@@ -169,6 +169,29 @@ class WSA4000:
 		self.scpiset(":TRACE:BLOCK:DATA?\n")
 
 
+	## aquire a read permission for reading data
+	#
+	# @return - 1 if allowed to read, 0 if not
+	def request_read_perm(self):
+		lockstr = self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
+		if lockstr == "1":
+			return 1
+		else:
+			return 0
+
+
+	## query to see if you have read permissions
+	#
+	# @return - 1 if allowed to read, 0 if not
+	def have_read_perm(self):
+		lockstr = self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
+		if lockstr == "1":
+			return 1
+		else:
+			return 0
+
+	
+
 	## test for no more data
 	#
 	# @return - 1 if no more data, 0 if more data
