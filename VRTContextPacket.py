@@ -87,6 +87,23 @@ class VRTContextPacket:
 			self.fields.append(('Unknown', ""))
 
 
+	def is_data_packet(self):
+		return False
+
+
+	def is_context_packet(self, type=None):
+		if (type == None):
+			return True
+
+		elif (type == "Receiver"):
+			return (self.type == VRTRECEIVER)
+
+		elif (type == "Digitizer"):
+			return (self.type == VRTDIGITIZER)
+
+		else:
+			return False
+
 
 	def __str__(self):
 		return ("Context #%d [s=%d, id=0x%08x, ts=%d.%d " % (self.count, self.size, self.streamId, self.tsi, self.tsf)) + self.fields.__str__() + "]"

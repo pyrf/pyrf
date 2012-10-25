@@ -33,5 +33,14 @@ class VRTDataPacket:
 			print "error: invalid number of bytes"
 			return
 
+	
+	def is_data_packet(self):
+		return True
+
+
+	def is_context_packet(self):
+		return False
+
+
 	def __str__(self):
 		return ("Data #%d (%d.%09d) [%d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))
