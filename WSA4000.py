@@ -298,3 +298,9 @@ class WSA4000:
 		self.scpiset(":sweep:list:stop");
 
 
+	## flush capture memory of captures
+	#
+	def flush_captures(self):
+		self.scpiset(":sweep:flush");
+
+
