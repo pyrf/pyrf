@@ -21,6 +21,15 @@ class WSA4000:
 		self.vrt = VRTStream.VRTStream(self.sock.vrt);
 
 
+	## close a connection to a wsa
+	#
+	def close(self):
+		self.sock.scpi.shutdown(socket.SHUT_RDWR)
+		self.sock.scpi.close()
+		self.sock.vrt.shutdown(socket.SHUT_RDWR)
+		self.sock.vrt.close()
+
+
 	## send a scpi command
 	#
 	# @param cmd - the command to send
