@@ -106,4 +106,4 @@ class VRTContextPacket:
 
 
 	def __str__(self):
-		return ("Context #%d [s=%d, id=0x%08x, ts=%d.%d " % (self.count, self.size, self.streamId, self.tsi, self.tsf)) + self.fields.__str__() + "]"
+		return ("Context #%02d [%d.%012d, 0x%08x " % (self.count, self.tsi, self.tsf, self.streamId)) + self.fields.__str__() + "]"

@@ -43,4 +43,4 @@ class VRTDataPacket:
 
 
 	def __str__(self):
-		return ("Data #%d (%d.%09d) [%d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))
+		return ("Data #%02d [%d.%012d, %d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))
