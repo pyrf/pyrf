@@ -215,6 +215,21 @@ class WSA4000:
 		return self.vrt.has_data()
 
 
+	## get lock status
+	#
+	# @param modulestr - 'vco' for rf lock status.. clkref for mobo lock status
+	# @return - 1 if locked.. 0 if not locked, -1 on error
+	def locked(self, modulestr):
+		if modulestr.upper() == 'VCO':
+			buf = self.scpiget("SENSE:LOCK:RF?");
+			return int(buf)
+		elif modulestr.upper() == 'CLKREF':
+			buf = self.scpiget("SENSE:LOCK:REFERENCE?");
+			return int(buf)
+		else:
+			return -1
+
+
 	## read data
 	#
 	# @return - a packet object
