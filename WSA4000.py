@@ -237,6 +237,14 @@ class WSA4000:
 		return self.vrt.read_packet()
 
 
+	## raw read of socket data
+	#
+	# @param len - the number of bytes to read
+	# @return - an array of bytes
+	def raw_read(self, len):
+		return self.sock.vrt.recv(len)
+
+
 	## sweep add
 	#
 	# @param entry - the sweep entry to add
