@@ -23,7 +23,7 @@ class WSA4000:
 
 	## close a connection to a wsa
 	#
-	def close(self):
+	def disconnect(self):
 		self.sock.scpi.shutdown(socket.SHUT_RDWR)
 		self.sock.scpi.close()
 		self.sock.vrt.shutdown(socket.SHUT_RDWR)
