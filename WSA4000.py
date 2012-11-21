@@ -3,7 +3,11 @@ from collections import namedtuple
 import VRTStream
 import WSA4000SweepEntry
 
-class WSA4000:
+class WSA4000Settings(object):
+    pass
+
+
+class WSA4000(object):
 
     def __init__(self):
         pass
@@ -18,7 +22,7 @@ class WSA4000:
         self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock_vrt.connect((host, 37000))
-        self._vrt = VRTStream.VRTStream(self._sock_vrt);
+        self._vrt = VRTStream.VRTStream(self._sock_vrt)
 
 
     ## close a connection to a wsa
@@ -51,7 +55,7 @@ class WSA4000:
     #
     # @return - the id string
     def id(self):
-        return self.scpiget(":*idn?");
+        return self.scpiget(":*idn?")
 
 
     ## get/set current frequency
@@ -59,11 +63,11 @@ class WSA4000:
     # @param freq - if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
     # @return - the frequency of the box
     def freq(self, freq=None):
-        if (freq == None):
-            buf = self.scpiget("FREQ:CENTER?");
+        if freq is None:
+            buf = self.scpiget("FREQ:CENTER?")
             freq = int(buf)
         else:
-            self.scpiset(":FREQ:CENTER %d\n" % (freq))
+            self.scpiset(":FREQ:CENTER %d\n" % freq)
 
         return freq
 
@@ -73,11 +77,11 @@ class WSA4000:
     # @param freq - if this param is given, then the frequency is shifted by this amount. otherwise, the freq shift is queried
     # @return - the amount of frequency shift
     def fshift(self, shift=None):
-        if (shift == None):
-            buf = self.scpiget("FREQ:SHIFT?");
+        if shift is None:
+            buf = self.scpiget("FREQ:SHIFT?")
             shift = float(buf)
         else:
-            self.scpiset(":FREQ:SHIFT %d\n" % (shift))
+            self.scpiset(":FREQ:SHIFT %d\n" % shift)
 
         return shift
 
@@ -87,11 +91,11 @@ class WSA4000:
     # @param value - if this param is given, then the input signal is decimated by this amount. otherwise, the decimation is queried
     # @return - the amount of decimation
     def decimation(self, value=None):
-        if (value == None):
-            buf = self.scpiget("SENSE:DECIMATION?");
+        if value is None:
+            buf = self.scpiget("SENSE:DECIMATION?")
             value = int(buf)
         else:
-            self.scpiset(":SENSE:DECIMATION %d\n" % (value))
+            self.scpiset(":SENSE:DECIMATION %d\n" % value)
 
         return value
 
@@ -101,10 +105,10 @@ class WSA4000:
     # @param gain - if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
     # @return - the frequency of the box
     def gain(self, gain=None):
-        if (gain == None):
-            gain = self.scpiget("INPUT:GAIN:RF?");
+        if gain is None:
+            gain = self.scpiget("INPUT:GAIN:RF?")
         else:
-            self.scpiset(":INPUT:GAIN:RF %s\n" % (gain))
+            self.scpiset(":INPUT:GAIN:RF %s\n" % gain)
 
         return gain
 
@@ -114,12 +118,12 @@ class WSA4000:
     # @param gain - if this param is given, then the if of the box is set to this value. otherwise the gain is queried
     # @return - the ifgain in dB
     def ifgain(self, gain=None):
-        if (gain == None):
-            gain = self.scpiget(":INPUT:GAIN:IF?");
+        if gain is None:
+            gain = self.scpiget(":INPUT:GAIN:IF?")
             gain = gain.partition(" ")
             gain = int(gain[0])
         else:
-            self.scpiset(":INPUT:GAIN:IF %d\n" % (gain))
+            self.scpiset(":INPUT:GAIN:IF %d\n" % gain)
 
         return gain
 
@@ -135,22 +139,22 @@ class WSA4000:
     # @param gain - if this param is given, then the trigger settings are set as given.. if not, they are read
     # @return - the trigger settings set as an object
     def trigger(self, settings=None):
-        if (settings == None):
+        if settings is None:
             # find out what kind of trigger is set
             trigstr = self.scpiget(":TRIGGER:MODE?")
             if trigstr == "NONE":
                 # build our return object
-                settings = namedtuple("type")
+                settings = WSA4000Settings()
                 settings.type = "NONE"
 
             elif trigstr == "LEVEL":
                 # build our return object
-                settings = namedtuple("type", "fstart", "fstop", "amplitude")
+                settings = WSA4000Settings()
                 settings.type = "LEVEL"
 
                 # read the settings from the box
                 trigstr = self.scpiget(":TRIGGER:LEVEL?")
-                (settings.fstart, settings.fstop, settings.amplitude) = trigstr.split(",")
+                settings.fstart, settings.fstop, settings.amplitude = trigstr.split(",")
 
             else:
                 print "error: unsupported trigger type set: %s" % trigstr
@@ -180,24 +184,18 @@ class WSA4000:
 
     ## aquire a read permission for reading data
     #
-    # @return - 1 if allowed to read, 0 if not
+    # @return - True if allowed to read, False if not
     def request_read_perm(self):
         lockstr = self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
-        if lockstr == "1":
-            return 1
-        else:
-            return 0
+        return lockstr == "1"
 
 
     ## query to see if you have read permissions
     #
-    # @return - 1 if allowed to read, 0 if not
+    # @return - True if allowed to read, False if not
     def have_read_perm(self):
         lockstr = self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
-        if lockstr == "1":
-            return 1
-        else:
-            return 0
+        return lockstr == "1"
 
 
 
@@ -221,10 +219,10 @@ class WSA4000:
     # @return - 1 if locked.. 0 if not locked, -1 on error
     def locked(self, modulestr):
         if modulestr.upper() == 'VCO':
-            buf = self.scpiget("SENSE:LOCK:RF?");
+            buf = self.scpiget("SENSE:LOCK:RF?")
             return int(buf)
         elif modulestr.upper() == 'CLKREF':
-            buf = self.scpiget("SENSE:LOCK:REFERENCE?");
+            buf = self.scpiget("SENSE:LOCK:REFERENCE?")
             return int(buf)
         else:
             return -1
@@ -239,10 +237,10 @@ class WSA4000:
 
     ## raw read of socket data
     #
-    # @param len - the number of bytes to read
+    # @param num - the number of bytes to read
     # @return - an array of bytes
-    def raw_read(self, len):
-        return self._sock_vrt.recv(len)
+    def raw_read(self, num):
+        return self._sock_vrt.recv(num)
 
 
     ## sweep add
@@ -315,24 +313,24 @@ class WSA4000:
     ## flush the sweep list
     #
     def sweep_clear(self):
-        self.scpiset(":sweep:entry:del all");
+        self.scpiset(":sweep:entry:del all")
 
 
     ## start the sweep engine
     #
     def sweep_start(self):
-        self.scpiset(":sweep:list:start");
+        self.scpiset(":sweep:list:start")
 
 
     ## stop the sweep engine
     #
     def sweep_stop(self):
-        self.scpiset(":sweep:list:stop");
+        self.scpiset(":sweep:list:stop")
 
 
     ## flush capture memory of captures
     #
     def flush_captures(self):
-        self.scpiset(":sweep:flush");
+        self.scpiset(":sweep:flush")
 
 
