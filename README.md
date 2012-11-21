@@ -16,6 +16,7 @@ dut = WSA4000.WSA4000()
 dut.connect("10.126.110.103")
 
 # setup test conditions
+dut.request_read_perm()
 dut.ifgain(0)
 dut.freq(2450e6)
 dut.gain('low')
@@ -29,10 +30,10 @@ dut.capture(1024, 1)
 while not dut.eof():
     pkt = dut.read()
 
-    if isinstance(pkt, VRTDataPacket):
+    if isinstance(pkt, VRTDataPacket.VRTDataPacket):
         break
 
 # print I/Q data into i and q
 for t in pkt.data:
-    print "%d,%d" % (i[0], i[1])
+    print "%d,%d" % (t[0], t[1])
 ```
