@@ -6,35 +6,35 @@ import WSA4000SweepEntry
 class WSA4000:
 
     def __init__(self):
-        self.sock = namedtuple('socket', ['scpi', 'vrt'])
+        pass
 
 
     ## connects to a wsa
     #
     # @param host - the hostname or IP to connect to
     def connect(self, host):
-        self.sock.scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.scpi.connect((host, 37001))
-        self.sock.scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        self.sock.vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.vrt.connect((host, 37000))
-        self.vrt = VRTStream.VRTStream(self.sock.vrt);
+        self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock_scpi.connect((host, 37001))
+        self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock_vrt.connect((host, 37000))
+        self._vrt = VRTStream.VRTStream(self._sock_vrt);
 
 
     ## close a connection to a wsa
     #
     def disconnect(self):
-        self.sock.scpi.shutdown(socket.SHUT_RDWR)
-        self.sock.scpi.close()
-        self.sock.vrt.shutdown(socket.SHUT_RDWR)
-        self.sock.vrt.close()
+        self._sock_scpi.shutdown(socket.SHUT_RDWR)
+        self._sock_scpi.close()
+        self._sock_vrt.shutdown(socket.SHUT_RDWR)
+        self._sock_vrt.close()
 
 
     ## send a scpi command
     #
     # @param cmd - the command to send
     def scpiset(self, cmd):
-        self.sock.scpi.send("%s\n" % cmd)
+        self._sock_scpi.send("%s\n" % cmd)
 
 
     ## get a scpi command
@@ -42,8 +42,8 @@ class WSA4000:
     # @param cmd - the command to send
     # @return - the response back from the box if any
     def scpiget(self, cmd):
-        self.sock.scpi.send("%s\n" % cmd)
-        buf = self.sock.scpi.recv(1024)
+        self._sock_scpi.send("%s\n" % cmd)
+        buf = self._sock_scpi.recv(1024)
         return buf
 
 
@@ -205,14 +205,14 @@ class WSA4000:
     #
     # @return - 1 if no more data, 0 if more data
     def eof(self):
-        return self.vrt.eof
+        return self._vrt.eof
 
 
     ## has data
     #
     # @return - 1 if there is a packet to read.. 0 if not
     def has_data(self):
-        return self.vrt.has_data()
+        return self._vrt.has_data()
 
 
     ## get lock status
@@ -234,7 +234,7 @@ class WSA4000:
     #
     # @return - a packet object
     def read(self):
-        return self.vrt.read_packet()
+        return self._vrt.read_packet()
 
 
     ## raw read of socket data
@@ -242,7 +242,7 @@ class WSA4000:
     # @param len - the number of bytes to read
     # @return - an array of bytes
     def raw_read(self, len):
-        return self.sock.vrt.recv(len)
+        return self._sock_vrt.recv(len)
 
 
     ## sweep add
