@@ -1,17 +1,15 @@
 Documentation
 =============
 Module is documented with Doxygen.  Run to generate latex or html documentation.
-# doxygen
+
+    # doxygen
 
 Example:
 --------
 
 ```python
-from collections import namedtuple
 import VRTDataPacket
-import VRTContextPacket
 import WSA4000
-import WSA4000SweepEntry
 
 # connect to wsa
 dut = WSA4000.WSA4000()
@@ -28,14 +26,10 @@ dut.decimation(0)
 dut.capture(1024, 1)
 
 # read until I get 1 data packet
-count = 0
 while not dut.eof():
     pkt = dut.read()
 
-    if pkt.__class__.__name__ == "VRTDataPacket":
-        count = count + 1
-
-    if count == 1:
+    if isinstance(pkt, VRTDataPacket):
         break
 
 # print I/Q data into i and q
