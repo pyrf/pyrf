@@ -1,7 +1,7 @@
 import struct
 import socketread
 
-class VRTDataPacket:
+class VRTDataPacket(object):
 
     def __init__(self, word, socket):
         self.type = 1

@@ -8,11 +8,10 @@ Example:
 --------
 
 ```python
-import VRTDataPacket
-import WSA4000
+from WSA4000 import WSA4000
 
 # connect to wsa
-dut = WSA4000.WSA4000()
+dut = WSA4000()
 dut.connect("10.126.110.103")
 
 # setup test conditions
@@ -30,7 +29,7 @@ dut.capture(1024, 1)
 while not dut.eof():
     pkt = dut.read()
 
-    if isinstance(pkt, VRTDataPacket.VRTDataPacket):
+    if pkt.is_data_packet():
         break
 
 # print I/Q data into i and q

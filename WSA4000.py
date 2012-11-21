@@ -1,5 +1,4 @@
 import socket
-from collections import namedtuple
 import VRTStream
 import WSA4000SweepEntry
 
@@ -201,14 +200,14 @@ class WSA4000(object):
 
     ## test for no more data
     #
-    # @return - 1 if no more data, 0 if more data
+    # @return - True if no more data, False if more data
     def eof(self):
         return self._vrt.eof
 
 
     ## has data
     #
-    # @return - 1 if there is a packet to read.. 0 if not
+    # @return - True if there is a packet to read, False if not
     def has_data(self):
         return self._vrt.has_data()
 

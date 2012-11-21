@@ -5,9 +5,10 @@ import VRTContextPacket
 import VRTDataPacket
 
 VRTCONTEXT = 4
+VRTCUSTOMCONTEXT = 5
 VRTDATA = 1
 
-class VRTStream:
+class VRTStream(object):
 
     def __init__(self, socket):
         self.socket = socket
@@ -34,9 +35,9 @@ class VRTStream:
         # decode the packet type
         packet_type = (word >> 28) & 0x0f
 
-        if (packet_type == 4) or (packet_type == 5):
+        if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
             return VRTContextPacket.VRTContextPacket(packet_type, word, self.socket)
-        elif (packet_type == 1):
+        elif packet_type == VRTDATA:
             return VRTDataPacket.VRTDataPacket(word, self.socket)
         else:
             print "error: unknown packet type: %s" % packet_type

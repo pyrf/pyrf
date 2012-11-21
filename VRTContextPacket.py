@@ -5,7 +5,7 @@ VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
 
-class VRTContextPacket:
+class VRTContextPacket(object):
 
     CTX_REFERENCEPOINT = (1 << 30)
     CTX_RFFREQ = (1 << 27)

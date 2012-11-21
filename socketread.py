@@ -1,4 +1,3 @@
-import socket
 
 def read(socket, count, flags = None):
     if not flags:
