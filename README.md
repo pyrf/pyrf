@@ -8,7 +8,7 @@ Example:
 --------
 
 ```python
-from WSA4000 import WSA4000
+from thinkrf.devices import WSA4000
 
 # connect to wsa
 dut = WSA4000()

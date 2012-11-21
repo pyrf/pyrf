@@ -1,5 +1,5 @@
 
-def read(socket, count, flags = None):
+def socketread(socket, count, flags = None):
     if not flags:
         flags = 0
     data = socket.recv(count, flags)

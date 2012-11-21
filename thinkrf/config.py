@@ -1,5 +1,9 @@
 
-class WSA4000SweepEntry:
+class Settings(object):
+    pass
+
+
+class SweepEntry(object):
 
     def __init__(self):
         self.fstart = 2400000000
@@ -32,4 +36,5 @@ class WSA4000SweepEntry:
         str = str + "\tlevel:fstart/fstop/famplitude: %d / %d / %d\n" % (self.level_fstart, self.level_fstop, self.level_amplitude)
         str = str + ")"
         return str
+
 

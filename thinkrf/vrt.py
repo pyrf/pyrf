@@ -1,11 +1,51 @@
 import struct
-import socketread
+from thinkrf.util import socketread
+
+VRTCONTEXT = 4
+VRTCUSTOMCONTEXT = 5
+VRTDATA = 1
 
 VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
 
-class VRTContextPacket(object):
+class Stream(object):
+
+    def __init__(self, socket):
+        self.socket = socket
+        self.eof = False
+
+    def has_data(self):
+        # read a word
+        try:
+            tmpstr = socketread(self.socket, 4, socket.MSG_DONTWAIT | socket.MSG_PEEK)
+        except socket.error:
+            self.eof = True
+            return False
+
+        return True
+
+
+    def read_packet(self):
+        # read a word
+        tmpstr = socketread(self.socket, 4, 0)
+
+        # convert to int word
+        (word,) = struct.unpack(">I", tmpstr)
+
+        # decode the packet type
+        packet_type = (word >> 28) & 0x0f
+
+        if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
+            return ContextPacket(packet_type, word, self.socket)
+        elif packet_type == VRTDATA:
+            return DataPacket(word, self.socket)
+        else:
+            print "error: unknown packet type: %s" % packet_type
+            return False
+
+
+class ContextPacket(object):
 
     CTX_REFERENCEPOINT = (1 << 30)
     CTX_RFFREQ = (1 << 27)
@@ -25,7 +65,7 @@ class VRTContextPacket(object):
 
         # now read in the rest of the packet
         packet_size = (self.size - 1) * 4
-        tmpstr = socketread.read(socket, packet_size)
+        tmpstr = socketread(socket, packet_size)
         (self.streamId, self.tsi, self.tsf,indicatorsField,) = struct.unpack(">IIQI", tmpstr[0:20])
 
         # now read all the indicators
@@ -124,3 +164,48 @@ class VRTContextPacket(object):
 
     def __str__(self):
         return ("Context #%02d [%d.%012d, 0x%08x " % (self.count, self.tsi, self.tsf, self.streamId)) + self.fields.__str__() + "]"
+
+
+class DataPacket(object):
+
+    def __init__(self, word, socket):
+        self.type = 1
+        self.count = (word >> 16) & 0x0f
+        self.size = (word >> 0) & 0xffff
+        self.data = []
+
+        # read in the rest of the header
+        tmpstr = socketread(socket, 16)
+        if (len(tmpstr) < 16):
+            print "error: invalid number of bytes"
+            return
+        (self.streamId, self.tsi, self.tsf) = struct.unpack(">IIQ", tmpstr)
+
+        # read in the payload
+        payloadsize = self.size - 5 - 1
+        tmpstr = socketread(socket, payloadsize * 4)
+        if (len(tmpstr) < (payloadsize * 4)):
+            print "error: invalid number of bytes"
+            return
+
+        # read in data
+        for i in range(0, payloadsize * 4, 4):
+            self.data.append(struct.unpack(">hh", tmpstr[i:i+4]))
+
+        # read in the trailer
+        tmpstr = socketread(socket, 4)
+        if (len(tmpstr) < 4):
+            print "error: invalid number of bytes"
+            return
+
+
+    def is_data_packet(self):
+        return True
+
+
+    def is_context_packet(self):
+        return False
+
+
+    def __str__(self):
+        return ("Data #%02d [%d.%012d, %d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))

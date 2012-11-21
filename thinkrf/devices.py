@@ -1,10 +1,6 @@
 import socket
-import VRTStream
-import WSA4000SweepEntry
-
-class WSA4000Settings(object):
-    pass
-
+from thinkrf.vrt import Stream
+from thinkrf.config import SweepEntry, Settings
 
 class WSA4000(object):
 
@@ -21,7 +17,7 @@ class WSA4000(object):
         self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock_vrt.connect((host, 37000))
-        self._vrt = VRTStream.VRTStream(self._sock_vrt)
+        self._vrt = Stream(self._sock_vrt)
 
 
     ## close a connection to a wsa
@@ -143,12 +139,12 @@ class WSA4000(object):
             trigstr = self.scpiget(":TRIGGER:MODE?")
             if trigstr == "NONE":
                 # build our return object
-                settings = WSA4000Settings()
+                settings = Settings()
                 settings.type = "NONE"
 
             elif trigstr == "LEVEL":
                 # build our return object
-                settings = WSA4000Settings()
+                settings = Settings()
                 settings.type = "LEVEL"
 
                 # read the settings from the box
@@ -266,7 +262,7 @@ class WSA4000(object):
     # @param index - the index of the entry to read
     # @return entry
     def sweep_read(self, index):
-        ent = WSA4000SweepEntry.WSA4000SweepEntry()
+        ent = SweepEntry()
 
         entrystr = self.scpiget(":sweep:entry:read? %d" % index)
 
