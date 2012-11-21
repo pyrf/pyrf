@@ -318,8 +318,11 @@ class WSA4000(object):
 
     ## start the sweep engine
     #
-    def sweep_start(self):
-        self.scpiset(":sweep:list:start")
+    def sweep_start(self, start_id = None):
+        if start_id:
+            self.scpiset(":sweep:list:start %d" % start_id);
+        else:
+            self.scpiset(":sweep:list:start");
 
 
     ## stop the sweep engine

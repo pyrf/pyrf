@@ -3,6 +3,7 @@ import socketread
 
 VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
+VRTCUSTOM = 0x90000004
 
 class VRTContextPacket:
 
@@ -13,10 +14,11 @@ class VRTContextPacket:
     CTX_BANDWIDTH = (1 << 29)
     CTX_RFOFFSET = (1 << 26)
     CTX_REFERENCELEVEL = (1 << 24)
+    CTX_STREAMSTART = (1 << 0)
 
-    def __init__(self, word, socket):
+    def __init__(self, pkt_type, word, socket):
         # extract the pieces of word we want
-        self.type = 4
+        self.type = pkt_type
         self.count = (word >> 16) & 0x0f
         self.size = (word >> 0) & 0xffff
         self.fields = []
@@ -31,6 +33,8 @@ class VRTContextPacket:
             self._parseReceiverContext(indicatorsField, tmpstr[20:])
         elif (self.streamId == 0x90000002):
             self._parseDigitizerContext(indicatorsField, tmpstr[20:])
+        elif (self.streamId == 0x90000004):
+            self._parseCustomContext(indicatorsField, tmpstr[20:])
 
 
     def _parseReceiverContext(self, indicators, data):
@@ -81,6 +85,19 @@ class VRTContextPacket:
             (value,) = struct.unpack(">h", data[i+2:i+4])
             value = (value >> 7) + ((value & 0x0000007f) / 0x0000007f)
             self.fields.append(('reflevel', value))
+            i += 4
+
+        else:
+            self.fields.append(('Unknown', ""))
+
+
+    def _parseCustomContext(self, indicators, data):
+        i = 0
+
+        if (indicators & self.CTX_STREAMSTART):
+            (value,) = struct.unpack(">I", data[i:i+4])
+            value = "0x%08x" % value
+            self.fields.append(('startid', value))
             i += 4
 
         else:

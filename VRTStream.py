@@ -34,8 +34,8 @@ class VRTStream:
         # decode the packet type
         packet_type = (word >> 28) & 0x0f
 
-        if (packet_type == 4):
-            return VRTContextPacket.VRTContextPacket(word, self.socket)
+        if (packet_type == 4) or (packet_type == 5):
+            return VRTContextPacket.VRTContextPacket(packet_type, word, self.socket)
         elif (packet_type == 1):
             return VRTDataPacket.VRTDataPacket(word, self.socket)
         else:
