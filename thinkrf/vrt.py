@@ -88,20 +88,20 @@ class ContextPacket(object):
 
         elif (indicators & self.CTX_RFFREQ):
             (value,) = struct.unpack(">Q", data[i:i+8])
-            value = (value >> 20) + ((value & 0x00000000000fffff) / 0x000fffff)
+            value /= 2.0 ** 20
             self.fields['rffreq'] = value
             i += 8
 
         elif (indicators & self.CTX_GAIN):
             (g1,g2) = struct.unpack(">hh", data[i:i+4])
-            g1 = (g1 >> 7) + ((g1 & 0x007f) / 0x007f)
-            g2 = (g2 >> 7) + ((g2 & 0x007f) / 0x007f)
+            g1 /= 2.0 ** 7
+            g2 /= 2.0 ** 7
             self.fields['gain'] = (g1, g2)
             i += 4
 
         elif (indicators & self.CTX_TEMPERATURE):
             (value,) = struct.unpack(">I", data[i:i+4])
-            value = (value >> 20) + ((value & 0x00000000000fffff) / 0x000fffff)
+            value = value
             self.fields['temperature'] = value
             i += 4
 
@@ -113,19 +113,19 @@ class ContextPacket(object):
 
         if (indicators & self.CTX_BANDWIDTH):
             (value,) = struct.unpack(">Q", data[i:i+8])
-            value = (value >> 20) + ((value & 0x00000000000fffff) / 0x00000000000fffff)
+            value /= 2.0 ** 20
             self.fields['bandwidth'] = value
             i += 8
 
         elif (indicators & self.CTX_RFOFFSET):
             (value,) = struct.unpack(">Q", data[i:i+8])
-            value = (value >> 20) + ((value & 0x00000000000fffff) / 0x00000000000fffff)
+            value /= 2.0 ** 20
             self.fields['rfoffset'] = value
             i += 8
 
         elif (indicators & self.CTX_REFERENCELEVEL):
             (value,) = struct.unpack(">h", data[i+2:i+4])
-            value = (value >> 7) + ((value & 0x0000007f) / 0x0000007f)
+            value /= 2.0 ** 7
             self.fields['reflevel'] = value
             i += 4
 
