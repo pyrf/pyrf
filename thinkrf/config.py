@@ -5,36 +5,50 @@ class Settings(object):
 
 class SweepEntry(object):
 
-    def __init__(self):
-        self.fstart = 2400000000
-        self.fstop = 2400000000
-        self.fstep = 100000000
-        self.fshift = 0
-        self.decimation = 0
-        self.antenna = 1
-        self.gain = "vlow"
-        self.ifgain = 0
-        self.spp = 1024
-        self.ppb = 1
-        self.trigtype = "none"
-        self.level_fstart =  50000000
-        self.level_fstop = 10000000000
-        self.level_amplitude = -100
+    def __init__(self,
+            fstart=2400000000,
+            fstop=2400000000,
+            fstep=100000000,
+            fshift=0,
+            decimation=0,
+            antenna=1,
+            gain="vlow",
+            ifgain=0,
+            spp=1024,
+            ppb=1,
+            trigtype="none",
+            level_fstart= 50000000,
+            level_fstop=10000000000,
+            level_amplitude=-100):
+        self.fstart = fstart
+        self.fstop = fstop
+        self.fstep = fstep
+        self.fshift = fshift
+        self.decimation = decimation
+        self.antenna = antenna
+        self.gain = gain
+        self.ifgain = ifgain
+        self.spp = spp
+        self.ppb = ppb
+        self.trigtype = trigtype
+        self.level_fstart = level_fstart
+        self.level_fstop = level_fstop
+        self.level_amplitude = level_amplitude
+
 
     def __str__(self):
-        str = "SweepEntry(\n"
-        str = str + "\tfstart: %d\n" % self.fstart
-        str = str + "\tfstop: %d\n" % self.fstop
-        str = str + "\tfstep: %d\n" % self.fstep
-        str = str + "\tfshift: %d\n" % self.fshift
-        str = str + "\tdecimation: %d\n" % self.decimation
-        str = str + "\tantenna: %d\n" % self.antenna
-        str = str + "\tgain: %s\n" % self.gain
-        str = str + "\tifgain: %d\n" % self.ifgain
-        str = str + "\tspp/ppb: %d/%d\n" % (self.spp, self.ppb)
-        str = str + "\ttrigtype: %s\n" % self.trigtype
-        str = str + "\tlevel:fstart/fstop/famplitude: %d / %d / %d\n" % (self.level_fstart, self.level_fstop, self.level_amplitude)
-        str = str + ")"
-        return str
+        return ("SweepEntry(\n"
+            + "\tfstart: %d\n" % self.fstart
+            + "\tfstop: %d\n" % self.fstop
+            + "\tfstep: %d\n" % self.fstep
+            + "\tfshift: %d\n" % self.fshift
+            + "\tdecimation: %d\n" % self.decimation
+            + "\tantenna: %d\n" % self.antenna
+            + "\tgain: %s\n" % self.gain
+            + "\tifgain: %d\n" % self.ifgain
+            + "\tspp/ppb: %d/%d\n" % (self.spp, self.ppb)
+            + "\ttrigtype: %s\n" % self.trigtype
+            + "\tlevel:fstart/fstop/famplitude: %d / %d / %d\n" % (self.level_fstart, self.level_fstop, self.level_amplitude)
+            + ")")
 
 
