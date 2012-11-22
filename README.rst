@@ -1,3 +1,4 @@
+
 thinkRF Device API
 ==================
 
@@ -5,13 +6,6 @@ This is a preliminary release of the thinkRF Python Device API.
 
 This library supports development for the WSA4000 Platform.
 
-Documentation
--------------
-
-Module is documented with Doxygen.  Run to generate latex or HTML
-documentation::
-
-    # doxygen
 
 Example:
 --------

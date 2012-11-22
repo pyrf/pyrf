@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 setup(
     name='thinkrf',
@@ -9,7 +12,7 @@ setup(
     author_email='support@thinkrf.com',
     packages=['thinkrf'],
     url='https://github.com/thinkrf/python-thinkrf',
-    license='LICENSE.txt',
+    license='BSD',
     description='ThinkRF Python Device API',
     long_description=open('README.rst').read(),
 )

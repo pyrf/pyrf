@@ -8,10 +8,12 @@ class WSA4000(object):
         pass
 
 
-    ## connects to a wsa
-    #
-    # @param host - the hostname or IP to connect to
     def connect(self, host):
+        """
+        connects to a wsa
+
+        :param host: the hostname or IP to connect to
+        """
         self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock_scpi.connect((host, 37001))
         self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
@@ -20,44 +22,53 @@ class WSA4000(object):
         self._vrt = Stream(self._sock_vrt)
 
 
-    ## close a connection to a wsa
-    #
     def disconnect(self):
+        """
+        close a connection to a wsa
+        """
         self._sock_scpi.shutdown(socket.SHUT_RDWR)
         self._sock_scpi.close()
         self._sock_vrt.shutdown(socket.SHUT_RDWR)
         self._sock_vrt.close()
 
 
-    ## send a scpi command
-    #
-    # @param cmd - the command to send
     def scpiset(self, cmd):
+        """
+        send a scpi command
+
+        :param cmd: the command to send
+        """
         self._sock_scpi.send("%s\n" % cmd)
 
 
-    ## get a scpi command
-    #
-    # @param cmd - the command to send
-    # @return - the response back from the box if any
     def scpiget(self, cmd):
+        """
+        get a scpi command
+
+        :param cmd: the command to send
+        :returns: the response back from the box if any
+        """
         self._sock_scpi.send("%s\n" % cmd)
         buf = self._sock_scpi.recv(1024)
         return buf
 
 
-    ## get the box identification string
-    #
-    # @return - the id string
     def id(self):
+        """
+        get the box identification string
+
+        :returns: the id string
+        """
         return self.scpiget(":*idn?")
 
 
-    ## get/set current frequency
-    #
-    # @param freq - if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
-    # @return - the frequency of the box
     def freq(self, freq=None):
+        """
+        get/set current frequency
+
+        :param freq: if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
+        :returns: the frequency of the box
+        """
         if freq is None:
             buf = self.scpiget("FREQ:CENTER?")
             freq = int(buf)
@@ -67,11 +78,13 @@ class WSA4000(object):
         return freq
 
 
-    ## get/set frequency shift
-    #
-    # @param freq - if this param is given, then the frequency is shifted by this amount. otherwise, the freq shift is queried
-    # @return - the amount of frequency shift
     def fshift(self, shift=None):
+        """
+        get/set frequency shift
+
+        :param freq: if this param is given, then the frequency is shifted by this amount. otherwise, the freq shift is queried
+        :returns: the amount of frequency shift
+        """
         if shift is None:
             buf = self.scpiget("FREQ:SHIFT?")
             shift = float(buf)
@@ -81,11 +94,13 @@ class WSA4000(object):
         return shift
 
 
-    ## get/set decimation
-    #
-    # @param value - if this param is given, then the input signal is decimated by this amount. otherwise, the decimation is queried
-    # @return - the amount of decimation
     def decimation(self, value=None):
+        """
+        get/set decimation
+
+        :param value: if this param is given, then the input signal is decimated by this amount. otherwise, the decimation is queried
+        :returns: the amount of decimation
+        """
         if value is None:
             buf = self.scpiget("SENSE:DECIMATION?")
             value = int(buf)
@@ -95,11 +110,13 @@ class WSA4000(object):
         return value
 
 
-    ## get/set current gain
-    #
-    # @param gain - if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
-    # @return - the frequency of the box
     def gain(self, gain=None):
+        """
+        get/set current gain
+
+        :param gain: if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
+        :returns: the frequency of the box
+        """
         if gain is None:
             gain = self.scpiget("INPUT:GAIN:RF?")
         else:
@@ -108,11 +125,13 @@ class WSA4000(object):
         return gain
 
 
-    ## get/set current IF Gain
-    #
-    # @param gain - if this param is given, then the if of the box is set to this value. otherwise the gain is queried
-    # @return - the ifgain in dB
     def ifgain(self, gain=None):
+        """
+        get/set current IF Gain
+
+        :param gain: if this param is given, then the if of the box is set to this value. otherwise the gain is queried
+        :returns: the ifgain in dB
+        """
         if gain is None:
             gain = self.scpiget(":INPUT:GAIN:IF?")
             gain = gain.partition(" ")
@@ -123,17 +142,21 @@ class WSA4000(object):
         return gain
 
 
-    ## flush any captures from the capture memory
-    #
     def flush(self):
+        """
+        flush any captures from the capture memory
+
+        """
         self.scpiset(":sweep:flush\n")
 
 
-    ## get/set trigger settings
-    #
-    # @param gain - if this param is given, then the trigger settings are set as given.. if not, they are read
-    # @return - the trigger settings set as an object
     def trigger(self, settings=None):
+        """
+        get/set trigger settings
+
+        :param gain: if this param is given, then the trigger settings are set as given.. if not, they are read
+        :returns: the trigger settings set as an object
+        """
         if settings is None:
             # find out what kind of trigger is set
             trigstr = self.scpiget(":TRIGGER:MODE?")
@@ -166,53 +189,65 @@ class WSA4000(object):
         return settings
 
 
-    ## test for no more data
-    ## do a manual capture
-    #
-    # @param spp - the number of samples in a packet
-    # @param ppb - the number of packets in a capture
     def capture(self, spp, ppb):
+        """
+        test for no more data
+        do a manual capture
+
+        :param spp: the number of samples in a packet
+        :param ppb: the number of packets in a capture
+        """
         self.scpiset(":TRACE:SPP %s\n" % (spp))
         self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
         self.scpiset(":TRACE:BLOCK:DATA?\n")
 
 
-    ## aquire a read permission for reading data
-    #
-    # @return - True if allowed to read, False if not
     def request_read_perm(self):
+        """
+        aquire a read permission for reading data
+
+        :returns: True if allowed to read, False if not
+        """
         lockstr = self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
         return lockstr == "1"
 
 
-    ## query to see if you have read permissions
-    #
-    # @return - True if allowed to read, False if not
     def have_read_perm(self):
+        """
+        query to see if you have read permissions
+
+        :returns: True if allowed to read, False if not
+        """
         lockstr = self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
         return lockstr == "1"
 
 
 
-    ## test for no more data
-    #
-    # @return - True if no more data, False if more data
     def eof(self):
+        """
+        test for no more data
+
+        :returns: True if no more data, False if more data
+        """
         return self._vrt.eof
 
 
-    ## has data
-    #
-    # @return - True if there is a packet to read, False if not
     def has_data(self):
+        """
+        has data
+
+        :returns: True if there is a packet to read, False if not
+        """
         return self._vrt.has_data()
 
 
-    ## get lock status
-    #
-    # @param modulestr - 'vco' for rf lock status.. clkref for mobo lock status
-    # @return - 1 if locked.. 0 if not locked, -1 on error
     def locked(self, modulestr):
+        """
+        get lock status
+
+        :param modulestr: 'vco' for rf lock status.. clkref for mobo lock status
+        :returns: 1 if locked.. 0 if not locked, -1 on error
+        """
         if modulestr.upper() == 'VCO':
             buf = self.scpiget("SENSE:LOCK:RF?")
             return int(buf)
@@ -223,25 +258,31 @@ class WSA4000(object):
             return -1
 
 
-    ## read data
-    #
-    # @return - a packet object
     def read(self):
+        """
+        read data
+
+        :returns: a packet object
+        """
         return self._vrt.read_packet()
 
 
-    ## raw read of socket data
-    #
-    # @param num - the number of bytes to read
-    # @return - an array of bytes
     def raw_read(self, num):
+        """
+        raw read of socket data
+
+        :param num: the number of bytes to read
+        :returns: an array of bytes
+        """
         return self._sock_vrt.recv(num)
 
 
-    ## sweep add
-    #
-    # @param entry - the sweep entry to add
     def sweep_add(self, entry):
+        """
+        sweep add
+
+        :param entry: the sweep entry to add
+        """
         self.scpiset(":sweep:entry:new")
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
         self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
@@ -257,11 +298,13 @@ class WSA4000(object):
         self.scpiset(":sweep:entry:save")
 
 
-    ## sweep read
-    #
-    # @param index - the index of the entry to read
-    # @return entry
     def sweep_read(self, index):
+        """
+        sweep read
+
+        :param index: the index of the entry to read
+        :returns: entry
+        """
         ent = SweepEntry()
 
         entrystr = self.scpiget(":sweep:entry:read? %d" % index)
@@ -305,30 +348,34 @@ class WSA4000(object):
         return ent
 
 
-    ## flush the sweep list
-    #
     def sweep_clear(self):
+        """
+        flush the sweep list
+        """
         self.scpiset(":sweep:entry:del all")
 
 
-    ## start the sweep engine
-    #
     def sweep_start(self, start_id = None):
+        """
+        start the sweep engine
+        """
         if start_id:
             self.scpiset(":sweep:list:start %d" % start_id);
         else:
             self.scpiset(":sweep:list:start");
 
 
-    ## stop the sweep engine
-    #
     def sweep_stop(self):
+        """
+        stop the sweep engine
+        """
         self.scpiset(":sweep:list:stop")
 
 
-    ## flush capture memory of captures
-    #
     def flush_captures(self):
+        """
+        flush capture memory of captures
+        """
         self.scpiset(":sweep:flush")
 
 
