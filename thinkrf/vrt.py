@@ -9,6 +9,10 @@ VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
 
+class InvalidDataReceived(Exception):
+    pass
+
+
 class Stream(object):
 
     def __init__(self, socket):
@@ -41,8 +45,7 @@ class Stream(object):
         elif packet_type == VRTDATA:
             return DataPacket(word, self.socket)
         else:
-            print "error: unknown packet type: %s" % packet_type
-            return False
+            raise InvalidDataReceived("unknown packet type: %s" % packet_type)
 
 
 class ContextPacket(object):
@@ -180,17 +183,15 @@ class DataPacket(object):
 
         # read in the rest of the header
         tmpstr = socketread(socket, 16)
-        if (len(tmpstr) < 16):
-            print "error: invalid number of bytes"
-            return
+        if len(tmpstr) < 16:
+            raise InvalidDataReceived("data packet too short: %r" % tmpstr)
         (self.streamId, self.tsi, self.tsf) = struct.unpack(">IIQ", tmpstr)
 
         # read in the payload
         payloadsize = self.size - 5 - 1
         tmpstr = socketread(socket, payloadsize * 4)
         if (len(tmpstr) < (payloadsize * 4)):
-            print "error: invalid number of bytes"
-            return
+            raise InvalidDataReceived("data packet too short: %r" % tmpstr)
 
         # read in data
         for i in range(0, payloadsize * 4, 4):
@@ -199,8 +200,7 @@ class DataPacket(object):
         # read in the trailer
         tmpstr = socketread(socket, 4)
         if (len(tmpstr) < 4):
-            print "error: invalid number of bytes"
-            return
+            raise InvalidDataReceived("data packet too short: %r" % tmpstr)
 
 
     def is_data_packet(self):
