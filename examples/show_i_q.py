@@ -1,18 +1,11 @@
-Documentation
-=============
-Module is documented with Doxygen.  Run to generate latex or html documentation.
+#!/usr/bin/env python
 
-    # doxygen
-
-Example:
---------
-
-```python
+import sys
 from thinkrf.devices import WSA4000
 
 # connect to wsa
 dut = WSA4000()
-dut.connect("10.126.110.103")
+dut.connect(sys.argv[1])
 
 # setup test conditions
 dut.request_read_perm()
@@ -35,4 +28,3 @@ while not dut.eof():
 # print I/Q data into i and q
 for i, q in pkt.data:
     print "%d,%d" % (i, q)
-```
