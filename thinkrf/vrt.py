@@ -61,7 +61,7 @@ class ContextPacket(object):
         self.type = pkt_type
         self.count = (word >> 16) & 0x0f
         self.size = (word >> 0) & 0xffff
-        self.fields = []
+        self.fields = {}
 
         # now read in the rest of the packet
         packet_size = (self.size - 1) * 4
@@ -69,11 +69,11 @@ class ContextPacket(object):
         (self.streamId, self.tsi, self.tsf,indicatorsField,) = struct.unpack(">IIQI", tmpstr[0:20])
 
         # now read all the indicators
-        if (self.streamId == 0x90000001):
+        if self.streamId == VRTRECEIVER:
             self._parseReceiverContext(indicatorsField, tmpstr[20:])
-        elif (self.streamId == 0x90000002):
+        elif self.streamId == VRTDIGITIZER:
             self._parseDigitizerContext(indicatorsField, tmpstr[20:])
-        elif (self.streamId == 0x90000004):
+        elif self.streamId == VRTCUSTOM:
             self._parseCustomContext(indicatorsField, tmpstr[20:])
 
 
@@ -83,28 +83,30 @@ class ContextPacket(object):
         if (indicators & self.CTX_REFERENCEPOINT):
             value = struct.unpack(">I", data[i:i+4])
             value = "0x%08x" % value
-            self.fields.append(('refpoint', value))
+            self.fields['refpoint'] = value
             i += 4
 
         elif (indicators & self.CTX_RFFREQ):
             (value,) = struct.unpack(">Q", data[i:i+8])
             value = (value >> 20) + ((value & 0x00000000000fffff) / 0x000fffff)
-            self.fields.append(('rffreq', value))
+            self.fields['rffreq'] = value
             i += 8
 
         elif (indicators & self.CTX_GAIN):
             (g1,g2) = struct.unpack(">hh", data[i:i+4])
             g1 = (g1 >> 7) + ((g1 & 0x007f) / 0x007f)
             g2 = (g2 >> 7) + ((g2 & 0x007f) / 0x007f)
-            self.fields.append(('gain', (g1, g2)))
+            self.fields['gain'] = (g1, g2)
             i += 4
 
         elif (indicators & self.CTX_TEMPERATURE):
             (value,) = struct.unpack(">I", data[i:i+4])
             value = (value >> 20) + ((value & 0x00000000000fffff) / 0x000fffff)
-            self.fields.append(('temperature', 0))
+            self.fields['temperature'] = value
             i += 4
 
+        else:
+            self.fields['unknown'] = (indicators, data)
 
     def _parseDigitizerContext(self, indicators, data):
         i = 0
@@ -112,23 +114,23 @@ class ContextPacket(object):
         if (indicators & self.CTX_BANDWIDTH):
             (value,) = struct.unpack(">Q", data[i:i+8])
             value = (value >> 20) + ((value & 0x00000000000fffff) / 0x00000000000fffff)
-            self.fields.append(('bandwidth', value))
+            self.fields['bandwidth'] = value
             i += 8
 
         elif (indicators & self.CTX_RFOFFSET):
             (value,) = struct.unpack(">Q", data[i:i+8])
             value = (value >> 20) + ((value & 0x00000000000fffff) / 0x00000000000fffff)
-            self.fields.append(('rfoffset', value))
+            self.fields['rfoffset'] = value
             i += 8
 
         elif (indicators & self.CTX_REFERENCELEVEL):
             (value,) = struct.unpack(">h", data[i+2:i+4])
             value = (value >> 7) + ((value & 0x0000007f) / 0x0000007f)
-            self.fields.append(('reflevel', value))
+            self.fields['reflevel'] = value
             i += 4
 
         else:
-            self.fields.append(('Unknown', ""))
+            self.fields['unknown'] = (indicators, data)
 
 
     def _parseCustomContext(self, indicators, data):
@@ -137,11 +139,11 @@ class ContextPacket(object):
         if (indicators & self.CTX_STREAMSTART):
             (value,) = struct.unpack(">I", data[i:i+4])
             value = "0x%08x" % value
-            self.fields.append(('startid', value))
+            self.fields['startid'] = value
             i += 4
 
         else:
-            self.fields.append(('Unknown', ""))
+            self.fields['unknown'] = (indicators, data)
 
 
     def is_data_packet(self):
@@ -163,7 +165,9 @@ class ContextPacket(object):
 
 
     def __str__(self):
-        return ("Context #%02d [%d.%012d, 0x%08x " % (self.count, self.tsi, self.tsf, self.streamId)) + self.fields.__str__() + "]"
+        return ("Context #%02d [%d.%012d, 0x%08x " % (
+            self.count, self.tsi, self.tsf, self.streamId)
+            ) + str(self.fields) + "]"
 
 
 class DataPacket(object):
