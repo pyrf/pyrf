@@ -1,2 +1,2 @@
-recursive-include examples
+recursive-include examples *.py
 include LICENSE.txt README.rst Doxyfile
