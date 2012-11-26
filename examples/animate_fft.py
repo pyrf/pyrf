@@ -31,12 +31,6 @@ class WSA4000Connection(object):
         self.dut.gain('high')
         self.dut.fshift(0)
         self.dut.decimation(0)
-        trigger = TriggerSettings(
-            trigtype="LEVEL",
-            fstart=2400e6,
-            fstop=2480e6,
-            amplitude=-70)
-        self.dut.trigger(trigger)
 
     def read_powdata(self):
         # capture 1 packet
