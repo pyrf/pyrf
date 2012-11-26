@@ -1,6 +1,19 @@
 
-class Settings(object):
+class TriggerSettingsError(Exception):
     pass
+
+class TriggerSettings(object):
+
+    def __init__(self,
+            trigtype="NONE",
+            fstart=None,
+            fstop=None,
+            amplitude=None):
+        self.trigtype = trigtype
+        self.fstart = fstart
+        self.fstop = fstop
+        self.amplitude = amplitude
+
 
 
 class SweepEntry(object):

@@ -1,6 +1,6 @@
 import socket
 from thinkrf.vrt import Stream
-from thinkrf.config import SweepEntry, Settings
+from thinkrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
 
 class WSA4000(object):
 
@@ -152,37 +152,37 @@ class WSA4000(object):
 
     def trigger(self, settings=None):
         """
-        get/set trigger settings
+        This command sets or queries the type of trigger event.
+        Setting the trigger type to "NONE" is equivalent to disabling
+        the trigger execution; setting to any other type will
+        enable the trigger engine.
 
-        :param gain: if this param is given, then the trigger settings are set as given.. if not, they are read
+        :param settings: if this param is given, then the trigger settings are set as given.. if not, they are read
+        :type settings: thinkrf.config.TriggerSettings
         :returns: the trigger settings set as an object
         """
         if settings is None:
             # find out what kind of trigger is set
             trigstr = self.scpiget(":TRIGGER:MODE?")
             if trigstr == "NONE":
-                # build our return object
-                settings = Settings()
-                settings.type = "NONE"
+                settings = TriggerSettings("NONE")
 
             elif trigstr == "LEVEL":
                 # build our return object
-                settings = Settings()
-                settings.type = "LEVEL"
+                settings = TriggerSettings("LEVEL")
 
                 # read the settings from the box
                 trigstr = self.scpiget(":TRIGGER:LEVEL?")
                 settings.fstart, settings.fstop, settings.amplitude = trigstr.split(",")
 
             else:
-                print "error: unsupported trigger type set: %s" % trigstr
-                return None
+                raise TriggerSettingsError("unsupported trigger type set: %s" % trigstr)
 
         else:
-            if settings.type == "NONE":
+            if settings.trigtype == "NONE":
                 self.scpiset(":TRIGGER:MODE NONE")
 
-            elif settings.type == "LEVEL":
+            elif settings.trigtype == "LEVEL":
                 self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings.fstart, settings.fstop, settings.amplitude))
                 self.scpiset(":TRIGGER:MODE LEVEL")
 
