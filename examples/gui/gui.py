@@ -36,7 +36,7 @@ class MainPanel(QtGui.QWidget):
             try:
                 f = float(freq.text())
             except ValueError:
-                pass
+                return
             self.set_freq_mhz(f)
         freq.textEdited.connect(write_freq)
         grid.addWidget(freq, 1, 10, 1, 2)
