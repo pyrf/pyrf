@@ -163,7 +163,7 @@ class WSA4000(object):
         """
         if settings is None:
             # find out what kind of trigger is set
-            trigstr = self.scpiget(":TRIGGER:MODE?")
+            trigstr = self.scpiget(":TRIGGER:TYPE?")
             if trigstr == "NONE":
                 settings = TriggerSettings("NONE")
 
@@ -180,11 +180,11 @@ class WSA4000(object):
 
         else:
             if settings.trigtype == "NONE":
-                self.scpiset(":TRIGGER:MODE NONE")
+                self.scpiset(":TRIGGER:TYPE NONE")
 
             elif settings.trigtype == "LEVEL":
                 self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings.fstart, settings.fstop, settings.amplitude))
-                self.scpiset(":TRIGGER:MODE LEVEL")
+                self.scpiset(":TRIGGER:TYPE LEVEL")
 
         return settings
 
