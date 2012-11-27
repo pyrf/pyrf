@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 try:
-    from setuptools import setup
+    import setuptools
+    def setup(**kwargs):
+        setuptools.setup(zip_safe=False, **kwargs)
 except ImportError:
     from distutils.core import setup
 
