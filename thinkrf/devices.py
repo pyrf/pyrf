@@ -112,17 +112,21 @@ class WSA4000(object):
 
     def gain(self, gain=None):
         """
-        get/set current gain
+        This command sets or queries RFE quantized gain configuration.
+        The RF front end (RFE) of the WSA4000 consists of multiple quantized
+        gain stages. The gain corresponding to each user-selectable setting
+        has been pre-calculated for either optimal sensitivity or linearity.
+        The parameter defines the total quantized gain of the RFE.
 
-        :param gain: if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
-        :returns: the frequency of the box
+        :param gain: 'high', 'medium', 'low' or 'vlow' to set; None to query
+        :returns: the RF gain value
         """
         if gain is None:
             gain = self.scpiget("INPUT:GAIN:RF?")
         else:
             self.scpiset(":INPUT:GAIN:RF %s\n" % gain)
 
-        return gain
+        return gain.lower()
 
 
     def ifgain(self, gain=None):
@@ -140,6 +144,20 @@ class WSA4000(object):
             self.scpiset(":INPUT:GAIN:IF %d\n" % gain)
 
         return gain
+
+
+    def preselect_filter(self, enable=None):
+        """
+        This command sets or queries the RFE preselect filter selection.
+
+        :param enable: True or False to set; None to query
+        :returns: the RFE preselect filter selection state
+        """
+        if enable is None:
+            enable = self.scpiget(":INPUT:FILTER:PRESELECT?")
+            enable = bool(int(enable.split()[0]))
+        else:
+            self.scpiset(":INPUT:FILTER:PRESELECT %d" % int(enable))
 
 
     def flush(self):

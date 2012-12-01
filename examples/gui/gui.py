@@ -26,13 +26,19 @@ class MainPanel(QtGui.QWidget):
         bpf = QtGui.QComboBox(self)
         bpf.addItem("BPF On")
         bpf.addItem("BPF Off")
-        bpf.setEnabled(False)
+        bpf.setCurrentIndex(0 if self.read_bpf() else 1)
+        def new_bpf():
+            self.update_bpf("On" in bpf.currentText())
+        bpf.currentIndexChanged.connect(new_bpf)
         grid.addWidget(bpf, y, 3, 1, 2)
 
         y += 1
         gain = QtGui.QComboBox(self)
-        gain.addItem("RF Gain: High")
-        gain.addItem("RF Gain: Low")
+        gain_values = ['High', 'Medium', 'Low', 'VLow']
+        for g in gain_values:
+            gain.addItem("RF Gain: %s" % g)
+        gain_index = [g.lower() for g in gain_values].index(self.read_gain())
+        gain.setCurrentIndex(gain_index)
         def new_gain():
             self.update_gain(gain.currentText().split()[-1].lower())
         gain.currentIndexChanged.connect(new_gain)
@@ -84,6 +90,16 @@ class MainPanel(QtGui.QWidget):
 
     def update_screen(self):
         self.screen.update_data(self.device.read_powdata(), self.center_freq)
+
+
+    def read_bpf(self):
+        return self.device.dut.preselect_filter()
+
+    def update_bpf(self, enable):
+        self.device.dut.preselect_filter(enable)
+
+    def read_gain(self):
+        return self.device.dut.gain()
 
     def update_gain(self, value):
         self.device.dut.gain(value)
