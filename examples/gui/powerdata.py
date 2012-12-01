@@ -1,4 +1,4 @@
-from numpy import fft
+from numpy import fft, abs, log10
 import math
 
 def read_power_data(dut):
@@ -20,4 +20,4 @@ def read_power_data(dut):
     cfft = fft.fftshift(cfft)
 
     # compute power
-    return [20 * math.log10(abs(t)) for t in cfft]
+    return log10(abs(cfft)) * 20
