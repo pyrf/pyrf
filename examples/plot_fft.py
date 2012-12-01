@@ -7,11 +7,8 @@ import sys
 import time
 import math
 
-from numpy import fft
+from numpy import fft, abs, log10
 from matplotlib.pyplot import plot, figure, axis, xlabel, ylabel, show
-
-def logpower(i, q):
-    return 20 * math.log10(math.sqrt((i*i) + (q*q)))
 
 # connect to wsa
 dut = WSA4000()
@@ -42,19 +39,14 @@ while not dut.eof():
         break
 
 # seperate data into i and q
-cdata = []
-for t in pkt.data:
-    cdata.append( complex(t[0], t[1]) )
+cdata = [complex(i, q) for i, q in pkt.data]
 
 # compute the fft of the complex data
 cfft = fft.fft(cdata)
 cfft = fft.fftshift(cfft)
 
 # compute power
-powdata = []
-for t in cfft:
-    powdata.append(logpower(t.real, t.imag))
-
+powdata = log10(abs(cfft)) * 20
 
 # setup my graph
 fig = figure(1)
