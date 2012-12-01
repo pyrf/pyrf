@@ -1,9 +1,9 @@
 from numpy import fft, linspace
 from PySide import QtGui, QtCore
 
-TOP_MARGIN = 10
-RIGHT_MARGIN = 10
-LEFT_AXIS_WIDTH = 60
+TOP_MARGIN = 20
+RIGHT_MARGIN = 20
+LEFT_AXIS_WIDTH = 70
 BOTTOM_AXIS_HEIGHT = 40
 AXIS_THICKNESS = 1
 
@@ -47,7 +47,7 @@ def dBm_labels(height):
     """
     # simple, fixed implementation for now
     num = 6
-    dBm_labels = ['"%s"' % d for d in linspace(30, -120, num)]
+    dBm_labels = ['"%s"' % d for d in linspace(-20, -120, num)]
     y_values = linspace(0, height, num)
     return zip(y_values, dBm_labels)
 
