@@ -1,14 +1,15 @@
 
 from PySide import QtGui, QtCore
 from spectrum import SpectrumView
+from powerdata import read_power_data
 
 class MainPanel(QtGui.QWidget):
 
-    def __init__(self, device):
+    def __init__(self, dut):
         super(MainPanel, self).__init__()
-        self.device = device
+        self.dut = dut
         self.get_freq_mhz()
-        self.screen = SpectrumView(device.read_powdata(), self.center_freq)
+        self.screen = SpectrumView(read_power_data(dut), self.center_freq)
         self.initUI()
 
     def initUI(self):
@@ -21,17 +22,17 @@ class MainPanel(QtGui.QWidget):
         antenna = QtGui.QComboBox(self)
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
-        antenna.setCurrentIndex(self.read_antenna() - 1)
+        antenna.setCurrentIndex(self.dut.antenna() - 1)
         def new_antenna():
-            self.update_antenna(int(antenna.currentText().split()[-1]))
+            self.dut.antenna(int(antenna.currentText().split()[-1]))
         antenna.currentIndexChanged.connect(new_antenna)
         grid.addWidget(antenna, y, 1, 1, 2)
         bpf = QtGui.QComboBox(self)
         bpf.addItem("BPF On")
         bpf.addItem("BPF Off")
-        bpf.setCurrentIndex(0 if self.read_bpf() else 1)
+        bpf.setCurrentIndex(0 if self.dut.preselect_filter() else 1)
         def new_bpf():
-            self.update_bpf("On" in bpf.currentText())
+            self.dut.preselect_filter("On" in bpf.currentText())
         bpf.currentIndexChanged.connect(new_bpf)
         grid.addWidget(bpf, y, 3, 1, 2)
 
@@ -40,10 +41,10 @@ class MainPanel(QtGui.QWidget):
         gain_values = ['High', 'Medium', 'Low', 'VLow']
         for g in gain_values:
             gain.addItem("RF Gain: %s" % g)
-        gain_index = [g.lower() for g in gain_values].index(self.read_gain())
+        gain_index = [g.lower() for g in gain_values].index(self.dut.gain())
         gain.setCurrentIndex(gain_index)
         def new_gain():
-            self.update_gain(gain.currentText().split()[-1].lower())
+            self.dut.gain(gain.currentText().split()[-1].lower())
         gain.currentIndexChanged.connect(new_gain)
         grid.addWidget(gain, y, 1, 1, 2)
 
@@ -92,33 +93,14 @@ class MainPanel(QtGui.QWidget):
         self.show()
 
     def update_screen(self):
-        self.screen.update_data(self.device.read_powdata(), self.center_freq)
-
-
-    def read_antenna(self):
-        return self.device.dut.antenna()
-
-    def update_antenna(self, number):
-        self.device.dut.antenna(number)
-
-    def read_bpf(self):
-        return self.device.dut.preselect_filter()
-
-    def update_bpf(self, enable):
-        self.device.dut.preselect_filter(enable)
-
-    def read_gain(self):
-        return self.device.dut.gain()
-
-    def update_gain(self, value):
-        self.device.dut.gain(value)
+        self.screen.update_data(read_power_data(self.dut), self.center_freq)
 
     def get_freq_mhz(self):
-        self.center_freq = self.device.dut.freq()
-        return self.center_freq / 10 ** 6
+        self.center_freq = self.dut.freq()
+        return self.center_freq / 1e6
 
     def set_freq_mhz(self, f):
-        self.center_freq = f * 10 ** 6
-        return self.device.dut.freq(self.center_freq)
+        self.center_freq = f * 1e6
+        return self.dut.freq(self.center_freq)
 
 
