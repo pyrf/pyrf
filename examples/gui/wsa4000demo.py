@@ -17,7 +17,10 @@ from PySide import QtGui, QtCore
 REFRESH = 0.05
 
 def logpower(c):
-    return 20 * math.log10(abs(c))
+    try:
+        return 20 * math.log10(abs(c))
+    except ValueError:
+        raise ValueError(repr(c))
 
 class WSA4000Connection(object):
 
