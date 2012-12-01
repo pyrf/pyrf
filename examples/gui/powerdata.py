@@ -1,4 +1,4 @@
-from numpy import fft, abs, log10
+import numpy
 import math
 
 def read_power_data(dut):
@@ -16,8 +16,8 @@ def read_power_data(dut):
     cdata = [complex(i, q) for i, q in pkt.data]
 
     # compute the fft of the complex data
-    cfft = fft.fft(cdata)
-    cfft = fft.fftshift(cfft)
+    cfft = numpy.fft.fft(cdata)
+    cfft = numpy.fft.fftshift(cfft)
 
     # compute power
-    return log10(abs(cfft)) * 20
+    return numpy.log10(numpy.abs(cfft)) * 20
