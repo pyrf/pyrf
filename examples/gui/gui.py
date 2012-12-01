@@ -38,7 +38,7 @@ class MainPanel(QtGui.QWidget):
 
         y += 1
         gain = QtGui.QComboBox(self)
-        gain_values = ['High', 'Medium', 'Low', 'VLow']
+        gain_values = ['High', 'Med', 'Low', 'VLow']
         for g in gain_values:
             gain.addItem("RF Gain: %s" % g)
         gain_index = [g.lower() for g in gain_values].index(self.dut.gain())
