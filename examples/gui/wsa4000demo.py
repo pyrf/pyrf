@@ -16,8 +16,8 @@ from PySide import QtGui, QtCore
 
 REFRESH = 0.05
 
-def logpower(i, q):
-    return 20 * math.log10(math.sqrt((i*i) + (q*q)))
+def logpower(c):
+    return 20 * math.log10(abs(c))
 
 class WSA4000Connection(object):
 
@@ -46,19 +46,14 @@ class WSA4000Connection(object):
                 break
 
         # seperate data into i and q
-        cdata = []
-        for t in pkt.data:
-            cdata.append( complex(t[0], t[1]) )
+        cdata = [complex(i, q) for i, q in pkt.data]
 
         # compute the fft of the complex data
         cfft = fft.fft(cdata)
         cfft = fft.fftshift(cfft)
 
         # compute power
-        powdata = []
-        for t in cfft:
-            powdata.append(logpower(t.real, t.imag))
-        return powdata
+        return [logpower(t) for t in cfft]
 
 
 
