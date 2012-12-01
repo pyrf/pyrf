@@ -155,9 +155,25 @@ class WSA4000(object):
         """
         if enable is None:
             enable = self.scpiget(":INPUT:FILTER:PRESELECT?")
-            enable = bool(int(enable.split()[0]))
+            enable = bool(int(enable))
         else:
             self.scpiset(":INPUT:FILTER:PRESELECT %d" % int(enable))
+        return enable
+
+
+    def antenna(self, number=None):
+        """
+        This command selects and queries the active antenna port.
+
+        :param number: 1 or 2 to set; None to query
+        :returns: active antenna port
+        """
+        if number is None:
+            number = self.scpiget(":INPUT:ANTENNA?")
+            number = int(number)
+        else:
+            self.scpiset(":INPUT:ANTENNA %d" % number)
+        return number
 
 
     def flush(self):

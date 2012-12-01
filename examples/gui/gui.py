@@ -21,7 +21,10 @@ class MainPanel(QtGui.QWidget):
         antenna = QtGui.QComboBox(self)
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
-        antenna.setEnabled(False)
+        antenna.setCurrentIndex(self.read_antenna() - 1)
+        def new_antenna():
+            self.update_antenna(int(antenna.currentText().split()[-1]))
+        antenna.currentIndexChanged.connect(new_antenna)
         grid.addWidget(antenna, y, 1, 1, 2)
         bpf = QtGui.QComboBox(self)
         bpf.addItem("BPF On")
@@ -91,6 +94,12 @@ class MainPanel(QtGui.QWidget):
     def update_screen(self):
         self.screen.update_data(self.device.read_powdata(), self.center_freq)
 
+
+    def read_antenna(self):
+        return self.device.dut.antenna()
+
+    def update_antenna(self, number):
+        self.device.dut.antenna(number)
 
     def read_bpf(self):
         return self.device.dut.preselect_filter()
