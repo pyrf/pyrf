@@ -115,9 +115,18 @@ class MainPanel(QtGui.QWidget):
             self.dut.gain(gain.currentText().split()[-1].lower())
         gain.currentIndexChanged.connect(new_gain)
         grid.addWidget(gain, y, 1, 1, 2)
+        grid.addWidget(QtGui.QLabel('IF Gain:'), y, 3, 1, 1)
+        ifgain = QtGui.QSpinBox(self)
+        ifgain.setRange(-10, 34)
+        ifgain.setSuffix(" dB")
+        ifgain.setValue(int(self.dut.ifgain()))
+        def new_ifgain():
+            self.dut.ifgain(ifgain.value())
+        ifgain.valueChanged.connect(new_ifgain)
+        grid.addWidget(ifgain, y, 4, 1, 1)
 
         y += 1
-        grid.addWidget(QtGui.QLabel('Center Freq'), y, 1, 1, 1)
+        grid.addWidget(QtGui.QLabel('Center Freq:'), y, 1, 1, 1)
         freq = QtGui.QLineEdit("")
         def read_freq():
             freq.setText("%0.1f" % self.get_freq_mhz())

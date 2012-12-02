@@ -131,9 +131,12 @@ class WSA4000(object):
 
     def ifgain(self, gain=None):
         """
-        get/set current IF Gain
+        This command sets or queries variable IF gain stages of the RFE.
+        The gain has a range of -10 to 34 dB. This stage of the gain is
+        additive with the primary gain stages of the LNA
+        that are described in :meth:`gain`.
 
-        :param gain: if this param is given, then the if of the box is set to this value. otherwise the gain is queried
+        :param gain: float between -10 and 34 to set; None to query
         :returns: the ifgain in dB
         """
         if gain is None:
