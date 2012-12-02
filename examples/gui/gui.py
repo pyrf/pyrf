@@ -1,7 +1,82 @@
 
+import sys
+import socket
+
 from PySide import QtGui, QtCore
 from spectrum import SpectrumView
 from powerdata import read_power_data
+
+from thinkrf.devices import WSA4000
+
+REFRESH_CHARTS = 0.05
+
+class MainWindow(QtGui.QMainWindow):
+    def __init__(self, name=None):
+        super(MainWindow, self).__init__()
+        self.initUI()
+
+        self.dut = None
+        if len(sys.argv) > 1:
+            self.open_device(sys.argv[1])
+        else:
+            self.open_device_dialog()
+        self.show()
+
+        timer = QtCore.QTimer(self)
+        timer.timeout.connect(self.update_charts)
+        timer.start(REFRESH_CHARTS)
+
+    def initUI(self):
+        openAction = QtGui.QAction('&Open Device', self)
+        openAction.triggered.connect(self.open_device_dialog)
+        exitAction = QtGui.QAction('&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.triggered.connect(self.close)
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(openAction)
+        fileMenu.addAction(exitAction)
+
+        self.setWindowTitle('ThinkRF WSA4000')
+
+    def open_device_dialog(self):
+        name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
+            'Enter a hostname or IP address:')
+        while True:
+            if not ok:
+                return
+
+            try:
+                self.open_device(name)
+                break
+            except socket.error:
+                name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
+                    'Connection Failed, please try again\n\n'
+                    'Enter a hostname or IP address:')
+
+    def open_device(self, name):
+        dut = WSA4000()
+        dut.connect(name)
+        dut.request_read_perm()
+        if '--reset' in sys.argv:
+            device_defaults(dut)
+
+        self.dut = dut
+        self.setCentralWidget(MainPanel(dut))
+        self.setWindowTitle('ThinkRF WSA4000: %s' % name)
+
+    def update_charts(self):
+        if self.dut is None:
+            return
+        self.centralWidget().update_screen()
+
+
+def device_defaults(dut):
+    dut.ifgain(0)
+    dut.freq(2450e6)
+    dut.gain('high')
+    dut.fshift(0)
+    dut.decimation(0)
 
 class MainPanel(QtGui.QWidget):
 
@@ -89,7 +164,6 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(freq_plus, y, 4, 1, 1)
 
         self.setLayout(grid)
-        self.setWindowTitle('ThinkRF WSA4000')
         self.show()
 
     def update_screen(self):
