@@ -59,7 +59,7 @@ class MainWindow(QtGui.QMainWindow):
         dut.connect(name)
         dut.request_read_perm()
         if '--reset' in sys.argv:
-            device_defaults(dut)
+            dut.reset()
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
@@ -70,13 +70,6 @@ class MainWindow(QtGui.QMainWindow):
             return
         self.centralWidget().update_screen()
 
-
-def device_defaults(dut):
-    dut.ifgain(0)
-    dut.freq(2450e6)
-    dut.gain('high')
-    dut.fshift(0)
-    dut.decimation(0)
 
 class MainPanel(QtGui.QWidget):
 

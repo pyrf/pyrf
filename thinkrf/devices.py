@@ -176,6 +176,16 @@ class WSA4000(object):
         return number
 
 
+    def reset(self):
+        """
+        Resets the WSA4000 to its default settings. It does not affect
+        the registers or queues associated with the IEEE mandated commands.
+        Each non-IEEE mandated command description in this reference shows
+        the *RST value when affected.
+        """
+        self.scpiset(":*rst")
+
+
     def flush(self):
         """
         flush any captures from the capture memory
