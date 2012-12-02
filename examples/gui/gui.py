@@ -165,6 +165,12 @@ class MainPanel(QtGui.QWidget):
         freq_plus.clicked.connect(lambda: freq_step(1))
         grid.addWidget(freq_plus, y, 4, 1, 1)
 
+        y += 1
+        rbw = QtGui.QComboBox(self)
+        rbw.addItem("RBW: 122kHz")
+        rbw.setEnabled(False)
+        grid.addWidget(rbw, y, 2, 1, 2)
+
         self.setLayout(grid)
         self.show()
 
