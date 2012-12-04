@@ -14,6 +14,8 @@ class TriggerSettings(object):
         self.fstop = fstop
         self.amplitude = amplitude
 
+    def __str__(self):
+        return ("TriggerSettings(%s, %s, %s, %s)" % (self.trigtype, self.fstart, self.fstop, self.amplitude))
 
 
 class SweepEntry(object):
