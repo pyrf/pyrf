@@ -222,6 +222,11 @@ class WSA4000(object):
                 trigstr = self.scpiget(":TRIGGER:LEVEL?")
                 settings.fstart, settings.fstop, settings.amplitude = trigstr.split(",")
 
+                # convert to integers
+                settings.fstart = int(settings.fstart)
+                settings.fstop = int(settings.fstop)
+                settings.amplitude = float(settings.amplitude)
+
             else:
                 raise TriggerSettingsError("unsupported trigger type set: %s" % trigstr)
 
