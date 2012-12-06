@@ -7,6 +7,9 @@ LEFT_AXIS_WIDTH = 70
 BOTTOM_AXIS_HEIGHT = 40
 AXIS_THICKNESS = 1
 
+DBM_TOP = 20
+DBM_BOTTOM = -120
+
 class SpectrumView(QtGui.QWidget):
     """
     A complete spectrum view with left/bottom axis and plot
@@ -46,8 +49,8 @@ def dBm_labels(height):
     is a value between 0 (top) and height (bottom).
     """
     # simple, fixed implementation for now
-    num = 6
-    dBm_labels = ['"%s"' % d for d in linspace(-20, -120, num)]
+    num = 8
+    dBm_labels = [str(d) for d in linspace(DBM_TOP, DBM_BOTTOM, num)]
     y_values = linspace(0, height, num)
     return zip(y_values, dBm_labels)
 
@@ -77,9 +80,9 @@ class SpectrumViewLeftAxis(QtGui.QWidget):
         for y, txt in dBm_labels(height - BOTTOM_AXIS_HEIGHT - TOP_MARGIN):
             qp.drawText(
                 0,
-                y + TOP_MARGIN - 5,
+                y + TOP_MARGIN - 10,
                 LEFT_AXIS_WIDTH - 5,
-                10,
+                20,
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter,
                 txt)
 
@@ -172,7 +175,8 @@ class SpectrumViewPlot(QtGui.QWidget):
 
         qp.setPen(QtCore.Qt.green)
 
-        points = [QtCore.QPoint(x, height - 1 - (y / 200 * height))
+        points = [QtCore.QPoint(x, height - 1 - (
+                (y - DBM_BOTTOM) / (DBM_TOP - DBM_BOTTOM) * height))
             for x, y in zip(
                 linspace(0, width - 1 - RIGHT_MARGIN, len(self.powdata)),
                 self.powdata)]

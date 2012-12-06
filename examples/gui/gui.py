@@ -77,7 +77,8 @@ class MainPanel(QtGui.QWidget):
         super(MainPanel, self).__init__()
         self.dut = dut
         self.get_freq_mhz()
-        self.screen = SpectrumView(read_power_data(dut), self.center_freq)
+        powdata, self.reference_level = read_power_data(dut)
+        self.screen = SpectrumView(powdata, self.center_freq)
         self.initUI()
 
     def initUI(self):
@@ -175,7 +176,9 @@ class MainPanel(QtGui.QWidget):
         self.show()
 
     def update_screen(self):
-        self.screen.update_data(read_power_data(self.dut), self.center_freq)
+        powdata, self.reference_level = read_power_data(self.dut,
+            self.reference_level)
+        self.screen.update_data(powdata, self.center_freq)
 
     def get_freq_mhz(self):
         self.center_freq = self.dut.freq()
