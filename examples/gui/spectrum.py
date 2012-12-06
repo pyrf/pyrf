@@ -172,13 +172,9 @@ class SpectrumViewPlot(QtGui.QWidget):
 
         qp.setPen(QtCore.Qt.green)
 
-        prev_x = prev_y = None
-        for x, y in zip(
+        points = [QtCore.QPoint(x, height - 1 - (y / 200 * height))
+            for x, y in zip(
                 linspace(0, width - 1 - RIGHT_MARGIN, len(self.powdata)),
-                self.powdata):
-
-            y = height - 1 - (y / 200 * height)
-            if prev_x is not None:
-                qp.drawLine(prev_x, prev_y, x, y)
-            prev_x, prev_y = x, y
+                self.powdata)]
+        qp.drawPolyline(points)
 
