@@ -138,7 +138,7 @@ class MainPanel(QtGui.QWidget):
             except ValueError:
                 return
             self.set_freq_mhz(f)
-        freq.textEdited.connect(write_freq)
+        freq.editingFinished.connect(write_freq)
         grid.addWidget(freq, y, 2, 1, 2)
         grid.addWidget(QtGui.QLabel('MHz'), y, 4, 1, 1)
 
