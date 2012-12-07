@@ -77,8 +77,12 @@ class MainPanel(QtGui.QWidget):
         super(MainPanel, self).__init__()
         self.dut = dut
         self.get_freq_mhz()
+        self.get_decimation()
         powdata, self.reference_level = read_power_data(dut)
-        self.screen = SpectrumView(powdata, self.center_freq)
+        self.screen = SpectrumView(
+            powdata,
+            self.center_freq,
+            self.decimation_factor)
         self.initUI()
 
     def initUI(self):
@@ -167,10 +171,22 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(freq_plus, y, 4, 1, 1)
 
         y += 1
+        span = QtGui.QComboBox(self)
+        decimation_values = [0] + [2 ** x for x in range(2, 10)]
+        span.addItem("Span: 125 MHz") # decimation 0 is special
+        for d in decimation_values[1:6]:
+            span.addItem("Span: %g MHz" % (125.0 / d))
+        for d in decimation_values[6:]:
+            span.addItem("Span: %g kHz" % (125000.0 / d))
+        span.setCurrentIndex(decimation_values.index(self.dut.decimation()))
+        def new_span():
+            self.set_decimation(decimation_values[span.currentIndex()])
+        span.currentIndexChanged.connect(new_span)
+        grid.addWidget(span, y, 1, 1, 2)
         rbw = QtGui.QComboBox(self)
         rbw.addItem("RBW: 122kHz")
         rbw.setEnabled(False)
-        grid.addWidget(rbw, y, 2, 1, 2)
+        grid.addWidget(rbw, y, 3, 1, 2)
 
         self.setLayout(grid)
         self.show()
@@ -178,7 +194,10 @@ class MainPanel(QtGui.QWidget):
     def update_screen(self):
         powdata, self.reference_level = read_power_data(self.dut,
             self.reference_level)
-        self.screen.update_data(powdata, self.center_freq)
+        self.screen.update_data(
+            powdata,
+            self.center_freq,
+            self.decimation_factor)
 
     def get_freq_mhz(self):
         self.center_freq = self.dut.freq()
@@ -186,6 +205,14 @@ class MainPanel(QtGui.QWidget):
 
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
-        return self.dut.freq(self.center_freq)
+        self.dut.freq(self.center_freq)
+
+    def get_decimation(self):
+        d = self.dut.decimation()
+        self.decimation_factor = 1 if d == 0 else d
+
+    def set_decimation(self, d):
+        self.decimation_factor = 1 if d == 0 else d
+        self.dut.decimation(d)
 
 

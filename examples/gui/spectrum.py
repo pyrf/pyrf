@@ -16,12 +16,12 @@ class SpectrumView(QtGui.QWidget):
     A complete spectrum view with left/bottom axis and plot
     """
 
-    def __init__(self, powdata, center_freq):
+    def __init__(self, powdata, center_freq, decimation_factor):
         super(SpectrumView, self).__init__()
-        self.plot = SpectrumViewPlot(powdata, center_freq)
+        self.plot = SpectrumViewPlot(powdata, center_freq, decimation_factor)
         self.left = SpectrumViewLeftAxis()
         self.bottom = SpectrumViewBottomAxis()
-        self.bottom.update_center_freq(center_freq)
+        self.bottom.update_params(center_freq, decimation_factor)
         self.initUI()
 
     def initUI(self):
@@ -38,10 +38,11 @@ class SpectrumView(QtGui.QWidget):
         grid.setContentsMargins(0, 0, 0, 0)
         self.setLayout(grid)
 
-    def update_data(self, powdata, center_freq):
-        if self.plot.center_freq != center_freq:
-            self.bottom.update_center_freq(center_freq)
-        self.plot.update_data(powdata, center_freq)
+    def update_data(self, powdata, center_freq, decimation_factor):
+        if (self.plot.center_freq, self.plot.decimation_factor) != (
+                center_freq, decimation_factor):
+            self.bottom.update_params(center_freq, decimation_factor)
+        self.plot.update_data(powdata, center_freq, decimation_factor)
 
 
 def dBm_labels(height):
@@ -87,14 +88,15 @@ class SpectrumViewLeftAxis(QtGui.QWidget):
                 QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter,
                 txt)
 
-def MHz_labels(width, center_freq):
+def MHz_labels(width, center_freq, decimation_factor):
     """
     return a list of (position, label_text) tuples where position
     is a value between 0 (left) and width (right).
     """
+    df = float(decimation_factor)
     # simple, fixed implementation for now
     offsets = (-50, -25, 0, 25, 50)
-    freq_labels = [str(center_freq / 1e6 + d) for d in offsets]
+    freq_labels = [str(center_freq / 1e6 + d/df) for d in offsets]
     x_values = [(d + 62.5) * width / 125 for d in offsets]
     return zip(x_values, freq_labels)
 
@@ -102,8 +104,9 @@ class SpectrumViewBottomAxis(QtGui.QWidget):
     """
     The bottom axis of a spectrum view showing frequencies
     """
-    def update_center_freq(self, center_freq):
+    def update_params(self, center_freq, decimation_factor):
         self.center_freq = center_freq
+        self.decimation_factor = decimation_factor
         self.update()
 
     def paintEvent(self, e):
@@ -123,7 +126,10 @@ class SpectrumViewBottomAxis(QtGui.QWidget):
             AXIS_THICKNESS,
             QtCore.Qt.gray)
 
-        for x, txt in MHz_labels(width - RIGHT_MARGIN, self.center_freq):
+        for x, txt in MHz_labels(
+                width - RIGHT_MARGIN,
+                self.center_freq,
+                self.decimation_factor):
             qp.drawText(
                 x - 40,
                 5,
@@ -138,14 +144,16 @@ class SpectrumViewPlot(QtGui.QWidget):
     """
     The data plot of a spectrum view
     """
-    def __init__(self, powdata, center_freq):
+    def __init__(self, powdata, center_freq, decimation_factor):
         super(SpectrumViewPlot, self).__init__()
         self.powdata = powdata
         self.center_freq = center_freq
+        self.decimation_factor = decimation_factor
 
-    def update_data(self, powdata, center_freq):
+    def update_data(self, powdata, center_freq, decimation_factor):
         self.powdata = powdata
         self.center_freq = center_freq
+        self.decimation_factor = decimation_factor
         self.update()
 
     def paintEvent(self, e):
@@ -167,7 +175,10 @@ class SpectrumViewPlot(QtGui.QWidget):
                 y + TOP_MARGIN,
                 width - RIGHT_MARGIN - 1,
                 y + TOP_MARGIN)
-        for x, txt in MHz_labels(width - RIGHT_MARGIN, self.center_freq):
+        for x, txt in MHz_labels(
+                width - RIGHT_MARGIN,
+                self.center_freq,
+                self.decimation_factor):
             qp.drawLine(
                 x,
                 TOP_MARGIN,
