@@ -124,7 +124,7 @@ class ContextPacket(object):
             i += 8
 
         elif (indicators & self.CTX_RFOFFSET):
-            (value,) = struct.unpack(">Q", data[i:i+8])
+            (value,) = struct.unpack(">q", data[i:i+8])
             value /= 2.0 ** 20
             self.fields['rfoffset'] = value
             i += 8
