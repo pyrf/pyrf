@@ -1,4 +1,4 @@
-from numpy import fft, linspace
+import numpy
 from PySide import QtGui, QtCore
 
 TOP_MARGIN = 20
@@ -50,8 +50,8 @@ def dBm_labels(height):
     """
     # simple, fixed implementation for now
     num = 8
-    dBm_labels = [str(d) for d in linspace(DBM_TOP, DBM_BOTTOM, num)]
-    y_values = linspace(0, height, num)
+    dBm_labels = [str(d) for d in numpy.linspace(DBM_TOP, DBM_BOTTOM, num)]
+    y_values = numpy.linspace(0, height, num)
     return zip(y_values, dBm_labels)
 
 class SpectrumViewLeftAxis(QtGui.QWidget):
@@ -175,10 +175,11 @@ class SpectrumViewPlot(QtGui.QWidget):
 
         qp.setPen(QtCore.Qt.green)
 
-        points = [QtCore.QPoint(x, height - 1 - (
-                (y - DBM_BOTTOM) / (DBM_TOP - DBM_BOTTOM) * height))
-            for x, y in zip(
-                linspace(0, width - 1 - RIGHT_MARGIN, len(self.powdata)),
-                self.powdata)]
-        qp.drawPolyline(points)
+        y_values = height - 1 - (self.powdata - DBM_BOTTOM) * (
+            float(height) / (DBM_TOP - DBM_BOTTOM))
+        x_values = numpy.linspace(0, width - 1 - RIGHT_MARGIN,
+            len(self.powdata))
+        vpoints = numpy.frompyfunc(QtCore.QPoint, 2, 1)
+
+        qp.drawPolyline(vpoints(x_values, y_values))
 
