@@ -1,9 +1,9 @@
 import numpy
 import math
 
-def read_power_data(dut, reference_level=None):
+def read_power_data(dut, reference_level=None, points=1024):
     # capture 1 packet
-    dut.capture(1024, 1)
+    dut.capture(points, 1)
 
     # read until I get 1 data packet
     while not dut.eof():

@@ -5,9 +5,11 @@ import socket
 from PySide import QtGui, QtCore
 from spectrum import SpectrumView
 from powerdata import read_power_data
+from util import frequency_text
 
 from thinkrf.devices import WSA4000
 
+DEVICE_FULL_SPAN = 125e6
 REFRESH_CHARTS = 0.05
 
 class MainWindow(QtGui.QMainWindow):
@@ -78,6 +80,7 @@ class MainPanel(QtGui.QWidget):
         self.dut = dut
         self.get_freq_mhz()
         self.get_decimation()
+        self.decimation_points = None
         powdata, self.reference_level = read_power_data(dut)
         self.screen = SpectrumView(
             powdata,
@@ -173,27 +176,43 @@ class MainPanel(QtGui.QWidget):
         y += 1
         span = QtGui.QComboBox(self)
         decimation_values = [0] + [2 ** x for x in range(2, 10)]
-        span.addItem("Span: 125 MHz") # decimation 0 is special
-        for d in decimation_values[1:6]:
-            span.addItem("Span: %g MHz" % (125.0 / d))
-        for d in decimation_values[6:]:
-            span.addItem("Span: %g kHz" % (125000.0 / d))
+        span.addItem("Span: %s" % frequency_text(DEVICE_FULL_SPAN)) # 0 is special
+        for d in decimation_values[1:]:
+            span.addItem("Span: %s" % frequency_text(DEVICE_FULL_SPAN / d))
         span.setCurrentIndex(decimation_values.index(self.dut.decimation()))
         def new_span():
             self.set_decimation(decimation_values[span.currentIndex()])
+            build_rbw()
         span.currentIndexChanged.connect(new_span)
         grid.addWidget(span, y, 1, 1, 2)
         rbw = QtGui.QComboBox(self)
-        rbw.addItem("RBW: 122kHz")
-        rbw.setEnabled(False)
+        points_values = [2 ** x for x in range(8, 16)]
+        rbw.addItems([str(p) for p in points_values])
+        def build_rbw():
+            d = self.decimation_factor
+            for i, p in enumerate(points_values):
+                r = DEVICE_FULL_SPAN / d / p
+                rbw.setItemText(i, "RBW: %s" % frequency_text(r))
+                if self.decimation_points and self.decimation_points == d * p:
+                    rbw.setCurrentIndex(i)
+            self.points = points_values[rbw.currentIndex()]
+        build_rbw()
+        def new_rbw():
+            self.points = points_values[rbw.currentIndex()]
+            self.decimation_points = self.decimation_factor * self.points
+        rbw.setCurrentIndex(points_values.index(1024))
+        new_rbw()
+        rbw.currentIndexChanged.connect(new_rbw)
         grid.addWidget(rbw, y, 3, 1, 2)
 
         self.setLayout(grid)
         self.show()
 
     def update_screen(self):
-        powdata, self.reference_level = read_power_data(self.dut,
-            self.reference_level)
+        powdata, self.reference_level = read_power_data(
+            self.dut,
+            self.reference_level,
+            self.points)
         self.screen.update_data(
             powdata,
             self.center_freq,
