@@ -17,9 +17,9 @@ def read_power_data(dut, reference_level=None):
 
     assert reference_level is not None, pkt
 
-    i_data, q_data = numpy.array(zip(*pkt.data), dtype=float)
-    i_data /= len(pkt.data)
-    q_data /= len(pkt.data)
+    iq_data = pkt.data.numpy_array()
+    i_data = numpy.array(iq_data[:,0], dtype=float) / len(iq_data)
+    q_data = numpy.array(iq_data[:,1], dtype=float) / len(iq_data)
     return calculate_fft(i_data, q_data, reference_level), reference_level
 
 

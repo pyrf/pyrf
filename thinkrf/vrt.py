@@ -1,4 +1,7 @@
 import struct
+import array
+import sys
+
 from thinkrf.util import socketread
 
 VRTCONTEXT = 4
@@ -173,13 +176,58 @@ class ContextPacket(object):
             ) + str(self.fields) + "]"
 
 
+class IQData(object):
+    """
+    Data packet values presented as a collection of (i, q) tuples,
+    lazily interpreting the data when required.
+    """
+    def __init__(self, s):
+        self._strdata = s
+        self._data = None
+
+    def _update_data(self):
+        self._data = array.array('h')
+        self._data.fromstring(self._strdata)
+        if sys.byteorder == 'little':
+            self._data.byteswap()
+
+    def __len__(self):
+        return len(self._strdata) / 4
+
+    def __getitem__(self, n):
+        if not self._data:
+            self._update_data()
+        return tuple(self._data[n * 2:n * 2 + 2])
+
+    def __iter__(self):
+        if not self._data:
+            self._update_data()
+        for i in range(0, len(self._data), 2):
+            yield tuple(self._data[i:i + 2])
+
+    def __reversed__(self):
+        if not self._data:
+            self._update_data()
+        for i in reversed(range(0, len(self._data), 2)):
+            yield tuple(self._data[i:i + 2])
+
+    def numpy_array(self):
+        """
+        Return a numpy array of I, Q values for this data
+        """
+        import numpy
+        a = numpy.frombuffer(self._strdata, dtype=numpy.int16)
+        a = a.newbyteorder('>')
+        a.shape = (-1, 2)
+        return a
+
+
 class DataPacket(object):
 
     def __init__(self, word, socket):
         self.type = 1
         self.count = (word >> 16) & 0x0f
         self.size = (word >> 0) & 0xffff
-        self.data = []
 
         # read in the rest of the header
         tmpstr = socketread(socket, 16)
@@ -193,9 +241,8 @@ class DataPacket(object):
         if (len(tmpstr) < (payloadsize * 4)):
             raise InvalidDataReceived("data packet too short: %r" % tmpstr)
 
-        # read in data
-        for i in range(0, payloadsize * 4, 4):
-            self.data.append(struct.unpack(">hh", tmpstr[i:i+4]))
+        # interpret data
+        self.data = IQData(tmpstr)
 
         # read in the trailer
         tmpstr = socketread(socket, 4)
