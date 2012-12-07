@@ -188,7 +188,7 @@ class SpectrumViewPlot(QtGui.QWidget):
         qp.setPen(QtCore.Qt.green)
 
         y_values = height - 1 - (self.powdata - DBM_BOTTOM) * (
-            float(height) / (DBM_TOP - DBM_BOTTOM))
+            float(height - TOP_MARGIN) / (DBM_TOP - DBM_BOTTOM))
         x_values = numpy.linspace(0, width - 1 - RIGHT_MARGIN,
             len(self.powdata))
 
