@@ -95,6 +95,30 @@ class MainPanel(QtGui.QWidget):
         grid.setColumnMinimumWidth(0, 400)
 
         y = 0
+        grid.addWidget(self._antenna_control(), y, 1, 1, 2)
+        grid.addWidget(self._bpf_control(), y, 3, 1, 2)
+        y += 1
+        grid.addWidget(self._gain_control(), y, 1, 1, 2)
+        grid.addWidget(QtGui.QLabel('IF Gain:'), y, 3, 1, 1)
+        grid.addWidget(self._ifgain_control(), y, 4, 1, 1)
+        y += 1
+        freq, steps, freq_plus, freq_minus = self._freq_controls()
+        grid.addWidget(QtGui.QLabel('Center Freq:'), y, 1, 1, 1)
+        grid.addWidget(freq, y, 2, 1, 2)
+        grid.addWidget(QtGui.QLabel('MHz'), y, 4, 1, 1)
+        y += 1
+        grid.addWidget(steps, y, 2, 1, 2)
+        grid.addWidget(freq_minus, y, 1, 1, 1)
+        grid.addWidget(freq_plus, y, 4, 1, 1)
+        y += 1
+        span, rbw = self._span_rbw_controls()
+        grid.addWidget(span, y, 1, 1, 2)
+        grid.addWidget(rbw, y, 3, 1, 2)
+
+        self.setLayout(grid)
+        self.show()
+
+    def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
@@ -102,7 +126,9 @@ class MainPanel(QtGui.QWidget):
         def new_antenna():
             self.dut.antenna(int(antenna.currentText().split()[-1]))
         antenna.currentIndexChanged.connect(new_antenna)
-        grid.addWidget(antenna, y, 1, 1, 2)
+        return antenna
+
+    def _bpf_control(self):
         bpf = QtGui.QComboBox(self)
         bpf.addItem("BPF On")
         bpf.addItem("BPF Off")
@@ -110,9 +136,9 @@ class MainPanel(QtGui.QWidget):
         def new_bpf():
             self.dut.preselect_filter("On" in bpf.currentText())
         bpf.currentIndexChanged.connect(new_bpf)
-        grid.addWidget(bpf, y, 3, 1, 2)
+        return bpf
 
-        y += 1
+    def _gain_control(self):
         gain = QtGui.QComboBox(self)
         gain_values = ['High', 'Med', 'Low', 'VLow']
         for g in gain_values:
@@ -122,8 +148,9 @@ class MainPanel(QtGui.QWidget):
         def new_gain():
             self.dut.gain(gain.currentText().split()[-1].lower())
         gain.currentIndexChanged.connect(new_gain)
-        grid.addWidget(gain, y, 1, 1, 2)
-        grid.addWidget(QtGui.QLabel('IF Gain:'), y, 3, 1, 1)
+        return gain
+
+    def _ifgain_control(self):
         ifgain = QtGui.QSpinBox(self)
         ifgain.setRange(-10, 34)
         ifgain.setSuffix(" dB")
@@ -131,10 +158,9 @@ class MainPanel(QtGui.QWidget):
         def new_ifgain():
             self.dut.ifgain(ifgain.value())
         ifgain.valueChanged.connect(new_ifgain)
-        grid.addWidget(ifgain, y, 4, 1, 1)
+        return ifgain
 
-        y += 1
-        grid.addWidget(QtGui.QLabel('Center Freq:'), y, 1, 1, 1)
+    def _freq_controls(self):
         freq = QtGui.QLineEdit("")
         def read_freq():
             freq.setText("%0.1f" % self.get_freq_mhz())
@@ -146,10 +172,7 @@ class MainPanel(QtGui.QWidget):
                 return
             self.set_freq_mhz(f)
         freq.editingFinished.connect(write_freq)
-        grid.addWidget(freq, y, 2, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, 4, 1, 1)
 
-        y += 1
         steps = QtGui.QComboBox(self)
         steps.addItem("Adjust: 1 MHz")
         steps.addItem("Adjust: 2.5 MHz")
@@ -165,15 +188,14 @@ class MainPanel(QtGui.QWidget):
             delta = float(steps.currentText().split()[1]) * factor
             freq.setText("%0.1f" % (f + delta))
             write_freq()
-        grid.addWidget(steps, y, 2, 1, 2)
         freq_minus = QtGui.QPushButton('-')
         freq_minus.clicked.connect(lambda: freq_step(-1))
-        grid.addWidget(freq_minus, y, 1, 1, 1)
         freq_plus = QtGui.QPushButton('+')
         freq_plus.clicked.connect(lambda: freq_step(1))
-        grid.addWidget(freq_plus, y, 4, 1, 1)
 
-        y += 1
+        return freq, steps, freq_plus, freq_minus
+
+    def _span_rbw_controls(self):
         span = QtGui.QComboBox(self)
         decimation_values = [0] + [2 ** x for x in range(2, 10)]
         span.addItem("Span: %s" % frequency_text(DEVICE_FULL_SPAN)) # 0 is special
@@ -184,7 +206,7 @@ class MainPanel(QtGui.QWidget):
             self.set_decimation(decimation_values[span.currentIndex()])
             build_rbw()
         span.currentIndexChanged.connect(new_span)
-        grid.addWidget(span, y, 1, 1, 2)
+
         rbw = QtGui.QComboBox(self)
         points_values = [2 ** x for x in range(8, 16)]
         rbw.addItems([str(p) for p in points_values])
@@ -203,10 +225,9 @@ class MainPanel(QtGui.QWidget):
         rbw.setCurrentIndex(points_values.index(1024))
         new_rbw()
         rbw.currentIndexChanged.connect(new_rbw)
-        grid.addWidget(rbw, y, 3, 1, 2)
 
-        self.setLayout(grid)
-        self.show()
+        return span, rbw
+
 
     def update_screen(self):
         powdata, self.reference_level = read_power_data(
