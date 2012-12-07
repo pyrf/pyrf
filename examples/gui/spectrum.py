@@ -1,4 +1,5 @@
 import numpy
+import itertools
 from PySide import QtGui, QtCore
 
 TOP_MARGIN = 20
@@ -179,7 +180,10 @@ class SpectrumViewPlot(QtGui.QWidget):
             float(height) / (DBM_TOP - DBM_BOTTOM))
         x_values = numpy.linspace(0, width - 1 - RIGHT_MARGIN,
             len(self.powdata))
-        vpoints = numpy.frompyfunc(QtCore.QPoint, 2, 1)
 
-        qp.drawPolyline(vpoints(x_values, y_values))
-
+        path = QtGui.QPainterPath()
+        points = itertools.izip(x_values, y_values)
+        path.moveTo(*next(points))
+        for x,y in points:
+            path.lineTo(x, y)
+        qp.drawPath(path)
