@@ -5,7 +5,7 @@ ThinkRF Device API
 .. figure:: wsa4000demo.png
    :alt: wsa4000demo screen shot
 
-   The wsa4000demo GUI application
+   The :ref:`wsa4000demo GUI <demo-gui>` application
 
 Contents:
 
@@ -13,6 +13,7 @@ Contents:
    :maxdepth: 2
 
    examples
+   gui
    reference
 
 
