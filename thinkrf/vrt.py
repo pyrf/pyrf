@@ -12,17 +12,32 @@ VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
 
+CTX_REFERENCEPOINT = (1 << 30)
+CTX_RFFREQ = (1 << 27)
+CTX_GAIN = (1 << 23)
+CTX_TEMPERATURE = (1 << 18)
+CTX_BANDWIDTH = (1 << 29)
+CTX_RFOFFSET = (1 << 26)
+CTX_REFERENCELEVEL = (1 << 24)
+CTX_STREAMSTART = (1 << 0)
+
 class InvalidDataReceived(Exception):
     pass
 
 
 class Stream(object):
+    """
+    A VRT Packet Stream interface wrapping *socket*.
+    """
 
     def __init__(self, socket):
         self.socket = socket
         self.eof = False
 
     def has_data(self):
+        """
+        :returns: True if there is data waiting on *socket*.
+        """
         # read a word
         try:
             tmpstr = socketread(self.socket, 4, socket.MSG_DONTWAIT | socket.MSG_PEEK)
@@ -34,6 +49,11 @@ class Stream(object):
 
 
     def read_packet(self):
+        """
+        Read a complete packet from *socket* and return either a
+        :class:`thinkrf.vrt.ContextPacket` or a
+        :class:`thinkrf.vrt.DataPacket`.
+        """
         # read a word
         tmpstr = socketread(self.socket, 4, 0)
 
@@ -52,19 +72,17 @@ class Stream(object):
 
 
 class ContextPacket(object):
+    """
+    A Context Packet received from :meth:`thinkrf.vrt.Stream.read_packet`
 
-    CTX_REFERENCEPOINT = (1 << 30)
-    CTX_RFFREQ = (1 << 27)
-    CTX_GAIN = (1 << 23)
-    CTX_TEMPERATURE = (1 << 18)
-    CTX_BANDWIDTH = (1 << 29)
-    CTX_RFOFFSET = (1 << 26)
-    CTX_REFERENCELEVEL = (1 << 24)
-    CTX_STREAMSTART = (1 << 0)
+    .. attribute:: fields
+
+       a dict containing field names and values from the packet
+    """
 
     def __init__(self, pkt_type, word, socket):
         # extract the pieces of word we want
-        self.type = pkt_type
+        self.ptype = pkt_type
         self.count = (word >> 16) & 0x0f
         self.size = (word >> 0) & 0xffff
         self.fields = {}
@@ -86,26 +104,26 @@ class ContextPacket(object):
     def _parseReceiverContext(self, indicators, data):
         i = 0
 
-        if (indicators & self.CTX_REFERENCEPOINT):
+        if indicators & CTX_REFERENCEPOINT:
             value = struct.unpack(">I", data[i:i+4])
             value = "0x%08x" % value
             self.fields['refpoint'] = value
             i += 4
 
-        elif (indicators & self.CTX_RFFREQ):
+        elif indicators & CTX_RFFREQ:
             (value,) = struct.unpack(">Q", data[i:i+8])
             value /= 2.0 ** 20
             self.fields['rffreq'] = value
             i += 8
 
-        elif (indicators & self.CTX_GAIN):
+        elif indicators & CTX_GAIN:
             (g1,g2) = struct.unpack(">hh", data[i:i+4])
             g1 /= 2.0 ** 7
             g2 /= 2.0 ** 7
             self.fields['gain'] = (g1, g2)
             i += 4
 
-        elif (indicators & self.CTX_TEMPERATURE):
+        elif indicators & CTX_TEMPERATURE:
             (value,) = struct.unpack(">I", data[i:i+4])
             value = value
             self.fields['temperature'] = value
@@ -117,19 +135,19 @@ class ContextPacket(object):
     def _parseDigitizerContext(self, indicators, data):
         i = 0
 
-        if (indicators & self.CTX_BANDWIDTH):
+        if indicators & CTX_BANDWIDTH:
             (value,) = struct.unpack(">Q", data[i:i+8])
             value /= 2.0 ** 20
             self.fields['bandwidth'] = value
             i += 8
 
-        elif (indicators & self.CTX_RFOFFSET):
+        elif indicators & CTX_RFOFFSET:
             (value,) = struct.unpack(">q", data[i:i+8])
             value /= 2.0 ** 20
             self.fields['rfoffset'] = value
             i += 8
 
-        elif (indicators & self.CTX_REFERENCELEVEL):
+        elif indicators & CTX_REFERENCELEVEL:
             (value,) = struct.unpack(">h", data[i+2:i+4])
             value /= 2.0 ** 7
             self.fields['reflevel'] = value
@@ -142,7 +160,7 @@ class ContextPacket(object):
     def _parseCustomContext(self, indicators, data):
         i = 0
 
-        if (indicators & self.CTX_STREAMSTART):
+        if indicators & CTX_STREAMSTART:
             (value,) = struct.unpack(">I", data[i:i+4])
             value = "0x%08x" % value
             self.fields['startid'] = value
@@ -153,18 +171,26 @@ class ContextPacket(object):
 
 
     def is_data_packet(self):
+        """
+        :returns: False
+        """
         return False
 
 
-    def is_context_packet(self, type=None):
-        if (type == None):
+    def is_context_packet(self, ptype=None):
+        """
+        :param ptype: "Receiver", "Digitizer" or None for any packet type
+
+        :returns: True if this packet matches the type passed
+        """
+        if ptype is None:
             return True
 
-        elif (type == "Receiver"):
-            return (self.type == VRTRECEIVER)
+        elif ptype == "Receiver":
+            return self.ptype == VRTRECEIVER
 
-        elif (type == "Digitizer"):
-            return (self.type == VRTDIGITIZER)
+        elif ptype == "Digitizer":
+            return self.ptype == VRTDIGITIZER
 
         else:
             return False
@@ -178,11 +204,21 @@ class ContextPacket(object):
 
 class IQData(object):
     """
-    Data packet values presented as a collection of (i, q) tuples,
-    lazily interpreting the data when required.
+    Data Packet values as a lazy collection of (i, q) tuples
+    read from *binary_data*.
+
+    This object behaves as an immutable python sequence, e.g.
+    you may do all of the following:
+
+    .. code-block:: python
+
+       points = len(iq_data)
+       val = iq_data[5]
+       for i, q in iq_data:
+           print i, q
     """
-    def __init__(self, s):
-        self._strdata = s
+    def __init__(self, binary_data):
+        self._strdata = binary_data
         self._data = None
 
     def _update_data(self):
@@ -223,9 +259,16 @@ class IQData(object):
 
 
 class DataPacket(object):
+    """
+    A Data Packet received from :meth:`thinkrf.vrt.Stream.read_packet`
+
+    .. attribute:: data
+
+       a :class:`thinkrf.vrt.IQData` object containing the packet data
+    """
 
     def __init__(self, word, socket):
-        self.type = 1
+        self.ptype = 1
         self.count = (word >> 16) & 0x0f
         self.size = (word >> 0) & 0xffff
 
@@ -251,10 +294,16 @@ class DataPacket(object):
 
 
     def is_data_packet(self):
+        """
+        :returns: True
+        """
         return True
 
 
-    def is_context_packet(self):
+    def is_context_packet(self, ptype=None):
+        """
+        :returns: False
+        """
         return False
 
 
