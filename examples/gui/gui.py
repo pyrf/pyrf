@@ -4,10 +4,11 @@ import socket
 
 from PySide import QtGui, QtCore
 from spectrum import SpectrumView
-from powerdata import read_power_data
 from util import frequency_text
 
 from thinkrf.devices import WSA4000
+from thinkrf.util import read_data_and_reflevel
+from thinkrf.numpy_util import compute_fft
 
 DEVICE_FULL_SPAN = 125e6
 REFRESH_CHARTS = 0.05
@@ -81,9 +82,9 @@ class MainPanel(QtGui.QWidget):
         self.get_freq_mhz()
         self.get_decimation()
         self.decimation_points = None
-        powdata, self.reference_level = read_power_data(dut)
+        data, reflevel = read_data_and_reflevel(dut)
         self.screen = SpectrumView(
-            powdata,
+            compute_fft(data, reflevel),
             self.center_freq,
             self.decimation_factor)
         self.initUI()
@@ -230,12 +231,11 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_screen(self):
-        powdata, self.reference_level = read_power_data(
+        data, reflevel = read_data_and_reflevel(
             self.dut,
-            self.reference_level,
             self.points)
         self.screen.update_data(
-            powdata,
+            compute_fft(data, reflevel),
             self.center_freq,
             self.decimation_factor)
 

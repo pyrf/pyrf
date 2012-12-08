@@ -1,30 +1,28 @@
 import numpy
 import math
 
-def read_power_data(dut, reference_level=None, points=1024):
-    # capture 1 packet
-    dut.capture(points, 1)
 
-    # read until I get 1 data packet
-    while not dut.eof():
-        pkt = dut.read()
+def compute_fft(data_pkt, reflevel_pkt):
+    """
+    Return an array of dBm values by computing the FFT of
+    the passed data and reference level.
 
-        if pkt.is_data_packet():
-            break
+    :param data_pkt: packet containing samples
+    :type data_pkt: thinkrf.vrt.DataPacket
+    :param reflevel_pkt: packet containing 'reflevel' value
+    :type reflevel_pkt: thinkrf.vrt.ContextPacket
 
-        if 'reflevel' in pkt.fields:
-            reference_level = pkt.fields['reflevel']
+    :returns: numpy array of dBm values as floats
+    """
+    reference_level = reflevel_pkt.fields['reflevel']
 
-    assert reference_level is not None, pkt
-
-    iq_data = pkt.data.numpy_array()
+    iq_data = data_pkt.data.numpy_array()
     i_data = numpy.array(iq_data[:,0], dtype=float) / len(iq_data)
     q_data = numpy.array(iq_data[:,1], dtype=float) / len(iq_data)
-    return calculate_fft(i_data, q_data, reference_level), reference_level
+    return _compute_fft(i_data, q_data, reference_level)
 
-
-def calculate_fft(i_data, q_data, reference_level):
-    calibrated_q = calibrate_i_q(i_data, q_data)
+def _compute_fft(i_data, q_data, reference_level):
+    calibrated_q = _calibrate_i_q(i_data, q_data)
     i_removed_dc_offset = i_data - numpy.mean(i_data)
     q_removed_dc_offset = calibrated_q - numpy.mean(calibrated_q)
     iq = i_removed_dc_offset + 1j * q_removed_dc_offset
@@ -43,7 +41,7 @@ def calculate_fft(i_data, q_data, reference_level):
     return fft_result
 
 
-def calibrate_i_q(i_data, q_data):
+def _calibrate_i_q(i_data, q_data):
     samples = len(i_data)
 
     sum_of_squares_i = sum(i_data ** 2)

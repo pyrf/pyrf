@@ -22,3 +22,17 @@ thinkrf.vrt
 .. automodule:: thinkrf.vrt
    :members:
    :undoc-members:
+
+thinkrf.util
+------------
+
+.. automodule:: thinkrf.util
+   :members:
+   :undoc-members:
+
+thinkrf.numpy_util
+------------------
+
+.. automodule:: thinkrf.numpy_util
+   :members:
+   :undoc-members:
