@@ -50,4 +50,8 @@ as a spectrum display using NumPy_ and matplotlib_.
 
 .. literalinclude:: ../examples/plot_fft.py
 
+.. figure:: plot_fft.png
+   :alt: plot_fft screen shot
+
+   Example output of ``plot_fft.py``
 

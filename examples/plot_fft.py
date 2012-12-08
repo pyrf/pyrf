@@ -2,12 +2,13 @@
 
 from thinkrf.devices import WSA4000
 from thinkrf.config import TriggerSettings
+from thinkrf.util import read_data_and_reflevel
+from thinkrf.numpy_util import compute_fft
 
 import sys
 import time
 import math
 
-from numpy import fft, abs, log10
 from matplotlib.pyplot import plot, figure, axis, xlabel, ylabel, show
 
 # connect to wsa
@@ -30,31 +31,14 @@ trigger = TriggerSettings(
 dut.trigger(trigger)
 
 # capture 1 packet
-dut.capture(1024, 1)
-
-# read until I get 1 data packet
-while not dut.eof():
-    pkt = dut.read()
-
-    if pkt.is_data_packet():
-        break
-
-# seperate data into i and q
-cdata = [complex(i, q) for i, q in pkt.data]
+data, reflevel = read_data_and_reflevel(dut, 1024)
 
 # compute the fft of the complex data
-cfft = fft.fft(cdata)
-cfft = fft.fftshift(cfft)
-
-# compute power
-powdata = log10(abs(cfft)) * 20
+powdata = compute_fft(data, reflevel)
 
 # setup my graph
 fig = figure(1)
-axis([0, 1024, 0, 200])
-indexes = range(0, 1024)
-for i in indexes:
-    i = (i-512) * 125e6 / 1024/1024
+axis([0, 1024, -120, 20])
 
 xlabel("Sample Index")
 ylabel("Amplitude")
