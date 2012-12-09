@@ -3,6 +3,11 @@ from thinkrf.vrt import Stream
 from thinkrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
 
 class WSA4000(object):
+    """
+    Interface for WSA4000
+
+    :meth:`.connect` must be called before other methods are used.
+    """
 
     def __init__(self):
         pass
@@ -10,7 +15,7 @@ class WSA4000(object):
 
     def connect(self, host):
         """
-        connects to a wsa
+        connect to a wsa
 
         :param host: the hostname or IP to connect to
         """
@@ -34,18 +39,28 @@ class WSA4000(object):
 
     def scpiset(self, cmd):
         """
-        send a scpi command
+        Send a SCPI command.
+
+        This is the lowest-level interface provided.
+        Please see the Programmer's Guide for information about
+        the commands available.
 
         :param cmd: the command to send
+        :type cmd: str
         """
         self._sock_scpi.send("%s\n" % cmd)
 
 
     def scpiget(self, cmd):
         """
-        get a scpi command
+        Send a SCPI command and wait for the response.
+
+        This is the lowest-level interface provided.
+        Please see the Programmer's Guide for information about
+        the commands available.
 
         :param cmd: the command to send
+        :type cmd: str
         :returns: the response back from the box if any
         """
         self._sock_scpi.send("%s\n" % cmd)
@@ -55,19 +70,21 @@ class WSA4000(object):
 
     def id(self):
         """
-        get the box identification string
+        Returns the WSA4000's identification information string.
 
-        :returns: the id string
+        :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
         return self.scpiget(":*idn?")
 
 
     def freq(self, freq=None):
         """
-        get/set current frequency
+        This command sets or queries the tuned center frequency of the WSA.
 
-        :param freq: if this param is given, then the box is tuned to this freq. otherwise, the freq is queried
-        :returns: the frequency of the box
+        :param freq: the new center frequency in Hz (0 - 10 GHz); None to query
+
+        :type freq: int
+        :returns: the frequency in Hz
         """
         if freq is None:
             buf = self.scpiget("FREQ:CENTER?")
@@ -80,9 +97,10 @@ class WSA4000(object):
 
     def fshift(self, shift=None):
         """
-        get/set frequency shift
+        This command sets or queries the frequency shift value.
 
-        :param freq: if this param is given, then the frequency is shifted by this amount. otherwise, the freq shift is queried
+        :param freq: the new frequency shift in Hz (0 - 125 MHz); None to query
+        :type freq: int
         :returns: the amount of frequency shift
         """
         if shift is None:
@@ -96,10 +114,16 @@ class WSA4000(object):
 
     def decimation(self, value=None):
         """
-        get/set decimation
+        This command sets or queries the rate of decimation of samples in
+        a trace capture. This decimation method consists of cascaded
+        integrator-comb (CIC) filters and at every
+        *value* number of samples, one sample is captured. The supported
+        rate is 4 - 1023.  When the rate is set to 0, no decimation is
+        performed on the trace capture.
 
-        :param value: if this param is given, then the input signal is decimated by this amount. otherwise, the decimation is queried
-        :returns: the amount of decimation
+        :param value: new decimation value (0 or 4 - 1023); None to query
+        :type value: int
+        :returns: the decimation value
         """
         if value is None:
             buf = self.scpiget("SENSE:DECIMATION?")
@@ -183,16 +207,13 @@ class WSA4000(object):
         """
         Resets the WSA4000 to its default settings. It does not affect
         the registers or queues associated with the IEEE mandated commands.
-        Each non-IEEE mandated command description in this reference shows
-        the *RST value when affected.
         """
         self.scpiset(":*rst")
 
 
     def flush(self):
         """
-        flush any captures from the capture memory
-
+        Flush capture memory of sweep captures.
         """
         self.scpiset(":sweep:flush\n")
 
@@ -204,9 +225,9 @@ class WSA4000(object):
         the trigger execution; setting to any other type will
         enable the trigger engine.
 
-        :param settings: if this param is given, then the trigger settings are set as given.. if not, they are read
+        :param settings: the new trigger settings; None to query
         :type settings: thinkrf.config.TriggerSettings
-        :returns: the trigger settings set as an object
+        :returns: the trigger settings
         """
         if settings is None:
             # find out what kind of trigger is set
@@ -241,10 +262,14 @@ class WSA4000(object):
         return settings
 
 
+
     def capture(self, spp, ppb):
         """
-        test for no more data
-        do a manual capture
+        This command will start the single block capture and the return of
+        *ppb* packets of *spp* samples each. The data
+        within a single block capture trace is continuous from one packet
+        to the other, but not necessary between successive block capture
+        commands issued.
 
         :param spp: the number of samples in a packet
         :param ppb: the number of packets in a capture
@@ -256,7 +281,7 @@ class WSA4000(object):
 
     def request_read_perm(self):
         """
-        aquire a read permission for reading data
+        Aquire exclusive permission to read data from the WSA.
 
         :returns: True if allowed to read, False if not
         """
@@ -266,7 +291,7 @@ class WSA4000(object):
 
     def have_read_perm(self):
         """
-        query to see if you have read permissions
+        Check if we have permission to read data.
 
         :returns: True if allowed to read, False if not
         """
@@ -277,7 +302,7 @@ class WSA4000(object):
 
     def eof(self):
         """
-        test for no more data
+        Check if the VRT stream has closed.
 
         :returns: True if no more data, False if more data
         """
@@ -286,7 +311,7 @@ class WSA4000(object):
 
     def has_data(self):
         """
-        has data
+        Check if there is VRT data to read.
 
         :returns: True if there is a packet to read, False if not
         """
@@ -295,45 +320,48 @@ class WSA4000(object):
 
     def locked(self, modulestr):
         """
-        get lock status
+        This command queries the lock status of the RF VCO (Voltage Control
+        Oscillator) in the Radio Front End (RFE) or the lock status of the
+        PLL reference clock in the digital card.
 
-        :param modulestr: 'vco' for rf lock status.. clkref for mobo lock status
-        :returns: 1 if locked.. 0 if not locked, -1 on error
+        :param modulestr: 'vco' for rf lock status, 'clkref' for mobo lock status
+        :returns: True if locked
         """
         if modulestr.upper() == 'VCO':
             buf = self.scpiget("SENSE:LOCK:RF?")
-            return int(buf)
+            return bool(int(buf))
         elif modulestr.upper() == 'CLKREF':
             buf = self.scpiget("SENSE:LOCK:REFERENCE?")
-            return int(buf)
+            return bool(int(buf))
         else:
             return -1
 
 
     def read(self):
         """
-        read data
+        Read a single VRT packet from the WSA.
 
-        :returns: a packet object
+        See :meth:`thinkrf.vrt.Stream.read_packet`.
         """
         return self._vrt.read_packet()
 
 
     def raw_read(self, num):
         """
-        raw read of socket data
+        Raw read of VRT socket data from the WSA.
 
         :param num: the number of bytes to read
-        :returns: an array of bytes
+        :returns: bytes
         """
         return self._sock_vrt.recv(num)
 
 
     def sweep_add(self, entry):
         """
-        sweep add
+        Add an entry to the sweep list
 
         :param entry: the sweep entry to add
+        :type entry: thinkrf.config.SweepEntry
         """
         self.scpiset(":sweep:entry:new")
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
@@ -352,10 +380,11 @@ class WSA4000(object):
 
     def sweep_read(self, index):
         """
-        sweep read
+        Read an entry from the sweep list.
 
         :param index: the index of the entry to read
-        :returns: entry
+        :returns: sweep entry
+        :rtype: thinkrf.config.SweepEntry
         """
         ent = SweepEntry()
 
@@ -402,14 +431,14 @@ class WSA4000(object):
 
     def sweep_clear(self):
         """
-        flush the sweep list
+        Remove all entries from the sweep list.
         """
         self.scpiset(":sweep:entry:del all")
 
 
     def sweep_start(self, start_id = None):
         """
-        start the sweep engine
+        Start the sweep engine.
         """
         if start_id:
             self.scpiset(":sweep:list:start %d" % start_id);
@@ -419,14 +448,14 @@ class WSA4000(object):
 
     def sweep_stop(self):
         """
-        stop the sweep engine
+        Stop the sweep engine.
         """
         self.scpiset(":sweep:list:stop")
 
 
     def flush_captures(self):
         """
-        flush capture memory of captures
+        Flush capture memory of sweep captures.
         """
         self.scpiset(":sweep:flush")
 

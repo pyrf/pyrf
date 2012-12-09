@@ -3,6 +3,14 @@ class TriggerSettingsError(Exception):
     pass
 
 class TriggerSettings(object):
+    """
+    Trigger settings for :meth:`thinkrf.devices.WSA4000.trigger`.
+
+    :param trigtype: "LEVEL" or "NONE" to disable
+    :param fstart: starting frequency in Hz
+    :param fstop: ending frequency in Hz
+    :param amplitude: minumum level for trigger in dBm
+    """
 
     def __init__(self,
             trigtype="NONE",
@@ -19,6 +27,23 @@ class TriggerSettings(object):
 
 
 class SweepEntry(object):
+    """
+    Sweep entry for :meth:`thinkrf.devices.WSA4000.sweep_add`
+
+    :param fstart: starting frequency in Hz
+    :param fstop: ending frequency in Hz
+    :param shift: the frequency shift in Hz
+    :param decimation: the decimation value (0 or 4 - 1023)
+    :param antenna: the antenna (1 or 2)
+    :param gain: the RF gain value ('high', 'medium', 'low' or 'vlow')
+    :param ifgain: the IF gain in dB (-10 - 34)
+    :param spp: samples per packet
+    :param ppb: packets per block
+    :param trigtype: trigger type ('none' or 'level')
+    :param level_fstart: level trigger starting frequency in Hz
+    :param level_fstop: level trigger ending frequency in Hz
+    :param level_amplitude: level trigger minimum in dBm
+    """
 
     def __init__(self,
             fstart=2400000000,
