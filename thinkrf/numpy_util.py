@@ -1,6 +1,4 @@
-import numpy
 import math
-
 
 def compute_fft(data_pkt, reflevel_pkt):
     """
@@ -14,6 +12,8 @@ def compute_fft(data_pkt, reflevel_pkt):
 
     :returns: numpy array of dBm values as floats
     """
+    import numpy # import here so docstrings are visible even without numpy
+
     reference_level = reflevel_pkt.fields['reflevel']
 
     iq_data = data_pkt.data.numpy_array()
@@ -22,6 +22,8 @@ def compute_fft(data_pkt, reflevel_pkt):
     return _compute_fft(i_data, q_data, reference_level)
 
 def _compute_fft(i_data, q_data, reference_level):
+    import numpy
+
     calibrated_q = _calibrate_i_q(i_data, q_data)
     i_removed_dc_offset = i_data - numpy.mean(i_data)
     q_removed_dc_offset = calibrated_q - numpy.mean(calibrated_q)
