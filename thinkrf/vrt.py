@@ -204,16 +204,18 @@ class ContextPacket(object):
 
 class IQData(object):
     """
-    Data Packet values as a lazy collection of (i, q) tuples
+    Data Packet values as a lazy collection of (I, Q) tuples
     read from *binary_data*.
 
     This object behaves as an immutable python sequence, e.g.
-    you may do all of the following:
+    you may do any of the following:
 
     .. code-block:: python
 
        points = len(iq_data)
-       val = iq_data[5]
+
+       i_and_q = iq_data[5]
+
        for i, q in iq_data:
            print i, q
     """
@@ -249,7 +251,17 @@ class IQData(object):
 
     def numpy_array(self):
         """
-        Return a numpy array of I, Q values for this data
+        Return a numpy array of I, Q values for this data similar to:
+
+        .. code-block:: python
+
+           array([[ -44,    8],
+                  [ -40,   60],
+                  [ -12,   92],
+                  ...,
+                  [-132,   -8],
+                  [-124,   56],
+                  [ -44,   80]], dtype=int16)
         """
         import numpy
         a = numpy.frombuffer(self._strdata, dtype=numpy.int16)
