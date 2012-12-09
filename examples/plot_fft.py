@@ -34,7 +34,7 @@ dut.trigger(trigger)
 data, reflevel = read_data_and_reflevel(dut, 1024)
 
 # compute the fft of the complex data
-powdata = compute_fft(data, reflevel)
+powdata = compute_fft(dut, data, reflevel)
 
 # setup my graph
 fig = figure(1)

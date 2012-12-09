@@ -84,7 +84,7 @@ class MainPanel(QtGui.QWidget):
         self.decimation_points = None
         data, reflevel = read_data_and_reflevel(dut)
         self.screen = SpectrumView(
-            compute_fft(data, reflevel),
+            compute_fft(dut, data, reflevel),
             self.center_freq,
             self.decimation_factor)
         self.initUI()
@@ -235,7 +235,7 @@ class MainPanel(QtGui.QWidget):
             self.dut,
             self.points)
         self.screen.update_data(
-            compute_fft(data, reflevel),
+            compute_fft(self.dut, data, reflevel),
             self.center_freq,
             self.decimation_factor)
 

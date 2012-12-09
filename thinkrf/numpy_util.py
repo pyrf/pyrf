@@ -1,14 +1,21 @@
 import math
 
-def compute_fft(data_pkt, reflevel_pkt):
+FFT_BASELINE = -10
+
+def compute_fft(dut, data_pkt, reflevel_pkt):
     """
     Return an array of dBm values by computing the FFT of
     the passed data and reference level.
 
+    :param dut: WSA device
+    :type dut: thinkrf.devices.WSA4000
     :param data_pkt: packet containing samples
     :type data_pkt: thinkrf.vrt.DataPacket
     :param reflevel_pkt: packet containing 'reflevel' value
     :type reflevel_pkt: thinkrf.vrt.ContextPacket
+
+    This function uses only *dut.ADC_DYNAMIC_RANGE*,
+    *data_pkt.data* and *reflevel_pkt['reflevel']*.
 
     :returns: numpy array of dBm values as floats
     """
@@ -19,9 +26,9 @@ def compute_fft(data_pkt, reflevel_pkt):
     iq_data = data_pkt.data.numpy_array()
     i_data = numpy.array(iq_data[:,0], dtype=float) / len(iq_data)
     q_data = numpy.array(iq_data[:,1], dtype=float) / len(iq_data)
-    return _compute_fft(i_data, q_data, reference_level)
+    return _compute_fft(i_data, q_data, reference_level, dut.ADC_DYNAMIC_RANGE)
 
-def _compute_fft(i_data, q_data, reference_level):
+def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
     import numpy
 
     calibrated_q = _calibrate_i_q(i_data, q_data)
@@ -30,9 +37,7 @@ def _compute_fft(i_data, q_data, reference_level):
     iq = i_removed_dc_offset + 1j * q_removed_dc_offset
     windowed_iq = iq * numpy.hanning(len(i_data))
 
-    FFT_BASELINE = -10
-    ADC_DYNAMIC_RANGE = 72.5
-    noise_level_offset = reference_level - FFT_BASELINE - ADC_DYNAMIC_RANGE
+    noise_level_offset = reference_level - FFT_BASELINE - adc_dynamic_range
 
     fft_result = numpy.fft.fftshift(numpy.fft.fft(windowed_iq))
     fft_result = 20 * numpy.log10(numpy.abs(fft_result)) + noise_level_offset

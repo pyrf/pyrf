@@ -9,6 +9,8 @@ class WSA4000(object):
     :meth:`.connect` must be called before other methods are used.
     """
 
+    ADC_DYNAMIC_RANGE = 72.5
+
     def __init__(self):
         pass
 
