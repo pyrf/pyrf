@@ -4,7 +4,7 @@ ThinkRF Device API
 
 This is an early release of the ThinkRF Python Device API.
 
-This library supports development for thei `WSA4000 Platform`_.
+This library supports development for the `WSA4000 Platform`_.
 
 .. _WSA4000 Platform: http://www.thinkrf.com/products.html
 
@@ -15,13 +15,13 @@ Documentation
 * `Other WSA4000 Documentation <http://www.thinkrf.com/resources>`_
 
 
-GUI Example Included
---------------------
+Cross-platform GUI Included
+---------------------------
 
 .. image:: http://python-thinkrf.readthedocs.org/en/latest/_images/wsa4000demo.png
 
-Example
--------
+Example Code
+------------
 
 ::
 
@@ -39,16 +39,16 @@ Example
     dut.fshift(0)
     dut.decimation(0)
 
-    # capture 1 packet
+    # capture 1 packet with 1024 samples
     dut.capture(1024, 1)
 
-    # read until I get 1 data packet
+    # skip the context packets
     while not dut.eof():
         pkt = dut.read()
 
         if pkt.is_data_packet():
             break
 
-    # print I/Q data into i and q
+    # print I/Q data
     for i, q in pkt.data:
         print "%d,%d" % (i, q)
