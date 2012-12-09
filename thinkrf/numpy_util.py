@@ -30,7 +30,7 @@ def _compute_fft(i_data, q_data, reference_level):
     iq = i_removed_dc_offset + 1j * q_removed_dc_offset
     windowed_iq = iq * numpy.hanning(len(i_data))
 
-    FFT_BASELINE = -28.5
+    FFT_BASELINE = -10
     ADC_DYNAMIC_RANGE = 72.5
     noise_level_offset = reference_level - FFT_BASELINE - ADC_DYNAMIC_RANGE
 
