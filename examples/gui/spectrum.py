@@ -9,7 +9,8 @@ BOTTOM_AXIS_HEIGHT = 40
 AXIS_THICKNESS = 1
 
 DBM_TOP = 20
-DBM_BOTTOM = -120
+DBM_BOTTOM = -140
+DBM_STEPS = 9
 
 class SpectrumView(QtGui.QWidget):
     """
@@ -51,9 +52,9 @@ def dBm_labels(height):
     is a value between 0 (top) and height (bottom).
     """
     # simple, fixed implementation for now
-    num = 8
-    dBm_labels = [str(d) for d in numpy.linspace(DBM_TOP, DBM_BOTTOM, num)]
-    y_values = numpy.linspace(0, height, num)
+    dBm_labels = [str(d) for d in
+        numpy.linspace(DBM_TOP, DBM_BOTTOM, DBM_STEPS)]
+    y_values = numpy.linspace(0, height, DBM_STEPS)
     return zip(y_values, dBm_labels)
 
 class SpectrumViewLeftAxis(QtGui.QWidget):
