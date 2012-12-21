@@ -120,10 +120,10 @@ class WSA4000(object):
         a trace capture. This decimation method consists of cascaded
         integrator-comb (CIC) filters and at every
         *value* number of samples, one sample is captured. The supported
-        rate is 4 - 1023.  When the rate is set to 0, no decimation is
+        rate is 4 - 1023.  When the rate is set to 1, no decimation is
         performed on the trace capture.
 
-        :param value: new decimation value (0 or 4 - 1023); None to query
+        :param value: new decimation value (1 or 4 - 1023); None to query
         :type value: int
         :returns: the decimation value
         """
@@ -132,6 +132,10 @@ class WSA4000(object):
             value = int(buf)
         else:
             self.scpiset(":SENSE:DECIMATION %d\n" % value)
+
+        # firmware < 2.5.3 returned 0 instead of 1
+        if value == 0:
+            value = 1
 
         return value
 

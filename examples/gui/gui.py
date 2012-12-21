@@ -198,7 +198,7 @@ class MainPanel(QtGui.QWidget):
 
     def _span_rbw_controls(self):
         span = QtGui.QComboBox(self)
-        decimation_values = [0] + [2 ** x for x in range(2, 10)]
+        decimation_values = [1] + [2 ** x for x in range(2, 10)]
         span.addItem("Span: %s" % frequency_text(DEVICE_FULL_SPAN)) # 0 is special
         for d in decimation_values[1:]:
             span.addItem("Span: %s" % frequency_text(DEVICE_FULL_SPAN / d))
