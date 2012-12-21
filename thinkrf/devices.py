@@ -132,6 +132,11 @@ class WSA4000(object):
             value = int(buf)
         else:
             self.scpiset(":SENSE:DECIMATION %d\n" % value)
+            if value == 1:
+                # verify decimation was disabled correctly
+                if int(self.scpiget("SENSE:DECIMATION?")) != 1:
+                    # firmware < 2.5.3
+                    self.scpiset(":SENSE:DECIMATION %d\n" % 0)
 
         # firmware < 2.5.3 returned 0 instead of 1
         if value == 0:
