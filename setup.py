@@ -9,7 +9,7 @@ except ImportError:
 
 setup(
     name='thinkrf',
-    version='0.2.1',
+    version='0.3.0-dev',
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
     packages=['thinkrf'],
