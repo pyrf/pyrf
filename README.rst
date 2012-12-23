@@ -2,8 +2,6 @@
 ThinkRF Device API
 ==================
 
-This is an early release of the ThinkRF Python Device API.
-
 This library supports development for the `WSA4000 Platform`_.
 
 .. _WSA4000 Platform: http://www.thinkrf.com/products.html
