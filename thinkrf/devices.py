@@ -15,13 +15,14 @@ class WSA4000(object):
     def __init__(self, connector=PlainSocketConnector):
         self.connector = connector()
 
+    @sync_async
     def connect(self, host):
         """
         connect to a wsa
 
         :param host: the hostname or IP to connect to
         """
-        self.connector.connect(host)
+        yield self.connector.connect(host)
 
     def disconnect(self):
         """
