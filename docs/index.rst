@@ -10,6 +10,7 @@ Contents:
    reference
    examples
    gui
+   plans
 
 .. figure:: wsa4000demo.png
    :alt: wsa4000demo screen shot
