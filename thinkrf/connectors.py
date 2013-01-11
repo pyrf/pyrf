@@ -2,6 +2,10 @@ import socket
 from functools import wraps
 
 from thinkrf.vrt import Stream
+from thinkrf import twisted_util
+
+SCPI_PORT = 37001
+VRT_PORT = 37000
 
 def sync_async(f):
     """
@@ -28,10 +32,10 @@ class PlainSocketConnector(object):
 
     def connect(self, host):
         self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock_scpi.connect((host, 37001))
+        self._sock_scpi.connect((host, SCPI_PORT))
         self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock_vrt.connect((host, 37000))
+        self._sock_vrt.connect((host, VRT_PORT))
         self._vrt = Stream(self._sock_vrt)
 
     def disconnect(self):
@@ -79,3 +83,30 @@ class PlainSocketConnector(object):
                 val = gen.send(val)
         except StopIteration:
             return val
+
+class TwistedConnector(object):
+    """
+    A connector that makes SCPI/VRT connections asynchronously using
+    Twisted.
+    """
+    def __init__(self, reactor):
+        self._reactor = reactor
+
+    def connect(self, host):
+        # this should fail only if twisted is not installed
+        from thinkrf.twisted_util import HostnameEndpoint
+
+        point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
+        d = point.connect(twisted_util.SCPIClientFactory())
+
+        @d.addCallback
+        def connect_vrt(scpi):
+            assert 0, scpi
+            self._scpi = scpi
+            point = HostnameEndpoint(self._reactor, host, VRT_PORT)
+            return point.connect(twisted_util.VRTClientFactory())
+
+        @d.addCallback(vrt):
+            self._vrt = vrt
+
+        return d
