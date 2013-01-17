@@ -1,29 +1,30 @@
 
-ThinkRF Device API
-==================
+PyRF
+====
 
-This library supports development for the `WSA4000 Platform`_.
+This library currently supports development for the `WSA4000 Platform`_,
+but may support additional hardware in the future.
 
 .. _WSA4000 Platform: http://www.thinkrf.com/products.html
 
 Documentation
 -------------
 
-* `Documentation for this API <http://python-thinkrf.rtfd.org>`_
-* `Other WSA4000 Documentation <http://www.thinkrf.com/resources>`_
+* `Documentation for this API <http://pyrf.rtfd.org>`_
+* `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
 
 
 Cross-platform GUI Included
 ---------------------------
 
-.. image:: http://python-thinkrf.readthedocs.org/en/latest/_images/wsa4000demo.png
+.. image:: http://pyrf.readthedocs.org/en/latest/_images/wsa4000demo.png
 
 Example Code
 ------------
 
 ::
 
-    from thinkrf.devices import WSA4000
+    from pyrf.devices.thinkrf import WSA4000
 
     # connect to wsa
     dut = WSA4000()

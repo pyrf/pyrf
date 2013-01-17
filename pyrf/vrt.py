@@ -2,7 +2,7 @@ import struct
 import array
 import sys
 
-from thinkrf.util import socketread
+from pyrf.util import socketread
 
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
@@ -51,8 +51,8 @@ class Stream(object):
     def read_packet(self):
         """
         Read a complete packet from *socket* and return either a
-        :class:`thinkrf.vrt.ContextPacket` or a
-        :class:`thinkrf.vrt.DataPacket`.
+        :class:`pyrf.vrt.ContextPacket` or a
+        :class:`pyrf.vrt.DataPacket`.
         """
         # read a word
         tmpstr = socketread(self.socket, 4, 0)
@@ -73,7 +73,7 @@ class Stream(object):
 
 class ContextPacket(object):
     """
-    A Context Packet received from :meth:`thinkrf.vrt.Stream.read_packet`
+    A Context Packet received from :meth:`pyrf.vrt.Stream.read_packet`
 
     .. attribute:: fields
 
@@ -272,11 +272,11 @@ class IQData(object):
 
 class DataPacket(object):
     """
-    A Data Packet received from :meth:`thinkrf.vrt.Stream.read_packet`
+    A Data Packet received from :meth:`pyrf.vrt.Stream.read_packet`
 
     .. attribute:: data
 
-       a :class:`thinkrf.vrt.IQData` object containing the packet data
+       a :class:`pyrf.vrt.IQData` object containing the packet data
     """
 
     def __init__(self, word, socket):

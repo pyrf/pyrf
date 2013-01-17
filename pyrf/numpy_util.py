@@ -8,11 +8,11 @@ def compute_fft(dut, data_pkt, reflevel_pkt):
     the passed data and reference level.
 
     :param dut: WSA device
-    :type dut: thinkrf.devices.WSA4000
+    :type dut: pyrf.devices.thinkrf.WSA4000
     :param data_pkt: packet containing samples
-    :type data_pkt: thinkrf.vrt.DataPacket
+    :type data_pkt: pyrf.vrt.DataPacket
     :param reflevel_pkt: packet containing 'reflevel' value
-    :type reflevel_pkt: thinkrf.vrt.ContextPacket
+    :type reflevel_pkt: pyrf.vrt.ContextPacket
 
     This function uses only *dut.ADC_DYNAMIC_RANGE*,
     *data_pkt.data* and *reflevel_pkt['reflevel']*.

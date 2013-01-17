@@ -8,13 +8,13 @@ except ImportError:
     from distutils.core import setup
 
 setup(
-    name='thinkrf',
-    version='0.3.0-dev',
+    name='pyrf',
+    version='0.2.3',
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
-    packages=['thinkrf'],
-    url='https://github.com/thinkrf/python-thinkrf',
+    packages=['pyrf'],
+    url='https://github.com/pyrf/pyrf',
     license='BSD',
-    description='ThinkRF Python Device API',
+    description='API for RF receivers including ThinkRF WSA4000',
     long_description=open('README.rst').read(),
 )
