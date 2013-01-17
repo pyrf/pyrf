@@ -106,7 +106,8 @@ class TwistedConnector(object):
             point = HostnameEndpoint(self._reactor, host, VRT_PORT)
             return point.connect(twisted_util.VRTClientFactory())
 
-        @d.addCallback(vrt):
+        @d.addCallback
+        def save_vrt(vrt):
             self._vrt = vrt
 
         return d
