@@ -2,37 +2,37 @@
 Reference
 =========
 
-thinkrf.devices
----------------
+pyrf.devices.thinkrf
+--------------------
 
-.. automodule:: thinkrf.devices
+.. automodule:: pyrf.devices.thinkrf
    :members:
    :undoc-members:
 
-thinkrf.config
---------------
-
-.. automodule:: thinkrf.config
-   :members:
-   :undoc-members:
-
-thinkrf.vrt
+pyrf.config
 -----------
 
-.. automodule:: thinkrf.vrt
+.. automodule:: pyrf.config
    :members:
    :undoc-members:
 
-thinkrf.util
-------------
+pyrf.vrt
+--------
 
-.. automodule:: thinkrf.util
+.. automodule:: pyrf.vrt
    :members:
    :undoc-members:
 
-thinkrf.numpy_util
-------------------
+pyrf.util
+---------
 
-.. automodule:: thinkrf.numpy_util
+.. automodule:: pyrf.util
+   :members:
+   :undoc-members:
+
+pyrf.numpy_util
+---------------
+
+.. automodule:: pyrf.numpy_util
    :members:
    :undoc-members:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# ThinkRF Device API documentation build configuration file, created by
+# PyRF documentation build configuration file, created by
 # sphinx-quickstart on Thu Nov 22 17:25:57 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -40,8 +40,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'ThinkRF Device API'
-copyright = u'2012, ThinkRF Corporation'
+project = u'PyRF'
+copyright = u'2012-2013, ThinkRF Corporation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -164,7 +164,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'ThinkRFDeviceAPIdoc'
+htmlhelp_basename = 'PyRFdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'ThinkRFDeviceAPI.tex', u'ThinkRF Device API Documentation',
+  ('index', 'PyRF.tex', u'API for RF receivers including ThinkRF WSA4000',
    u'ThinkRF Corporation', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'thinkrfdeviceapi', u'ThinkRF Device API Documentation',
+    ('index', 'pyrf', u'API for RF receivers including ThinkRF WSA4000',
      [u'ThinkRF Corporation'], 1)
 ]
 
@@ -227,8 +227,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'ThinkRFDeviceAPI', u'ThinkRF Device API Documentation',
-   u'ThinkRF Corporation', 'ThinkRFDeviceAPI', 'One line description of project.',
+  ('index', 'PyRF', u'PyRF Documentation',
+   u'ThinkRF Corporation', 'PyRF', 'API for RF receivers including ThinkRF WSA4000',
    'Miscellaneous'),
 ]
 

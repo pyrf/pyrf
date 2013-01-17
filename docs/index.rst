@@ -1,5 +1,5 @@
 
-ThinkRF Device API
+PyRF Documentation
 ==================
 
 Contents:
