@@ -1,8 +1,13 @@
 import socket
 from functools import wraps
 
-from thinkrf.vrt import Stream
-from thinkrf import twisted_util
+from pyrf.vrt import Stream
+from pyrf import twisted_util
+
+try:
+    from twisted.internet import defer
+except ImportError:
+    defer = None
 
 SCPI_PORT = 37001
 VRT_PORT = 37000
@@ -94,14 +99,13 @@ class TwistedConnector(object):
 
     def connect(self, host):
         # this should fail only if twisted is not installed
-        from thinkrf.twisted_util import HostnameEndpoint
+        from pyrf.twisted_util import HostnameEndpoint
 
         point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
         d = point.connect(twisted_util.SCPIClientFactory())
 
         @d.addCallback
         def connect_vrt(scpi):
-            assert 0, scpi
             self._scpi = scpi
             point = HostnameEndpoint(self._reactor, host, VRT_PORT)
             return point.connect(twisted_util.VRTClientFactory())
@@ -111,3 +115,30 @@ class TwistedConnector(object):
             self._vrt = vrt
 
         return d
+
+    def disconnect(self):
+        pass # FIXME
+
+    def scpiset(self, cmd):
+        self._scpi.transport.write("%s\n" % cmd)
+
+    def scpiget(self, cmd):
+        self._scpi.transport.write("%s\n" % cmd)
+        return self._scpi.expectingLine()
+
+    def sync_async(self, gen):
+        def advance(result):
+            try:
+                d = gen.send(result)
+                print d
+                d = defer.maybeDeferred(lambda: d)
+            except StopIteration:
+                print "stopped"
+                return
+            d.addCallback(advance)
+            return d
+
+        return advance(None)
+
+    def eof(self):
+        return self._vrt.eof
