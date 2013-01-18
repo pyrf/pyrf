@@ -6,9 +6,9 @@ from PySide import QtGui, QtCore
 from spectrum import SpectrumView
 from util import frequency_text
 
-from thinkrf.devices import WSA4000
-from thinkrf.util import read_data_and_reflevel
-from thinkrf.numpy_util import compute_fft
+from pyrf.devices.thinkrf import WSA4000
+from pyrf.util import read_data_and_reflevel
+from pyrf.numpy_util import compute_fft
 
 DEVICE_FULL_SPAN = 125e6
 REFRESH_CHARTS = 0.05

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from thinkrf.devices import WSA4000
+from pyrf.devices.thinkrf import WSA4000
 
 # connect to wsa
 dut = WSA4000()
