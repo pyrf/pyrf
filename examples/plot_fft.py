@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from thinkrf.devices import WSA4000
-from thinkrf.config import TriggerSettings
-from thinkrf.util import read_data_and_reflevel
-from thinkrf.numpy_util import compute_fft
+from pyrf.devices.thinkrf import WSA4000
+from pyrf.config import TriggerSettings
+from pyrf.util import read_data_and_reflevel
+from pyrf.numpy_util import compute_fft
 
 import sys
 import time

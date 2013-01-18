@@ -1,5 +1,5 @@
-from thinkrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
-from thinkrf.connectors import PlainSocketConnector, sync_async
+from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
+from pyrf.connectors import PlainSocketConnector, sync_async
 
 class WSA4000(object):
     """
@@ -226,7 +226,7 @@ class WSA4000(object):
         enable the trigger engine.
 
         :param settings: the new trigger settings; None to query
-        :type settings: thinkrf.config.TriggerSettings
+        :type settings: pyrf.config.TriggerSettings
         :returns: the trigger settings
         """
         if settings is None:
@@ -341,7 +341,7 @@ class WSA4000(object):
         """
         Read a single VRT packet from the WSA.
 
-        See :meth:`thinkrf.vrt.Stream.read_packet`.
+        See :meth:`pyrf.vrt.Stream.read_packet`.
         """
         yield self.connector.read()
 
@@ -361,7 +361,7 @@ class WSA4000(object):
         Add an entry to the sweep list
 
         :param entry: the sweep entry to add
-        :type entry: thinkrf.config.SweepEntry
+        :type entry: pyrf.config.SweepEntry
         """
         self.scpiset(":sweep:entry:new")
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
@@ -384,7 +384,7 @@ class WSA4000(object):
 
         :param index: the index of the entry to read
         :returns: sweep entry
-        :rtype: thinkrf.config.SweepEntry
+        :rtype: pyrf.config.SweepEntry
         """
         ent = SweepEntry()
 
