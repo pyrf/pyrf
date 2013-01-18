@@ -12,8 +12,15 @@ class WSA4000(object):
 
     ADC_DYNAMIC_RANGE = 72.5
 
-    def __init__(self, connector=PlainSocketConnector):
-        self.connector = connector()
+    def __init__(self, connector=None):
+        """
+        :param connector: object to use for connections to device,
+            defaults to a new :class:`pyrf.connectors.PlainSocketConnector`
+            instance
+        """
+        if not connector:
+            connector = PlainSocketConnector()
+        self.connector = connector
 
     @sync_async
     def connect(self, host):
