@@ -9,7 +9,7 @@ except ImportError:
 
 setup(
     name='pyrf',
-    version='0.2.3',
+    version='0.2.2',
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
     packages=['pyrf'],
