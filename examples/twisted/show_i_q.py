@@ -28,7 +28,6 @@ def show_i_q():
 
     # read until I get 1 data packet
     while not dut.eof():
-        print "read loop"
         pkt = yield dut.read()
 
         if pkt.is_data_packet():
