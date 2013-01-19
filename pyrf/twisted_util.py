@@ -66,18 +66,11 @@ class VRTClient(Protocol):
     def expectingData(self, num_bytes):
         d = defer.Deferred()
 
-        def callback(data):
-            d.callback(data)
-
-        self._expected_responses.append((callback, num_bytes))
-
-        #self.dataReceived("")
-        #return d
-
         data = self._bufConsume(num_bytes)
         if data:
-            self._expected_responses.pop(0)
-            callback(data)
+            d.callback(data)
+        else:
+            self._expected_responses.append((d.callback, num_bytes))
         return d
 
     def connectionLost(self, reason):
