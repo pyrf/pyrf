@@ -2,10 +2,30 @@
 Reference
 =========
 
-pyrf.devices.thinkrf
---------------------
+pyrf.devices
+------------
+
+.thinkrf
+~~~~~~~~
 
 .. automodule:: pyrf.devices.thinkrf
+   :members:
+   :undoc-members:
+
+pyrf.connectors
+---------------
+
+.blocking
+~~~~~~~~~
+
+.. automodule:: pyrf.connectors.blocking
+   :members:
+   :undoc-members:
+
+.twisted_async
+~~~~~~~~~~~~~~
+
+.. automodule:: pyrf.connectors.twisted_async
    :members:
    :undoc-members:
 
