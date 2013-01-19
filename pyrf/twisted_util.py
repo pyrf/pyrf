@@ -35,27 +35,30 @@ class VRTClient(Protocol):
     def makeConnection(self, transport):
         Protocol.makeConnection(self, transport)
         self._buf = StringIO()
+        self._buf_offset = 0
 
     def _bufAppend(self, data):
+        if self._buf_offset:
+            self._buf.seek(self._buf_offset)
+            prefix = self._buf.read()
+            self._buf.seek(0)
+            self._buf.truncate()
+            self._buf.write(prefix)
+            self._buf_offset = 0
         self._buf.seek(0, 2)
         self._buf.write(data)
 
     def _bufConsume(self, num_bytes):
         "returns None if not enough bytes available"
-        self._buf.seek(0, 2)
-        if self._buf.tell() < num_bytes:
+        if self._bufLength() < num_bytes:
             return None
-        self._buf.seek(0)
-        data = self._buf.read(num_bytes)
-        remaining = self._buf.read()
-        self._buf.seek(0)
-        self._buf.truncate()
-        self._buf.write(remaining)
-        return data
+        self._buf.seek(self._buf_offset)
+        self._buf_offset += num_bytes
+        return self._buf.read(num_bytes)
 
     def _bufLength(self):
         self._buf.seek(0, 2)
-        return self._buf.tell()
+        return self._buf.tell() - self._buf_offset
 
     def dataReceived(self, data):
         self._bufAppend(data)
@@ -67,7 +70,7 @@ class VRTClient(Protocol):
 
             callback(data)
 
-        if self._bufLength() > TOO_MUCH_UNEXPECTED_DATA:
+        if self._bufLength() > self.TOO_MUCH_UNEXPECTED_DATA:
             self.transport.loseConnection()
             raise VRTTooMuchData("Too much unexpected data received")
 
