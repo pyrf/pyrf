@@ -18,6 +18,61 @@ except ImportError:
     from StringIO import StringIO
 
 
+from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
+
+class TwistedConnector(object):
+    """
+    A connector that makes SCPI/VRT connections asynchronously using
+    Twisted.
+    """
+    def __init__(self, reactor):
+        self._reactor = reactor
+
+    def connect(self, host):
+        point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
+        d = point.connect(SCPIClientFactory())
+
+        @d.addCallback
+        def connect_vrt(scpi):
+            self._scpi = scpi
+            point = HostnameEndpoint(self._reactor, host, VRT_PORT)
+            return point.connect(VRTClientFactory())
+
+        @d.addCallback
+        def save_vrt(vrt):
+            self._vrt = vrt
+
+        return d
+
+    def disconnect(self):
+        pass # FIXME
+
+    def scpiset(self, cmd):
+        self._scpi.transport.write("%s\n" % cmd)
+
+    def scpiget(self, cmd):
+        self._scpi.transport.write("%s\n" % cmd)
+        return self._scpi.expectingData()
+
+    def sync_async(self, gen):
+        def advance(result):
+            try:
+                d = gen.send(result)
+                d = defer.maybeDeferred(lambda: d)
+            except StopIteration:
+                return result
+            d.addCallback(advance)
+            return d
+
+        return advance(None)
+
+    def eof(self):
+        return self._vrt.eof
+
+    def raw_read(self, num_bytes):
+        return self._vrt.expectingData(num_bytes)
+
+
 class VRTTooMuchData(Exception):
     pass
 

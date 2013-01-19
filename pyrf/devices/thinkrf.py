@@ -1,5 +1,6 @@
 from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
-from pyrf.connectors import PlainSocketConnector, sync_async
+from pyrf.connectors.blocking import PlainSocketConnector
+from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 
 class WSA4000(object):
@@ -7,7 +8,7 @@ class WSA4000(object):
     Interface for WSA4000
 
     :param connector: Connector object to use for SCPI/VRT connections,
-        defaults to a new :class:`pyrf.connectors.PlainSocketConnector`
+        defaults to a new :class:`pyrf.connectors.blocking.PlainSocketConnector`
         instance
 
     :meth:`.connect` must be called before other methods are used.

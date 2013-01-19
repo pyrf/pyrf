@@ -2,7 +2,7 @@
 
 import sys
 from pyrf.devices.thinkrf import WSA4000
-from pyrf.connectors import TwistedConnector
+from pyrf.connectors.twisted_async import TwistedConnector
 
 from twisted.internet import reactor, defer
 import twisted.python.log
