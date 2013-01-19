@@ -2,8 +2,6 @@ import struct
 import array
 import sys
 
-from pyrf.util import socketread
-
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
 VRTDATA = 1
@@ -25,72 +23,52 @@ class InvalidDataReceived(Exception):
     pass
 
 
-class Stream(object):
+def vrt_packet_reader(raw_read):
     """
-    A VRT Packet Stream interface wrapping *socket*.
+    Read a VRT packet, parse it and return an object with its data.
+
+    Implemented as a generator that yields the result of the passed
+    raw_read function and accepts the value sent as its data.
     """
+    tmpstr = yield raw_read(4)
+    (word,) = struct.unpack(">I", tmpstr)
+    packet_type = (word >> 28) & 0x0f
+    count = (word >> 16) & 0x0f
+    size = (word >> 0) & 0xffff
 
-    def __init__(self, socket):
-        self.socket = socket
-        self.eof = False
+    if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
+        packet_size = (size - 1) * 4
+        context_data = yield raw_read(packet_size)
+        yield ContextPacket(packet_type, count, size, context_data)
 
-    def has_data(self):
-        """
-        :returns: True if there is data waiting on *socket*.
-        """
-        # read a word
-        try:
-            tmpstr = socketread(self.socket, 4, socket.MSG_DONTWAIT | socket.MSG_PEEK)
-        except socket.error:
-            self.eof = True
-            return False
+    elif packet_type == VRTDATA:
+        data_header = yield raw_read(16)
+        stream_id, tsi, tsf = struct.unpack(">IIQ", data_header)
+        payload_size = (size - 5 - 1) * 4
+        payload = yield raw_read(payload_size)
+        trailer = yield raw_read(4)
+        yield DataPacket(count, size, stream_id, tsi, tsf, payload)
 
-        return True
+    else:
+        raise InvalidDataReceived("unknown packet type: %s" % packet_type)
 
-
-    def read_packet(self):
-        """
-        Read a complete packet from *socket* and return either a
-        :class:`pyrf.vrt.ContextPacket` or a
-        :class:`pyrf.vrt.DataPacket`.
-        """
-        # read a word
-        tmpstr = socketread(self.socket, 4, 0)
-
-        # convert to int word
-        (word,) = struct.unpack(">I", tmpstr)
-
-        # decode the packet type
-        packet_type = (word >> 28) & 0x0f
-
-        if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
-            return ContextPacket(packet_type, word, self.socket)
-        elif packet_type == VRTDATA:
-            return DataPacket(word, self.socket)
-        else:
-            raise InvalidDataReceived("unknown packet type: %s" % packet_type)
 
 
 class ContextPacket(object):
     """
-    A Context Packet received from :meth:`pyrf.vrt.Stream.read_packet`
+    A Context Packet received from :meth:`pyrf.devices.thinkrf.WSA4000.read`
 
     .. attribute:: fields
 
        a dict containing field names and values from the packet
     """
 
-    def __init__(self, pkt_type, word, socket):
-        # extract the pieces of word we want
-        self.ptype = pkt_type
-        self.count = (word >> 16) & 0x0f
-        self.size = (word >> 0) & 0xffff
-        self.fields = {}
-
-        # now read in the rest of the packet
-        packet_size = (self.size - 1) * 4
-        tmpstr = socketread(socket, packet_size)
+    def __init__(self, packet_type, count, size, tmpstr):
+        self.ptype = packet_type
+        self.count = count
+        self.size = size
         (self.streamId, self.tsi, self.tsf,indicatorsField,) = struct.unpack(">IIQI", tmpstr[0:20])
+        self.fields = {}
 
         # now read all the indicators
         if self.streamId == VRTRECEIVER:
@@ -272,37 +250,23 @@ class IQData(object):
 
 class DataPacket(object):
     """
-    A Data Packet received from :meth:`pyrf.vrt.Stream.read_packet`
+    A Data Packet received from :meth:`pyrf.devices.thinkrf.WSA4000.read`
 
     .. attribute:: data
 
        a :class:`pyrf.vrt.IQData` object containing the packet data
     """
 
-    def __init__(self, word, socket):
+    def __init__(self, count, size, streamId, tsi, tsf, payload):
         self.ptype = 1
-        self.count = (word >> 16) & 0x0f
-        self.size = (word >> 0) & 0xffff
-
-        # read in the rest of the header
-        tmpstr = socketread(socket, 16)
-        if len(tmpstr) < 16:
-            raise InvalidDataReceived("data packet too short: %r" % tmpstr)
-        (self.streamId, self.tsi, self.tsf) = struct.unpack(">IIQ", tmpstr)
-
-        # read in the payload
-        payloadsize = self.size - 5 - 1
-        tmpstr = socketread(socket, payloadsize * 4)
-        if (len(tmpstr) < (payloadsize * 4)):
-            raise InvalidDataReceived("data packet too short: %r" % tmpstr)
+        self.count = count
+        self.size = size
+        self.streamId = streamId
+        self.tsi = tsi
+        self.tsf = tsf
 
         # interpret data
-        self.data = IQData(tmpstr)
-
-        # read in the trailer
-        tmpstr = socketread(socket, 4)
-        if (len(tmpstr) < 4):
-            raise InvalidDataReceived("data packet too short: %r" % tmpstr)
+        self.data = IQData(payload)
 
 
     def is_data_packet(self):

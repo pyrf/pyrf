@@ -1,43 +1,39 @@
-import socket
-from pyrf.vrt import Stream
 from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
+from pyrf.connectors import PlainSocketConnector, sync_async
+from pyrf.vrt import vrt_packet_reader
 
 class WSA4000(object):
     """
     Interface for WSA4000
+
+    :param connector: Connector object to use for SCPI/VRT connections,
+        defaults to a new :class:`pyrf.connectors.PlainSocketConnector`
+        instance
 
     :meth:`.connect` must be called before other methods are used.
     """
 
     ADC_DYNAMIC_RANGE = 72.5
 
-    def __init__(self):
-        pass
+    def __init__(self, connector=None):
+        if not connector:
+            connector = PlainSocketConnector()
+        self.connector = connector
 
-
+    @sync_async
     def connect(self, host):
         """
         connect to a wsa
 
         :param host: the hostname or IP to connect to
         """
-        self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock_scpi.connect((host, 37001))
-        self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock_vrt.connect((host, 37000))
-        self._vrt = Stream(self._sock_vrt)
-
+        yield self.connector.connect(host)
 
     def disconnect(self):
         """
         close a connection to a wsa
         """
-        self._sock_scpi.shutdown(socket.SHUT_RDWR)
-        self._sock_scpi.close()
-        self._sock_vrt.shutdown(socket.SHUT_RDWR)
-        self._sock_vrt.close()
-
+        self.connector.disconnect()
 
     def scpiset(self, cmd):
         """
@@ -50,8 +46,7 @@ class WSA4000(object):
         :param cmd: the command to send
         :type cmd: str
         """
-        self._sock_scpi.send("%s\n" % cmd)
-
+        self.connector.scpiset(cmd)
 
     def scpiget(self, cmd):
         """
@@ -65,20 +60,18 @@ class WSA4000(object):
         :type cmd: str
         :returns: the response back from the box if any
         """
-        self._sock_scpi.send("%s\n" % cmd)
-        buf = self._sock_scpi.recv(1024)
-        return buf
+        return self.connector.scpiget(cmd)
 
-
+    @sync_async
     def id(self):
         """
         Returns the WSA4000's identification information string.
 
         :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
-        return self.scpiget(":*idn?")
+        yield self.scpiget(":*idn?")
 
-
+    @sync_async
     def freq(self, freq=None):
         """
         This command sets or queries the tuned center frequency of the WSA.
@@ -89,14 +82,14 @@ class WSA4000(object):
         :returns: the frequency in Hz
         """
         if freq is None:
-            buf = self.scpiget("FREQ:CENTER?")
+            buf = yield self.scpiget("FREQ:CENTER?")
             freq = int(buf)
         else:
             self.scpiset(":FREQ:CENTER %d\n" % freq)
 
-        return freq
+        yield freq
 
-
+    @sync_async
     def fshift(self, shift=None):
         """
         This command sets or queries the frequency shift value.
@@ -106,14 +99,14 @@ class WSA4000(object):
         :returns: the amount of frequency shift
         """
         if shift is None:
-            buf = self.scpiget("FREQ:SHIFT?")
+            buf = yield self.scpiget("FREQ:SHIFT?")
             shift = float(buf)
         else:
             self.scpiset(":FREQ:SHIFT %d\n" % shift)
 
-        return shift
+        yield shift
 
-
+    @sync_async
     def decimation(self, value=None):
         """
         This command sets or queries the rate of decimation of samples in
@@ -128,13 +121,14 @@ class WSA4000(object):
         :returns: the decimation value
         """
         if value is None:
-            buf = self.scpiget("SENSE:DECIMATION?")
+            buf = yield self.scpiget("SENSE:DECIMATION?")
             value = int(buf)
         else:
             self.scpiset(":SENSE:DECIMATION %d\n" % value)
             if value == 1:
                 # verify decimation was disabled correctly
-                if int(self.scpiget("SENSE:DECIMATION?")) != 1:
+                actual = yield self.scpiget("SENSE:DECIMATION?")
+                if int(actual) != 1:
                     # firmware < 2.5.3
                     self.scpiset(":SENSE:DECIMATION %d\n" % 0)
 
@@ -142,9 +136,9 @@ class WSA4000(object):
         if value == 0:
             value = 1
 
-        return value
+        yield value
 
-
+    @sync_async
     def gain(self, gain=None):
         """
         This command sets or queries RFE quantized gain configuration.
@@ -157,13 +151,13 @@ class WSA4000(object):
         :returns: the RF gain value
         """
         if gain is None:
-            gain = self.scpiget("INPUT:GAIN:RF?")
+            gain = yield self.scpiget("INPUT:GAIN:RF?")
         else:
             self.scpiset(":INPUT:GAIN:RF %s\n" % gain)
 
-        return gain.lower()
+        yield gain.lower()
 
-
+    @sync_async
     def ifgain(self, gain=None):
         """
         This command sets or queries variable IF gain stages of the RFE.
@@ -175,15 +169,15 @@ class WSA4000(object):
         :returns: the ifgain in dB
         """
         if gain is None:
-            gain = self.scpiget(":INPUT:GAIN:IF?")
+            gain = yield self.scpiget(":INPUT:GAIN:IF?")
             gain = gain.partition(" ")
             gain = int(gain[0])
         else:
             self.scpiset(":INPUT:GAIN:IF %d\n" % gain)
 
-        return gain
+        yield gain
 
-
+    @sync_async
     def preselect_filter(self, enable=None):
         """
         This command sets or queries the RFE preselect filter selection.
@@ -192,13 +186,13 @@ class WSA4000(object):
         :returns: the RFE preselect filter selection state
         """
         if enable is None:
-            enable = self.scpiget(":INPUT:FILTER:PRESELECT?")
+            enable = yield self.scpiget(":INPUT:FILTER:PRESELECT?")
             enable = bool(int(enable))
         else:
             self.scpiset(":INPUT:FILTER:PRESELECT %d" % int(enable))
-        return enable
+        yield enable
 
-
+    @sync_async
     def antenna(self, number=None):
         """
         This command selects and queries the active antenna port.
@@ -207,11 +201,11 @@ class WSA4000(object):
         :returns: active antenna port
         """
         if number is None:
-            number = self.scpiget(":INPUT:ANTENNA?")
+            number = yield self.scpiget(":INPUT:ANTENNA?")
             number = int(number)
         else:
             self.scpiset(":INPUT:ANTENNA %d" % number)
-        return number
+        yield number
 
 
     def reset(self):
@@ -228,7 +222,7 @@ class WSA4000(object):
         """
         self.scpiset(":sweep:flush\n")
 
-
+    @sync_async
     def trigger(self, settings=None):
         """
         This command sets or queries the type of trigger event.
@@ -242,7 +236,7 @@ class WSA4000(object):
         """
         if settings is None:
             # find out what kind of trigger is set
-            trigstr = self.scpiget(":TRIGGER:TYPE?")
+            trigstr = yield self.scpiget(":TRIGGER:TYPE?")
             if trigstr == "NONE":
                 settings = TriggerSettings("NONE")
 
@@ -251,7 +245,7 @@ class WSA4000(object):
                 settings = TriggerSettings("LEVEL")
 
                 # read the settings from the box
-                trigstr = self.scpiget(":TRIGGER:LEVEL?")
+                trigstr = yield self.scpiget(":TRIGGER:LEVEL?")
                 settings.fstart, settings.fstop, settings.amplitude = trigstr.split(",")
 
                 # convert to integers
@@ -270,7 +264,7 @@ class WSA4000(object):
                 self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings.fstart, settings.fstop, settings.amplitude))
                 self.scpiset(":TRIGGER:TYPE LEVEL")
 
-        return settings
+        yield settings
 
 
 
@@ -289,25 +283,25 @@ class WSA4000(object):
         self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
         self.scpiset(":TRACE:BLOCK:DATA?\n")
 
-
+    @sync_async
     def request_read_perm(self):
         """
         Aquire exclusive permission to read data from the WSA.
 
         :returns: True if allowed to read, False if not
         """
-        lockstr = self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
-        return lockstr == "1"
+        lockstr = yield self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
+        yield lockstr == "1"
 
-
+    @sync_async
     def have_read_perm(self):
         """
         Check if we have permission to read data.
 
         :returns: True if allowed to read, False if not
         """
-        lockstr = self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
-        return lockstr == "1"
+        lockstr = yield self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
+        yield lockstr == "1"
 
 
 
@@ -317,7 +311,7 @@ class WSA4000(object):
 
         :returns: True if no more data, False if more data
         """
-        return self._vrt.eof
+        return self.connector.eof()
 
 
     def has_data(self):
@@ -326,9 +320,9 @@ class WSA4000(object):
 
         :returns: True if there is a packet to read, False if not
         """
-        return self._vrt.has_data()
+        return self.connector.has_data()
 
-
+    @sync_async
     def locked(self, modulestr):
         """
         This command queries the lock status of the RF VCO (Voltage Control
@@ -339,23 +333,21 @@ class WSA4000(object):
         :returns: True if locked
         """
         if modulestr.upper() == 'VCO':
-            buf = self.scpiget("SENSE:LOCK:RF?")
-            return bool(int(buf))
+            buf = yield self.scpiget("SENSE:LOCK:RF?")
+            yield bool(int(buf))
         elif modulestr.upper() == 'CLKREF':
-            buf = self.scpiget("SENSE:LOCK:REFERENCE?")
-            return bool(int(buf))
+            buf = yield self.scpiget("SENSE:LOCK:REFERENCE?")
+            yield bool(int(buf))
         else:
-            return -1
+            yield -1
 
 
+    @sync_async
     def read(self):
         """
         Read a single VRT packet from the WSA.
-
-        See :meth:`pyrf.vrt.Stream.read_packet`.
         """
-        return self._vrt.read_packet()
-
+        return vrt_packet_reader(self.connector.raw_read)
 
     def raw_read(self, num):
         """
@@ -364,7 +356,7 @@ class WSA4000(object):
         :param num: the number of bytes to read
         :returns: bytes
         """
-        return self._sock_vrt.recv(num)
+        return self.connector.raw_read(num)
 
 
     def sweep_add(self, entry):
@@ -388,7 +380,7 @@ class WSA4000(object):
         self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
         self.scpiset(":sweep:entry:save")
 
-
+    @sync_async
     def sweep_read(self, index):
         """
         Read an entry from the sweep list.
@@ -399,7 +391,7 @@ class WSA4000(object):
         """
         ent = SweepEntry()
 
-        entrystr = self.scpiget(":sweep:entry:read? %d" % index)
+        entrystr = yield self.scpiget(":sweep:entry:read? %d" % index)
 
         (value, sep, entrystr) = entrystr.partition(',')
         ent.fstart = int(value)
@@ -437,7 +429,7 @@ class WSA4000(object):
                 (value, sep, trigstr) = trigstr.partition(',')
                 ent.level_amplitude = int(value)
 
-        return ent
+        yield ent
 
 
     def sweep_clear(self):
