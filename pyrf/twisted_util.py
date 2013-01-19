@@ -53,6 +53,10 @@ class VRTClient(Protocol):
         self._buf.write(remaining)
         return data
 
+    def _bufLength(self):
+        self._buf.seek(0, 2)
+        return self._buf.tell()
+
     def dataReceived(self, data):
         self._bufAppend(data)
         while self._expected_responses:
@@ -62,6 +66,10 @@ class VRTClient(Protocol):
             callback, num_bytes = self._expected_responses.pop(0)
 
             callback(data)
+
+        if self._bufLength() > TOO_MUCH_UNEXPECTED_DATA:
+            self.transport.loseConnection()
+            raise VRTTooMuchData("Too much unexpected data received")
 
     def expectingData(self, num_bytes):
         d = defer.Deferred()
