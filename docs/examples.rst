@@ -55,3 +55,10 @@ as a spectrum display using NumPy_ and matplotlib_.
 
    Example output of ``plot_fft.py``
 
+
+twisted_show_i_q.py
+-------------------
+
+This is a Twisted version of the show_i_q.py example above.
+
+.. literalinclude:: ../examples/twisted_show_i_q.py
