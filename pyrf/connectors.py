@@ -124,7 +124,7 @@ class TwistedConnector(object):
                 d = defer.maybeDeferred(lambda: d)
             except StopIteration:
                 print "stopped"
-                return
+                return result
             print "< adding"
             d.addCallback(advance)
             print "> done adding"
