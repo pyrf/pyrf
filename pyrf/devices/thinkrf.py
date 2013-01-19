@@ -12,7 +12,16 @@ class WSA4000(object):
         :class:`PlainSocketConnector <pyrf.connectors.blocking.PlainSocketConnector>`
         instance
 
-    :meth:`WSA4000.connect` must be called before other methods are used.
+    :meth:`connect() <WSA4000.connect>` must be called before other methods are used.
+
+    .. note::
+
+       The following methods will either block then return a result
+       or if you passed a
+       :class:`TwistedConnector <pyrf.connectors.twisted_async.TwistedConnector>`
+       instance to the constructor they will immediately return a
+       Twisted Deferred object.
+
     """
 
     ADC_DYNAMIC_RANGE = 72.5
