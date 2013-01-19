@@ -26,7 +26,7 @@ class VRTClient(Protocol):
     A Twisted protocol for the VRT connection
     """
     TOO_MUCH_UNEXPECTED_DATA = 10**6
-    _sful_data = None, 0
+    _buf = None
 
     def __init__(self):
         self.eof = False
@@ -34,36 +34,34 @@ class VRTClient(Protocol):
 
     def makeConnection(self, transport):
         Protocol.makeConnection(self, transport)
-        self._sful_data = StringIO(), 0
+        self._buf = StringIO()
+
+    def _bufAppend(self, data):
+        self._buf.seek(0, 2)
+        self._buf.write(data)
+
+    def _bufConsume(self, num_bytes):
+        "returns None if not enough bytes available"
+        self._buf.seek(0, 2)
+        if self._buf.tell() < num_bytes:
+            return None
+        self._buf.seek(0)
+        data = self._buf.read(num_bytes)
+        remaining = self._buf.read()
+        self._buf.seek(0)
+        self._buf.truncate()
+        self._buf.write(remaining)
+        return data
 
     def dataReceived(self, data):
-        buf, offset = self._sful_data
-        buf.seek(0, 2)
-        buf.write(data)
-        blen = buf.tell() # how many bytes total is in the buffer
-        buf.seek(offset)
+        self._bufAppend(data)
         while self._expected_responses:
-            exp_callback, exp_bytes = self._expected_responses.pop(0)
-            if blen - offset < exp_bytes:
+            data = self._bufConsume(self._expected_responses[0][1])
+            if not data:
                 break
-            d = buf.read(exp_bytes)
-            offset += exp_bytes
-            exp_callback(d)
+            callback, num_bytes = self._expected_responses.pop(0)
 
-        if self.transport.disconnecting: # XXX: argh stupid hack borrowed right from LineReceiver
-            return # dataReceived won't be called again, so who cares about consistent state
-
-        if blen - offset > self.TOO_MUCH_UNEXPECTED_DATA:
-            self.transport.loseConnection()
-            raise VRTTooMuchData("received too much unexpected data!")
-
-        if offset != 0:
-            b = buf.read()
-            buf.seek(0)
-            buf.truncate()
-            buf.write(b)
-            offset = 0
-        self._sful_data = buf, offset
+            callback(data)
 
     def expectingData(self, num_bytes):
         d = defer.Deferred()
@@ -75,7 +73,13 @@ class VRTClient(Protocol):
 
         self._expected_responses.append((callback, num_bytes))
 
-        self.dataReceived("") # in case enough data is already waiting
+        #self.dataReceived("")
+        #return d
+
+        data = self._bufConsume(num_bytes)
+        if data:
+            self._expected_responses.pop(0)
+            callback(data)
         return d
 
     def connectionLost(self, reason):

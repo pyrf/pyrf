@@ -10,16 +10,13 @@ class FakeTransport(object):
 class TestVRTClient(unittest.TestCase):
     def test_client(self):
         def got_it(d):
-            self.assertEquals(d, "hello")
+            print d
+            self.assertEquals(d[:-1], "hello")
+            c.expectingData(6).addCallback(got_it)
 
         c = VRTClient()
         c.makeConnection(FakeTransport())
-        c.dataReceived("hellohello"*10)
-        c.expectingData(5).addCallback(got_it)
-        c.expectingData(5).addCallback(got_it)
-        c.expectingData(5).addCallback(got_it)
-        c.expectingData(5).addCallback(got_it)
-        c.expectingData(5).addCallback(got_it)
-        c.expectingData(5).addCallback(got_it)
+        c.expectingData(6).addCallback(got_it)
+        c.dataReceived(''.join("hello%d" % i for i in range(6)))
 
 

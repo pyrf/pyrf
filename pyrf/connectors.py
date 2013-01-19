@@ -120,7 +120,7 @@ class TwistedConnector(object):
         def advance(result):
             try:
                 d = gen.send(result)
-                print d
+                print 'generated', repr(d)
                 d = defer.maybeDeferred(lambda: d)
             except StopIteration:
                 print "stopped"
