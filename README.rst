@@ -13,41 +13,25 @@ Documentation
 * `Documentation for this API <http://pyrf.rtfd.org>`_
 * `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
 
-
-Cross-platform GUI Included
----------------------------
+GUI Example Included
+--------------------
 
 .. image:: http://pyrf.readthedocs.org/en/latest/_images/wsa4000demo.png
 
-Example Code
-------------
 
-::
+User Requirements
+-----------------
 
-    from pyrf.devices.thinkrf import WSA4000
+* Linux, Windows or OSX
+* Python 2.5 - 2.7
+* NumPy for GUI and FFT calculations
+* PySide for GUI
+* Twisted + zope.interface for Twisted examples
+* pywin32 for Twisted examples on Windows
 
-    # connect to wsa
-    dut = WSA4000()
-    dut.connect("10.126.110.103")
+Build Requirements
+------------------
 
-    # setup test conditions
-    dut.request_read_perm()
-    dut.ifgain(0)
-    dut.freq(2450e6)
-    dut.gain('low')
-    dut.fshift(0)
-    dut.decimation(0)
+* Sphinx + setuptools to build documentation
+* Py2exe to compile GUI to .exe on Windows
 
-    # capture 1 packet with 1024 samples
-    dut.capture(1024, 1)
-
-    # skip the context packets
-    while not dut.eof():
-        pkt = dut.read()
-
-        if pkt.is_data_packet():
-            break
-
-    # print I/Q data
-    for i, q in pkt.data:
-        print "%d,%d" % (i, q)
