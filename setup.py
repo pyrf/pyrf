@@ -7,6 +7,23 @@ try:
 except ImportError:
     from distutils.core import setup
 
+extras = {}
+try:
+    import py2exe
+    extras.update({
+        'options':{
+            'py2exe':{
+                'compressed': 1,
+                'bundle_files': 1,
+                'excludes': ['Tkconstants', 'Tkinter', 'tcl'],
+                },
+            },
+        'zipfile':None,
+        'windows':['wsa4000blocking.py'],
+        })
+except ImportError:
+    pass
+
 setup(
     name='pyrf',
     version='0.3.0-dev',
@@ -46,4 +63,5 @@ setup(
             "wsa4000blocking = pyrf.gui.wsa4000blocking:main",
             ],
         },
-)
+    **extras
+    )
