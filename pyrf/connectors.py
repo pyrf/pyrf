@@ -1,7 +1,6 @@
 import socket
 from functools import wraps
 
-from pyrf.vrt import Stream
 from pyrf import twisted_util
 
 try:
@@ -41,7 +40,6 @@ class PlainSocketConnector(object):
         self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock_vrt.connect((host, VRT_PORT))
-        self._vrt = Stream(self._sock_vrt)
 
     def disconnect(self):
         self._sock_scpi.shutdown(socket.SHUT_RDWR)
@@ -58,24 +56,15 @@ class PlainSocketConnector(object):
         return buf
 
     def eof(self):
-        return self._vrt.eof
+        # FIXME: lies
+        return False
 
     def has_data(self):
+        # FIXME: broken
         return self._vrt.has_data()
-
-    def read(self):
-        return self._vrt.read_packet()
 
     def raw_read(self, num):
         return self._sock_vrt.recv(num)
-
-    def has_data(self):
-        """
-        Check if there is VRT data to read.
-
-        :returns: True if there is a packet to read, False if not
-        """
-        return self._vrt.has_data()
 
     def sync_async(self, gen):
         """
@@ -124,7 +113,7 @@ class TwistedConnector(object):
 
     def scpiget(self, cmd):
         self._scpi.transport.write("%s\n" % cmd)
-        return self._scpi.expectingLine()
+        return self._scpi.expectingData()
 
     def sync_async(self, gen):
         def advance(result):
@@ -142,3 +131,6 @@ class TwistedConnector(object):
 
     def eof(self):
         return self._vrt.eof
+
+    def raw_read(self, num_bytes):
+        return self._vrt.expectingData(num_bytes)

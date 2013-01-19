@@ -1,11 +1,14 @@
 from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
 from pyrf.connectors import PlainSocketConnector, sync_async
+from pyrf.vrt import vrt_packet_reader
 
 class WSA4000(object):
     """
     Interface for WSA4000
 
-    :param connector: Connector class to use for SCPI/VRT connections
+    :param connector: Connector object to use for SCPI/VRT connections,
+        defaults to a new :class:`pyrf.connectors.PlainSocketConnector`
+        instance
 
     :meth:`.connect` must be called before other methods are used.
     """
@@ -13,11 +16,6 @@ class WSA4000(object):
     ADC_DYNAMIC_RANGE = 72.5
 
     def __init__(self, connector=None):
-        """
-        :param connector: object to use for connections to device,
-            defaults to a new :class:`pyrf.connectors.PlainSocketConnector`
-            instance
-        """
         if not connector:
             connector = PlainSocketConnector()
         self.connector = connector
@@ -343,16 +341,14 @@ class WSA4000(object):
         else:
             yield -1
 
+
     @sync_async
     def read(self):
         """
         Read a single VRT packet from the WSA.
-
-        See :meth:`pyrf.vrt.Stream.read_packet`.
         """
-        yield self.connector.read()
+        return vrt_packet_reader(self.connector.raw_read)
 
-    @sync_async
     def raw_read(self, num):
         """
         Raw read of VRT socket data from the WSA.
@@ -360,7 +356,7 @@ class WSA4000(object):
         :param num: the number of bytes to read
         :returns: bytes
         """
-        yield self.connector.raw_read(num)
+        return self.connector.raw_read(num)
 
 
     def sweep_add(self, entry):
