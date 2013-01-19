@@ -1,17 +1,17 @@
 
 .. _demo-gui:
 
-GUI Example: wsa4000demo
-========================
+GUI Example: wsa4000blocking
+============================
 
-``wsa4000demo`` is a cross-platform GUI application built with the
+``wsa4000blocking`` is a cross-platform GUI application built with the
 Qt_ toolkit and PySide_ bindings for Python.
 
 .. _Qt: http://qt.digia.com/
 .. _PySide: http://qt-project.org/wiki/PySide
 
-You may run application by launching the ``wsa4000demo.py`` script in
-the ``examples/gui`` directory.
+You may run application by launching the ``wsa4000blocking`` command
+after installing the package.
 
 You may specify a device on the command line or open a device after the
 GUI has launched.  Adding ``--reset`` to the command line parameters
@@ -22,7 +22,7 @@ wsa4000demo.py
 
 This is the script that launches the application.
 
-.. literalinclude:: ../examples/gui/wsa4000demo.py
+.. literalinclude:: ../pyrf/gui/wsa4000blocking.py
 
 gui.py
 ------
@@ -47,7 +47,7 @@ and placed to left of the controls.
    The next release will move the blocking call and data processing
    into a separate process.
 
-.. literalinclude:: ../examples/gui/gui.py
+.. literalinclude:: ../pyrf/gui/gui.py
 
 spectrum.py
 -----------
@@ -61,11 +61,11 @@ The ``SpectrumView`` widget is divided into three parts:
 The utility functions ``dBm_labels`` and ``MHz_labels`` compute the
 positions and labels for each axis.
 
-.. literalinclude:: ../examples/gui/spectrum.py
+.. literalinclude:: ../pyrf/gui/spectrum.py
 
 util.py
 -------
 
 Pretty-print frequency values
 
-.. literalinclude:: ../examples/gui/util.py
+.. literalinclude:: ../pyrf/gui/util.py
