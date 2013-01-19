@@ -40,4 +40,5 @@ setup(
         "Topic :: Software Development :: Testing",
         "Topic :: System :: Hardware",
         ],
+    test_suite='pyrf.tests',
 )

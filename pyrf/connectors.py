@@ -125,7 +125,9 @@ class TwistedConnector(object):
             except StopIteration:
                 print "stopped"
                 return
+            print "< adding"
             d.addCallback(advance)
+            print "> done adding"
             return d
 
         return advance(None)
