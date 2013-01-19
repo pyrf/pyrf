@@ -16,9 +16,7 @@ def show_i_q():
 
     # setup test conditions
     yield dut.reset()
-    print "here"
     yield dut.request_read_perm()
-    print "there"
     yield dut.ifgain(0)
     yield dut.freq(2450e6)
     yield dut.gain('low')

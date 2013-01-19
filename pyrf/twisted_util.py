@@ -67,9 +67,7 @@ class VRTClient(Protocol):
         d = defer.Deferred()
 
         def callback(data):
-            print "VRT data: %r" %data
             d.callback(data)
-            print "nope"
 
         self._expected_responses.append((callback, num_bytes))
 
@@ -100,7 +98,7 @@ class SCPIClient(Protocol):
         self._expected_responses = []
 
     def connectionMade(self):
-        print "connectionMade"
+        pass
 
     def expectingData(self):
         d = defer.Deferred()
@@ -108,7 +106,6 @@ class SCPIClient(Protocol):
         return d
 
     def dataReceived(self, data):
-        print "received: %r" % data
         self._expected_responses.pop(0).callback(data)
 
 class SCPIClientFactory(Factory):
