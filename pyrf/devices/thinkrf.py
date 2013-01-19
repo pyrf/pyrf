@@ -8,10 +8,11 @@ class WSA4000(object):
     Interface for WSA4000
 
     :param connector: Connector object to use for SCPI/VRT connections,
-        defaults to a new :class:`pyrf.connectors.blocking.PlainSocketConnector`
+        defaults to a new
+        :class:`PlainSocketConnector <pyrf.connectors.blocking.PlainSocketConnector>`
         instance
 
-    :meth:`.connect` must be called before other methods are used.
+    :meth:`WSA4000.connect` must be called before other methods are used.
     """
 
     ADC_DYNAMIC_RANGE = 72.5

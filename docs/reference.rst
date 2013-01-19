@@ -8,9 +8,76 @@ pyrf.devices
 .thinkrf
 ~~~~~~~~
 
-.. automodule:: pyrf.devices.thinkrf
-   :members:
-   :undoc-members:
+.. module:: pyrf.devices.thinkrf
+
+.. autoclass:: WSA4000
+
+   .. automethod:: connect(host)
+
+   .. note::
+
+      The following methods will either block then return a result
+      or if you passed a
+      :class:`TwistedConnector <pyrf.connectors.twisted_async.TwistedConnector>`
+      object to the constructor they will immediately return a
+      Twisted Deferred object.
+
+   .. automethod:: antenna(number=None)
+
+   .. automethod:: capture(spp, ppb)
+
+   .. automethod:: decimation(value=None)
+
+   .. automethod:: disconnect()
+
+   .. automethod:: eof()
+
+   .. automethod:: flush()
+
+   .. automethod:: flush_captures()
+
+   .. automethod:: freq(freq=None)
+
+   .. automethod:: fshift(shift=None)
+
+   .. automethod:: gain(gain=None)
+
+   .. automethod:: has_data()
+
+   .. automethod:: have_read_perm()
+
+   .. automethod:: id()
+
+   .. automethod:: ifgain(gain=None)
+
+   .. automethod:: locked(modulestr)
+
+   .. automethod:: preselect_filter(enable=None)
+
+   .. automethod:: raw_read(num)
+
+   .. automethod:: read()
+
+   .. automethod:: request_read_perm()
+
+   .. automethod:: reset()
+
+   .. automethod:: scpiget(cmd)
+
+   .. automethod:: scpiset(cmd)
+
+   .. automethod:: sweep_add(entry)
+
+   .. automethod:: sweep_clear()
+
+   .. automethod:: sweep_read(index)
+
+   .. automethod:: sweep_start(start_id=None)
+
+   .. automethod:: sweep_stop()
+
+   .. automethod:: trigger(settings=None)
+
 
 pyrf.connectors
 ---------------
