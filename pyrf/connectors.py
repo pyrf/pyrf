@@ -1,6 +1,7 @@
 import socket
 from functools import wraps
 
+from pyrf.util import socketread
 from pyrf import twisted_util
 
 try:
@@ -64,7 +65,7 @@ class PlainSocketConnector(object):
         return self._vrt.has_data()
 
     def raw_read(self, num):
-        return self._sock_vrt.recv(num)
+        return socketread(self._sock_vrt, num)
 
     def sync_async(self, gen):
         """
