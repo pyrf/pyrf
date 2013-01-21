@@ -21,5 +21,5 @@ def read_data_and_reflevel(dut, points=1024):
         if 'reflevel' in pkt.fields:
             reference_pkt = pkt
 
-    yield pkt, reference_pkt
+    defer.returnValue((pkt, reference_pkt))
 
