@@ -17,8 +17,10 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
+
+import logging
+logger = logging.getLogger(__name__)
 
 class TwistedConnector(object):
     """
@@ -162,6 +164,7 @@ class SCPIClient(Protocol):
             # prevent reordering
             self._pending.append((cmd, None))
         else:
+            logger.debug('scpiset %r', cmd)
             self.transport.write(cmd)
 
     def scpiget(self, cmd):
@@ -172,15 +175,23 @@ class SCPIClient(Protocol):
         else:
             self._pending = [('', d)]
             self.transport.write(cmd)
+            logger.debug('scpiget %r', cmd)
         return d
 
     def dataReceived(self, data):
         cmd, d = self._pending.pop(0)
+        logger.debug('scpigot %r', data)
         if d:
             d.callback(data)
 
-        if self._pending:
-            self.transport.write(self._pending[0][0])
+        while self._pending:
+            cmd, d = self._pending[0]
+            logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
+            self.transport.write(cmd)
+            if d:
+                break
+            self._pending.pop(0)
+
 
 class SCPIClientFactory(Factory):
     def startedConnecting(self, connector):
