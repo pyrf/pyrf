@@ -4,6 +4,9 @@ from pyrf.util import socketread
 
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PlainSocketConnector(object):
     """
     This connector makes SCPI/VRT socket connections using plain sockets.
@@ -23,11 +26,16 @@ class PlainSocketConnector(object):
         self._sock_vrt.close()
 
     def scpiset(self, cmd):
-        self._sock_scpi.send("%s\n" % cmd)
+        cmd = "%s\n" % cmd
+        logger.debug('scpiset %r', cmd)
+        self._sock_scpi.send(cmd)
 
     def scpiget(self, cmd):
-        self._sock_scpi.send("%s\n" % cmd)
+        cmd = "%s\n" % cmd
+        logger.debug('scpiset %r', cmd)
+        self._sock_scpi.send(cmd)
         buf = self._sock_scpi.recv(1024)
+        logger.debug('scpigot %r', buf)
         return buf
 
     def eof(self):
