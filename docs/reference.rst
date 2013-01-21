@@ -95,10 +95,17 @@ pyrf.config
    :members:
    :undoc-members:
 
-pyrf.vrt
---------
+pyrf.numpy_util
+---------------
 
-.. automodule:: pyrf.vrt
+.. automodule:: pyrf.numpy_util
+   :members:
+   :undoc-members:
+
+pyrf.twisted_util
+-----------------
+
+.. automodule:: pyrf.twisted_util
    :members:
    :undoc-members:
 
@@ -109,9 +116,10 @@ pyrf.util
    :members:
    :undoc-members:
 
-pyrf.numpy_util
----------------
+pyrf.vrt
+--------
 
-.. automodule:: pyrf.numpy_util
+.. automodule:: pyrf.vrt
    :members:
    :undoc-members:
+
