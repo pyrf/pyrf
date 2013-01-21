@@ -163,7 +163,8 @@ class MainPanel(QtGui.QWidget):
         self._gain_box = gain
         self._read_update_gain_box()
         def new_gain():
-            self.dut.gain(gain.currentText().split()[-1].lower())
+            g = gain.currentText().split()[-1].lower().encode('ascii')
+            self.dut.gain(g)
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
