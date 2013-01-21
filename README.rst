@@ -25,9 +25,9 @@ User Requirements
 * Linux, Windows or OSX
 * Python 2.5 - 2.7
 * NumPy for GUI and FFT calculations
-* PySide for GUI
-* Twisted + zope.interface for Twisted examples
-* pywin32 for Twisted examples on Windows
+* PySide and `qt4reactor <https://github.com/ghtdak/qtreactor>`_ for GUI
+* Twisted and zope.interface for GUI and Twisted examples
+* pywin32 for GUI and Twisted examples on Windows
 
 Build Requirements
 ------------------
