@@ -61,6 +61,7 @@ setup(
     entry_points={
         'gui_scripts': [
             "wsa4000blocking = pyrf.gui.wsa4000blocking:main",
+            "wsa4000gui = pyrf.gui.wsa4000gui:main",
             ],
         },
     **extras

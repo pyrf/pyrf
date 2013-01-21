@@ -17,13 +17,9 @@ class SpectrumView(QtGui.QWidget):
     A complete spectrum view with left/bottom axis and plot
     """
 
-    def __init__(self, powdata, center_freq, decimation_factor):
+    def __init__(self):
         super(SpectrumView, self).__init__()
-        self.plot = SpectrumViewPlot(powdata, center_freq, decimation_factor)
-        self.left = SpectrumViewLeftAxis()
-        self.bottom = SpectrumViewBottomAxis()
-        self.bottom.update_params(center_freq, decimation_factor)
-        self.initUI()
+        self.plot = None
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -40,6 +36,14 @@ class SpectrumView(QtGui.QWidget):
         self.setLayout(grid)
 
     def update_data(self, powdata, center_freq, decimation_factor):
+        if not self.plot:
+            self.plot = SpectrumViewPlot(powdata, center_freq, decimation_factor)
+            self.left = SpectrumViewLeftAxis()
+            self.bottom = SpectrumViewBottomAxis()
+            self.bottom.update_params(center_freq, decimation_factor)
+            self.initUI()
+            return
+
         if (self.plot.center_freq, self.plot.decimation_factor) != (
                 center_freq, decimation_factor):
             self.bottom.update_params(center_freq, decimation_factor)

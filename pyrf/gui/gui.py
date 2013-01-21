@@ -2,7 +2,7 @@
 import sys
 import socket
 
-from PySide import QtGui, QtCore
+from PySide import QtGui
 from spectrum import SpectrumView
 from util import frequency_text
 
@@ -11,9 +11,10 @@ from pyrf.util import read_data_and_reflevel
 from pyrf.numpy_util import compute_fft
 
 DEVICE_FULL_SPAN = 125e6
-REFRESH_CHARTS = 0.05
+
 
 class MainWindow(QtGui.QMainWindow):
+
     def __init__(self, name=None):
         super(MainWindow, self).__init__()
         self.initUI()
@@ -24,10 +25,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.open_device_dialog()
         self.show()
-
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.update_charts)
-        timer.start(REFRESH_CHARTS)
 
     def initUI(self):
         openAction = QtGui.QAction('&Open Device', self)
@@ -40,7 +37,7 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
 
-        self.setWindowTitle('ThinkRF WSA4000')
+        self.setWindowTitle('PyRF')
 
     def open_device_dialog(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
@@ -66,7 +63,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
-        self.setWindowTitle('ThinkRF WSA4000: %s' % name)
+        self.setWindowTitle('PyRF: %s' % name)
 
     def update_charts(self):
         if self.dut is None:
@@ -79,15 +76,21 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
-        self.get_freq_mhz()
-        self.get_decimation()
+        self.center_freq = None
+        self.decimation_factor = None
         self.decimation_points = None
-        data, reflevel = read_data_and_reflevel(dut)
-        self.screen = SpectrumView(
-            compute_fft(dut, data, reflevel),
+        self.screen = SpectrumView()
+        self.initDUT()
+        self.initUI()
+
+    def initDUT(self):
+        self.center_freq = self.dut.freq()
+        self.decimation_factor = self.dut.decimation()
+        data, reflevel = read_data_and_reflevel(self.dut)
+        self.screen.update_data(
+            compute_fft(self.dut, data, reflevel),
             self.center_freq,
             self.decimation_factor)
-        self.initUI()
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -119,53 +122,81 @@ class MainPanel(QtGui.QWidget):
         self.setLayout(grid)
         self.show()
 
+    def _read_update_antenna_box(self):
+        self._antenna_box.setCurrentIndex(self.dut.antenna() - 1)
+
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
-        antenna.setCurrentIndex(self.dut.antenna() - 1)
+        self._antenna_box = antenna
+        self._read_update_antenna_box()
         def new_antenna():
             self.dut.antenna(int(antenna.currentText().split()[-1]))
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
+    def _read_update_bpf_box(self):
+        self._bpf_box.setCurrentIndex(0 if self.dut.preselect_filter() else 1)
+
     def _bpf_control(self):
         bpf = QtGui.QComboBox(self)
         bpf.addItem("BPF On")
         bpf.addItem("BPF Off")
-        bpf.setCurrentIndex(0 if self.dut.preselect_filter() else 1)
+        self._bpf_box = bpf
+        self._read_update_bpf_box()
         def new_bpf():
             self.dut.preselect_filter("On" in bpf.currentText())
         bpf.currentIndexChanged.connect(new_bpf)
         return bpf
+
+    def _read_update_gain_box(self):
+        gain_index = self._gain_values.index(self.dut.gain())
+        self._gain_box.setCurrentIndex(gain_index)
 
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
         gain_values = ['High', 'Med', 'Low', 'VLow']
         for g in gain_values:
             gain.addItem("RF Gain: %s" % g)
-        gain_index = [g.lower() for g in gain_values].index(self.dut.gain())
-        gain.setCurrentIndex(gain_index)
+        self._gain_values = [g.lower() for g in gain_values]
+        self._gain_box = gain
+        self._read_update_gain_box()
         def new_gain():
             self.dut.gain(gain.currentText().split()[-1].lower())
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
+    def _read_update_ifgain_box(self):
+        self._ifgain_box.setValue(int(self.dut.ifgain()))
+
     def _ifgain_control(self):
         ifgain = QtGui.QSpinBox(self)
         ifgain.setRange(-10, 34)
         ifgain.setSuffix(" dB")
-        ifgain.setValue(int(self.dut.ifgain()))
+        self._ifgain_box = ifgain
+        self._read_update_ifgain_box()
         def new_ifgain():
             self.dut.ifgain(ifgain.value())
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
 
+    def _read_update_freq_edit(self):
+        "Get current frequency from self.dut and update the edit box"
+        self.center_freq = self.dut.freq()
+        self._update_freq_edit()
+
+    def _update_freq_edit(self):
+        "Update the frequency edit box from self.center_freq"
+        if self.center_freq is None:
+            self._freq_edit.setText("---")
+        else:
+            self._freq_edit.setText("%0.1f" % (self.center_freq / 1e6))
+
     def _freq_controls(self):
         freq = QtGui.QLineEdit("")
-        def read_freq():
-            freq.setText("%0.1f" % self.get_freq_mhz())
-        read_freq()
+        self._freq_edit = freq
+        self._read_update_freq_edit()
         def write_freq():
             try:
                 f = float(freq.text())
@@ -185,7 +216,8 @@ class MainPanel(QtGui.QWidget):
             try:
                 f = float(freq.text())
             except ValueError:
-                return read_freq()
+                self._update_freq_edit()
+                return
             delta = float(steps.currentText().split()[1]) * factor
             freq.setText("%0.1f" % (f + delta))
             write_freq()
@@ -196,34 +228,45 @@ class MainPanel(QtGui.QWidget):
 
         return freq, steps, freq_plus, freq_minus
 
+    def _read_update_span_rbw_boxes(self):
+        self.decimation_factor = self.dut.decimation()
+        self._span_box.setCurrentIndex(
+            self._decimation_values.index(self.decimation_factor))
+        self._update_rbw_box()
+
+    def _update_rbw_box(self):
+        d = self.decimation_factor
+        for i, p in enumerate(self._points_values):
+            r = DEVICE_FULL_SPAN / d / p
+            self._rbw_box.setItemText(i, "RBW: %s" % frequency_text(r))
+            if self.decimation_points and self.decimation_points == d * p:
+                self._rbw_box.setCurrentIndex(i)
+        self.points = self._points_values[self._rbw_box.currentIndex()]
+
     def _span_rbw_controls(self):
         span = QtGui.QComboBox(self)
         decimation_values = [1] + [2 ** x for x in range(2, 10)]
         for d in decimation_values:
             span.addItem("Span: %s" % frequency_text(DEVICE_FULL_SPAN / d))
-        span.setCurrentIndex(decimation_values.index(self.dut.decimation()))
+        self._decimation_values = decimation_values
+        self._span_box = span
         def new_span():
             self.set_decimation(decimation_values[span.currentIndex()])
+            self._update_rbw_box()
             build_rbw()
         span.currentIndexChanged.connect(new_span)
 
         rbw = QtGui.QComboBox(self)
-        points_values = [2 ** x for x in range(8, 16)]
-        rbw.addItems([str(p) for p in points_values])
-        def build_rbw():
-            d = self.decimation_factor
-            for i, p in enumerate(points_values):
-                r = DEVICE_FULL_SPAN / d / p
-                rbw.setItemText(i, "RBW: %s" % frequency_text(r))
-                if self.decimation_points and self.decimation_points == d * p:
-                    rbw.setCurrentIndex(i)
-            self.points = points_values[rbw.currentIndex()]
-        build_rbw()
+        self._points_values = [2 ** x for x in range(8, 16)]
+        self._rbw_box = rbw
+        rbw.addItems([str(p) for p in self._points_values])
+        self._read_update_span_rbw_boxes()
+
         def new_rbw():
-            self.points = points_values[rbw.currentIndex()]
+            self.points = self._points_values[rbw.currentIndex()]
             self.decimation_points = self.decimation_factor * self.points
-        rbw.setCurrentIndex(points_values.index(1024))
-        new_rbw()
+        rbw.setCurrentIndex(self._points_values.index(1024))
+        #new_rbw()
         rbw.currentIndexChanged.connect(new_rbw)
 
         return span, rbw
@@ -238,20 +281,13 @@ class MainPanel(QtGui.QWidget):
             self.center_freq,
             self.decimation_factor)
 
-    def get_freq_mhz(self):
-        self.center_freq = self.dut.freq()
-        return self.center_freq / 1e6
-
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
         self.dut.freq(self.center_freq)
 
-    def get_decimation(self):
-        d = self.dut.decimation()
-        self.decimation_factor = 1 if d == 0 else d
-
     def set_decimation(self, d):
         self.decimation_factor = 1 if d == 0 else d
         self.dut.decimation(d)
+
 
 
