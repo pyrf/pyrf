@@ -1,8 +1,8 @@
 
 .. _demo-gui:
 
-GUI Example: wsa4000gui
-=======================
+GUI
+===
 
 ``wsa4000gui`` is a cross-platform GUI application built with the
 Qt_ toolkit and PySide_ bindings for Python.
