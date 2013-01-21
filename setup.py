@@ -19,7 +19,7 @@ try:
                 },
             },
         'zipfile':None,
-        'windows':['wsa4000blocking.py'],
+        'windows':['wsa4000gui.py'],
         })
 except ImportError:
     pass
