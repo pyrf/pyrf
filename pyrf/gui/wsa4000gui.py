@@ -15,6 +15,10 @@ class TwistedMainWindow(MainWindow):
         self._reactor = reactor
         super(TwistedMainWindow, self).__init__()
 
+    def closeEvent(self, event):
+        event.accept()
+        self._reactor.stop()
+
     @defer.inlineCallbacks
     def open_device(self, name):
         # late import because installReactor is being used
@@ -85,8 +89,6 @@ def main():
     # late import because installReactor is being used
     from twisted.internet import reactor
     ex = TwistedMainWindow(reactor)
-    #QtCore.QTimer.singleShot(0, reactor.runReturn)
-    #sys.exit(app.exec_())
     reactor.run()
 
 
