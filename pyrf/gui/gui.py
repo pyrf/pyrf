@@ -254,7 +254,6 @@ class MainPanel(QtGui.QWidget):
         def new_span():
             self.set_decimation(decimation_values[span.currentIndex()])
             self._update_rbw_box()
-            build_rbw()
         span.currentIndexChanged.connect(new_span)
 
         rbw = QtGui.QComboBox(self)
