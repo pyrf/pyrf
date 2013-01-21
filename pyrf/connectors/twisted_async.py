@@ -48,11 +48,10 @@ class TwistedConnector(object):
         pass # FIXME
 
     def scpiset(self, cmd):
-        self._scpi.transport.write("%s\n" % cmd)
+        self._scpi.scpiset("%s\n" % cmd)
 
     def scpiget(self, cmd):
-        self._scpi.transport.write("%s\n" % cmd)
-        return self._scpi.expectingData()
+        return self._scpi.scpiget("%s\n" % cmd)
 
     def sync_async(self, gen):
         def advance(result):
@@ -153,19 +152,35 @@ class VRTClientFactory(Factory):
         pass
 
 class SCPIClient(Protocol):
-    def __init__(self):
-        self._expected_responses = []
+    _pending = None
 
     def connectionMade(self):
         pass
 
-    def expectingData(self):
+    def scpiset(self, cmd):
+        if self._pending:
+            # prevent reordering
+            self._pending.append((cmd, None))
+        else:
+            self.transport.write(cmd)
+
+    def scpiget(self, cmd):
         d = defer.Deferred()
-        self._expected_responses.append(d)
+        if self._pending:
+            # command pipelining not supported
+            self._pending.append((cmd, d))
+        else:
+            self._pending = [('', d)]
+            self.transport.write(cmd)
         return d
 
     def dataReceived(self, data):
-        self._expected_responses.pop(0).callback(data)
+        cmd, d = self._pending.pop(0)
+        if d:
+            d.callback(data)
+
+        if self._pending:
+            self.transport.write(self._pending[0][0])
 
 class SCPIClientFactory(Factory):
     def startedConnecting(self, connector):
