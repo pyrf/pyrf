@@ -2,16 +2,16 @@
 .. image:: https://raw.github.com/pyrf/pyrf/master/docs/pyrf_logo.png
    :alt: PyRF logo
 
-PyRF
-====
+Hardware Support
+----------------
 
 This library currently supports development for the `WSA4000 Platform`_,
 but may support additional hardware in the future.
 
 .. _WSA4000 Platform: http://www.thinkrf.com/products.html
 
-Documentation
--------------
+Links
+-----
 
 * `Documentation for this API <http://pyrf.rtfd.org>`_
 * `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
