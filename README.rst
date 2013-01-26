@@ -1,4 +1,6 @@
 
+.. image:: http://pyrf.readthedocs.org/en/latest/_images/pyrf_logo.png
+
 PyRF
 ====
 
