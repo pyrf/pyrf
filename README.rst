@@ -1,5 +1,6 @@
 
 .. image:: https://raw.github.com/pyrf/pyrf/master/docs/pyrf_logo.png
+   :alt: PyRF logo
 
 PyRF
 ====
@@ -19,6 +20,7 @@ GUI Example Included
 --------------------
 
 .. image:: https://raw.github.com/pyrf/pyrf/master/docs/wsa4000demo.png
+   :alt: wsa4000gui screen shot
 
 
 User Requirements
