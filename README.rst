@@ -1,5 +1,5 @@
 
-.. image:: http://pyrf.readthedocs.org/en/latest/_images/pyrf_logo.png
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/pyrf_logo.png
 
 PyRF
 ====
@@ -18,7 +18,7 @@ Documentation
 GUI Example Included
 --------------------
 
-.. image:: http://pyrf.readthedocs.org/en/latest/_images/wsa4000demo.png
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/wsa4000demo.png
 
 
 User Requirements
