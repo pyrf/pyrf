@@ -48,7 +48,7 @@ copyright = u'2012-2013, ThinkRF Corporation'
 # built documents.
 #
 # The short X.Y version.
-version = '0.2.4'
+version = '0.2.5'
 # The full version, including alpha/beta/rc tags.
 release = version # + '-dev'
 
