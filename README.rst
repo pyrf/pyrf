@@ -13,6 +13,7 @@ but may support additional hardware in the future.
 Links
 -----
 
+* `Official github page <https://github.com/pyrf/pyrf>`_
 * `Documentation for this API <http://pyrf.rtfd.org>`_
 * `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
 
