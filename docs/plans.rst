@@ -2,21 +2,9 @@
 Planned Development
 ===================
 
-Blocking Sockets
-----------------
-
-This library will continue to be usable in a simple
-blocking-socket manner the way the current GUI example does.
-
-Simple data capture and processing needs can be accomplished
-with few lines of code.
-
-Twisted and Async
+Processing Blocks
 -----------------
 
-The device API is being extended so that it can also work with a
-provided non-blocking `Twisted <http://twistedmatrix.com/>`_ API,
-or any other async library the user chooses to add support for.
 
 The simplest Twisted use will have all processing blocks in the same
 process, much like the current GUI example but without the problem
