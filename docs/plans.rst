@@ -5,6 +5,7 @@ Planned Development
 Processing Blocks
 -----------------
 
+.. seealso:: `issue on github <https://github.com/pyrf/pyrf/issues/4>`_.
 
 The simplest Twisted use will have all processing blocks in the same
 process, much like the current GUI example but without the problem
@@ -31,9 +32,6 @@ from one processing block to the next.
    spectrum = spectrum_display(calibrate)
 
 
-Processing Blocks
------------------
-
 Processing blocks will use Python interfaces based on zope.interface
 to describe connections that may be made from consumer to producer.
 
@@ -58,6 +56,8 @@ producer interfaces have consumers connected.
 
 Multiprocess and HTTP
 ---------------------
+
+.. seealso:: `issue on github <https://github.com/pyrf/pyrf/issues/5>`_.
 
 Using multiple cores for data processing will be accomplished by
 grouping some or all processing blocks into separate processes. These
@@ -103,6 +103,8 @@ sent.  The body will contain the raw packet bytes.
 
 Distributed
 -----------
+
+.. seealso:: `issue on github <https://github.com/pyrf/pyrf/issues/6>`_.
 
 HTTP servers work across different machines without modification.
 Setting up a distributed processing chain across separate machines
