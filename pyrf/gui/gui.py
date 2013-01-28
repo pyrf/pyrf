@@ -7,24 +7,40 @@ from spectrum import SpectrumView
 from util import frequency_text
 
 from pyrf.devices.thinkrf import WSA4000
+from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_reflevel
 from pyrf.numpy_util import compute_fft
+from pyrf import twisted_util
+
+try:
+    from twisted.internet.defer import inlineCallbacks
+except ImportError:
+    def inlineCallbacks(fn):
+        pass
 
 DEVICE_FULL_SPAN = 125e6
 
 
 class MainWindow(QtGui.QMainWindow):
-
+    """
+    The main window and menus
+    """
     def __init__(self, name=None):
         super(MainWindow, self).__init__()
         self.initUI()
 
         self.dut = None
+        self._reactor = self._get_reactor()
         if len(sys.argv) > 1:
             self.open_device(sys.argv[1])
         else:
             self.open_device_dialog()
         self.show()
+
+    def _get_reactor(self):
+        # late import because installReactor is being used
+        from twisted.internet import reactor
+        return reactor
 
     def initUI(self):
         openAction = QtGui.QAction('&Open Device', self)
@@ -54,25 +70,27 @@ class MainWindow(QtGui.QMainWindow):
                     'Connection Failed, please try again\n\n'
                     'Enter a hostname or IP address:')
 
+    @inlineCallbacks
     def open_device(self, name):
-        dut = WSA4000()
-        dut.connect(name)
-        dut.request_read_perm()
+        # late import because installReactor is being used
+        dut = WSA4000(connector=TwistedConnector(self._reactor))
+        yield dut.connect(name)
         if '--reset' in sys.argv:
-            dut.reset()
+            yield dut.reset()
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
         self.setWindowTitle('PyRF: %s' % name)
 
-    def update_charts(self):
-        if self.dut is None:
-            return
-        self.centralWidget().update_screen()
+    def closeEvent(self, event):
+        event.accept()
+        self._reactor.stop()
 
 
 class MainPanel(QtGui.QWidget):
-
+    """
+    The spectrum view and controls
+    """
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
@@ -83,14 +101,19 @@ class MainPanel(QtGui.QWidget):
         self.initDUT()
         self.initUI()
 
+    @inlineCallbacks
     def initDUT(self):
-        self.center_freq = self.dut.freq()
-        self.decimation_factor = self.dut.decimation()
-        data, reflevel = read_data_and_reflevel(self.dut)
-        self.screen.update_data(
-            compute_fft(self.dut, data, reflevel),
-            self.center_freq,
-            self.decimation_factor)
+        self.center_freq = yield self.dut.freq()
+        self.decimation_factor = yield self.dut.decimation()
+
+        yield self.dut.request_read_perm()
+        while True:
+            data, reflevel = yield twisted_util.read_data_and_reflevel(
+                self.dut, self.points)
+            self.screen.update_data(
+                compute_fft(self.dut, data, reflevel),
+                self.center_freq,
+                self.decimation_factor)
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -122,8 +145,10 @@ class MainPanel(QtGui.QWidget):
         self.setLayout(grid)
         self.show()
 
+    @inlineCallbacks
     def _read_update_antenna_box(self):
-        self._antenna_box.setCurrentIndex(self.dut.antenna() - 1)
+        ant = yield self.dut.antenna()
+        self._antenna_box.setCurrentIndex(ant - 1)
 
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
@@ -136,8 +161,10 @@ class MainPanel(QtGui.QWidget):
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
+    @inlineCallbacks
     def _read_update_bpf_box(self):
-        self._bpf_box.setCurrentIndex(0 if self.dut.preselect_filter() else 1)
+        bpf = yield self.dut.preselect_filter()
+        self._bpf_box.setCurrentIndex(0 if bpf else 1)
 
     def _bpf_control(self):
         bpf = QtGui.QComboBox(self)
@@ -150,9 +177,10 @@ class MainPanel(QtGui.QWidget):
         bpf.currentIndexChanged.connect(new_bpf)
         return bpf
 
+    @inlineCallbacks
     def _read_update_gain_box(self):
-        gain_index = self._gain_values.index(self.dut.gain())
-        self._gain_box.setCurrentIndex(gain_index)
+        gain = yield self.dut.gain()
+        self._gain_box.setCurrentIndex(self._gain_values.index(gain))
 
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
@@ -168,8 +196,10 @@ class MainPanel(QtGui.QWidget):
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
+    @inlineCallbacks
     def _read_update_ifgain_box(self):
-        self._ifgain_box.setValue(int(self.dut.ifgain()))
+        ifgain = yield self.dut.ifgain()
+        self._ifgain_box.setValue(int(ifgain))
 
     def _ifgain_control(self):
         ifgain = QtGui.QSpinBox(self)
@@ -182,9 +212,11 @@ class MainPanel(QtGui.QWidget):
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
 
+    @inlineCallbacks
     def _read_update_freq_edit(self):
         "Get current frequency from self.dut and update the edit box"
-        self.center_freq = self.dut.freq()
+        self._update_freq_edit() # once immediately in case of long delay
+        self.center_freq = yield self.dut.freq()
         self._update_freq_edit()
 
     def _update_freq_edit(self):
@@ -229,8 +261,9 @@ class MainPanel(QtGui.QWidget):
 
         return freq, steps, freq_plus, freq_minus
 
+    @inlineCallbacks
     def _read_update_span_rbw_boxes(self):
-        self.decimation_factor = self.dut.decimation()
+        self.decimation_factor = yield self.dut.decimation()
         self._span_box.setCurrentIndex(
             self._decimation_values.index(self.decimation_factor))
         self._update_rbw_box()
