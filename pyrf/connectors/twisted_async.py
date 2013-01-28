@@ -157,7 +157,7 @@ class SCPIClient(Protocol):
     _pending = None
 
     def connectionMade(self):
-        pass
+        self.transport.setTcpNoDelay(True)
 
     def scpiset(self, cmd):
         if self._pending:
