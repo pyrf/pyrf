@@ -1,6 +1,27 @@
 Manual
 ======
 
+.. image:: pyrf_logo.png
+   :alt: PyRF logo
+
+Installation
+------------
+
+Install from PyPI::
+
+   pip install pyrf
+
+Or Obtain the Development Version::
+
+   git clone git://github.com/pyrf/pyrf.git
+
+(Or `Download a Stable Release Tarball <https://github.com/pyrf/pyrf/tags>`_)
+
+Then Install from Source or Extracted Tarball::
+
+   python setup.py install
+
+
 API for WSA4000 RF Receiver
 ---------------------------
 
@@ -45,6 +66,9 @@ described in :ref:`planned-development`.
 
 GUI
 ---
+
+.. image:: wsa4000demo.png
+   :alt: wsa4000gui screen shot
 
 ``wsa4000gui`` is a cross-platform GUI application built with the
 Qt_ toolkit and PySide_ bindings for Python.
