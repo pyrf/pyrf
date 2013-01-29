@@ -7,9 +7,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   usermanual
    reference
    examples
-   gui
    plans
 
 

@@ -1,19 +1,63 @@
-User Manual
-===========
+Manual
+======
 
-Blocking Sockets
+API for WSA4000 RF Receiver
+---------------------------
+
+:class:`pyrf.devices.thinkrf.WSA4000` is the class that provides access
+to WSA4000 devices.
+Its methods closely match the SCPI Command Set described in the
+Programmers Reference available in
+`ThinkRF Resources <http://www.thinkrf.com/resources>`_.
+
+There are simple examples that use this API under the "examples" directory
+included with the source code.
+
+This API may be used in a blocking mode (the default) or in an asynchronous
+mode with using the `Twisted <http://twistedmatrix.com/>`_ python library.
+Asynchronous modes using other libraries may be added in the future.
+
+In blocking mode all methods that read from the device will wait
+to receive a response before returning.
+
+In asynchronous mode all methods will send their commands to the device and
+then immediately return a Twisted Deferred object.  If you need to wait for
+the response or completion of this command you can attach a callback to the
+Deferred object and the Twisted reactor will call it when ready.  You may
+choose to use Twisted's inlineCallbacks function decorator to write Twisted
+code that resembles synchronous code by yielding the Deferred objects
+returned from the API.
+
+To use the asynchronous when a WSA4000 instance is created
+you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
+instance as the connector parameter, as in :ref:`twisted-show-i-q`
+
+
+Processing Tools
 ----------------
 
-This library will continue to be usable in a simple
-blocking-socket manner the way the simple examples do.
+Additional PyRF tools are under active development, but will soon support
+processing blocks, multiprocess use and distributed processing as
+described in :ref:`planned-development`.
 
-Simple data capture and processing needs can be accomplished
-with few lines of code.
 
-Twisted and Async
------------------
+.. _demo-gui:
 
-The device API has being extended so that it can also work with a
-provided non-blocking `Twisted <http://twistedmatrix.com/>`_ API,
-or any other async library the user chooses to add support for.
+GUI
+---
 
+``wsa4000gui`` is a cross-platform GUI application built with the
+Qt_ toolkit and PySide_ bindings for Python.
+
+.. _Qt: http://qt.digia.com/
+.. _PySide: http://qt-project.org/wiki/PySide
+
+The GUI may be launched with the command::
+
+  wsa4000gui <hostname> [--reset]
+
+If *hostname* is not specified a dialog will appear asking you to enter one.
+If ``--reset`` is used the WSA will be reset to defaults before the GUI
+appears.
+
+.. seealso:: :ref:`gui-source`
