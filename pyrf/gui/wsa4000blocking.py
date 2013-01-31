@@ -71,6 +71,14 @@ class BlockingMainPanel(MainPanel):
             self._decimation_values.index(self.decimation_factor))
         self._update_rbw_box()
 
+    def update_screen(self):
+        data, context = read_data_and_context(
+            self.dut,
+            self.points)
+        self.screen.update_data(
+            compute_fft(self.dut, data, context),
+            self.center_freq,
+            self.decimation_factor)
 
 
 def main():

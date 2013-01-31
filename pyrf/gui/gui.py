@@ -305,15 +305,6 @@ class MainPanel(QtGui.QWidget):
         return span, rbw
 
 
-    def update_screen(self):
-        data, context = read_data_and_context(
-            self.dut,
-            self.points)
-        self.screen.update_data(
-            compute_fft(self.dut, data, context),
-            self.center_freq,
-            self.decimation_factor)
-
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
         self.dut.freq(self.center_freq)
