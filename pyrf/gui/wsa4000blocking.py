@@ -3,7 +3,7 @@ from PySide import QtGui, QtCore
 from pyrf.gui.gui import MainWindow, MainPanel
 from pyrf.numpy_util import compute_fft
 from pyrf.devices.thinkrf import WSA4000
-from pyrf.util import read_data_and_reflevel
+from pyrf.util import read_data_and_context
 
 REFRESH_CHARTS = 0.05
 
@@ -42,9 +42,9 @@ class BlockingMainPanel(MainPanel):
     def initDUT(self):
         self.center_freq = self.dut.freq()
         self.decimation_factor = self.dut.decimation()
-        data, reflevel = read_data_and_reflevel(self.dut)
+        data, context = read_data_and_context(self.dut)
         self.screen.update_data(
-            compute_fft(self.dut, data, reflevel),
+            compute_fft(self.dut, data, context),
             self.center_freq,
             self.decimation_factor)
 

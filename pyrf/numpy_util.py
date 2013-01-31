@@ -2,7 +2,7 @@ import math
 
 FFT_BASELINE = -10
 
-def compute_fft(dut, data_pkt, reflevel_pkt):
+def compute_fft(dut, data_pkt, context):
     """
     Return an array of dBm values by computing the FFT of
     the passed data and reference level.
@@ -11,22 +11,22 @@ def compute_fft(dut, data_pkt, reflevel_pkt):
     :type dut: pyrf.devices.thinkrf.WSA4000
     :param data_pkt: packet containing samples
     :type data_pkt: pyrf.vrt.DataPacket
-    :param reflevel_pkt: packet containing 'reflevel' value
-    :type reflevel_pkt: pyrf.vrt.ContextPacket
+    :param context: dict containing context values
 
     This function uses only *dut.ADC_DYNAMIC_RANGE*,
-    *data_pkt.data* and *reflevel_pkt['reflevel']*.
+    *data_pkt.data* and *context['reflevel']*.
 
     :returns: numpy array of dBm values as floats
     """
     import numpy # import here so docstrings are visible even without numpy
 
-    reference_level = reflevel_pkt.fields['reflevel']
+    reference_level = context['reflevel']
 
     iq_data = data_pkt.data.numpy_array()
     # i, q values here are 14-bit signed
     i_data = numpy.array(iq_data[:,0], dtype=float) / 2**13
     q_data = numpy.array(iq_data[:,1], dtype=float) / 2**13
+
     return _compute_fft(i_data, q_data, reference_level, dut.ADC_DYNAMIC_RANGE)
 
 def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
