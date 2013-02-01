@@ -1,4 +1,15 @@
 
+"""
+The main application window and GUI controls
+
+``MainWindow`` creates and handles the ``File | Open Device`` menu and
+wraps the ``MainPanel`` widget responsible for most of the interface.
+
+All the buttons and controls and their callback functions are built in
+``MainPanel`` and arranged on a grid.  A ``SpectrumView`` is created
+and placed to left of the controls.
+"""
+
 import sys
 import socket
 

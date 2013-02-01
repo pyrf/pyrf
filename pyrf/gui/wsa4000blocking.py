@@ -1,3 +1,16 @@
+"""
+This the launcher for the old version of the GUI that doesn't use
+Twisted and may be run as ``wsa4000gui-blocking``.
+
+.. note::
+
+   This version calls ``MainPanel.update_screen()`` in a timer
+   loop 20 times a second.  This method makes a blocking call to capture
+   the next packet and render it all in the same thread as the application.
+   This can make the interface slow or completely unresponsive if you
+   lose connection to the device.
+"""
+
 import sys
 from PySide import QtGui, QtCore
 from pyrf.gui.gui import MainWindow, MainPanel

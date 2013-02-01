@@ -1,3 +1,14 @@
+"""
+The ``SpectrumView`` widget is divided into three parts:
+
+* ``SpectrumViewPlot`` contains the plotted spectrum data.
+* ``SpectrumViewLeftAxis`` displays the dBm axis along the left.
+* ``SpectrumViewBottomAxis`` displays the MHz axis across the bottom.
+
+The utility functions ``dBm_labels`` and ``MHz_labels`` compute the
+positions and labels for each axis.
+"""
+
 import numpy
 import itertools
 from PySide import QtGui, QtCore

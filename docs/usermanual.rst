@@ -142,4 +142,3 @@ If *hostname* is not specified a dialog will appear asking you to enter one.
 If ``--reset`` is used the WSA will be reset to defaults before the GUI
 appears.
 
-.. seealso:: :ref:`gui-source`
