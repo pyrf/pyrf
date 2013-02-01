@@ -8,7 +8,7 @@ from util import frequency_text
 
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
-from pyrf.util import read_data_and_reflevel
+from pyrf.util import read_data_and_context
 from pyrf.numpy_util import compute_fft
 from pyrf import twisted_util
 
@@ -108,10 +108,10 @@ class MainPanel(QtGui.QWidget):
 
         yield self.dut.request_read_perm()
         while True:
-            data, reflevel = yield twisted_util.read_data_and_reflevel(
+            data, context = yield twisted_util.read_data_and_context(
                 self.dut, self.points)
             self.screen.update_data(
-                compute_fft(self.dut, data, reflevel),
+                compute_fft(self.dut, data, context),
                 self.center_freq,
                 self.decimation_factor)
 
@@ -304,15 +304,6 @@ class MainPanel(QtGui.QWidget):
 
         return span, rbw
 
-
-    def update_screen(self):
-        data, reflevel = read_data_and_reflevel(
-            self.dut,
-            self.points)
-        self.screen.update_data(
-            compute_fft(self.dut, data, reflevel),
-            self.center_freq,
-            self.decimation_factor)
 
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6

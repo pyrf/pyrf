@@ -1,7 +1,7 @@
 from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
 from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
-from pyrf.vrt import vrt_packet_reader
+from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 
 class WSA4000(object):
     """
@@ -25,6 +25,9 @@ class WSA4000(object):
     """
 
     ADC_DYNAMIC_RANGE = 72.5
+    M = 10**6
+    CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
+    SWEEP_FREQ_RANGE = (90*M, 10000*M)
 
     def __init__(self, connector=None):
         if not connector:

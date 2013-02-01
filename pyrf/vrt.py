@@ -19,6 +19,10 @@ CTX_RFOFFSET = (1 << 26)
 CTX_REFERENCELEVEL = (1 << 24)
 CTX_STREAMSTART = (1 << 0)
 
+# values captured in a given frequency range
+I_ONLY = 'i_only'
+IQ = 'iq'
+
 class InvalidDataReceived(Exception):
     pass
 
