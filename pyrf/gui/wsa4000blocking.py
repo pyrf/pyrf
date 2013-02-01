@@ -71,6 +71,12 @@ class BlockingMainPanel(MainPanel):
             self._decimation_values.index(self.decimation_factor))
         self._update_rbw_box()
 
+    def _span_rbw_controls(self):
+        rval = super(BlockingMainPanel, self)._span_rbw_controls()
+        self.points = self._points_values[self._rbw_box.currentIndex()]
+        self.decimation_points = self.decimation_factor * self.points
+        return rval
+
     def update_screen(self):
         data, context = read_data_and_context(
             self.dut,

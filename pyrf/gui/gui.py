@@ -309,7 +309,6 @@ class MainPanel(QtGui.QWidget):
             self.points = self._points_values[rbw.currentIndex()]
             self.decimation_points = self.decimation_factor * self.points
         rbw.setCurrentIndex(self._points_values.index(1024))
-        #new_rbw()
         rbw.currentIndexChanged.connect(new_rbw)
 
         return span, rbw
