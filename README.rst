@@ -24,19 +24,3 @@ GUI Example Included
    :alt: wsa4000gui screen shot
 
 
-User Requirements
------------------
-
-* Linux, Windows or OSX
-* Python 2.5 - 2.7
-* NumPy for GUI and FFT calculations
-* PySide and `qt4reactor <https://github.com/ghtdak/qtreactor>`_ for GUI
-* Twisted and zope.interface for GUI and Twisted examples
-* pywin32 for GUI and Twisted examples on Windows
-
-Build Requirements
-------------------
-
-* Sphinx + setuptools to build documentation
-* Py2exe to compile GUI to .exe on Windows
-
