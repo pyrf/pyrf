@@ -23,6 +23,8 @@ def read_data_and_context(dut, points=1024):
 
     return pkt, context_values
 
+# avoid breaking pyrf 0.2.x examples:
+read_data_and_reflevel = read_data_and_context
 
 def socketread(socket, count, flags = None):
     """
