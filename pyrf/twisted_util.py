@@ -1,16 +1,19 @@
 from twisted.internet import defer
 
 @defer.inlineCallbacks
-def read_data_and_reflevel(dut, points=1024):
+def read_data_and_context(dut, points=1024):
     """
-    Wait for and capture a data packet and a reference level packet.
+    Wait for and capture a data packet and collect preceeding context packets.
 
-    :returns: (data_pkt, reflevel_pkt)
+    :returns: (data_pkt, context_values)
+
+    Where context_values is a dict of {field_name: value} items from
+    all the context packets received.
     """
     # capture 1 packet
     yield dut.capture(points, 1)
 
-    reference_pkt = None
+    context_values = {}
     # read until I get 1 data packet
     while not dut.eof():
         pkt = yield dut.read()
@@ -18,8 +21,7 @@ def read_data_and_reflevel(dut, points=1024):
         if pkt.is_data_packet():
             break
 
-        if 'reflevel' in pkt.fields:
-            reference_pkt = pkt
+        context_values.update(pkt.fields)
 
-    defer.returnValue((pkt, reference_pkt))
+    defer.returnValue((pkt, context_values))
 
