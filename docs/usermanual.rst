@@ -7,6 +7,7 @@ Manual
 Installation
 ------------
 
+
 Install from PyPI::
 
    pip install pyrf
@@ -15,11 +16,12 @@ Or Obtain the Development Version::
 
    git clone git://github.com/pyrf/pyrf.git
 
-(Or `Download a Stable Release Tarball <https://github.com/pyrf/pyrf/tags>`_)
+(Or `Download a Stable Release <https://github.com/pyrf/pyrf/tags>`_)
 
-Then Install from Source or Extracted Tarball::
+Then Install from Source or Extracted Tarball/Zip file::
 
    python setup.py install
+
 
 Installing GUI Requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,7 +30,7 @@ On Debian/Ubuntu::
 
    apt-get install python-pyside python-twisted python-numpy \
    	python-zope.interface python-pip
-   pip install -r gui-requirements.txt
+   pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
 
 On Windows:
 
