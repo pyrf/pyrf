@@ -116,7 +116,6 @@ pyrf.util
 
 .. autofunction:: pyrf.util.read_data_and_context
 
-.. autofunction:: pyrf.util.socketread
 
 pyrf.vrt
 --------

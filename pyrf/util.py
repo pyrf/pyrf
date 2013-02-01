@@ -26,21 +26,3 @@ def read_data_and_context(dut, points=1024):
 # avoid breaking pyrf 0.2.x examples:
 read_data_and_reflevel = read_data_and_context
 
-def socketread(socket, count, flags = None):
-    """
-    Retry socket read until count data received,
-    like reading from a file.
-    """
-    if not flags:
-        flags = 0
-    data = socket.recv(count, flags)
-    datalen = len(data)
-
-    if datalen == 0:
-        return False
-
-    while datalen < count:
-        data = data + socket.recv(count - datalen)
-        datalen = len(data)
-
-    return data

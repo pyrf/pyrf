@@ -1,7 +1,5 @@
 import socket
 
-from pyrf.util import socketread
-
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
 
 import logging
@@ -60,3 +58,23 @@ class PlainSocketConnector(object):
                 val = gen.send(val)
         except StopIteration:
             return val
+
+
+def socketread(socket, count, flags = None):
+    """
+    Retry socket read until count data received,
+    like reading from a file.
+    """
+    if not flags:
+        flags = 0
+    data = socket.recv(count, flags)
+    datalen = len(data)
+
+    if datalen == 0:
+        return False
+
+    while datalen < count:
+        data = data + socket.recv(count - datalen)
+        datalen = len(data)
+
+    return data
