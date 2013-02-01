@@ -21,6 +21,45 @@ Then Install from Source or Extracted Tarball::
 
    python setup.py install
 
+Installing GUI Requirements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Debian/Ubuntu::
+
+   apt-get install python-pyside python-twisted python-numpy \
+   	python-zope.interface python-pip
+   pip install -r gui-requirements.txt
+
+On Windows:
+
+   Download and install:
+
+   * `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
+
+   Find the latest version of each of the following and install:
+
+   * `32-bit NumPy for Python 2.7 <http://sourceforge.net/projects/numpy/files/NumPy/>`_ e.g. "numpy-1.6.2-win32-superpack-python2.7.exe"
+   * `32-bit PySide for Python 2.7 <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
+     e.g. "PySide-1.1.2.win32-py2.7.exe"
+   * `32-bit zope.interface for Python 2.7 <http://pypi.python.org/pypi/zope.interface#download>`_ e.g. "zope.interface-4.0.3-py2.7-win32.egg"
+   * `32-bit Twisted for Python 2.7 <http://twistedmatrix.com/trac/wiki/Downloads#Windows>`_
+     e.g. "Twisted-12.3.0.win32-py2.7.msi"
+
+   Download the `latest version of qtreactor <https://github.com/pyrf/qtreactor/tags>`_,
+   extract it then switch to the qtreactor directory and run::
+
+      python setup.py install
+
+
+Installing GUI Requirements from Source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Debian/Ubuntu::
+
+   apt-get install qt-sdk python-dev cmake
+   pip install -r gui-requirements.txt
+
+
 
 API for WSA4000 RF Receiver
 ---------------------------
