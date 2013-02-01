@@ -59,7 +59,7 @@ def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
 def _compute_fft_i_only(i_data, reference_level, adc_dynamic_range):
     import numpy
 
-    windowed_i = numpy.hanning(len(i_data))
+    windowed_i = i_data * numpy.hanning(len(i_data))
 
     noise_level_offset = reference_level - FFT_BASELINE - adc_dynamic_range
 
