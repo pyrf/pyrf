@@ -94,6 +94,7 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
+        self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
         self.center_freq = None
         self.decimation_factor = None
         self.decimation_points = None
@@ -235,7 +236,16 @@ class MainPanel(QtGui.QWidget):
                 f = float(freq.text())
             except ValueError:
                 return
-            self.set_freq_mhz(f)
+            if f < self.mhz_bottom:
+                f = self.mhz_bottom
+                self.set_freq_mhz(f)
+                self._update_freq_edit()
+            elif self.mhz_top < f:
+                f = self.mhz_top
+                self.set_freq_mhz(f)
+                self._update_freq_edit()
+            else:
+                self.set_freq_mhz(f)
         freq.editingFinished.connect(write_freq)
 
         steps = QtGui.QComboBox(self)
@@ -299,7 +309,6 @@ class MainPanel(QtGui.QWidget):
             self.points = self._points_values[rbw.currentIndex()]
             self.decimation_points = self.decimation_factor * self.points
         rbw.setCurrentIndex(self._points_values.index(1024))
-        #new_rbw()
         rbw.currentIndexChanged.connect(new_rbw)
 
         return span, rbw
