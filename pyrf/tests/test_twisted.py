@@ -1,6 +1,6 @@
 import unittest
 
-from pyrf.connectors.twisted import VRTClient
+from pyrf.connectors.twisted_async import VRTClient
 from twisted.internet import reactor
 
 
