@@ -40,10 +40,10 @@ def compute_fft(dut, data_pkt, context):
 def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
     import numpy
 
-    calibrated_q = _calibrate_i_q(i_data, q_data)
     i_removed_dc_offset = i_data - numpy.mean(i_data)
-    q_removed_dc_offset = calibrated_q - numpy.mean(calibrated_q)
-    iq = i_removed_dc_offset + 1j * q_removed_dc_offset
+    q_removed_dc_offset = q_data- numpy.mean(q_data)
+    calibrated_q = _calibrate_i_q(i_removed_dc_offset, q_removed_dc_offset)
+    iq = i_removed_dc_offset + 1j * calibrated_q
     windowed_iq = iq * numpy.hanning(len(i_data))
 
     noise_level_offset = reference_level - FFT_BASELINE - adc_dynamic_range
