@@ -63,6 +63,21 @@ On Debian/Ubuntu::
 
 
 
+Building EXE Version of GUI
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Windows:
+
+   Install the GUI requirements above and make sure you can launch the GUI.
+
+   Find the
+   `latest version of py2exe for 32-bit Python2.7 <http://sourceforge.net/projects/py2exe/files/py2exe/>`_
+   and install it e.g. "py2exe-0.6.9.win32-py2.7.exe".
+
+   Switch to the pyrf directory and run::
+
+   python setup.py py2exe
+
 API for WSA4000 RF Receiver
 ---------------------------
 
