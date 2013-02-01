@@ -112,9 +112,11 @@ pyrf.twisted_util
 pyrf.util
 ---------
 
-.. automodule:: pyrf.util
-   :members:
-   :undoc-members:
+.. module:: pyrf.util
+
+.. autofunction:: pyrf.util.read_data_and_context
+
+.. autofunction:: pyrf.util.socketread
 
 pyrf.vrt
 --------
