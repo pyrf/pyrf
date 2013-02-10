@@ -32,14 +32,16 @@ def compute_fft(dut, data_pkt, context):
         if low <= freq <= high:
             break
 
-    noise_level_offset = (
-        reference_level - dut.NOISEFLOOR_CALIBRATION - dut.ADC_DYNAMIC_RANGE)
-
     if valid_data == I_ONLY:
-        return _compute_fft_i_only(i_data, noise_level_offset)
-    return _compute_fft(i_data, q_data, noise_level_offset)
+        power_spectrum = _compute_fft_i_only(i_data)
+    power_spectrum = _compute_fft(i_data, q_data)
 
-def _compute_fft(i_data, q_data, noise_level_offset):
+    noiselevel_offset = (
+        reference_level - dut.NOISEFLOOR_CALIBRATION - dut.ADC_DYNAMIC_RANGE)
+    return power_spectrum + noiselevel_offset
+
+
+def _compute_fft(i_data, q_data):
     import numpy
 
     i_removed_dc_offset = i_data - numpy.mean(i_data)
@@ -49,21 +51,20 @@ def _compute_fft(i_data, q_data, noise_level_offset):
     windowed_iq = iq * numpy.hanning(len(i_data))
 
     power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_iq))
-    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)
-        ) + noise_level_offset
+    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum))
 
     median_index = len(power_spectrum) // 2
     power_spectrum[median_index] = (power_spectrum[median_index - 1]
         + power_spectrum[median_index + 1]) / 2
     return power_spectrum
 
-def _compute_fft_i_only(i_data, noise_level_offset):
+def _compute_fft_i_only(i_data):
     import numpy
 
     windowed_i = i_data * numpy.hanning(len(i_data))
 
-    fft_result = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
-    fft_result = 20 * numpy.log10(numpy.abs(fft_result)) + noise_level_offset
+    power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
+    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum))
 
     median_index = len(fft_result) // 2
     return fft_result[median_index+1:]
