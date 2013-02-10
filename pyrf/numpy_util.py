@@ -64,8 +64,9 @@ def _compute_fft_i_only(i_data, reference_level, adc_dynamic_range):
 
     noise_level_offset = reference_level - FFT_BASELINE - adc_dynamic_range
 
-    fft_result = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
-    fft_result = 20 * numpy.log10(numpy.abs(fft_result)) + noise_level_offset
+    power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
+    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)
+        ) + noise_level_offset
 
     median_index = len(fft_result) // 2
     return fft_result[median_index+1:]
