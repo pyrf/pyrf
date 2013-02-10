@@ -25,6 +25,7 @@ class WSA4000(object):
     """
 
     ADC_DYNAMIC_RANGE = 72.5
+    NOISEFLOOR_CALIBRATION = -10
     M = 10**6
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
