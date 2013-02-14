@@ -28,7 +28,7 @@ Links
 -----
 
 * `Official github page <https://github.com/pyrf/pyrf>`_
-* `Documentation for this API <http://pyrf.rtfd.org>`_
+* `Documentation for this API <http://www.pyrf.org>`_
 * `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
 
 GUI Example Included
