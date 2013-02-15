@@ -25,8 +25,8 @@ def compute_fft(dut, data_pkt, reflevel_pkt):
 
     iq_data = data_pkt.data.numpy_array()
     # i, q values here are 14-bit signed
-    i_data = numpy.array(iq_data[:,0], dtype=float) / 2**13
-    q_data = numpy.array(iq_data[:,1], dtype=float) / 2**13
+    i_data = numpy.array(iq_data[:,0], dtype=float) / len(iq_data)
+    q_data = numpy.array(iq_data[:,1], dtype=float) / len(iq_data)
     return _compute_fft(i_data, q_data, reference_level, dut.ADC_DYNAMIC_RANGE)
 
 def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
