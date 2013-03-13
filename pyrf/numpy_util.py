@@ -25,8 +25,8 @@ def compute_fft(dut, data_pkt, reflevel_pkt):
 
     iq_data = data_pkt.data.numpy_array()
     # i, q values here are 14-bit signed
-    i_data = numpy.array(iq_data[:,0], dtype=float) / len(iq_data)
-    q_data = numpy.array(iq_data[:,1], dtype=float) / len(iq_data)
+    i_data = numpy.array(iq_data[:,0], dtype=float)
+    q_data = numpy.array(iq_data[:,1], dtype=float) 
     return _compute_fft(i_data, q_data, reference_level, dut.ADC_DYNAMIC_RANGE)
 
 def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
@@ -41,11 +41,9 @@ def _compute_fft(i_data, q_data, reference_level, adc_dynamic_range):
     noise_level_offset = reference_level - FFT_BASELINE - adc_dynamic_range
 
     fft_result = numpy.fft.fftshift(numpy.fft.fft(windowed_iq))
-    fft_result = 20 * numpy.log10(numpy.abs(fft_result)) + noise_level_offset
+    fft_result = 20 * numpy.log10(numpy.abs(fft_result)/len(fft_result)) + noise_level_offset
+    
 
-    median_index = len(fft_result) // 2
-    fft_result[median_index] = (fft_result[median_index - 1]
-        + fft_result[median_index + 1]) / 2
     return fft_result
 
 

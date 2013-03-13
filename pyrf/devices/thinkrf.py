@@ -293,6 +293,38 @@ class WSA4000(object):
         self.scpiset(":TRACE:SPP %s\n" % (spp))
         self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
         self.scpiset(":TRACE:BLOCK:DATA?\n")
+    
+    @sync_async  
+    def spp(self, spp = None):
+        """
+        This command sets the number of samples in an IQ packet
+
+        :param spp: the number of samples in a packet
+        :returns: active antenna port
+        """
+        if spp is None:
+            number = yield self.scpiget(":TRACE:SPP?")
+            spp = int(number)
+
+        else:
+            self.scpiset(":TRACE:SPP %s\n" % (spp))
+        yield spp
+    
+    @sync_async
+    def ppb(self, ppb = None):
+        """
+        This command sets the number of IQ packets in a capture
+        block
+
+        :param spp: the number of samples in a packet
+        :returns: active antenna port
+        """
+        if ppb is None:
+            number = yield self.scpiget(":TRACE:BLOCK:PACKETS?")
+            number = int(number)
+        else:
+            self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
+        yield number
 
     @sync_async
     def request_read_perm(self):
@@ -327,6 +359,7 @@ class WSA4000(object):
 
     def has_data(self):
         """
+        
         Check if there is VRT data to read.
 
         :returns: True if there is a packet to read, False if not
