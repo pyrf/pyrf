@@ -12,6 +12,7 @@ from pyrf.util import read_data_and_reflevel
 from pyrf.numpy_util import compute_fft
 from pyrf import twisted_util
 
+
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:

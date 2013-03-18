@@ -7,6 +7,10 @@ from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf import twisted_util
 
+# define constants
+MIN_FREQ = 0
+MAX_FREQ = 10e9
+MHZ = 1e6
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -26,6 +30,8 @@ class MainWindow(QtGui.QMainWindow):
         self._reactor = self._get_reactor()
         if len(sys.argv) > 1:
             self.open_device(sys.argv[1])
+        else:
+            self.open_device_dialog()
         self.show()
 
     def _get_reactor(self):
@@ -44,7 +50,6 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
-
         self.setWindowTitle('PyRF Receiver Controller')
 
     # connect to device after GUI loaded
@@ -54,7 +59,6 @@ class MainWindow(QtGui.QMainWindow):
         while True:
             if not ok:
                 return
-
             try:
                 self.open_device(name)
                 break
@@ -112,13 +116,6 @@ class MainPanel(QtGui.QWidget):
         self.show()
 
     @inlineCallbacks
-    def _read_update_antenna_box(self):
-        ant = yield self.dut.antenna()
-        self._antenna_box.setCurrentIndex(ant - 1)
-
-
-
-    @inlineCallbacks
     def _read_update_gain_box(self):
         gain = yield self.dut.gain()
         self._gain_box.setCurrentIndex(self._gain_values.index(gain))
@@ -165,7 +162,7 @@ class MainPanel(QtGui.QWidget):
         if self.center_freq is None:
             self._freq_edit.setText("---")
         else:
-            self._freq_edit.setText("%0.1f" % (self.center_freq / 1e6))
+            self._freq_edit.setText("%0.1f" % (self.center_freq / MHZ))
 
     def _freq_controls(self):
         freq = QtGui.QLineEdit("")
@@ -176,6 +173,7 @@ class MainPanel(QtGui.QWidget):
                 f = float(freq.text())
             except ValueError:
                 return
+
             self.set_freq_mhz(f)
         freq.editingFinished.connect(write_freq)
 
@@ -202,12 +200,10 @@ class MainPanel(QtGui.QWidget):
         return freq, steps, freq_plus, freq_minus
 
     def set_freq_mhz(self, f):
-        self.center_freq = f * 1e6
+        center_freq = f * MHZ
+        if center_freq > MAX_FREQ or center_freq < MIN_FREQ:          
+            self._freq_edit.setText(str((self.center_freq/MHZ)))
+            return
+            
+        self.center_freq = center_freq
         self.dut.freq(self.center_freq)
-
-    def set_decimation(self, d):
-        self.decimation_factor = 1 if d == 0 else d
-        self.dut.decimation(d)
-
-
-
