@@ -26,10 +26,10 @@ except ImportError:
 
 setup(
     name='pyrf',
-    version='0.3.0-dev',
+    version='0.3.1-dev',
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
-    packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui', 'pyrf.receiverGUI'],
+    packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui'],
     url='https://github.com/pyrf/pyrf',
     license='BSD',
     description='API for RF receivers including ThinkRF WSA4000',

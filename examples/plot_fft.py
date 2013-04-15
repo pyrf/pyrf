@@ -2,7 +2,7 @@
 
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.config import TriggerSettings
-from pyrf.util import read_data_and_context
+from pyrf.util import read_data_and_reflevel
 from pyrf.numpy_util import compute_fft
 
 import sys
@@ -31,10 +31,10 @@ trigger = TriggerSettings(
 dut.trigger(trigger)
 
 # capture 1 packet
-data, context = read_data_and_context(dut, 1024)
+data, reflevel = read_data_and_reflevel(dut, 1024)
 
 # compute the fft of the complex data
-powdata = compute_fft(dut, data, context)
+powdata = compute_fft(dut, data, reflevel)
 
 # setup my graph
 fig = figure(1)

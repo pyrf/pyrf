@@ -35,8 +35,3 @@ pyrf/gui/spectrum.py
 pyrf/gui/util.py
 pyrf/gui/wsa4000blocking.py
 pyrf/gui/wsa4000gui.py
-pyrf/receiverGUI/__init__.py
-pyrf/receiverGUI/gui.py
-pyrf/receiverGUI/setup.py
-pyrf/receiverGUI/util.py
-pyrf/receiverGUI/wsa4000ReceiverGUI.py

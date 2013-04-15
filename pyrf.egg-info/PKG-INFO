@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: pyrf
-Version: 0.3.0-dev
+Version: 0.3.1-dev
 Summary: API for RF receivers including ThinkRF WSA4000
 Home-page: https://github.com/pyrf/pyrf
 Author: ThinkRF Corporation
