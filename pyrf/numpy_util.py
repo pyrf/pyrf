@@ -24,8 +24,8 @@ def compute_fft(dut, data_pkt, context):
 
     iq_data = data_pkt.data.numpy_array()
     # i, q values here are 14-bit signed
-    i_data = numpy.array(iq_data[:,0], dtype=float) / 2**13
-    q_data = numpy.array(iq_data[:,1], dtype=float) / 2**13
+    i_data = numpy.array(iq_data[:,0], dtype=float)
+    q_data = numpy.array(iq_data[:,1], dtype=float)
 
     freq = context['rffreq']
     for low, high, valid_data in dut.CAPTURE_FREQ_RANGES:
@@ -51,7 +51,7 @@ def _compute_fft(i_data, q_data):
     windowed_iq = iq * numpy.hanning(len(i_data))
 
     power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_iq))
-    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum))
+    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(fft_result))
 
     median_index = len(power_spectrum) // 2
     power_spectrum[median_index] = (power_spectrum[median_index - 1]
@@ -64,7 +64,7 @@ def _compute_fft_i_only(i_data):
     windowed_i = i_data * numpy.hanning(len(i_data))
 
     power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
-    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum))
+    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(fft_result))
 
     median_index = len(fft_result) // 2
     return fft_result[median_index+1:]
