@@ -22,6 +22,9 @@ from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
 import logging
 logger = logging.getLogger(__name__)
 
+class TwistedConnectorError(Exception):
+    pass
+
 class TwistedConnector(object):
     """
     A connector that makes SCPI/VRT connections asynchronously using
@@ -71,7 +74,7 @@ class TwistedConnector(object):
         return self._vrt.eof
 
     def raw_read(self, num_bytes):
-        return self._vrt.expectingData(num_bytes)
+        raise TwistedConnectorError('synchronous read() not supported.')
 
 
 class VRTTooMuchData(Exception):
