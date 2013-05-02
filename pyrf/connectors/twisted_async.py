@@ -18,6 +18,7 @@ except ImportError:
     from StringIO import StringIO
 
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
+from pyrf.vrt import vrt_packet_reader
 
 import logging
 logger = logging.getLogger(__name__)
@@ -83,18 +84,43 @@ class VRTTooMuchData(Exception):
 class VRTClient(Protocol):
     """
     A Twisted protocol for the VRT connection
-    """
-    TOO_MUCH_UNEXPECTED_DATA = 10**6
-    _buf = None
 
-    def __init__(self):
-        self.eof = False
-        self._expected_responses = []
+    :param receive_callback: a function that will be passed a vrt
+        DataPacket or ContextPacket when it is received
+    """
+    _buf = None
+    eof = False
+
+    def __init__(self, receive_callback):
+        self._receive_callback = receive_callback
 
     def makeConnection(self, transport):
         Protocol.makeConnection(self, transport)
         self._buf = StringIO()
         self._buf_offset = 0
+        self._resetReader()
+        self._processData()
+
+    def _resetReader(self):
+        self._packet_reader = vrt_packet_reader(self._setBytesRequired)
+        next(self._packet_reader) 
+
+    def _setBytesRequired(self, x):
+        self._bytes_required = x
+
+    def _processData(self):
+        """
+        If we have received enough bytes process it as VRT data and
+        call receive_callback if a complete packet was received.
+        """
+        while True:
+            data = self._bufConsume(self._bytes_required)
+            if not data:
+                break
+            response = self._packet_reader.send(data)
+            if response:
+                self._receive_callback(response)
+                self._resetReader()
 
     def _bufAppend(self, data):
         if self._buf_offset:
@@ -121,27 +147,7 @@ class VRTClient(Protocol):
 
     def dataReceived(self, data):
         self._bufAppend(data)
-        while self._expected_responses:
-            data = self._bufConsume(self._expected_responses[0][1])
-            if not data:
-                break
-            callback, num_bytes = self._expected_responses.pop(0)
-
-            callback(data)
-
-        if self._bufLength() > self.TOO_MUCH_UNEXPECTED_DATA:
-            self.transport.loseConnection()
-            raise VRTTooMuchData("Too much unexpected data received")
-
-    def expectingData(self, num_bytes):
-        d = defer.Deferred()
-
-        data = self._bufConsume(num_bytes)
-        if data:
-            d.callback(data)
-        else:
-            self._expected_responses.append((d.callback, num_bytes))
-        return d
+        self._processData()
 
     def connectionLost(self, reason):
         self.eof = True
