@@ -102,13 +102,6 @@ pyrf.numpy_util
    :members:
    :undoc-members:
 
-pyrf.twisted_util
------------------
-
-.. automodule:: pyrf.twisted_util
-   :members:
-   :undoc-members:
-
 pyrf.util
 ---------
 

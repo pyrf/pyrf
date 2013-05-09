@@ -21,7 +21,6 @@ from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
 from pyrf.numpy_util import compute_fft
-from pyrf import twisted_util
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -109,6 +108,7 @@ class MainPanel(QtGui.QWidget):
         self.center_freq = None
         self.decimation_factor = None
         self.decimation_points = None
+        self._vrt_context = {}
         self.screen = SpectrumView()
         self.initDUT()
         self.initUI()
@@ -119,13 +119,20 @@ class MainPanel(QtGui.QWidget):
         self.decimation_factor = yield self.dut.decimation()
 
         yield self.dut.request_read_perm()
-        while True:
-            data, context = yield twisted_util.read_data_and_context(
-                self.dut, self.points)
+        self.dut.connector.vrt_callback = self.receive_vrt
+        yield self.dut.capture(self.points, 1)
+
+    def receive_vrt(self, packet):
+        if packet.is_data_packet():
             self.screen.update_data(
-                compute_fft(self.dut, data, context),
+                compute_fft(self.dut, packet, self._vrt_context),
                 self.center_freq,
                 self.decimation_factor)
+            self._vrt_context = {}
+            # start another capture
+            self.dut.capture(self.points, 1)
+        else:
+            self._vrt_context.update(packet.fields)
 
     def initUI(self):
         grid = QtGui.QGridLayout()

@@ -18,17 +18,26 @@ except ImportError:
     from StringIO import StringIO
 
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
+from pyrf.vrt import vrt_packet_reader
 
 import logging
 logger = logging.getLogger(__name__)
+
+class TwistedConnectorError(Exception):
+    pass
 
 class TwistedConnector(object):
     """
     A connector that makes SCPI/VRT connections asynchronously using
     Twisted.
+
+    A callback may be assigned to .vrt_callback that will be called
+    with VRT packets as they arrive.  When .vrt_callback is None
+    (the default) packets will be ignored.
     """
     def __init__(self, reactor):
         self._reactor = reactor
+        self.vrt_callback = None
 
     def connect(self, host):
         point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
@@ -38,7 +47,7 @@ class TwistedConnector(object):
         def connect_vrt(scpi):
             self._scpi = scpi
             point = HostnameEndpoint(self._reactor, host, VRT_PORT)
-            return point.connect(VRTClientFactory())
+            return point.connect(VRTClientFactory(self._vrt_callback))
 
         @d.addCallback
         def save_vrt(vrt):
@@ -71,7 +80,11 @@ class TwistedConnector(object):
         return self._vrt.eof
 
     def raw_read(self, num_bytes):
-        return self._vrt.expectingData(num_bytes)
+        raise TwistedConnectorError('synchronous read() not supported.')
+
+    def _vrt_callback(self, packet):
+        if self.vrt_callback:
+            self.vrt_callback(packet)
 
 
 class VRTTooMuchData(Exception):
@@ -80,18 +93,43 @@ class VRTTooMuchData(Exception):
 class VRTClient(Protocol):
     """
     A Twisted protocol for the VRT connection
-    """
-    TOO_MUCH_UNEXPECTED_DATA = 10**6
-    _buf = None
 
-    def __init__(self):
-        self.eof = False
-        self._expected_responses = []
+    :param receive_callback: a function that will be passed a vrt
+        DataPacket or ContextPacket when it is received
+    """
+    _buf = None
+    eof = False
+
+    def __init__(self, receive_callback):
+        self._receive_callback = receive_callback
 
     def makeConnection(self, transport):
         Protocol.makeConnection(self, transport)
         self._buf = StringIO()
         self._buf_offset = 0
+        self._resetReader()
+        self._processData()
+
+    def _resetReader(self):
+        self._packet_reader = vrt_packet_reader(self._setBytesRequired)
+        next(self._packet_reader) 
+
+    def _setBytesRequired(self, x):
+        self._bytes_required = x
+
+    def _processData(self):
+        """
+        If we have received enough bytes process it as VRT data and
+        call receive_callback if a complete packet was received.
+        """
+        while True:
+            data = self._bufConsume(self._bytes_required)
+            if not data:
+                break
+            response = self._packet_reader.send(data)
+            if response:
+                self._receive_callback(response)
+                self._resetReader()
 
     def _bufAppend(self, data):
         if self._buf_offset:
@@ -118,38 +156,24 @@ class VRTClient(Protocol):
 
     def dataReceived(self, data):
         self._bufAppend(data)
-        while self._expected_responses:
-            data = self._bufConsume(self._expected_responses[0][1])
-            if not data:
-                break
-            callback, num_bytes = self._expected_responses.pop(0)
-
-            callback(data)
-
-        if self._bufLength() > self.TOO_MUCH_UNEXPECTED_DATA:
-            self.transport.loseConnection()
-            raise VRTTooMuchData("Too much unexpected data received")
-
-    def expectingData(self, num_bytes):
-        d = defer.Deferred()
-
-        data = self._bufConsume(num_bytes)
-        if data:
-            d.callback(data)
-        else:
-            self._expected_responses.append((d.callback, num_bytes))
-        return d
+        self._processData()
 
     def connectionLost(self, reason):
         self.eof = True
 
 class VRTClientFactory(Factory):
+    def __init__(self, receive_callback):
+        self._receive_callback = receive_callback
+
     def startedConnecting(self, connector):
         pass
+
     def buildProtocol(self, addr):
-        return VRTClient()
+        return VRTClient(self._receive_callback)
+
     def clientConnectionLost(self, connector, reason):
         pass
+
     def clientConnectionFailed(self, connector, reason):
         pass
 
