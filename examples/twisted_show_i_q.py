@@ -23,21 +23,21 @@ def show_i_q():
     yield dut.fshift(0)
     yield dut.decimation(0)
 
+    dut.connector.vrt_callback = receive_vrt
     # capture 1 packet
     yield dut.capture(1024, 1)
 
+def receive_vrt(packet):
     # read until I get 1 data packet
-    while not dut.eof():
-        pkt = yield dut.read()
-
-        if pkt.is_data_packet():
-            break
+    if not packet.is_data_packet():
+        return
 
     # print I/Q data into i and q
-    for i, q in pkt.data:
+    for i, q in packet.data:
         print "%d,%d" % (i, q)
+    # exit
+    reactor.stop()
 
 d = show_i_q()
 d.addErrback(twisted.python.log.err)
-d.addCallback(lambda _:reactor.stop())
 reactor.run()
