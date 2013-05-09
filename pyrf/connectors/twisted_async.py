@@ -30,9 +30,14 @@ class TwistedConnector(object):
     """
     A connector that makes SCPI/VRT connections asynchronously using
     Twisted.
+
+    A callback may be assigned to .vrt_callback that will be called
+    with VRT packets as they arrive.  When .vrt_callback is None
+    (the default) packets will be ignored.
     """
     def __init__(self, reactor):
         self._reactor = reactor
+        self.vrt_callback = None
 
     def connect(self, host):
         point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
@@ -42,7 +47,7 @@ class TwistedConnector(object):
         def connect_vrt(scpi):
             self._scpi = scpi
             point = HostnameEndpoint(self._reactor, host, VRT_PORT)
-            return point.connect(VRTClientFactory())
+            return point.connect(VRTClientFactory(self._vrt_callback))
 
         @d.addCallback
         def save_vrt(vrt):
@@ -76,6 +81,10 @@ class TwistedConnector(object):
 
     def raw_read(self, num_bytes):
         raise TwistedConnectorError('synchronous read() not supported.')
+
+    def _vrt_callback(self, packet):
+        if self.vrt_callback:
+            self.vrt_callback(packet)
 
 
 class VRTTooMuchData(Exception):
@@ -153,12 +162,18 @@ class VRTClient(Protocol):
         self.eof = True
 
 class VRTClientFactory(Factory):
+    def __init__(self, receive_callback):
+        self._receive_callback = receive_callback
+
     def startedConnecting(self, connector):
         pass
+
     def buildProtocol(self, addr):
-        return VRTClient()
+        return VRTClient(self._receive_callback)
+
     def clientConnectionLost(self, connector, reason):
         pass
+
     def clientConnectionFailed(self, connector, reason):
         pass
 
