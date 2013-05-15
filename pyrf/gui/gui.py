@@ -13,15 +13,17 @@ and placed to left of the controls.
 import sys
 import socket
 
-from PySide import QtGui
-from spectrum import SpectrumView
+from PySide import QtGui, QtCore
 from util import frequency_text
+import pyqtgraph as pg
+import numpy as np
 
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
 from pyrf.numpy_util import compute_fft
 from pyrf import twisted_util
+import msvcrt
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -30,7 +32,8 @@ except ImportError:
         pass
 
 DEVICE_FULL_SPAN = 125e6
-
+PLOT_YMIN = -130
+PLOT_YMAX = 20
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -105,11 +108,21 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
+        self.points = 1024
+        self.grid_enable = True
+        self.max_hold_enable = False
+        self.max_hold_curve = None
+        self.max_hold_fft = None
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
         self.center_freq = None
         self.decimation_factor = None
         self.decimation_points = None
-        self.screen = SpectrumView()
+        self.max_hold_fft = None
+        self.max_hold_curve = None
+        self.plot_window = pg.PlotWidget(name='Plot1')
+        self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        self.plot_window.setLabel('left', text = 'Power', units = 'dBm')
+        self.fft_curve = self.plot_window.plot(pen = 'g')
         self.initDUT()
         self.initUI()
 
@@ -117,22 +130,54 @@ class MainPanel(QtGui.QWidget):
     def initDUT(self):
         self.center_freq = yield self.dut.freq()
         self.decimation_factor = yield self.dut.decimation()
-
+        
         yield self.dut.request_read_perm()
         while True:
             data, context = yield twisted_util.read_data_and_context(
                 self.dut, self.points)
-            self.screen.update_data(
-                compute_fft(self.dut, data, context),
-                self.center_freq,
-                self.decimation_factor)
+
+            # compute FFT
+            pow_data = compute_fft(self.dut, data, context)
+            
+            # gran center frequency/bandwidth to calculate axis width/height
+            center_freq = context['rffreq']
+            bandwidth = context['bandwidth']
+            
+            # update axes limits
+            start_freq = (center_freq) - (bandwidth / 2)
+            stop_freq = (center_freq) + (bandwidth / 2)
+            
+            self.update_plot(pow_data,start_freq,stop_freq)
+    
+    # hold all the hotkeys
+    def keyPressEvent(self, e):
+        key_pressed = e.text()
+        
+        # 'g' enables/disables plot grid
+        if key_pressed == 'g' or key_pressed == 'G':
+            self.grid_enable = not(self.grid_enable)
+            self.grid_control(self.grid_enable)
+        
+        # 'h' enables/disables max hold curve
+        if key_pressed == 'h' or key_pressed == 'H':
+            self.max_hold_enable = not(self.max_hold_enable)
+            
+            if self.max_hold_enable == True:
+                self.max_hold_curve = self.plot_window.plot(pen = 'y')
+            
+            elif self.max_hold_enable == False:
+                self.plot_window.removeItem(self.max_hold_curve)
+                self.max_hold_curve = None
+                self.max_hold_fft = None
+                
 
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        grid.addWidget(self.screen, 0, 0, 8, 1)
-        grid.setColumnMinimumWidth(0, 400)
 
+        grid.setColumnMinimumWidth(0, 400)
+        grid.addWidget(self.plot_window,0,0,10,1)
+      
         y = 0
         grid.addWidget(self._antenna_control(), y, 1, 1, 2)
         grid.addWidget(self._bpf_control(), y, 3, 1, 2)
@@ -153,10 +198,10 @@ class MainPanel(QtGui.QWidget):
         span, rbw = self._span_rbw_controls()
         grid.addWidget(span, y, 1, 1, 2)
         grid.addWidget(rbw, y, 3, 1, 2)
-
+        
         self.setLayout(grid)
         self.show()
-
+          
     @inlineCallbacks
     def _read_update_antenna_box(self):
         ant = yield self.dut.antenna()
@@ -324,7 +369,6 @@ class MainPanel(QtGui.QWidget):
 
         return span, rbw
 
-
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
         self.dut.freq(self.center_freq)
@@ -332,6 +376,29 @@ class MainPanel(QtGui.QWidget):
     def set_decimation(self, d):
         self.decimation_factor = 1 if d == 0 else d
         self.dut.decimation(d)
+        
+    def update_plot(self, pow_data, start_freq, stop_freq):
+        
+        # update the frequency range (Hz)
+        freq_range = np.linspace(start_freq,stop_freq , len(pow_data))
 
+        # initialize the x-axis of the plot
+        self.plot_window.setXRange(start_freq,stop_freq)
+        self.plot_window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
+        
+        if self.max_hold_enable:
+            if self.max_hold_fft == None:
+                self.max_hold_fft = np.zeros(len(pow_data)) - 500 
+            
+            self.max_hold_fft = np.maximum(self.max_hold_fft,pow_data)
+            self.max_hold_curve.setData(freq_range,self.max_hold_fft,pen = 'y')
+        # plot the standard FFT curve
+        self.fft_curve.setData(freq_range,pow_data,pen = 'g')
+    
+    def grid_control(self,state):
+        if state == True:
+            self.plot_window.showGrid(x = True, y = True)
+        elif state == False:
+            self.plot_window.showGrid(x = False, y = False)
 
 
