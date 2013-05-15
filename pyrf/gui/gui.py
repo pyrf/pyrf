@@ -21,6 +21,7 @@ import numpy as np
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
+from pyrf.config import TriggerSettings
 from pyrf.numpy_util import compute_fft
 from pyrf import twisted_util
 import msvcrt
@@ -111,6 +112,10 @@ class MainPanel(QtGui.QWidget):
         self.points = 1024
         self.grid_enable = True
         self.max_hold_enable = False
+        self.trigger_enable = False
+        self.trigger_set = None
+        self.amp_trigger_line = None
+        self.freq_trigger_lines = None
         self.max_hold_curve = None
         self.max_hold_fft = None
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
@@ -128,8 +133,7 @@ class MainPanel(QtGui.QWidget):
 
     @inlineCallbacks
     def initDUT(self):
-        self.center_freq = yield self.dut.freq()
-        self.decimation_factor = yield self.dut.decimation()
+
         
         yield self.dut.request_read_perm()
         while True:
@@ -140,12 +144,13 @@ class MainPanel(QtGui.QWidget):
             pow_data = compute_fft(self.dut, data, context)
             
             # gran center frequency/bandwidth to calculate axis width/height
-            center_freq = context['rffreq']
+            self.center_freq = context['rffreq']
+
             bandwidth = context['bandwidth']
             
             # update axes limits
-            start_freq = (center_freq) - (bandwidth / 2)
-            stop_freq = (center_freq) + (bandwidth / 2)
+            start_freq = (self.center_freq) - (bandwidth / 2)
+            stop_freq = (self.center_freq) + (bandwidth / 2)
             
             self.update_plot(pow_data,start_freq,stop_freq)
     
@@ -169,7 +174,30 @@ class MainPanel(QtGui.QWidget):
                 self.plot_window.removeItem(self.max_hold_curve)
                 self.max_hold_curve = None
                 self.max_hold_fft = None
+         
+         # 't' enables/disables trigger lines
+        if key_pressed == 't' or key_pressed == 'T':
+            self.trigger_enable = not(self.trigger_enable)
+            
+            if self.trigger_enable == True:
                 
+      
+                self.trigger_set = TriggerSettings('LEVEL',self.center_freq - 10e6, self.center_freq + 10e6,-100) 
+                self.dut.trigger(self.trigger_set)
+                
+                self.amp_trigger_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
+                self.freq_trigger_lines = pg.LinearRegionItem([self.center_freq - 10e6,self.center_freq + 10e6])
+                
+                self.plot_window.addItem(self.amp_trigger_line)
+                self.plot_window.addItem(self.freq_trigger_lines)
+            
+            elif self.trigger_enable == False:
+                self.plot_window.removeItem(self.amp_trigger_line)
+                self.plot_window.removeItem(self.freq_trigger_lines)
+                self.amp_trigger_line = None
+                self.freq_trigger_lines = None
+                self.trigger_set = TriggerSettings('NONE',self.center_freq - 10e6, self.center_freq + 10e6,-100) 
+                self.dut.trigger(self.trigger_set)
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -389,9 +417,21 @@ class MainPanel(QtGui.QWidget):
         if self.max_hold_enable:
             if self.max_hold_fft == None:
                 self.max_hold_fft = np.zeros(len(pow_data)) - 500 
-            
+                
             self.max_hold_fft = np.maximum(self.max_hold_fft,pow_data)
             self.max_hold_curve.setData(freq_range,self.max_hold_fft,pen = 'y')
+        
+        if self.trigger_enable == True and self.freq_trigger_lines != None and self.amp_trigger_line != None:
+            type = 'LEVEL'
+            amplitude = self.amp_trigger_line.value()
+            freq_region = self.freq_trigger_lines.getRegion()
+            start_freq = min(freq_region)
+            stop_freq = max(freq_region)
+            new_trigger_set = TriggerSettings(type,start_freq,stop_freq,amplitude)
+            if new_trigger_set != self.trigger_set:
+                self.trigger_set = new_trigger_set
+                self.dut.trigger(new_trigger_set)
+                
         # plot the standard FFT curve
         self.fft_curve.setData(freq_range,pow_data,pen = 'g')
     
@@ -400,5 +440,6 @@ class MainPanel(QtGui.QWidget):
             self.plot_window.showGrid(x = True, y = True)
         elif state == False:
             self.plot_window.showGrid(x = False, y = False)
+
 
 
