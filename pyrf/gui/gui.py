@@ -12,11 +12,12 @@ and placed to left of the controls.
 
 import sys
 import socket
+from contextlib import contextmanager
 
 from PySide import QtGui
-from spectrum import SpectrumView
-from util import frequency_text
 
+from pyrf.gui.spectrum import SpectrumView
+from pyrf.gui.util import frequency_text
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
@@ -179,9 +180,8 @@ class MainPanel(QtGui.QWidget):
         self._antenna_box = antenna
         self._read_update_antenna_box()
         def new_antenna():
-            self.dut.stream_stop()
-            self.dut.antenna(int(antenna.currentText().split()[-1]))
-            self.dut.stream_start()
+            with self.paused_stream() as dut:
+                dut.antenna(int(antenna.currentText().split()[-1]))
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
@@ -197,9 +197,8 @@ class MainPanel(QtGui.QWidget):
         self._bpf_box = bpf
         self._read_update_bpf_box()
         def new_bpf():
-            self.dut.stream_stop()
-            self.dut.preselect_filter("On" in bpf.currentText())
-            self.dut.stream_start()
+            with self.paused_stream() as dut:
+                dut.preselect_filter("On" in bpf.currentText())
         bpf.currentIndexChanged.connect(new_bpf)
         return bpf
 
@@ -218,9 +217,8 @@ class MainPanel(QtGui.QWidget):
         self._read_update_gain_box()
         def new_gain():
             g = gain.currentText().split()[-1].lower().encode('ascii')
-            self.dut.stream_stop()
-            self.dut.gain(g)
-            self.dut.stream_start()
+            with self.paused_stream() as dut:
+                dut.gain(g)
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
@@ -236,9 +234,8 @@ class MainPanel(QtGui.QWidget):
         self._ifgain_box = ifgain
         self._read_update_ifgain_box()
         def new_ifgain():
-            self.dut.stream_stop()
-            self.dut.ifgain(ifgain.value())
-            self.dut.stream_start()
+            with self.paused_stream() as dut:
+                dut.ifgain(ifgain.value())
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
 
@@ -345,15 +342,19 @@ class MainPanel(QtGui.QWidget):
 
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
-        self.dut.stream_stop()
-        self.dut.freq(self.center_freq)
-        self.dut.stream_start()
+        with self.paused_stream() as dut:
+            dut.freq(self.center_freq)
 
     def set_decimation(self, d):
         self.decimation_factor = 1 if d == 0 else d
-        self.dut.stream_stop()
-        self.dut.decimation(d)
-        self.dut.stream_start()
+        with self.paused_stream() as dut:
+            dut.decimation(d)
 
+    @contextmanager
+    def paused_stream(self):
+        self.dut.stream_stop()
+        self.dut.flush()
+        yield self.dut
+        self.dut.stream_start()
 
 
