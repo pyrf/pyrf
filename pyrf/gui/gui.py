@@ -12,6 +12,7 @@ and placed to left of the controls.
 
 import sys
 import socket
+import random
 from contextlib import contextmanager
 
 from PySide import QtGui
@@ -112,6 +113,7 @@ class MainPanel(QtGui.QWidget):
         self.decimation_factor = None
         self.decimation_points = None
         self._vrt_context = {}
+        self._vrt_stream_id = random.randrange(1, 2**32)
         self.screen = SpectrumView()
         self.initDUT()
         self.initUI()
@@ -126,15 +128,19 @@ class MainPanel(QtGui.QWidget):
         yield self.dut.request_read_perm()
         self.dut.connector.vrt_callback = self.receive_vrt
         yield self.dut.spp(self.points)
-        yield self.dut.stream_start()
+        yield self.dut.stream_start(self._vrt_stream_id)
 
     def receive_vrt(self, packet):
         if packet.is_data_packet():
-            if all(x in self._vrt_context for x in ('reflevel', 'rffreq')):
-                self.screen.update_data(
-                    compute_fft(self.dut, packet, self._vrt_context),
-                    self.center_freq,
-                    self.decimation_factor)
+            if any(x not in self._vrt_context for x in (
+                    'reflevel', 'rffreq', 'streamid')):
+                return
+            if self._vrt_context['streamid'] != self._vrt_stream_id:
+                return
+            self.screen.update_data(
+                compute_fft(self.dut, packet, self._vrt_context),
+                self.center_freq,
+                self.decimation_factor)
         else:
             self._vrt_context.update(packet.fields)
 
@@ -357,6 +363,7 @@ class MainPanel(QtGui.QWidget):
         self.dut.stream_stop()
         self.dut.flush()
         yield self.dut
-        self.dut.stream_start()
+        self._vrt_stream_id = (self._vrt_stream_id + 1) & (2**23-1)
+        self.dut.stream_start(self._vrt_stream_id)
 
 
