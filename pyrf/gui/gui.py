@@ -12,11 +12,13 @@ and placed to left of the controls.
 
 import sys
 import socket
+import random
+from contextlib import contextmanager
 
 from PySide import QtGui
-from spectrum import SpectrumView
-from util import frequency_text
 
+from pyrf.gui.spectrum import SpectrumView
+from pyrf.gui.util import frequency_text
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
@@ -87,6 +89,8 @@ class MainWindow(QtGui.QMainWindow):
         yield dut.connect(name)
         if '--reset' in sys.argv:
             yield dut.reset()
+        else:
+            yield dut.flush()
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
@@ -109,28 +113,34 @@ class MainPanel(QtGui.QWidget):
         self.decimation_factor = None
         self.decimation_points = None
         self._vrt_context = {}
+        self._vrt_stream_id = random.randrange(1, 2**32)
         self.screen = SpectrumView()
         self.initDUT()
         self.initUI()
 
     @inlineCallbacks
     def initDUT(self):
+        yield self.dut.request_read_perm()
         self.center_freq = yield self.dut.freq()
         self.decimation_factor = yield self.dut.decimation()
 
+        yield self.dut.flush()
         yield self.dut.request_read_perm()
         self.dut.connector.vrt_callback = self.receive_vrt
-        yield self.dut.capture(self.points, 1)
+        yield self.dut.spp(self.points)
+        yield self.dut.stream_start(self._vrt_stream_id)
 
     def receive_vrt(self, packet):
         if packet.is_data_packet():
+            if any(x not in self._vrt_context for x in (
+                    'reflevel', 'rffreq', 'streamid')):
+                return
+            if self._vrt_context['streamid'] != self._vrt_stream_id:
+                return
             self.screen.update_data(
                 compute_fft(self.dut, packet, self._vrt_context),
                 self.center_freq,
                 self.decimation_factor)
-            self._vrt_context = {}
-            # start another capture
-            self.dut.capture(self.points, 1)
         else:
             self._vrt_context.update(packet.fields)
 
@@ -176,7 +186,8 @@ class MainPanel(QtGui.QWidget):
         self._antenna_box = antenna
         self._read_update_antenna_box()
         def new_antenna():
-            self.dut.antenna(int(antenna.currentText().split()[-1]))
+            with self.paused_stream() as dut:
+                dut.antenna(int(antenna.currentText().split()[-1]))
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
@@ -192,7 +203,8 @@ class MainPanel(QtGui.QWidget):
         self._bpf_box = bpf
         self._read_update_bpf_box()
         def new_bpf():
-            self.dut.preselect_filter("On" in bpf.currentText())
+            with self.paused_stream() as dut:
+                dut.preselect_filter("On" in bpf.currentText())
         bpf.currentIndexChanged.connect(new_bpf)
         return bpf
 
@@ -211,7 +223,8 @@ class MainPanel(QtGui.QWidget):
         self._read_update_gain_box()
         def new_gain():
             g = gain.currentText().split()[-1].lower().encode('ascii')
-            self.dut.gain(g)
+            with self.paused_stream() as dut:
+                dut.gain(g)
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
@@ -227,7 +240,8 @@ class MainPanel(QtGui.QWidget):
         self._ifgain_box = ifgain
         self._read_update_ifgain_box()
         def new_ifgain():
-            self.dut.ifgain(ifgain.value())
+            with self.paused_stream() as dut:
+                dut.ifgain(ifgain.value())
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
 
@@ -326,6 +340,8 @@ class MainPanel(QtGui.QWidget):
         def new_rbw():
             self.points = self._points_values[rbw.currentIndex()]
             self.decimation_points = self.decimation_factor * self.points
+            with self.paused_stream() as dut:
+                dut.spp(self.points)
         rbw.setCurrentIndex(self._points_values.index(1024))
         rbw.currentIndexChanged.connect(new_rbw)
 
@@ -334,11 +350,20 @@ class MainPanel(QtGui.QWidget):
 
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
-        self.dut.freq(self.center_freq)
+        with self.paused_stream() as dut:
+            dut.freq(self.center_freq)
 
     def set_decimation(self, d):
         self.decimation_factor = 1 if d == 0 else d
-        self.dut.decimation(d)
+        with self.paused_stream() as dut:
+            dut.decimation(d)
 
+    @contextmanager
+    def paused_stream(self):
+        self.dut.stream_stop()
+        self.dut.flush()
+        yield self.dut
+        self._vrt_stream_id = (self._vrt_stream_id + 1) & (2**23-1)
+        self.dut.stream_start(self._vrt_stream_id)
 
 

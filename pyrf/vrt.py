@@ -17,7 +17,8 @@ CTX_TEMPERATURE = (1 << 18)
 CTX_BANDWIDTH = (1 << 29)
 CTX_RFOFFSET = (1 << 26)
 CTX_REFERENCELEVEL = (1 << 24)
-CTX_STREAMSTART = (1 << 0)
+CTX_SWEEPID = (1 << 0)
+CTX_STREAMID = (1 << 1)
 
 # values captured in a given frequency range
 I_ONLY = 'i_only'
@@ -142,10 +143,16 @@ class ContextPacket(object):
     def _parseCustomContext(self, indicators, data):
         i = 0
 
-        if indicators & CTX_STREAMSTART:
+        if indicators & CTX_SWEEPID:
             (value,) = struct.unpack(">I", data[i:i+4])
+            self.fields['sweepid'] = value
             value = "0x%08x" % value
-            self.fields['startid'] = value
+            self.fields['startid'] = value # backwards compat
+            i += 4
+
+        elif indicators & CTX_STREAMID:
+            (value,) = struct.unpack(">I", data[i:i+4])
+            self.fields['streamid'] = value
             i += 4
 
         else:
