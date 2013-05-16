@@ -126,10 +126,11 @@ class MainPanel(QtGui.QWidget):
 
     def receive_vrt(self, packet):
         if packet.is_data_packet():
-            self.screen.update_data(
-                compute_fft(self.dut, packet, self._vrt_context),
-                self.center_freq,
-                self.decimation_factor)
+            if all(x in self._vrt_context for x in ('reflevel', 'rffreq')):
+                self.screen.update_data(
+                    compute_fft(self.dut, packet, self._vrt_context),
+                    self.center_freq,
+                    self.decimation_factor)
         else:
             self._vrt_context.update(packet.fields)
 
