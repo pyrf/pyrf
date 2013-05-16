@@ -130,7 +130,6 @@ class MainPanel(QtGui.QWidget):
                 compute_fft(self.dut, packet, self._vrt_context),
                 self.center_freq,
                 self.decimation_factor)
-            self._vrt_context = {}
         else:
             self._vrt_context.update(packet.fields)
 
