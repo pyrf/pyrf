@@ -175,7 +175,9 @@ class MainPanel(QtGui.QWidget):
         self._antenna_box = antenna
         self._read_update_antenna_box()
         def new_antenna():
+            self.dut.stream_stop()
             self.dut.antenna(int(antenna.currentText().split()[-1]))
+            self.dut.stream_start()
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
@@ -191,7 +193,9 @@ class MainPanel(QtGui.QWidget):
         self._bpf_box = bpf
         self._read_update_bpf_box()
         def new_bpf():
+            self.dut.stream_stop()
             self.dut.preselect_filter("On" in bpf.currentText())
+            self.dut.stream_start()
         bpf.currentIndexChanged.connect(new_bpf)
         return bpf
 
@@ -210,7 +214,9 @@ class MainPanel(QtGui.QWidget):
         self._read_update_gain_box()
         def new_gain():
             g = gain.currentText().split()[-1].lower().encode('ascii')
+            self.dut.stream_stop()
             self.dut.gain(g)
+            self.dut.stream_start()
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
@@ -226,7 +232,9 @@ class MainPanel(QtGui.QWidget):
         self._ifgain_box = ifgain
         self._read_update_ifgain_box()
         def new_ifgain():
+            self.dut.stream_stop()
             self.dut.ifgain(ifgain.value())
+            self.dut.stream_start()
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
 
@@ -333,11 +341,15 @@ class MainPanel(QtGui.QWidget):
 
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
+        self.dut.stream_stop()
         self.dut.freq(self.center_freq)
+        self.dut.stream_start()
 
     def set_decimation(self, d):
         self.decimation_factor = 1 if d == 0 else d
+        self.dut.stream_stop()
         self.dut.decimation(d)
+        self.dut.stream_start()
 
 
 

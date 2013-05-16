@@ -3,6 +3,8 @@ from PySide import QtGui
 from pyrf.gui.gui import MainWindow
 
 import qt4reactor
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 def main():
     app = QtGui.QApplication(sys.argv)
