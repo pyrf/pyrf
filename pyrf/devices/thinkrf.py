@@ -511,4 +511,33 @@ class WSA4000(object):
         """
         self.scpiset(":sweep:flush")
 
+    def stream_start(self, stream_id=None):
+        """
+        This command begins the execution of the stream capture.
+        It will also initiate data capturing.  Data packets will
+        be streamed (or pushed) from the WSA4000 whenever data
+        is available.
+
+        :param stream_id: optional unsigned 32-bit stream identifier
+        """
+        self.scpiset(':TRACE:STREAM:START' +
+            (' %d' % stream_id if stream_id else ''))
+
+    def stream_stop(self):
+        """
+        This command stops the stream capture.  After receiving
+        the command, the WSA system will stop when the current 
+        capturing VRT packet is completed.
+        """
+        self.scpiset(':TRACE:STREAM:STOP')
+
+    @sync_async
+    def stream_status(self):
+        """
+        This query returns the current running status of the
+        stream capture mode.
+
+        :returns: 'RUNNING' or 'STOPPED'
+        """
+        yield self.scpiget(":TRACE:STREAM:STATUS?")
 
