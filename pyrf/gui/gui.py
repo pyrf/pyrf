@@ -87,6 +87,8 @@ class MainWindow(QtGui.QMainWindow):
         yield dut.connect(name)
         if '--reset' in sys.argv:
             yield dut.reset()
+        else:
+            yield dut.flush()
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
