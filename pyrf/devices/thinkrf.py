@@ -230,15 +230,6 @@ class WSA4000(object):
         """
         self.scpiset(":*rst")
 
-    def system_flush(self):
-        """
-        This command clears the WSA4000's internal data storage buffer of
-        any data that is waiting to be sent.  Thus, It is recommended that
-        the flush command should be used when switching between different
-        capture modes to clear up the remnants of packet.
-        """
-        self.scpiset(":SYSTEM:FLUSH")
-
     def system_abort(self):
         """
         This command will cause the WSA4000 to stop the data capturing,
@@ -253,9 +244,12 @@ class WSA4000(object):
 
     def flush(self):
         """
-        Flush capture memory of sweep captures.
+        This command clears the WSA4000's internal data storage buffer of
+        any data that is waiting to be sent.  Thus, It is recommended that
+        the flush command should be used when switching between different
+        capture modes to clear up the remnants of packet.
         """
-        self.scpiset(":sweep:flush\n")
+        self.scpiset(":SYSTEM:FLUSH")
 
     @sync_async
     def trigger(self, settings=None):
@@ -529,7 +523,7 @@ class WSA4000(object):
         """
         Flush capture memory of sweep captures.
         """
-        self.scpiset(":sweep:flush")
+        self.scpiset(":SYSTEM:FLUSH")
 
     def stream_start(self, stream_id=None):
         """
