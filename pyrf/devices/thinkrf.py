@@ -314,20 +314,25 @@ class WSA4000(object):
 
 
     @sync_async
-    def spp(self, spp = None):
+    def spp(self, spp=None):
         """
-        This command sets the number of samples in an IQ packet
+        This command sets or queries the number of Samples Per Packet
+        (SPPacket).
 
-        :param spp: the number of samples in a packet
-        :returns: active antenna port
+        The upper bound of the samples is limited by the VRT's 16-bit
+        packet size field less the VRT header and any optional fields
+        (i.e. Stream ID, Class ID, Timestamps, and trailer)  of 32-bit
+        wide words.  However since the SPP must be a multiple of 16,
+        the maximum is thus limited by 2**16 - 16.
+
+        :param spp: the number of samples in a packet or None
+        :returns: the current spp value if the spp parameter is None
         """
         if spp is None:
             number = yield self.scpiget(":TRACE:SPP?")
-            spp = int(number)
-
+            yield int(number)
         else:
-            self.scpiset(":TRACE:SPP %s\n" % (spp))
-        yield spp
+            self.scpiset(":TRACE:SPP %s\n" % (spp,))
 
     @sync_async
     def ppb(self, ppb = None):
