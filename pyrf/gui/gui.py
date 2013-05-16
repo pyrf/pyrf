@@ -117,6 +117,7 @@ class MainPanel(QtGui.QWidget):
 
     @inlineCallbacks
     def initDUT(self):
+        yield self.dut.request_read_perm()
         self.center_freq = yield self.dut.freq()
         self.decimation_factor = yield self.dut.decimation()
 
