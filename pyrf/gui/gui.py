@@ -334,6 +334,8 @@ class MainPanel(QtGui.QWidget):
         def new_rbw():
             self.points = self._points_values[rbw.currentIndex()]
             self.decimation_points = self.decimation_factor * self.points
+            with self.paused_stream() as dut:
+                dut.spp(self.points)
         rbw.setCurrentIndex(self._points_values.index(1024))
         rbw.currentIndexChanged.connect(new_rbw)
 
