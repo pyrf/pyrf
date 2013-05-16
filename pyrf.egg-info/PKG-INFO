@@ -1,0 +1,57 @@
+Metadata-Version: 1.0
+Name: pyrf
+Version: 0.3.1-dev
+Summary: API for RF receivers including ThinkRF WSA4000
+Home-page: https://github.com/pyrf/pyrf
+Author: ThinkRF Corporation
+Author-email: support@thinkrf.com
+License: BSD
+Description: 
+        .. image:: https://raw.github.com/pyrf/pyrf/master/docs/pyrf_logo.png
+           :alt: PyRF logo
+        
+        Hardware Support
+        ----------------
+        
+        This library currently supports development for the `WSA4000 Platform`_,
+        but may support additional hardware in the future.
+        
+        .. _WSA4000 Platform: http://www.thinkrf.com/products.html
+        
+        Links
+        -----
+        
+        * `Official github page <https://github.com/pyrf/pyrf>`_
+        * `Documentation for this API <http://www.pyrf.org>`_
+        * `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
+        
+        GUI Example Included
+        --------------------
+        
+        .. image:: https://raw.github.com/pyrf/pyrf/master/docs/wsa4000demo.png
+           :alt: wsa4000gui screen shot
+        
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: MacOS X
+Classifier: Environment :: Win32 (MS Windows)
+Classifier: Environment :: X11 Applications :: Qt
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.5
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Quality Assurance
+Classifier: Topic :: Software Development :: Testing
+Classifier: Topic :: System :: Hardware
