@@ -231,12 +231,6 @@ class WSA4000(object):
         self.scpiset(":*rst")
 
 
-    def flush(self):
-        """
-        Flush capture memory of sweep captures.
-        """
-        self.scpiset(":sweep:flush\n")
-
     @sync_async
     def trigger(self, settings=None):
         """
@@ -503,13 +497,6 @@ class WSA4000(object):
         Stop the sweep engine.
         """
         self.scpiset(":sweep:list:stop")
-
-
-    def flush_captures(self):
-        """
-        Flush capture memory of sweep captures.
-        """
-        self.scpiset(":sweep:flush")
 
     def stream_start(self, stream_id=None):
         """
