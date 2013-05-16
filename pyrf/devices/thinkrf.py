@@ -230,7 +230,7 @@ class WSA4000(object):
         """
         self.scpiset(":*rst")
 
-    def system_abort(self):
+    def abort(self):
         """
         This command will cause the WSA4000 to stop the data capturing,
         whether in the manual trace block capture, triggering or sweeping
