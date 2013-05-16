@@ -118,9 +118,11 @@ class MainPanel(QtGui.QWidget):
         self.center_freq = yield self.dut.freq()
         self.decimation_factor = yield self.dut.decimation()
 
+        yield self.dut.flush()
         yield self.dut.request_read_perm()
         self.dut.connector.vrt_callback = self.receive_vrt
-        yield self.dut.capture(self.points, 1)
+        yield self.dut.spp(self.points)
+        yield self.dut.stream_start()
 
     def receive_vrt(self, packet):
         if packet.is_data_packet():
@@ -129,8 +131,6 @@ class MainPanel(QtGui.QWidget):
                 self.center_freq,
                 self.decimation_factor)
             self._vrt_context = {}
-            # start another capture
-            self.dut.capture(self.points, 1)
         else:
             self._vrt_context.update(packet.fields)
 
