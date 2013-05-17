@@ -34,7 +34,7 @@ except ImportError:
         pass
 
 DEVICE_FULL_SPAN = 125e6
-PLOT_YMIN = -130
+PLOT_YMIN = -140
 PLOT_YMAX = 20
 LNEG_NUM = -5000
 LEVELED_TRIGGER_TYPE = 'LEVEL'
@@ -113,7 +113,6 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
-        self.dut.reset()
         self.points = 1024
         self.grid_enable = True
         
@@ -134,11 +133,20 @@ class MainPanel(QtGui.QWidget):
         self.decimation_factor = None
         self.decimation_points = None
         
+        # marker enable/disables
+        self.marker_enable = False
+        self.marker_selected = False
+        self.delta_enabled = False
+        self.delta_selected = False
+        
+        self.vert_key_con = 'RF'
+        self.hor_key_con = 'FREQ'
         # plot window
         self.plot_window = pg.PlotWidget(name='Plot1')
         # initialize the x-axis of the plot
-        self.plot_window.setXRange(2350e6,2450e6)
         self.plot_window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
+        
+        # initialize the y-axis of the plot
         self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
         self.plot_window.setLabel('left', text = 'Power', units = 'dBm')
         self.grid_control(self.grid_enable)
@@ -160,25 +168,17 @@ class MainPanel(QtGui.QWidget):
             pow_data = compute_fft(self.dut, data, context)
 
             # grab center frequency/bandwidth to calculate axis width/height
-            _center_freq = context['rffreq']
-            _bandwidth = context['bandwidth']
-            if (_center_freq != self.center_freq or _bandwidth != self.bandwidth):
-                # update axes limits
-                self.center_freq = _center_freq
-                self.bandwidth = _bandwidth
-                start_freq = (self.center_freq) - (self.bandwidth / 2)
-                stop_freq = (self.center_freq) + (self.bandwidth / 2)
+            self.center_freq  = context['rffreq']
+            self.bandwidth = context['bandwidth']
 
-            else:
-                start_freq = None
-                stop_freq = None
+            start_freq = (self.center_freq) - (self.bandwidth / 2)
+            stop_freq = (self.center_freq) + (self.bandwidth / 2)
             
             self.update_plot(pow_data,start_freq,stop_freq)
     
     # adjust the layout according to which key was pressed
     def keyPressEvent(self, event):
-
-        hotkey_util(self, str(event.text()))
+        hotkey_util(self, event)
        
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -269,7 +269,7 @@ class MainPanel(QtGui.QWidget):
 
     def _ifgain_control(self):
         ifgain = QtGui.QSpinBox(self)
-        ifgain.setRange(-10, 34)
+        ifgain.setRange(-10, 25)
         ifgain.setSuffix(" dB")
         self._ifgain_box = ifgain
         self._read_update_ifgain_box()
@@ -301,16 +301,7 @@ class MainPanel(QtGui.QWidget):
                 f = float(freq.text())
             except ValueError:
                 return
-            if f < self.mhz_bottom:
-                f = self.mhz_bottom
-                self.set_freq_mhz(f)
-                self._update_freq_edit()
-            elif self.mhz_top < f:
-                f = self.mhz_top
-                self.set_freq_mhz(f)
-                self._update_freq_edit()
-            else:
-                self.set_freq_mhz(f)
+            self.set_freq_mhz(f)
         freq.editingFinished.connect(write_freq)
 
         steps = QtGui.QComboBox(self)
@@ -331,9 +322,11 @@ class MainPanel(QtGui.QWidget):
             write_freq()
         freq_minus = QtGui.QPushButton('-')
         freq_minus.clicked.connect(lambda: freq_step(-1))
+        self._freq_minus = freq_minus
         freq_plus = QtGui.QPushButton('+')
         freq_plus.clicked.connect(lambda: freq_step(1))
-
+        self._freq_plus = freq_plus
+        
         return freq, steps, freq_plus, freq_minus
 
     @inlineCallbacks
@@ -390,7 +383,7 @@ class MainPanel(QtGui.QWidget):
         self.dut.decimation(d)
         
     def update_plot(self, pow_data, start_freq, stop_freq):
-
+        self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
         if start_freq != None and stop_freq != None:
             # update the frequency range (Hz)
             self.freq_range = np.linspace(start_freq,stop_freq , len(pow_data))
@@ -403,13 +396,7 @@ class MainPanel(QtGui.QWidget):
                 self.mhold_fft = np.zeros(len(pow_data)) + LNEG_NUM
                 
             self.mhold_fft = np.maximum(self.mhold_fft,pow_data)
-            self.mhold_curve.setData(self.freq_range,self.mhold_fft,pen = 'y')
-        
-        if (self.trig_enable == True and
-            self.freqtrig_lines != None and
-            self.amptrig_line != None):
-            self.update_trig()
-            
+            self.mhold_curve.setData(self.freq_range,self.mhold_fft,pen = 'y')           
                 
         # plot the standard FFT curve
         self.fft_curve.setData(self.freq_range,pow_data,pen = 'g')
