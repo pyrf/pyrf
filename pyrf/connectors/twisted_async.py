@@ -87,9 +87,6 @@ class TwistedConnector(object):
             self.vrt_callback(packet)
 
 
-class VRTTooMuchData(Exception):
-    pass
-
 class VRTClient(Protocol):
     """
     A Twisted protocol for the VRT connection
