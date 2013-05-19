@@ -1,3 +1,42 @@
+2013-05-18 PyRF 0.4.0
+
+    * pyrf.connectors.twisted_async.TwistedConnector now has a
+      vrt_callback attribute for setting a function to call when
+      VRT packets are received.
+
+      This new callback takes a single parameter: a pyrf.vrt.DataPacket
+      or pyrf.vrt.ContextPacket instance.
+
+      The old method of emulating a synchronous read() interface
+      from a pyrf.devices.thinkrf.WSA4000 instance is no longer
+      supported, and will now raise a
+      pyrf.connectors.twisted_async.TwistedConnectorError exception.
+
+    * New methods added to pyrf.devices.thinkrf.WSA4000: abort(),
+      spp(), ppb(), stream_start(), stream_stop(), stream_status()
+
+    * Added support for stream ID context packets and provide a value
+      for sweep ID context packet not converted to a hex string
+
+    * wsa4000gui updated to use streaming and vrt callback
+
+    * "wsa4000gui -v" enables verbose mode which currently shows SCPI
+      commands sent and responses received on stdout
+
+    * Added examples/stream.py example for testing stream data rate
+
+    * Updated examples/twisted_show_i_q.py for new vrt_callback
+
+    * Removed pyrf.twisted_util module which implemented old
+      synchronous read() interface
+
+    * Removed now unused pyrf.connectors.twisted_async.VRTTooMuchData
+      exception
+
+    * Removed wsa4000gui-blocking script
+
+    * Fix for power spectrum calculation in pyrf.numpy_util
+
 2013-02-01 PyRF 0.3.0
 
     * API now allows asynchronous use with TwistedConnector
