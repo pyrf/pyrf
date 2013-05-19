@@ -12,7 +12,6 @@ and placed to left of the controls.
 
 import sys
 import socket
-import random
 from contextlib import contextmanager
 
 from PySide import QtGui
@@ -84,7 +83,6 @@ class MainWindow(QtGui.QMainWindow):
 
     @inlineCallbacks
     def open_device(self, name):
-        # late import because installReactor is being used
         dut = WSA4000(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         if '--reset' in sys.argv:
@@ -113,7 +111,6 @@ class MainPanel(QtGui.QWidget):
         self.decimation_factor = None
         self.decimation_points = None
         self._vrt_context = {}
-        self._vrt_stream_id = random.randrange(1, 2**32)
         self.screen = SpectrumView()
         self.initDUT()
         self.initUI()
@@ -127,16 +124,15 @@ class MainPanel(QtGui.QWidget):
         yield self.dut.flush()
         yield self.dut.request_read_perm()
         self.dut.connector.vrt_callback = self.receive_vrt
-        yield self.dut.spp(self.points)
-        yield self.dut.stream_start(self._vrt_stream_id)
+        yield self.dut.capture(self.points, 1)
 
     def receive_vrt(self, packet):
         if packet.is_data_packet():
             if any(x not in self._vrt_context for x in (
-                    'reflevel', 'rffreq', 'streamid')):
+                    'reflevel', 'rffreq')):
                 return
-            if self._vrt_context['streamid'] != self._vrt_stream_id:
-                return
+            # queue up the next capture while we update
+            self.dut.capture(self.points, 1)
             self.screen.update_data(
                 compute_fft(self.dut, packet, self._vrt_context),
                 self.center_freq,
@@ -360,10 +356,6 @@ class MainPanel(QtGui.QWidget):
 
     @contextmanager
     def paused_stream(self):
-        self.dut.stream_stop()
-        self.dut.flush()
         yield self.dut
-        self._vrt_stream_id = (self._vrt_stream_id + 1) & (2**23-1)
-        self.dut.stream_start(self._vrt_stream_id)
 
 
