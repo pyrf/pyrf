@@ -12,6 +12,8 @@ pyrf.devices
 
 .. autoclass:: WSA4000
 
+   .. automethod:: abort()
+
    .. automethod:: antenna(number=None)
 
    .. automethod:: capture(spp, ppb)
@@ -44,6 +46,8 @@ pyrf.devices
 
    .. automethod:: locked(modulestr)
 
+   .. automethod:: ppb(packets=None)
+
    .. automethod:: preselect_filter(enable=None)
 
    .. automethod:: raw_read(num)
@@ -57,6 +61,14 @@ pyrf.devices
    .. automethod:: scpiget(cmd)
 
    .. automethod:: scpiset(cmd)
+
+   .. automethod:: spp(samples=None)
+
+   .. automethod:: stream_start(stream_id=None)
+
+   .. automethod:: stream_status()
+
+   .. automethod:: stream_stop()
 
    .. automethod:: sweep_add(entry)
 

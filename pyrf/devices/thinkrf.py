@@ -314,7 +314,7 @@ class WSA4000(object):
 
 
     @sync_async
-    def spp(self, spp=None):
+    def spp(self, samples=None):
         """
         This command sets or queries the number of Samples Per Packet
         (SPPacket).
@@ -325,29 +325,29 @@ class WSA4000(object):
         wide words.  However since the SPP must be a multiple of 16,
         the maximum is thus limited by 2**16 - 16.
 
-        :param spp: the number of samples in a packet or None
-        :returns: the current spp value if the spp parameter is None
+        :param samples: the number of samples in a packet or None
+        :returns: the current spp value if the samples parameter is None
         """
-        if spp is None:
+        if samples is None:
             number = yield self.scpiget(":TRACE:SPP?")
             yield int(number)
         else:
-            self.scpiset(":TRACE:SPP %s\n" % (spp,))
+            self.scpiset(":TRACE:SPP %s\n" % (samples,))
 
     @sync_async
-    def ppb(self, ppb = None):
+    def ppb(self, packets=None):
         """
         This command sets the number of IQ packets in a capture
         block
 
-        :param spp: the number of samples in a packet
-        :returns: active antenna port
+        :param packets: the number of samples in a packet
+        :returns: the current ppb value if the packets parameter is None
         """
-        if ppb is None:
+        if packets is None:
             number = yield self.scpiget(":TRACE:BLOCK:PACKETS?")
             number = int(number)
         else:
-            self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
+            self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (packets,))
         yield number
 
 
@@ -545,7 +545,7 @@ class WSA4000(object):
     def stream_stop(self):
         """
         This command stops the stream capture.  After receiving
-        the command, the WSA system will stop when the current 
+        the command, the WSA system will stop when the current
         capturing VRT packet is completed.
         """
         self.scpiset(':TRACE:STREAM:STOP')
