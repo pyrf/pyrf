@@ -83,7 +83,6 @@ class MainWindow(QtGui.QMainWindow):
 
     @inlineCallbacks
     def open_device(self, name):
-        # late import because installReactor is being used
         dut = WSA4000(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         if '--reset' in sys.argv:
