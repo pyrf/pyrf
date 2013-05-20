@@ -25,7 +25,6 @@ from pyrf.util import read_data_and_context
 from pyrf.config import TriggerSettings
 from pyrf.numpy_util import compute_fft
 from pyrf import twisted_util
-import msvcrt
 
 try:
     from twisted.internet.defer import inlineCallbacks
