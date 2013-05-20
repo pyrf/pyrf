@@ -149,7 +149,7 @@ hotkey_dict = {'2': _select_center_freq,
                 'RIGHT KEY': _right_arrow_key,
                 'LEFT KEY': _left_arrow_key,
                 'C': _center_plot_view,
-                'D': _delta_control,
+                #'D': _delta_control,
                 'G': _grid_control,
                 'H': _max_hold_control,
                 'M': _marker_control,
@@ -161,4 +161,4 @@ arrow_dict = {'16777235': 'UP KEY',
                 '16777234': 'LEFT KEY', 
                 '16777236': 'RIGHT KEY'}
 
-                
+
