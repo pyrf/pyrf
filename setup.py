@@ -26,7 +26,7 @@ except ImportError:
 
 setup(
     name='pyrf',
-    version='0.3.1-dev',
+    version='0.5.0-dev',
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
     packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui'],
@@ -60,7 +60,6 @@ setup(
     test_suite='pyrf.tests',
     entry_points={
         'gui_scripts': [
-            "wsa4000gui-blocking = pyrf.gui.wsa4000blocking:main",
             "wsa4000gui = pyrf.gui.wsa4000gui:main",
             ],
         },

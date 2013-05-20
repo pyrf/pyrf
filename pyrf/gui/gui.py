@@ -12,6 +12,7 @@ and placed to left of the controls.
 
 import sys
 import socket
+from contextlib import contextmanager
 
 from PySide import QtGui, QtCore
 from util import frequency_text
@@ -19,12 +20,13 @@ from util import hotkey_util
 import pyqtgraph as pg
 import numpy as np
 
+from pyrf.gui.spectrum import SpectrumView
+from pyrf.gui.util import frequency_text
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
 from pyrf.config import TriggerSettings
 from pyrf.numpy_util import compute_fft
-from pyrf import twisted_util
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -90,11 +92,12 @@ class MainWindow(QtGui.QMainWindow):
 
     @inlineCallbacks
     def open_device(self, name):
-        # late import because installReactor is being used
         dut = WSA4000(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         if '--reset' in sys.argv:
             yield dut.reset()
+        else:
+            yield dut.flush()
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
@@ -131,50 +134,64 @@ class MainPanel(QtGui.QWidget):
         self.bandwidth = None
         self.decimation_factor = None
         self.decimation_points = None
-        
+
         # marker enable/disables
         self.marker_enable = False
         self.marker_selected = False
         self.delta_enabled = False
         self.delta_selected = False
-        
+
         self.vert_key_con = 'RF'
         self.hor_key_con = 'FREQ'
         # plot window
         self.plot_window = pg.PlotWidget(name='Plot1')
         # initialize the x-axis of the plot
         self.plot_window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
-        
+
         # initialize the y-axis of the plot
         self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
         self.plot_window.setLabel('left', text = 'Power', units = 'dBm')
         self.grid_control(self.grid_enable)
         self.fft_curve = self.plot_window.plot(pen = 'g')
         self.freq_range = None
+
+        self._vrt_context = {}
         self.initDUT()
         self.initUI()
 
     @inlineCallbacks
     def initDUT(self):
-
-        
         yield self.dut.request_read_perm()
-        while True:
-            data, context = yield twisted_util.read_data_and_context(
-                self.dut, self.points)
+        self.center_freq = yield self.dut.freq()
+        self.decimation_factor = yield self.dut.decimation()
 
+        yield self.dut.flush()
+        yield self.dut.request_read_perm()
+        self.dut.connector.vrt_callback = self.receive_vrt
+        yield self.dut.capture(self.points, 1)
+
+    def receive_vrt(self, packet):
+        if packet.is_data_packet():
+            if any(x not in self._vrt_context for x in (
+                    'reflevel', 'rffreq', 'bandwidth')):
+                return
+            # queue up the next capture while we update
+            self.dut.capture(self.points, 1)
             # compute FFT
-            pow_data = compute_fft(self.dut, data, context)
+            pow_data = compute_fft(self.dut, packet, self._vrt_context)
 
             # grab center frequency/bandwidth to calculate axis width/height
-            self.center_freq  = context['rffreq']
-            self.bandwidth = context['bandwidth']
+            self.center_freq = self._vrt_context['rffreq']
+            self.bandwidth = self._vrt_context['bandwidth']
 
             start_freq = (self.center_freq) - (self.bandwidth / 2)
             stop_freq = (self.center_freq) + (self.bandwidth / 2)
-            
+
             self.update_plot(pow_data,start_freq,stop_freq)
-    
+        else:
+            self._vrt_context.update(packet.fields)
+
+
     # adjust the layout according to which key was pressed
     def keyPressEvent(self, event):
         hotkey_util(self, event)
@@ -222,7 +239,8 @@ class MainPanel(QtGui.QWidget):
         self._antenna_box = antenna
         self._read_update_antenna_box()
         def new_antenna():
-            self.dut.antenna(int(antenna.currentText().split()[-1]))
+            with self.paused_stream() as dut:
+                dut.antenna(int(antenna.currentText().split()[-1]))
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
@@ -238,7 +256,8 @@ class MainPanel(QtGui.QWidget):
         self._bpf_box = bpf
         self._read_update_bpf_box()
         def new_bpf():
-            self.dut.preselect_filter("On" in bpf.currentText())
+            with self.paused_stream() as dut:
+                dut.preselect_filter("On" in bpf.currentText())
         bpf.currentIndexChanged.connect(new_bpf)
         return bpf
 
@@ -257,7 +276,8 @@ class MainPanel(QtGui.QWidget):
         self._read_update_gain_box()
         def new_gain():
             g = gain.currentText().split()[-1].lower().encode('ascii')
-            self.dut.gain(g)
+            with self.paused_stream() as dut:
+                dut.gain(g)
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
@@ -273,7 +293,8 @@ class MainPanel(QtGui.QWidget):
         self._ifgain_box = ifgain
         self._read_update_ifgain_box()
         def new_ifgain():
-            self.dut.ifgain(ifgain.value())
+            with self.paused_stream() as dut:
+                dut.ifgain(ifgain.value())
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
 
@@ -365,6 +386,8 @@ class MainPanel(QtGui.QWidget):
         def new_rbw():
             self.points = self._points_values[rbw.currentIndex()]
             self.decimation_points = self.decimation_factor * self.points
+            with self.paused_stream() as dut:
+                dut.spp(self.points)
         rbw.setCurrentIndex(self._points_values.index(1024))
         rbw.currentIndexChanged.connect(new_rbw)
 
@@ -372,14 +395,16 @@ class MainPanel(QtGui.QWidget):
 
     def set_freq_mhz(self, f):
         self.center_freq = f * 1e6
-        self.dut.freq(self.center_freq)
+        with self.paused_stream() as dut:
+            dut.freq(self.center_freq)
         
         # reset max hold whenever frequency is changed
         self.mhold_fft = None
 
     def set_decimation(self, d):
         self.decimation_factor = 1 if d == 0 else d
-        self.dut.decimation(d)
+        with self.paused_stream() as dut:
+            dut.decimation(d)
         
     def update_plot(self, pow_data, start_freq, stop_freq):
         self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
@@ -416,4 +441,8 @@ class MainPanel(QtGui.QWidget):
                 amplitude != self.trig_set.amplitude):
                 self.trig_set = TriggerSettings(LEVELED_TRIGGER_TYPE, start_freq, stop_freq,amplitude) 
                 self.dut.trigger(self.trig_set)
+
+    @contextmanager
+    def paused_stream(self):
+        yield self.dut
 

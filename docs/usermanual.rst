@@ -29,8 +29,9 @@ Installing GUI Requirements
 On Debian/Ubuntu::
 
    apt-get install python-pyside python-twisted python-numpy \
-   	python-zope.interface python-pip
+   	python-zope.interface python-pip python-scipy
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
+
 
 On Windows:
 
@@ -41,6 +42,8 @@ On Windows:
    Find the latest version of each of the following and install:
 
    * `NumPy for 32-bit Python 2.7 <http://sourceforge.net/projects/numpy/files/NumPy/>`_ e.g. "numpy-1.6.2-win32-superpack-python2.7.exe"
+   * `SciPy for 32-bit Python 2.7 <http://sourceforge.net/projects/scipy/files/scipy/>`_ e.g. "scipy-0.12.0-win32-superpack-python2.7.exe"
+   * `PyQtGraph for 32-bit Python 2.7 <http://www.pyqtgraph.org/>`_ e.g. "pyqtgraph-0.9.7.win32.exe"
    * `PySide for 32-bit Python 2.7 <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
      e.g. "PySide-1.1.2.win32-py2.7.exe"
    * `zope.interface for 32-bit Python 2.7 <http://pypi.python.org/pypi/zope.interface#download>`_ e.g. "zope.interface-4.0.3-py2.7-win32.egg"
@@ -60,9 +63,12 @@ Installing GUI Requirements from Source
 
 On Debian/Ubuntu::
 
-   apt-get install qt-sdk python-dev cmake
+   apt-get install qt-sdk python-dev cmake \
+	libblas-dev libatlas-dev liblapack-dev gfortran
+   export BLAS=/usr/lib/libblas/libblas.so
+   export ATLAS=/usr/lib/atlas-base/libatlas.so
+   export LAPACK=/usr/lib/lapack/liblapack.so
    pip install -r gui-requirements.txt
-
 
 
 Building EXE Version of GUI

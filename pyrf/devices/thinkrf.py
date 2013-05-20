@@ -230,12 +230,26 @@ class WSA4000(object):
         """
         self.scpiset(":*rst")
 
+    def abort(self):
+        """
+        This command will cause the WSA4000 to stop the data capturing,
+        whether in the manual trace block capture, triggering or sweeping
+        mode.  The WSA4000 will be put into the manual mode; in other
+        words, process such as streaming, trigger and sweep will be
+        stopped.  The capturing process does not wait until the end of a
+        packet to stop, it will stop immediately upon receiving the command.
+        """
+        self.scpiset(":SYSTEM:ABORT")
+
 
     def flush(self):
         """
-        Flush capture memory of sweep captures.
+        This command clears the WSA4000's internal data storage buffer of
+        any data that is waiting to be sent.  Thus, It is recommended that
+        the flush command should be used when switching between different
+        capture modes to clear up the remnants of packet.
         """
-        self.scpiset(":sweep:flush\n")
+        self.scpiset(":SYSTEM:FLUSH")
 
     @sync_async
     def trigger(self, settings=None):
@@ -300,35 +314,40 @@ class WSA4000(object):
 
 
     @sync_async
-    def spp(self, spp = None):
+    def spp(self, samples=None):
         """
-        This command sets the number of samples in an IQ packet
+        This command sets or queries the number of Samples Per Packet
+        (SPPacket).
 
-        :param spp: the number of samples in a packet
-        :returns: active antenna port
+        The upper bound of the samples is limited by the VRT's 16-bit
+        packet size field less the VRT header and any optional fields
+        (i.e. Stream ID, Class ID, Timestamps, and trailer)  of 32-bit
+        wide words.  However since the SPP must be a multiple of 16,
+        the maximum is thus limited by 2**16 - 16.
+
+        :param samples: the number of samples in a packet or None
+        :returns: the current spp value if the samples parameter is None
         """
-        if spp is None:
+        if samples is None:
             number = yield self.scpiget(":TRACE:SPP?")
-            spp = int(number)
-
+            yield int(number)
         else:
-            self.scpiset(":TRACE:SPP %s\n" % (spp))
-        yield spp
+            self.scpiset(":TRACE:SPP %s\n" % (samples,))
 
     @sync_async
-    def ppb(self, ppb = None):
+    def ppb(self, packets=None):
         """
         This command sets the number of IQ packets in a capture
         block
 
-        :param spp: the number of samples in a packet
-        :returns: active antenna port
+        :param packets: the number of samples in a packet
+        :returns: the current ppb value if the packets parameter is None
         """
-        if ppb is None:
+        if packets is None:
             number = yield self.scpiget(":TRACE:BLOCK:PACKETS?")
             number = int(number)
         else:
-            self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
+            self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (packets,))
         yield number
 
 
@@ -509,6 +528,35 @@ class WSA4000(object):
         """
         Flush capture memory of sweep captures.
         """
-        self.scpiset(":sweep:flush")
+        self.scpiset(":SYSTEM:FLUSH")
 
+    def stream_start(self, stream_id=None):
+        """
+        This command begins the execution of the stream capture.
+        It will also initiate data capturing.  Data packets will
+        be streamed (or pushed) from the WSA4000 whenever data
+        is available.
+
+        :param stream_id: optional unsigned 32-bit stream identifier
+        """
+        self.scpiset(':TRACE:STREAM:START' +
+            (' %d' % stream_id if stream_id else ''))
+
+    def stream_stop(self):
+        """
+        This command stops the stream capture.  After receiving
+        the command, the WSA system will stop when the current
+        capturing VRT packet is completed.
+        """
+        self.scpiset(':TRACE:STREAM:STOP')
+
+    @sync_async
+    def stream_status(self):
+        """
+        This query returns the current running status of the
+        stream capture mode.
+
+        :returns: 'RUNNING' or 'STOPPED'
+        """
+        yield self.scpiget(":TRACE:STREAM:STATUS?")
 
