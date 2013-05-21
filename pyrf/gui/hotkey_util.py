@@ -6,68 +6,67 @@ NONE_TRIGGER_TYPE = 'NONE'
 PLOT_YMIN = -130
 PLOT_YMAX = 20
 
+def _update_if(layout, factor):
+        if_gain = layout._ifgain_box.value() + factor
+        layout._ifgain_box.setValue(if_gain) 
+    
+
+def _update_rf(layout, factor):
+    gain = layout._gain_box.currentIndex() + factor
+    max_gain = layout._gain_box.count()
+    if gain > max_gain - 1:
+        gain = max_gain -1
+    elif gain < 0:
+        gain = 0
+        layout._gain_box.setCurrentIndex(gain)
+    layout._gain_box.setCurrentIndex(gain)
+    
+ver_key_dict = {'IF': _update_if, 
+            'RF': _update_rf}
+                
+                
 def _select_if_gain(layout):
-    """
-    select if gain in arrow up/down controls
-    """
     layout.vert_key_con = 'IF'
     
 def _select_rf_gain(layout):
-    """
-    select rf gain in arrow up/down controls
-    """
     layout.vert_key_con = 'RF'
     
 def _select_center_freq(layout):
-    """
-    select center frequency in arrow right/left controls
-    """
     layout.vert_key_con = 'FREQ'
-
+  
 def _arrow_key_up(layout):
-    """
-    handle arrow key up action
-    """
-    if layout.vert_key_con == 'IF':
-        if_gain = layout._ifgain_box.value() + 1
-        layout._ifgain_box.setValue(if_gain) 
-    
-    elif layout.vert_key_con == 'RF':
-        gain = layout._gain_box.currentIndex() + 1
-        max_gain = layout._gain_box.count()
-        if gain > max_gain - 1:
-            gain = max_gain -1
-        layout._gain_box.setCurrentIndex(gain)
+    if ver_key_dict.has_key(layout.vert_key_con):
+        ver_key_dict[layout.vert_key_con](layout,1)
 
 def _arrow_key_down(layout):
-    """
-    handle arrow key down action
-    """
-    
-    if layout.vert_key_con == 'IF':
-        if_gain = layout._ifgain_box.value() - 1 
-        layout._ifgain_box.setValue(if_gain) 
-    
-    elif layout.vert_key_con == 'RF':
-       gain = layout._gain_box.currentIndex() - 1
-       if gain < 0:
-        gain = 0
-       layout._gain_box.setCurrentIndex(gain)
+   
+   if ver_key_dict.has_key(layout.vert_key_con):
+        ver_key_dict[layout.vert_key_con](layout,-1)
        
 def _right_arrow_key(layout):
     """
     handle arrow key right action
     """
+    # TODO: use a dict
     if layout.hor_key_con == 'FREQ':
         layout._freq_plus.click()
+    elif layout.hor_key_con == 'MARK':
+        step = (layout.fstep * 1e6) * (layout.data_size / layout.bandwidth)
+        layout.marker_ind = layout.marker_ind + step
+
+
 
 def _left_arrow_key(layout):
     """
     handle left arrow key action
     """
+    # TODO: use a dict
     if layout.hor_key_con == 'FREQ':
         layout._freq_minus.click()
-
+    elif layout.hor_key_con == 'MARK':
+        step = (layout.fstep * 1e6) * (layout.data_size / layout.bandwidth)
+        layout.marker_ind = layout.marker_ind - step
+        
 def _center_plot_view(layout):
     """
     disable/enable plot grid in layout
@@ -99,19 +98,34 @@ def _max_hold_control(layout):
         layout.mhold_fft = None
         
 def _marker_control(layout):
-    
+
+    # if marker is on and selected turn off
     if layout.marker_selected == True:
         layout.marker_enable = False
+        layout.hor_key_con = 'FREQ'
         layout.marker_selected = False
         layout.delta_enabled = False
         layout.delta_selected = False
+        layout.marker_point.clear()
+        layout.plot_window.removeItem(layout.marker_point)
     
+    # if marker is on and not selected, select
     elif (layout.marker_selected == False and
            layout.marker_enable == True): 
         layout.marker_selected = True
-        
-    elif layout.marker_enable == True:
-        layout.marker_enable = False
+    
+    # if marker is off, turn on and select
+    elif layout.marker_enable == False:
+        layout.hor_key_con = 'MARK'
+        layout.marker_ind = layout.data_size / 2
+        layout.marker_enable = True
+        layout.marker_selected = True
+        layout.marker_point = pg.ScatterPlotItem()
+        layout.plot_window.addItem(layout.marker_point)  
+
+def _enable_peak(layout):
+    layout.peak_enable = not(layout.peak_enable)
+    _marker_control(layout)
     
 def _trigger_control(layout):
     """
@@ -153,6 +167,7 @@ hotkey_dict = {'2': _select_center_freq,
                 'G': _grid_control,
                 'H': _max_hold_control,
                 'M': _marker_control,
+                'P': _enable_peak,
                 'T': _trigger_control
                 } 
                 

@@ -17,7 +17,6 @@ def hotkey_util(layout,event):
     """
     modify elements in the gui layout based on which key was pressed
     """
-    
 
     if arrow_dict.has_key(str(event.key())):
         hotkey =  arrow_dict[str(event.key())]
@@ -26,6 +25,28 @@ def hotkey_util(layout,event):
         
     if hotkey_dict.has_key(hotkey):
         hotkey_dict[hotkey](layout)
+        
+def find_max_index(array):
+    """
+    # returns the maximum index of an array         
+    """
+    # keep track of max index
+    index = 0
+    
+    array_size = len(array)
+    
+    max_value = 0
+    for i in range(array_size):
+        
+        if i == 0:
+            max_value = array[i]
+            index = i
+        elif array[i] > max_value:
+            max_value = array[i]
+            index = i
+    
+    
+    return index
 
       
 
