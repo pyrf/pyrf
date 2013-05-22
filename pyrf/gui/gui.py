@@ -18,8 +18,10 @@ from PySide import QtGui, QtCore
 from util import frequency_text
 from util import hotkey_util
 from util import find_max_index
+from util import find_nearest_index
 import pyqtgraph as pg
 import numpy as np
+
 
 
 from pyrf.gui.util import frequency_text
@@ -337,6 +339,8 @@ class MainPanel(QtGui.QWidget):
         freq.editingFinished.connect(write_freq)
 
         steps = QtGui.QComboBox(self)
+        steps.addItem("Adjust: 0.25 MHz")
+        steps.addItem("Adjust: 0.5 MHz")
         steps.addItem("Adjust: 1 MHz")
         steps.addItem("Adjust: 2.5 MHz")
         steps.addItem("Adjust: 10 MHz")
@@ -348,6 +352,7 @@ class MainPanel(QtGui.QWidget):
         
         steps.currentIndexChanged.connect(freq_step_change)
         steps.setCurrentIndex(2)
+        self._fstep_box = steps
         def freq_step(factor):
             try:
                 f = float(freq.text())
@@ -424,6 +429,7 @@ class MainPanel(QtGui.QWidget):
             dut.decimation(d)
         
     def update_plot(self, pow_data, start_freq, stop_freq):
+
         self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
         if start_freq != None and stop_freq != None:
             # update the frequency range (Hz)
@@ -432,7 +438,7 @@ class MainPanel(QtGui.QWidget):
         if self.mhold_enable:
             self.update_mhold(pow_data)
        
-        if self.marker_enable:
+        if self.marker_enable or self.peak_enable:
             self.update_marker(pow_data)
          
         # plot the standard FFT curve
@@ -466,10 +472,15 @@ class MainPanel(QtGui.QWidget):
         pos = np.random.normal(size=(2,1), scale=1e-9)
         
         if self.peak_enable:
-            max_index = find_max_index(pow_data)
+            if self.trig_enable == True:
+                start_ind = find_nearest_index(self.trig_set.fstart, self.freq_range)
+                stop_ind = find_nearest_index(self.trig_set.fstop, self.freq_range)
+                max_index = find_max_index(pow_data[start_ind:stop_ind]) + start_ind
+            else:
+                max_index = find_max_index(pow_data)
             self.marker_point.setData(x =pos[0] + self.freq_range[max_index], 
                                         y =  pos[0] + pow_data[max_index], 
-                                        size = 15, 
+                                        size = 10, 
                                         symbol = 't')
         else:
             if self.marker_ind == None:
@@ -484,7 +495,7 @@ class MainPanel(QtGui.QWidget):
             
             self.marker_point.setData(x =pos[0] + self.freq_range[self.marker_ind], 
                                         y =  pos[0] + pow_data[self.marker_ind], 
-                                        size = 15, 
+                                        size = 10, 
                                         symbol = 't')
     
     @contextmanager

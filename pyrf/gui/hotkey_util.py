@@ -6,42 +6,30 @@ NONE_TRIGGER_TYPE = 'NONE'
 PLOT_YMIN = -130
 PLOT_YMAX = 20
 
-def _update_if(layout, factor):
-        if_gain = layout._ifgain_box.value() + factor
-        layout._ifgain_box.setValue(if_gain) 
-    
-
-def _update_rf(layout, factor):
-    gain = layout._gain_box.currentIndex() + factor
-    max_gain = layout._gain_box.count()
-    if gain > max_gain - 1:
-        gain = max_gain -1
-    elif gain < 0:
-        gain = 0
-        layout._gain_box.setCurrentIndex(gain)
-    layout._gain_box.setCurrentIndex(gain)
-    
-ver_key_dict = {'IF': _update_if, 
-            'RF': _update_rf}
-                
-                
-def _select_if_gain(layout):
-    layout.vert_key_con = 'IF'
-    
-def _select_rf_gain(layout):
-    layout.vert_key_con = 'RF'
-    
 def _select_center_freq(layout):
     layout.vert_key_con = 'FREQ'
   
 def _arrow_key_up(layout):
-    if ver_key_dict.has_key(layout.vert_key_con):
-        ver_key_dict[layout.vert_key_con](layout,1)
+    
+    step = layout._fstep_box.currentIndex() + 1
+    max_step = layout._fstep_box.count()
+    if step > max_step - 1:
+        step = max_step -1
+    elif step < 0:
+        step = 0
+        layout._fstep_box.setCurrentIndex(step)
+    layout._fstep_box.setCurrentIndex(step)
 
 def _arrow_key_down(layout):
-   
-   if ver_key_dict.has_key(layout.vert_key_con):
-        ver_key_dict[layout.vert_key_con](layout,-1)
+
+    step = layout._fstep_box.currentIndex() - 1
+    max_step = layout._fstep_box.count()
+    if step > max_step - 1:
+        step = max_step -1
+    elif step < 0:
+        step = 0
+        layout._fstep_box.setCurrentIndex(step)
+    layout._fstep_box.setCurrentIndex(step)
        
 def _right_arrow_key(layout):
     """
@@ -53,7 +41,6 @@ def _right_arrow_key(layout):
     elif layout.hor_key_con == 'MARK':
         step = (layout.fstep * 1e6) * (layout.data_size / layout.bandwidth)
         layout.marker_ind = layout.marker_ind + step
-
 
 
 def _left_arrow_key(layout):
@@ -69,7 +56,7 @@ def _left_arrow_key(layout):
         
 def _center_plot_view(layout):
     """
-    disable/enable plot grid in layout
+    move the view to the center of the current FFT displayed
     """
     layout.plot_window.setXRange(layout.center_freq - (layout.bandwidth/2),
                                     layout.center_freq + (layout.bandwidth / 2))
@@ -102,8 +89,8 @@ def _marker_control(layout):
     # if marker is on and selected turn off
     if layout.marker_selected == True:
         layout.marker_enable = False
-        layout.hor_key_con = 'FREQ'
         layout.marker_selected = False
+        layout.hor_key_con = 'FREQ'
         layout.delta_enabled = False
         layout.delta_selected = False
         layout.marker_point.clear()
@@ -116,16 +103,33 @@ def _marker_control(layout):
     
     # if marker is off, turn on and select
     elif layout.marker_enable == False:
+        if layout.marker_point != None:
+            layout.marker_point.clear()
+            layout.plot_window.removeItem(layout.marker_point)
         layout.hor_key_con = 'MARK'
         layout.marker_ind = layout.data_size / 2
         layout.marker_enable = True
         layout.marker_selected = True
+        layout.peak_enable = False
         layout.marker_point = pg.ScatterPlotItem()
         layout.plot_window.addItem(layout.marker_point)  
 
 def _enable_peak(layout):
+  
     layout.peak_enable = not(layout.peak_enable)
-    _marker_control(layout)
+    
+    if layout.peak_enable:
+        if layout.marker_point != None:
+            layout.marker_point.clear()
+            layout.plot_window.removeItem(layout.marker_point)
+        layout.marker_point = pg.ScatterPlotItem()
+        layout.plot_window.addItem(layout.marker_point)
+        layout.marker_enable = False
+        layout.marker_selected = False
+    else:
+        layout.marker_point.clear()
+        layout.plot_window.removeItem(layout.marker_point)
+
     
 def _trigger_control(layout):
     """
@@ -156,8 +160,6 @@ def _trigger_control(layout):
         layout.dut.trigger(layout.trig_set)
     
 hotkey_dict = {'2': _select_center_freq,
-                '4': _select_if_gain,
-                '5': _select_rf_gain,
                 'UP KEY': _arrow_key_up, 
                 'DOWN KEY': _arrow_key_down,
                 'RIGHT KEY': _right_arrow_key,

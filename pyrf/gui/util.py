@@ -1,6 +1,6 @@
 
 from hotkey_util import *
-
+import numpy as np
 def frequency_text(hz):
     """
     return hz as readable text in Hz, kHz, MHz or GHz
@@ -28,7 +28,7 @@ def hotkey_util(layout,event):
         
 def find_max_index(array):
     """
-    # returns the maximum index of an array         
+    returns the maximum index of an array         
     """
     # keep track of max index
     index = 0
@@ -44,9 +44,14 @@ def find_max_index(array):
         elif array[i] > max_value:
             max_value = array[i]
             index = i
-    
-    
     return index
+
+def find_nearest_index(value, array):
+    """
+    returns the index in the array of the nearest value      
+    """
+    idx = (np.abs(array-value)).argmin()
+    return idx
 
       
 
