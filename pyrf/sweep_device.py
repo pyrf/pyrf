@@ -12,7 +12,23 @@ def plan_sweep(device, fstart, fstop, bins):
 
     The following device attributes are used in planning the sweep:
 
-    device.
+    device.FULL_BW
+      full width of the filter in Hz
+    device.USABLE_BW
+      usable portion before filter drop-off at edges in Hz
+    device.MIN_TUNABLE
+      the lowest valid center frequency for arbitrary tuning in Hz,
+      0(DC) is always assumed to be available for direct digitization
+    device.MAX_TUNABLE
+      the highest valid center frequency for arbitrart tuning in Hz
+    device.MIN_DECIMATION
+      the lowest valid decimation value above 1, 1(no decimation) is
+      assumed to always be available
+    device.MAX_DECIMATION
+      the highest valid decimation value, only powers of 2 will be used
+    device.DC_OFFSET_BW
+      the range of frequencies around center that may be affected by
+      a DC offset and should not be used
 
     This function generates a list of tuples:
 
@@ -25,7 +41,7 @@ def plan_sweep(device, fstart, fstop, bins):
     2. An FFT is run on the points returned to produce bins in the linear
        domain
     3. bins[bins_skip:bins_skip + bins_run] are selected
-    4. bins_reduce selected bins are summed to produce output bins: 
+    4. bins_reduce selected bins are summed to produce output bins, e.g.
        np.sum(selected_bins.reshape((-1, bins_reduce)), axis=1)
     5. take logarithm of output bins and appended to the result
     6. for sweeps (fstart != fstop) repeat from 2 until the sweep is complete
