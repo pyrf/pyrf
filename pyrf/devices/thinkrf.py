@@ -37,6 +37,7 @@ class WSA4000(object):
     MAX_TUNABLE = 10000*M
     MIN_DECIMATION = 4
     MAX_DECIMATION = 1023
+    DECIMATED_USABLE = 0.5
     DC_OFFSET_BW = 240000 # XXX: an educated guess
 
     def __init__(self, connector=None):
