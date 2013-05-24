@@ -21,6 +21,7 @@ from util import find_max_index
 from util import find_nearest_index
 import pyqtgraph as pg
 import numpy as np
+from plot_widget import plot
 
 from gui_config import plot_state
 
@@ -128,13 +129,10 @@ class MainPanel(QtGui.QWidget):
 
         # trigger settings
         self.trig_set = None
-        self.amptrig_line = None
-        self.freqtrig_lines = None
 
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
         self.center_freq = None
         self.bandwidth = None
-        self.fstep = None
         self.decimation_factor = None
         self.decimation_points = None
 
@@ -148,18 +146,13 @@ class MainPanel(QtGui.QWidget):
         self.vert_key_con = 'RF'
         self.hor_key_con = 'FREQ'
         # plot window
-        self.plot_window = pg.PlotWidget(name='Plot1')
-        # initialize the x-axis of the plot
-        self.plot_window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
+        self._plot = plot()
 
-        # initialize the y-axis of the plot
-        self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
-        self.plot_window.setLabel('left', text = 'Power', units = 'dBm')
         self.update_grid()
 
       
         # initialize a plot to hold the FFT data
-        self.fft_curve = self.plot_window.plot(pen = 'g')
+        
         self.freq_range = None
 
         self._vrt_context = {}
@@ -221,7 +214,7 @@ class MainPanel(QtGui.QWidget):
         grid.setSpacing(10)
 
         grid.setColumnMinimumWidth(0, 400)
-        grid.addWidget(self.plot_window,0,0,10,1)
+        grid.addWidget(self._plot.window,0,0,10,1)
         
         self.marker_label = QtGui.QLabel("")
         self.marker_label.setAlignment(2)
@@ -440,7 +433,7 @@ class MainPanel(QtGui.QWidget):
         
     def update_plot(self, pow_data, start_freq, stop_freq):
         
-        self.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        self._plot.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         if start_freq != None and stop_freq != None:
             # update the frequency range (Hz)
             self.freq_range = np.linspace(start_freq,stop_freq , len(pow_data))
@@ -450,10 +443,10 @@ class MainPanel(QtGui.QWidget):
         self.update_marker(pow_data)
          
         # plot the standard FFT curve
-        self.fft_curve.setData(self.freq_range,pow_data,pen = 'g')
+        self._plot.fft_curve.setData(self.freq_range,pow_data,pen = 'g')
 
     def update_grid(self):
-        self.plot_window.showGrid(x = self.plot_state.grid, y = self.plot_state.grid)
+        self._plot.window.showGrid(x = self.plot_state.grid, y = self.plot_state.grid)
 
 
     def update_trig(self):

@@ -43,7 +43,6 @@ def _right_arrow_key(layout):
         step = (layout.fstep * 1e6) * (layout.points / layout.bandwidth)
         layout.marker_ind = layout.marker_ind + step
 
-
 def _left_arrow_key(layout):
     """
     handle left arrow key action
@@ -59,10 +58,10 @@ def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
     """
-    layout.plot_window.setXRange(layout.center_freq - (layout.bandwidth/2),
+    layout._plot.window.setXRange(layout.center_freq - (layout.bandwidth/2),
                                     layout.center_freq + (layout.bandwidth / 2))
    
-    layout.plot_window.setYRange(PLOT_YMIN, PLOT_YMAX)
+    layout._plot.window.setYRange(PLOT_YMIN, PLOT_YMAX)
     
 def _update_grid(layout):
     """
@@ -78,10 +77,10 @@ def _update_mhold(layout):
     layout.plot_state.mhold = not(layout.plot_state.mhold)
         
     if layout.plot_state.mhold:
-        layout.mhold_curve = layout.plot_window.plot(pen = 'y')
+        layout.mhold_curve = layout._plot.window.plot(pen = 'y')
     
     else:
-        layout.plot_window.removeItem(layout.mhold_curve)
+        layout._plot.window.removeItem(layout.mhold_curve)
         layout.mhold_curve = None
         layout.mhold_fft = None
         
@@ -94,7 +93,7 @@ def _marker_control(layout):
         layout.hor_key_con = 'FREQ'
         layout.delta_enabled = False
         layout.delta_selected = False
-        layout.plot_window.removeItem(layout.marker_point)
+        layout._plot.window.removeItem(layout.marker_point)
         layout.marker_point = None
         layout.marker_label.setText('')
     
@@ -107,10 +106,10 @@ def _marker_control(layout):
     elif not layout.plot_state.marker:
         
         if layout.marker_point != None:
-            layout.plot_window.removeItem(layout.marker_point)
+            layout._plot.window.removeItem(layout.marker_point)
             layout.marker_point = None
         layout.marker_point = pg.CurvePoint(layout.fft_curve)
-        layout.plot_window.addItem(layout.marker_point)  
+        layout._plot.window.addItem(layout.marker_point)  
         layout.arrow =  pg.ArrowItem(pos=(0, 0), angle=-90, tailLen = 10, headLen = 30)
         layout.arrow.setParentItem(layout.marker_point)
         layout.hor_key_con = 'MARK'
@@ -127,16 +126,16 @@ def _enable_peak(layout):
     
     if layout.plot_state.peak:
         if layout.marker_point != None:
-            layout.plot_window.removeItem(layout.marker_point)
+            layout._plot.window.removeItem(layout.marker_point)
             layout.marker_point = None
         layout.marker_point = pg.CurvePoint(layout.fft_curve)
-        layout.plot_window.addItem(layout.marker_point)  
+        layout._plot.window.addItem(layout.marker_point)  
         layout.arrow =  pg.ArrowItem(pos=(0, 0), angle=-90)
         layout.arrow.setParentItem(layout.marker_point)
         layout.plot_state.marker = False
         layout.plot_state.marker_sel = False
     else:
-        layout.plot_window.removeItem(layout.marker_point)
+        layout._plot.window.removeItem(layout.marker_point)
         layout.marker_label.setText('')
     
 def _trigger_control(layout):
@@ -150,16 +149,11 @@ def _trigger_control(layout):
                                                 layout.center_freq - 10e6, 
                                                 layout.center_freq + 10e6,-100) 
         layout.dut.trigger(layout.trig_set)
-        layout.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
-        layout.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
-        layout.freqtrig_lines = pg.LinearRegionItem([layout.center_freq - 10e6,layout.center_freq + 10e6])
-        layout.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
-        layout.plot_window.addItem(layout.amptrig_line)
-        layout.plot_window.addItem(layout.freqtrig_lines)
+        layout._plot.add_trigger(layout)
     
     else:
-        layout.plot_window.removeItem(layout.amptrig_line)
-        layout.plot_window.removeItem(layout.freqtrig_lines)
+        layout._plot.window.removeItem(layout.amptrig_line)
+        layout._plot.window.removeItem(layout.freqtrig_lines)
         layout.trig_set = TriggerSettings(NONE_TRIGGER_TYPE,
                                                 layout.center_freq - 10e6, 
                                                 layout.center_freq + 10e6,-100) 
