@@ -24,12 +24,12 @@ class TestPlanSweep(unittest.TestCase):
         Develop a plan for sweeping with a WSA42, verify that
         it matches the expected plan
         """
-        result = plan_sweep(WSA42, start, stop, count)
+        result = plan_sweep(WSA42, start, stop, count, min_points=64)
         self.assertEquals(result, expected)
 
     def test_simple_within_sweep_single(self):
-        self._plan42(100*M, 164*M, 64,
-            [(165*M, 165*M, 0, 0, 1, 256, 126, 64, 1)])
+        self._plan42(100*M, 132*M, 64,
+            [(133*M, 149*M, 32*M, 0, 1, 256, 62, 64, 64)])
 
 
     #def test_vlow_plus_normal(self):

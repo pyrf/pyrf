@@ -74,7 +74,9 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     if fstart >= device.MIN_TUNABLE - usable2:
         start = fstart + usable2
         step = usable_bw
-        stop = start - (fstart - fstop) // step * step + step / 2.0  
+        bins_keep = int(round((fstop - fstart) / bin_size))
+        sweep_steps = -((-bins_keep) // usable_bins)
+        stop = start + step * (sweep_steps - 0.5)
         out.append((
             start,
             stop,
