@@ -36,7 +36,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     :returns: a list of tuples:
 
        (fstart, fstop, fstep, fshift, decimation, points, 
-       bins_skip, bins_run, bins_reduce)
+       bins_skip, bins_run, bins_keep)
 
     The caller would then use each of these tuples to do the following:
 
@@ -44,10 +44,10 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     2. An FFT is run on the points returned to produce bins in the linear
        domain
     3. bins[bins_skip:bins_skip + bins_run] are selected
-    4. bins_reduce selected bins are summed to produce output bins, e.g.
-       np.sum(selected_bins.reshape((-1, bins_reduce)), axis=1)
-    5. take logarithm of output bins and appended to the result
-    6. for sweeps (fstep > 0) repeat from 2 until the sweep is complete
+    4. take logarithm of output bins and appended to the result
+    5. for sweeps repeat from 2 until the sweep is complete
+    6. bins_keep is the total number of selected bins to keep; for
+       single captures bins_run == bins_keep
     """
     out = []
     usable2 = device.USABLE_BW / 2.0
@@ -55,9 +55,15 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
 
     ideal_bin_size = (fstop - fstart) / float(bins)
     points = device.FULL_BW / ideal_bin_size
-    # use "// 1" here for round to -Inf effect
     points = max(min_points, 2 ** int(-((-math.log(points, 2)) // 1)))
     bin_size = device.FULL_BW / float(points)
+
+    left_edge = device.FULL_BW / 2.0 - usable2
+    left_bin = -int((-left_edge) // bin_size)
+    fshift = left_bin * bin_size - left_edge
+
+    usable_bins = int((usable2 - dc_offset2) // bin_size)
+    usable_bw = usable_bins * bin_size
 
     # there are three regions that need to be handled differently
     # region 0: direct digitization / "VLOW band"
@@ -67,11 +73,22 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     # region 1: left-hand sweep area
     if fstart >= device.MIN_TUNABLE - usable2:
         start = fstart + usable2
-        step = usable2 - dc_offset2
+        step = usable_bw
         stop = start - (fstart - fstop) // step * step + step / 2.0  
-        out.append((start, stop, step, 0, 
+        out.append((
+            start,
+            stop,
+            step,
+            fshift,
+            1,
+            points,
+            left_bin,
+            usable_bins,
+            int(round((fstop - fstart) / bin_size)),
+            ))
 
     # region 2: right-hand edge
     if fstop > device.MAX_TUNABLE - dc_offset2:
         raise NotImplemented # yet
 
+    return out
