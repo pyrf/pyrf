@@ -1,5 +1,6 @@
+import math
 
-def plan_sweep(device, fstart, fstop, bins):
+def plan_sweep(device, fstart, fstop, bins, min_points=128):
     """
     :param device: a device class or instance such as
                    :class:`pyrf.devices.thinkrf.WSA4000`
@@ -32,9 +33,9 @@ def plan_sweep(device, fstart, fstop, bins):
       the range of frequencies around center that may be affected by
       a DC offset and should not be used
 
-    This function generates a list of tuples:
+    :returns: a list of tuples:
 
-      (fstart, fstop, fstep, fshift, decimation, points, 
+       (fstart, fstop, fstep, fshift, decimation, points, 
        bins_skip, bins_run, bins_reduce)
 
     The caller would then use each of these tuples to do the following:
@@ -48,4 +49,29 @@ def plan_sweep(device, fstart, fstop, bins):
     5. take logarithm of output bins and appended to the result
     6. for sweeps (fstep > 0) repeat from 2 until the sweep is complete
     """
+    out = []
+    usable2 = device.USABLE_BW / 2.0
+    dc_offset2 = device.DC_OFFSET_BW / 2.0
+
+    ideal_bin_size = (fstop - fstart) / float(bins)
+    points = device.FULL_BW / ideal_bin_size
+    # use "// 1" here for round to -Inf effect
+    points = max(min_points, 2 ** int(-((-math.log(points, 2)) // 1)))
+    bin_size = device.FULL_BW / float(points)
+
+    # there are three regions that need to be handled differently
+    # region 0: direct digitization / "VLOW band"
+    if fstart < device.MIN_TUNABLE - usable2:
+        raise NotImplemented # yet
+
+    # region 1: left-hand sweep area
+    if fstart >= device.MIN_TUNABLE - usable2:
+        start = fstart + usable2
+        step = usable2 - dc_offset2
+        stop = start - (fstart - fstop) // step * step + step / 2.0  
+        out.append((start, stop, step, 0, 
+
+    # region 2: right-hand edge
+    if fstop > device.MAX_TUNABLE - dc_offset2:
+        raise NotImplemented # yet
 
