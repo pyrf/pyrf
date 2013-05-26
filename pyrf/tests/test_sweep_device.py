@@ -27,18 +27,22 @@ class TestPlanSweep(unittest.TestCase):
         result = plan_sweep(WSA42, start, stop, count, min_points=64)
         self.assertEquals(result, expected)
 
-    def test_simple_within_sweep_single(self):
+    def test_simple_within_sweep_single_exact(self):
         self._plan42(100*M, 132*M, 64,
             [(133*M, 149*M, 32*M, 0, 1, 256, 62, 64, 64)])
 
     def test_simple_within_sweep_single_just_inside(self):
-        import pdb; pdb.set_trace()
         self._plan42(100*M, 131.9*M, 64,
-            [(133*M, 149*M, 32*M, 0, 1, 512, 164, 128, 128)])
+            [(133*M, 149*M, 32*M, 0, 1, 512, 124, 128, 128)])
 
     def test_simple_within_sweep_single_just_outside(self):
         self._plan42(100*M, 132.1*M, 64,
             [(133*M, 149*M, 32*M, 0, 1, 256, 62, 64, 64)])
+
+    def test_simple_within_sweep_double_exact(self):
+        self._plan42(100*M, 164*M, 128,
+            [(133*M, 181*M, 32*M, 0, 1, 256, 62, 64, 128)])
+
 
 
     #def test_vlow_plus_normal(self):
