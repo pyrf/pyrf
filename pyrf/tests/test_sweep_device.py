@@ -1,6 +1,6 @@
 import unittest
 
-from pyrf.sweep_device import plan_sweep
+from pyrf.sweep_device import plan_sweep, SweepStep
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.units import M
 
@@ -25,7 +25,7 @@ class TestPlanSweep(unittest.TestCase):
         it matches the expected plan
         """
         result = plan_sweep(WSA42, start, stop, count, min_points=64)
-        self.assertEquals(result, expected)
+        self.assertEquals(result, [SweepStep(*s) for s in expected])
 
     def test_simple_within_sweep_single_exact(self):
         self._plan42(100*M, 132*M, 64,

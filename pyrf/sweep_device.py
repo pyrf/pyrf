@@ -1,4 +1,17 @@
 import math
+from collections import namedtuple
+
+SweepStep = namedtuple('SweepStep', '''
+    fstart
+    fstop
+    fstep
+    fshift
+    decimation
+    points
+    bins_skip
+    bins_run
+    bins_keep
+    ''')
 
 def plan_sweep(device, fstart, fstop, bins, min_points=128):
     """
@@ -33,7 +46,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
       the range of frequencies around center that may be affected by
       a DC offset and should not be used
 
-    :returns: a list of tuples:
+    :returns: a list of SweepStep namedtuples:
 
        (fstart, fstop, fstep, fshift, decimation, points, 
        bins_skip, bins_run, bins_keep)
@@ -77,16 +90,16 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
         bins_keep = int(round((fstop - fstart) / bin_size))
         sweep_steps = -((-bins_keep) // usable_bins)
         stop = start + step * (sweep_steps - 0.5)
-        out.append((
-            start,
-            stop,
-            step,
-            fshift,
-            1,
-            points,
-            left_bin,
-            usable_bins,
-            int(round((fstop - fstart) / bin_size)),
+        out.append(SweepStep(
+            fstart=start,
+            fstop=stop,
+            fstep=step,
+            fshift=fshift,
+            decimation=1,
+            points=points,
+            bins_skip=left_bin,
+            bins_run=usable_bins,
+            bins_keep=int(round((fstop - fstart) / bin_size)),
             ))
 
     # region 2: right-hand edge
