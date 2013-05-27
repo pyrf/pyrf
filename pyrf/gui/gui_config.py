@@ -1,4 +1,3 @@
-import pyqtgraph as pg
 
 class plot_state(object):
     
@@ -8,25 +7,28 @@ class plot_state(object):
 
     def __init__(self):
         
-        # grid state
-        self.grid = True
-        
-        # max hold state
-        self.mhold = False
-        
-        # trigger state
-        self.trig = False
 
-        # marker state
+        self.grid = True
+        self.mhold = False
+        self.trig = False
         self.marker = False
         self.marker_sel = False
-
-        # peak enable/disable
         self.peak = False
-        
-        #delta enable/ disables
         self.delta = False
         self.delta_sel= False
+        
+    def disable_marker(self):
+        self.marker = False
+        self.marker_sel = False
+        
+    def enable_marker(self):
+        self.marker = True
+        self.marker_sel = True
+        
+    def sel_marker(self):
+        self.marker_sel = True
+        
+
 
     
     

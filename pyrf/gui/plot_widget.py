@@ -1,13 +1,13 @@
 import pyqtgraph as pg
 PLOT_YMIN = -140
 PLOT_YMAX = 20
-
+INITIAL_FREQ = 2450e6
 class plot(object):
     """
     Class to hold plot widget, as well as all the plot items (curves, arrows,etc)
     """
     
-    def __init__(self):
+    def __init__(self, layout):
     
         self.window = pg.PlotWidget(name='pyrf_plot')
         
@@ -20,14 +20,49 @@ class plot(object):
         
         # initialize fft curve
         self.fft_curve = self.window.plot(pen = 'g')
-        self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
-        
-        self.freqtrig_lines = None
 
+        # initialize max hold curve
+        self.mhold_curve = pg.PlotCurveItem(pen = 'y')
         
-    def add_trigger(self, layout):
-        self.freqtrig_lines = pg.LinearRegionItem([layout.center_freq - 10e6,layout.center_freq + 10e6])
+        # initialize marker
+        self.marker_point = None
+        self.arrow = None
+
+        # initialize trigger lines
+        self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
+        self.freqtrig_lines = pg.LinearRegionItem()
+        
+        # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
+        self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
+        
+    def add_marker(self):
+        self.marker_point = pg.CurvePoint(self.fft_curve)
+        self.arrow =  pg.ArrowItem(pos=(0, 0), angle=-90, tailLen = 10, headLen = 30, pen = 'w', brush = 'b') 
+        self.arrow.setParentItem(self.marker_point)
+        self.window.addItem(self.marker_point) 
+    
+    def remove_marker(self):
+        self.window.removeItem(self.marker_point)
+        
+    def add_mhold(self):
+        self.window.addItem(self.mhold_curve)
+        
+    def remove_mhold(self):
+        self.window.removeItem(self.mhold_curve)
+    
+    def add_trigger(self,f):
+        self.freqtrig_lines.setRegion([f - 10e6, f + 10e6])
         self.window.addItem(self.amptrig_line)
         self.window.addItem(self.freqtrig_lines)
-        self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
+                
+    def remove_trigger(self):
+        self.window.removeItem(self.amptrig_line)
+        self.window.removeItem(self.freqtrig_lines)
+        
+    def center_view(self,f,bw):
+        self.window.setXRange(f - (bw/2),f + (bw / 2))
+        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        
+    def grid(self,state):
+        self.window.showGrid(state,state)

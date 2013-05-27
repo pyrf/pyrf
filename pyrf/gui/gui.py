@@ -120,39 +120,27 @@ class MainPanel(QtGui.QWidget):
         super(MainPanel, self).__init__()
         self.dut = dut
         self.points = 1024
-        
-        # max hold settings
+
         self.plot_state = plot_state()
-        
-        self.mhold_curve = None
         self.mhold_fft = None
-
-        # trigger settings
+        
         self.trig_set = None
-
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
         self.center_freq = None
         self.bandwidth = None
         self.decimation_factor = None
         self.decimation_points = None
 
-        # marker enable/disables
         self.marker_ind = None
-        self.marker_point = None
         self.marker_step = None
-        
         self.delta_freq = None
-        self.arrow = None
         self.vert_key_con = 'RF'
         self.hor_key_con = 'FREQ'
-        # plot window
-        self._plot = plot()
-
-        self.update_grid()
-
-      
-        # initialize a plot to hold the FFT data
         
+        # plot window
+        self._plot = plot(self)
+        self._plot.grid(True)
+
         self.freq_range = None
 
         self._vrt_context = {}
@@ -199,10 +187,10 @@ class MainPanel(QtGui.QWidget):
     def mousePressEvent(self, event):
         if self.plot_state.marker_sel:
             click_pos =  event.pos().x() - 68
-            plot_window_width = self.plot_window.width() -68
+            plot_window_width = self._plot.window.width() -68
 
             if click_pos < plot_window_width and click_pos > 0:
-                vb = self.plot_window.plotItem.getViewBox()
+                vb = self._plot.window.plotItem.getViewBox()
                 window_freq = vb.viewRange()[0]
                 window_bw =  (window_freq[1] - window_freq[0])
                 click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
@@ -445,16 +433,12 @@ class MainPanel(QtGui.QWidget):
         # plot the standard FFT curve
         self._plot.fft_curve.setData(self.freq_range,pow_data,pen = 'g')
 
-    def update_grid(self):
-        self._plot.window.showGrid(x = self.plot_state.grid, y = self.plot_state.grid)
-
-
     def update_trig(self):
-            freq_region = self.freqtrig_lines.getRegion()
+            freq_region = self._plot.freqtrig_lines.getRegion()
             self.trig_set = TriggerSettings(LEVELED_TRIGGER_TYPE, 
                                                     min(freq_region), 
                                                     max(freq_region),
-                                                    self.amptrig_line.value()) 
+                                                    self._plot.amptrig_line.value()) 
             self.dut.trigger(self.trig_set)
     
     def update_mhold(self, pow_data):
@@ -465,22 +449,23 @@ class MainPanel(QtGui.QWidget):
                 self.mhold_fft = np.zeros(len(pow_data)) + LNEG_NUM
                 
             self.mhold_fft = np.maximum(self.mhold_fft,pow_data)
-            self.mhold_curve.setData(self.freq_range,self.mhold_fft)           
+            self._plot.mhold_curve.setData(self.freq_range,self.mhold_fft)
+        else:
+            self.mhold_fft = pow_data
     
     def update_marker(self, pow_data):
-        
-        if self.plot_state.peak:
-            if self.plot_state.trig:
-                start_ind = find_nearest_index(self.trig_set.fstart, self.freq_range)
-                stop_ind = find_nearest_index(self.trig_set.fstop, self.freq_range)
-                max_index = find_max_index(pow_data[start_ind:stop_ind]) + start_ind
-            else:
-                max_index = find_max_index(pow_data)
+        if self.plot_state.marker:
+            
+            if self.plot_state.peak:
+                #if self.plot_state.trig:
+                #    start_ind = find_nearest_index(self.trig_set.fstart, self.freq_range)
+                #    stop_ind = find_nearest_index(self.trig_set.fstop, self.freq_range)
+                #    self.marker_ind = find_max_index(pow_data[start_ind:stop_ind]) + start_ind
+                #else:
+                self.marker_ind = find_max_index(pow_data)
                 
-            self.marker_label.setText("<span style='color: green'>Frequency=%0.1f MHz,  Power=%0.1f dBm</span>"  % (self.freq_range[max_index]/1e6,pow_data[max_index]))
-            self.marker_point.setPos((float(max_index)/float(len(pow_data))) )
+                self.plot_state.peak = False
 
-        elif self.plot_state.marker:
             if self.marker_ind == None:
                 self.marker_ind = len(pow_data) / 2
             
@@ -490,7 +475,7 @@ class MainPanel(QtGui.QWidget):
             elif self.marker_ind >= len(pow_data):
                 self.marker_ind = len(pow_data) - 1
 
-            self.marker_point.setPos(float(self.marker_ind)/float(len(pow_data)))
+            self._plot.marker_point.setPos(float(self.marker_ind)/float(len(pow_data)))
             self.marker_label.setText("<span style='color: green'>Frequency=%0.1f MHz,  Power=%0.1f dBm</span>"  % (self.freq_range[self.marker_ind]/1e6,pow_data[self.marker_ind]))
     @contextmanager
     def paused_stream(self):

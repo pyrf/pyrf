@@ -8,7 +8,7 @@ PLOT_YMAX = 20
 
 def _select_center_freq(layout):
     layout.hor_key_con = 'FREQ'
-    layout.marker_selected = False
+    layout.plot_state.marker_sel = False
 
 def _up_arrow_key(layout):
     
@@ -58,17 +58,14 @@ def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
     """
-    layout._plot.window.setXRange(layout.center_freq - (layout.bandwidth/2),
-                                    layout.center_freq + (layout.bandwidth / 2))
-   
-    layout._plot.window.setYRange(PLOT_YMIN, PLOT_YMAX)
-    
+    layout._plot.center_view(layout.center_freq, layout.bandwidth)
+
 def _update_grid(layout):
     """
     disable/enable plot grid in layout
     """
     layout.plot_state.grid = not(layout.plot_state.grid)
-    layout.update_grid()
+    layout._plot.grid(layout.plot_state.grid)
 
 def _update_mhold(layout):
     """
@@ -77,66 +74,39 @@ def _update_mhold(layout):
     layout.plot_state.mhold = not(layout.plot_state.mhold)
         
     if layout.plot_state.mhold:
-        layout.mhold_curve = layout._plot.window.plot(pen = 'y')
-    
+        layout._plot.add_mhold()
+        
     else:
-        layout._plot.window.removeItem(layout.mhold_curve)
-        layout.mhold_curve = None
-        layout.mhold_fft = None
+        layout._plot.remove_mhold()
         
 def _marker_control(layout):
 
     # if marker is on and selected, turn off
     if layout.plot_state.marker_sel:
-        layout.plot_state.marker = False
-        layout.plot_state.marker_sel= False
+        layout.plot_state.disable_marker()
         layout.hor_key_con = 'FREQ'
-        layout.delta_enabled = False
-        layout.delta_selected = False
-        layout._plot.window.removeItem(layout.marker_point)
-        layout.marker_point = None
+        layout._plot.remove_marker()
+
         layout.marker_label.setText('')
     
     # if marker is on and not selected, select
-    elif layout.plot_state.marker_sel == False and layout.plot_state.marker: 
+    elif not layout.plot_state.marker_sel and layout.plot_state.marker: 
         layout.layout.plot_state.marker_sel = True
         layout.hor_key_con = 'MARK'
         
     # if marker is off, turn on and select
     elif not layout.plot_state.marker:
-        
-        if layout.marker_point != None:
-            layout._plot.window.removeItem(layout.marker_point)
-            layout.marker_point = None
-        layout.marker_point = pg.CurvePoint(layout.fft_curve)
-        layout._plot.window.addItem(layout.marker_point)  
-        layout.arrow =  pg.ArrowItem(pos=(0, 0), angle=-90, tailLen = 10, headLen = 30)
-        layout.arrow.setParentItem(layout.marker_point)
+               
+        layout._plot.add_marker()
         layout.hor_key_con = 'MARK'
         layout.marker_ind = layout.points / 2
-        layout.plot_state.marker = True
-        layout.plot_state.marker_sel = True
-        layout.peak_enable = False
+        layout.plot_state.enable_marker()
 
 
-
-def _enable_peak(layout):
-  
+def _find_peak(layout):
+    if not layout.plot_state.marker:
+        _marker_control(layout)
     layout.plot_state.peak = not(layout.plot_state.peak)
-    
-    if layout.plot_state.peak:
-        if layout.marker_point != None:
-            layout._plot.window.removeItem(layout.marker_point)
-            layout.marker_point = None
-        layout.marker_point = pg.CurvePoint(layout.fft_curve)
-        layout._plot.window.addItem(layout.marker_point)  
-        layout.arrow =  pg.ArrowItem(pos=(0, 0), angle=-90)
-        layout.arrow.setParentItem(layout.marker_point)
-        layout.plot_state.marker = False
-        layout.plot_state.marker_sel = False
-    else:
-        layout._plot.window.removeItem(layout.marker_point)
-        layout.marker_label.setText('')
     
 def _trigger_control(layout):
     """
@@ -145,15 +115,15 @@ def _trigger_control(layout):
     layout.plot_state.trig = not(layout.plot_state.trig)
  
     if layout.plot_state.trig:
+        _select_center_freq(layout)
         layout.trig_set = TriggerSettings(LEVELED_TRIGGER_TYPE,
                                                 layout.center_freq - 10e6, 
                                                 layout.center_freq + 10e6,-100) 
         layout.dut.trigger(layout.trig_set)
-        layout._plot.add_trigger(layout)
+        layout._plot.add_trigger(layout.center_freq)
     
     else:
-        layout._plot.window.removeItem(layout.amptrig_line)
-        layout._plot.window.removeItem(layout.freqtrig_lines)
+        layout._plot.remove_trigger()
         layout.trig_set = TriggerSettings(NONE_TRIGGER_TYPE,
                                                 layout.center_freq - 10e6, 
                                                 layout.center_freq + 10e6,-100) 
@@ -169,7 +139,7 @@ hotkey_dict = {'2': _select_center_freq,
                 'G': _update_grid,
                 'H': _update_mhold,
                 'M': _marker_control,
-                'P': _enable_peak,
+                'P': _find_peak,
                 'T': _trigger_control
                 } 
                 
