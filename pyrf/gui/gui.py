@@ -132,6 +132,7 @@ class MainPanel(QtGui.QWidget):
         self.decimation_points = None
 
         self.marker_ind = None
+        self.delta_ind = None
         self.marker_step = None
         self.delta_freq = None
         self.vert_key_con = 'RF'
@@ -195,7 +196,10 @@ class MainPanel(QtGui.QWidget):
                 window_bw =  (window_freq[1] - window_freq[0])
                 click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
                 self.marker_ind = find_nearest_index(click_freq, self.freq_range)
-                
+    
+    def resizeEvent(self, event):
+        x = event.size()
+        print x.width()
                 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -207,6 +211,10 @@ class MainPanel(QtGui.QWidget):
         self.marker_label = QtGui.QLabel("")
         self.marker_label.setAlignment(2)
         grid.addWidget(self.marker_label, 0, 0, 1,1)
+        
+        self.marker_label2 = QtGui.QLabel("DERPDERPDERP")
+        self.marker_label2.setAlignment(1)
+        grid.addWidget(self.marker_label2, 0, 0, 1,1)
         
         y = 0
         grid.addWidget(self._antenna_control(), y, 1, 1, 2)
@@ -476,7 +484,8 @@ class MainPanel(QtGui.QWidget):
                 self.marker_ind = len(pow_data) - 1
 
             self._plot.marker_point.setPos(float(self.marker_ind)/float(len(pow_data)))
-            self.marker_label.setText("<span style='color: green'>Frequency=%0.1f MHz,  Power=%0.1f dBm</span>"  % (self.freq_range[self.marker_ind]/1e6,pow_data[self.marker_ind]))
+            self.marker_label.setText("<font size=%d> <span style='color: green'>Frequency=%0.1f MHz,  Power=%0.1f dBm</span>"  % (4,self.freq_range[self.marker_ind]/1e6,pow_data[self.marker_ind]))
+            self.marker_label2.setText("<font size='5'> <span style='color: green'>Frequency=%0.1f MHz,  Power=%0.1f dBm</span>"  % (self.freq_range[self.marker_ind]/1e6,pow_data[self.marker_ind]))
     @contextmanager
     def paused_stream(self):
         yield self.dut

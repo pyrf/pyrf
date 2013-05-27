@@ -4,7 +4,7 @@ PLOT_YMAX = 20
 INITIAL_FREQ = 2450e6
 class plot(object):
     """
-    Class to hold plot widget, as well as all the plot items (curves, arrows,etc)
+    Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
     
     def __init__(self, layout):
@@ -26,7 +26,10 @@ class plot(object):
         
         # initialize marker
         self.marker_point = None
-        self.arrow = None
+        self.marker_arrow = None
+        
+        self.delta_point = None
+        self.delta_arrow = None
 
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
@@ -38,8 +41,8 @@ class plot(object):
         
     def add_marker(self):
         self.marker_point = pg.CurvePoint(self.fft_curve)
-        self.arrow =  pg.ArrowItem(pos=(0, 0), angle=-90, tailLen = 10, headLen = 30, pen = 'w', brush = 'b') 
-        self.arrow.setParentItem(self.marker_point)
+        self.marker_arrow =  pg.ArrowItem(pos=(0, 0), angle=-90, tailLen = 10, headLen = 30, pen = 'w', brush = 'b') 
+        self.marker_arrow.setParentItem(self.marker_point)
         self.window.addItem(self.marker_point) 
     
     def remove_marker(self):

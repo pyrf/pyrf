@@ -91,7 +91,7 @@ def _marker_control(layout):
     
     # if marker is on and not selected, select
     elif not layout.plot_state.marker_sel and layout.plot_state.marker: 
-        layout.layout.plot_state.marker_sel = True
+        layout.plot_state.marker_sel = True
         layout.hor_key_con = 'MARK'
         
     # if marker is off, turn on and select
