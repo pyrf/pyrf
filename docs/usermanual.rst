@@ -34,23 +34,47 @@ On Debian/Ubuntu::
 
 On Windows:
 
-   Download and install:
+   Download and install, in the order as listed, the latest version of:
 
-   * `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
-
-   Find the latest version of each of the following and install:
-
-   * `NumPy for 32-bit Python 2.7 <http://sourceforge.net/projects/numpy/files/NumPy/>`_ e.g. "numpy-1.6.2-win32-superpack-python2.7.exe"
-   * `PySide for 32-bit Python 2.7 <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
-     e.g. "PySide-1.1.2.win32-py2.7.exe"
-   * `zope.interface for 32-bit Python 2.7 <http://pypi.python.org/pypi/zope.interface#download>`_ e.g. "zope.interface-4.0.3-py2.7-win32.egg"
-   * `Twisted for 32-bit Python 2.7 <http://twistedmatrix.com/trac/wiki/Downloads#Windows>`_
-     e.g. "Twisted-12.3.0.win32-py2.7.msi"
+   * `32-bit version of Python 2.7.x <http://www.python.org/download/releases/>`_
+   * `PyPI setup tools <https://pypi.python.org/pypi/setuptools>'_
    * `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
      e.g. "pywin32-218.win32-py2.7.exe"
 
-   Download the `latest version of qtreactor <https://github.com/pyrf/qtreactor/tags>`_,
-   extract it then switch to the qtreactor directory and run::
+   Add ``Python27`` and ``Python27\Scripts`` directories to your PATH environment
+   variable.  e.g. if using the default install path, add:
+
+      ;C:\Python27;C:\Python27\Scripts
+
+   Open a Command Prompt window and run the following to download the lastest
+   library package:
+   
+      easy_install pyrf 
+      - this is for first time setting up pyrf.  Next usage, use: ``easy_install -U pyrf``
+      
+      easy_install -U numpy
+      easy_install -U pyside
+      easy_install -U zope.interface
+      easy_install -U twisted
+      easy_install -U qt4reactor
+
+   (Or in one line: ``easy_install -U numpy pyside zope.interface twisted qt4reactor``)
+   
+   If ``easy_install`` failed for any of the libraries, download the latest
+   version for ``32-bit Python 2.7`` directly from:
+   
+   * `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_
+     e.g. "numpy-1.x.x-win32-superpack-python2.7.exe"
+   * `PySide <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
+     e.g. "PySide-1.x.x.win32-py2.7.exe"
+   * `zope.interface <http://pypi.python.org/pypi/zope.interface#download>`_
+     e.g. "zope.interface-x.x.x.win32-py2.7.exe"
+   * `Twisted <http://twistedmatrix.com/trac/>`_
+     e.g. "Twisted-x.x.x.win32-py2.7.msi"
+   * `pywin32 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
+     e.g. "pywin32-xxx.win32-py2.7.exe"
+   * 'qtreactor <https://github.com/pyrf/qtreactor/tags>`_,
+     extract it then switch to the qtreactor directory and run:
 
       python setup.py install
 
