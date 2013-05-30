@@ -13,7 +13,7 @@ SweepStep = namedtuple('SweepStep', '''
     bins_keep
     ''')
 
-def plan_sweep(device, fstart, fstop, bins, min_points=128):
+def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     """
     :param device: a device class or instance such as
                    :class:`pyrf.devices.thinkrf.WSA4000`
@@ -23,6 +23,11 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     :type fstop: float
     :param bins: FFT bins requested (number produced likely more)
     :type bins: int
+    :param min_points: smallest number of points per capture
+    :type min_points: int
+    :param max_points: largest number of points per capture (due to
+                       decimation limits points returned may be larger)
+    :type max_points: int
 
     The following device attributes are used in planning the sweep:
 
@@ -69,14 +74,19 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     ideal_bin_size = (fstop - fstart) / float(bins)
     points = device.FULL_BW / ideal_bin_size
     points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
-    bin_size = device.FULL_BW / float(points)
 
-    left_edge = device.FULL_BW / 2.0 - usable2
-    left_bin = math.ceil(left_edge / bin_size)
-    fshift = left_bin * bin_size - left_edge
+    decimation = 1
+    ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
+    min_decimation = max(2, device.MIN_DECIMATION)
+    max_decimation = 2 ** math.floor(math.log(device.MAX_DECIMATION, 2))
+    if max_points < points and min_decimation <= ideal_decimation:
+        decimation = min(max_decimation, ideal_decimation)
+        points /= decimation
+        decimated_bw = device.FULL_BW / decimation
+        decimation_edge_bins = math.ceil(points * device.DECIMATED_USABLE / 2.0)
+        decimation_edge = decimation_edge_bins * decimated_bw
 
-    usable_bins = int((usable2 - dc_offset2 - fshift) // bin_size)
-    usable_bw = usable_bins * bin_size
+    bin_size = device.FULL_BW / decimation / float(points)
 
     # there are three regions that need to be handled differently
     # region 0: direct digitization / "VLOW band"
@@ -84,18 +94,29 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
         raise NotImplemented # yet
 
     # region 1: left-hand sweep area
-    if fstart >= device.MIN_TUNABLE - usable2:
+    if device.MIN_TUNABLE - usable2 <= fstart:
+        if decimation == 1:
+            left_edge = device.FULL_BW / 2.0 - usable2
+            left_bin = math.ceil(left_edge / bin_size)
+            fshift = left_bin * bin_size - left_edge
+            usable_bins = int((usable2 - dc_offset2 - fshift) // bin_size)
+        else:
+            fshift = usable2 + decimation_edge - (decimated_bw / 2.0)
+            usable_bins = int(min(points - (decimation_edge_bins * 2),
+                (usable2 - dc_offset2) // bin_size))
+
+        usable_bw = usable_bins * bin_size
+
         start = fstart + usable2
-        step = usable_bw
         bins_keep = int(round((fstop - fstart) / bin_size))
         sweep_steps = -((-bins_keep) // usable_bins)
-        stop = start + step * (sweep_steps - 0.5)
+        stop = start + usable_bw * (sweep_steps - 0.5)
         out.append(SweepStep(
             fstart=start,
             fstop=stop,
-            fstep=step,
+            fstep=usable_bw,
             fshift=fshift,
-            decimation=1,
+            decimation=decimation,
             points=points,
             bins_skip=left_bin,
             bins_run=usable_bins,
@@ -103,7 +124,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
             ))
 
     # region 2: right-hand edge
-    if fstop > device.MAX_TUNABLE - dc_offset2:
+    if device.MAX_TUNABLE - dc_offset2 < fstop:
         raise NotImplemented # yet
 
     return out
