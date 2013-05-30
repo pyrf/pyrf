@@ -19,12 +19,12 @@ class WSA42(object):
     DC_OFFSET_BW = 2*M
 
 class TestPlanSweep(unittest.TestCase):
-    def _plan42(self, start, stop, count, expected):
+    def _plan42(self, start, stop, count, expected, min_points=128):
         """
         Develop a plan for sweeping with a WSA42, verify that
         it matches the expected plan
         """
-        result = plan_sweep(WSA42, start, stop, count, min_points=64)
+        result = plan_sweep(WSA42, start, stop, count, min_points=min_points)
         self.assertEquals(result, [SweepStep(*s) for s in expected])
 
     def test_simple_within_sweep_single_exact(self):
@@ -42,6 +42,22 @@ class TestPlanSweep(unittest.TestCase):
     def test_simple_within_sweep_double_exact(self):
         self._plan42(100*M, 164*M, 128,
             [(133*M, 181*M, 32*M, 0, 1, 256, 62, 64, 128)])
+
+    def test_simple_within_sweep_double_points_up(self):
+        self._plan42(100*M, 164*M, 129,
+            [(133*M, 181*M, 32*M, 0, 1, 512, 124, 128, 256)])
+    
+    def test_simple_within_sweep_double_points_half(self):
+        self._plan42(100*M, 164*M, 64,
+            [(133*M, 181*M, 32*M, 0, 1, 128, 31, 32, 64)])
+    
+    def test_simple_within_sweep_double_points_min(self):
+        self._plan42(100*M, 164*M, 32,
+            [(133*M, 181*M, 32*M, 0, 1, 128, 31, 32, 64)])
+
+    def test_simple_within_sweep_triple_exact(self):
+        self._plan42(100*M, 196*M, 192,
+            [(133*M, 213*M, 32*M, 0, 1, 256, 62, 64, 192)])
 
 
 
