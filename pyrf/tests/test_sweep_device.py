@@ -30,48 +30,48 @@ class TestPlanSweep(unittest.TestCase):
 
     def test_simple_within_sweep_single_exact(self):
         self._plan42(100*M, 132*M, 64,
-            [(133*M, 149*M, 32*M, 0, 1, 256, 62, 64, 64)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
 
     def test_simple_within_sweep_single_just_inside(self):
         self._plan42(100*M, 131.9*M, 64,
-            [(133*M, 149*M, 32*M, 0, 1, 512, 124, 128, 128)])
+            [(133*M, 32*M, 0, 1, 512, 124, 128, 128)])
 
     def test_simple_within_sweep_single_just_outside(self):
         self._plan42(100*M, 132.1*M, 64,
-            [(133*M, 149*M, 32*M, 0, 1, 256, 62, 64, 64)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
 
     def test_simple_within_sweep_double_exact(self):
         self._plan42(100*M, 164*M, 128,
-            [(133*M, 181*M, 32*M, 0, 1, 256, 62, 64, 128)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 128)])
 
     def test_simple_within_sweep_double_points_up(self):
         self._plan42(100*M, 164*M, 129,
-            [(133*M, 181*M, 32*M, 0, 1, 512, 124, 128, 256)])
+            [(133*M, 32*M, 0, 1, 512, 124, 128, 256)])
     
     def test_simple_within_sweep_double_points_half(self):
         self._plan42(100*M, 164*M, 64,
-            [(133*M, 181*M, 32*M, 0, 1, 128, 31, 32, 64)])
+            [(133*M, 32*M, 0, 1, 128, 31, 32, 64)])
     
     def test_simple_within_sweep_double_points_min(self):
         self._plan42(100*M, 164*M, 32,
-            [(133*M, 181*M, 32*M, 0, 1, 128, 31, 32, 64)])
+            [(133*M, 32*M, 0, 1, 128, 31, 32, 64)])
 
     def test_simple_within_sweep_fshift_triple(self):
         self._plan42(100*M, 164*M, 32,
-            [(133*M, 208*M, 30*M, 1*M, 1, 64, 16, 15, 32)],
+            [(133*M, 30*M, 1*M, 1, 64, 16, 15, 32)],
             min_points=64)
 
     def test_simple_within_sweep_triple_exact(self):
         self._plan42(100*M, 196*M, 192,
-            [(133*M, 213*M, 32*M, 0, 1, 256, 62, 64, 192)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 192)])
 
     def test_decimated_within_sweep_single_exact(self):
         self._plan42(100*M, 101*M, 4096,
-            [(133*M, 133.5*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 4096)])
+            [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 4096)])
 
     def test_decimated_within_sweep_double_exact(self):
         self._plan42(100*M, 102*M, 8192,
-            [(133*M, 134.5*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 8192)])
+            [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 8192)])
 
 
     #def test_vlow_plus_normal(self):

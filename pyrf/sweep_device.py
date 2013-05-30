@@ -3,7 +3,6 @@ from collections import namedtuple
 
 SweepStep = namedtuple('SweepStep', '''
     fstart
-    fstop
     fstep
     fshift
     decimation
@@ -53,12 +52,12 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
 
     :returns: a list of SweepStep namedtuples:
 
-       (fstart, fstop, fstep, fshift, decimation, points, 
+       (fstart, fstep, fshift, decimation, points, 
        bins_skip, bins_run, bins_keep)
 
     The caller would then use each of these tuples to do the following:
 
-    1. The first 6 values are used for a single capture or single sweep
+    1. The first 5 values are used for a single capture or single sweep
     2. An FFT is run on the points returned to produce bins in the linear
        domain
     3. bins[bins_skip:bins_skip + bins_run] are selected
@@ -111,10 +110,8 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
         start = fstart + usable2
         bins_keep = round((fstop - fstart) / bin_size)
         sweep_steps = math.ceil(bins_keep / usable_bins)
-        stop = start + usable_bw * (sweep_steps - 0.5)
         out.append(SweepStep(
             fstart=start,
-            fstop=stop,
             fstep=usable_bw,
             fshift=fshift,
             decimation=decimation,
