@@ -55,6 +55,11 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 164*M, 32,
             [(133*M, 181*M, 32*M, 0, 1, 128, 31, 32, 64)])
 
+    def test_simple_within_sweep_fshift_triple(self):
+        self._plan42(100*M, 164*M, 32,
+            [(133*M, 208*M, 30*M, 1*M, 1, 64, 16, 15, 32)],
+            min_points=64)
+
     def test_simple_within_sweep_triple_exact(self):
         self._plan42(100*M, 196*M, 192,
             [(133*M, 213*M, 32*M, 0, 1, 256, 62, 64, 192)])

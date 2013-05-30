@@ -75,7 +75,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
     left_bin = -int((-left_edge) // bin_size)
     fshift = left_bin * bin_size - left_edge
 
-    usable_bins = int((usable2 - dc_offset2) // bin_size)
+    usable_bins = int((usable2 - dc_offset2 - fshift) // bin_size)
     usable_bw = usable_bins * bin_size
 
     # there are three regions that need to be handled differently
