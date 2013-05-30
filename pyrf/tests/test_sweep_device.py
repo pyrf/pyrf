@@ -13,13 +13,14 @@ class WSA42(object):
     USABLE_BW = 66*M
     MIN_TUNABLE = 64*M
     MAX_TUNABLE = 2048*M
-    MIN_DECIMATION = 2
+    MIN_DECIMATION = 4
     MAX_DECIMATION = 256
-    DECIMATED_USABLE = 0.75
+    DECIMATED_USABLE = 0.5
     DC_OFFSET_BW = 2*M
 
 class TestPlanSweep(unittest.TestCase):
-    def _plan42(self, start, stop, count, expected, min_points=128):
+    def _plan42(self, start, stop, count, expected, min_points=128,
+            max_points=8192):
         """
         Develop a plan for sweeping with a WSA42, verify that
         it matches the expected plan
@@ -64,6 +65,13 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 196*M, 192,
             [(133*M, 213*M, 32*M, 0, 1, 256, 62, 64, 192)])
 
+    def test_decimated_within_sweep_single_exact(self):
+        self._plan42(100*M, 101*M, 4096,
+            [(133*M, 133.5*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 4096)])
+
+    def test_decimated_within_sweep_double_exact(self):
+        self._plan42(100*M, 102*M, 8192,
+            [(133*M, 134.5*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 8192)])
 
 
     #def test_vlow_plus_normal(self):

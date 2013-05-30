@@ -84,7 +84,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
         points /= decimation
         decimated_bw = device.FULL_BW / decimation
         decimation_edge_bins = math.ceil(points * device.DECIMATED_USABLE / 2.0)
-        decimation_edge = decimation_edge_bins * decimated_bw
+        decimation_edge = decimation_edge_bins * decimated_bw / points
 
     bin_size = device.FULL_BW / decimation / float(points)
 
@@ -99,17 +99,18 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
             left_edge = device.FULL_BW / 2.0 - usable2
             left_bin = math.ceil(left_edge / bin_size)
             fshift = left_bin * bin_size - left_edge
-            usable_bins = int((usable2 - dc_offset2 - fshift) // bin_size)
+            usable_bins = (usable2 - dc_offset2 - fshift) // bin_size
         else:
+            left_bin = decimation_edge_bins
             fshift = usable2 + decimation_edge - (decimated_bw / 2.0)
-            usable_bins = int(min(points - (decimation_edge_bins * 2),
-                (usable2 - dc_offset2) // bin_size))
+            usable_bins = min(points - (decimation_edge_bins * 2),
+                (usable2 - dc_offset2) // bin_size)
 
         usable_bw = usable_bins * bin_size
 
         start = fstart + usable2
-        bins_keep = int(round((fstop - fstart) / bin_size))
-        sweep_steps = -((-bins_keep) // usable_bins)
+        bins_keep = round((fstop - fstart) / bin_size)
+        sweep_steps = math.ceil(bins_keep / usable_bins)
         stop = start + usable_bw * (sweep_steps - 0.5)
         out.append(SweepStep(
             fstart=start,
@@ -118,8 +119,8 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
             fshift=fshift,
             decimation=decimation,
             points=points,
-            bins_skip=left_bin,
-            bins_run=usable_bins,
+            bins_skip=int(left_bin),
+            bins_run=int(usable_bins),
             bins_keep=int(round((fstop - fstart) / bin_size)),
             ))
 
