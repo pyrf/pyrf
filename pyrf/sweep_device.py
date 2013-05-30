@@ -68,11 +68,11 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128):
 
     ideal_bin_size = (fstop - fstart) / float(bins)
     points = device.FULL_BW / ideal_bin_size
-    points = max(min_points, 2 ** int(-((-math.log(points, 2)) // 1)))
+    points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
     bin_size = device.FULL_BW / float(points)
 
     left_edge = device.FULL_BW / 2.0 - usable2
-    left_bin = -int((-left_edge) // bin_size)
+    left_bin = math.ceil(left_edge / bin_size)
     fshift = left_bin * bin_size - left_edge
 
     usable_bins = int((usable2 - dc_offset2 - fshift) // bin_size)
