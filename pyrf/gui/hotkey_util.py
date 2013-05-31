@@ -1,15 +1,25 @@
 from pyrf.config import TriggerSettings
 import pyqtgraph as pg
-
+import gui_state_util as util_state
 LEVELED_TRIGGER_TYPE = 'LEVEL'
 NONE_TRIGGER_TYPE = 'NONE'
 PLOT_YMIN = -130
 PLOT_YMAX = 20
 
 def _select_center_freq(layout):
-    layout.hor_key_con = 'FREQ'
+    layout.hor_key_con = 'CENT FREQ'
     layout.plot_state.marker_sel = False
-
+    util_state.select_center(layout)
+def _select_fstart(layout):
+    layout.hor_key_con = 'START FREQ'
+    layout.plot_state.marker_sel = False
+    util_state.select_fstart(layout)
+    
+def _select_fstop(layout):
+    layout.hor_key_con = 'STOP FREQ'
+    layout.plot_state.marker_sel = False
+    util_state.select_fstop(layout)
+    
 def _up_arrow_key(layout):
     
     step = layout._fstep_box.currentIndex() + 1
@@ -37,22 +47,17 @@ def _right_arrow_key(layout):
     handle arrow key right action
     """
     # TODO: use a dict
-    if layout.hor_key_con == 'FREQ':
+    if layout.hor_key_con == 'CENT FREQ':
         layout._freq_plus.click()
-    elif layout.hor_key_con == 'MARK':
-        step = (layout.fstep * 1e6) * (layout.points / layout.bandwidth)
-        layout.marker_ind = layout.marker_ind + step
+
 
 def _left_arrow_key(layout):
     """
     handle left arrow key action
     """
     # TODO: use a dict
-    if layout.hor_key_con == 'FREQ':
+    if layout.hor_key_con == 'CENT FREQ':
         layout._freq_minus.click()
-    elif layout.hor_key_con == 'MARK':
-        step = (layout.fstep * 1e6) * (layout.points / layout.bandwidth)
-        layout.marker_ind = layout.marker_ind - step
         
 def _center_plot_view(layout):
     """
@@ -74,33 +79,58 @@ def _update_mhold(layout):
     layout.plot_state.mhold = not(layout.plot_state.mhold)
         
     if layout.plot_state.mhold:
-        layout._plot.add_mhold()
+        layout._plot.add_mhold(layout.plot_state)
         
     else:
-        layout._plot.remove_mhold()
+        layout._plot.remove_mhold(layout.plot_state)
         
 def _marker_control(layout):
-
+    """
+    disable/enable marker
+    """
     # if marker is on and selected, turn off
     if layout.plot_state.marker_sel:
         layout.plot_state.disable_marker()
-        layout.hor_key_con = 'FREQ'
+        layout.hor_key_con = 'CENT FREQ'
         layout._plot.remove_marker()
+        if layout.plot_state.delta:
+            layout.plot_state.sel_delta()
 
-        layout.marker_label.setText('')
     
     # if marker is on and not selected, select
     elif not layout.plot_state.marker_sel and layout.plot_state.marker: 
-        layout.plot_state.marker_sel = True
-        layout.hor_key_con = 'MARK'
+        layout.plot_state.sel_marker()
         
     # if marker is off, turn on and select
     elif not layout.plot_state.marker:
                
         layout._plot.add_marker()
-        layout.hor_key_con = 'MARK'
+        layout.hor_key_con = True
         layout.marker_ind = layout.points / 2
         layout.plot_state.enable_marker()
+        layout.plot_state.sel_marker()
+def _delta_control(layout):
+    """
+    disable/enable delta marker
+    """
+
+    # if delta is on and selected, turn off
+    if layout.plot_state.delta_sel:
+        layout.plot_state.disable_delta()
+        layout._plot.remove_delta()
+            
+        if layout.plot_state.marker:
+            layout.plot_state.sel_marker()
+    
+    # if marker is on and not selected, select
+    elif not layout.plot_state.delta_sel and layout.plot_state.delta: 
+        layout.plot_state.sel_delta()
+        
+    # if marker is off, turn on and select
+    elif not layout.plot_state.delta:
+        layout.plot_state.enable_delta() 
+        layout.plot_state.sel_delta()        
+        layout._plot.add_delta()
 
 
 def _find_peak(layout):
@@ -115,7 +145,6 @@ def _trigger_control(layout):
     layout.plot_state.trig = not(layout.plot_state.trig)
  
     if layout.plot_state.trig:
-        _select_center_freq(layout)
         layout.trig_set = TriggerSettings(LEVELED_TRIGGER_TYPE,
                                                 layout.center_freq - 10e6, 
                                                 layout.center_freq + 10e6,-100) 
@@ -129,13 +158,15 @@ def _trigger_control(layout):
                                                 layout.center_freq + 10e6,-100) 
         layout.dut.trigger(layout.trig_set)
     
-hotkey_dict = {'2': _select_center_freq,
+hotkey_dict = {'1': _select_fstart,
+                '2': _select_center_freq,
+                '3': _select_fstop,
                 'UP KEY': _up_arrow_key, 
                 'DOWN KEY': _down_arrow_key,
                 'RIGHT KEY': _right_arrow_key,
                 'LEFT KEY': _left_arrow_key,
                 'C': _center_plot_view,
-                #'D': _delta_control,
+                'D': _delta_control,
                 'G': _update_grid,
                 'H': _update_mhold,
                 'M': _marker_control,
