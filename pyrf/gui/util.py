@@ -1,5 +1,5 @@
 
-from hotkey_util import *
+from control_util import *
 import numpy as np
 def frequency_text(hz):
     """

@@ -6,18 +6,22 @@ NONE_TRIGGER_TYPE = 'NONE'
 PLOT_YMIN = -130
 PLOT_YMAX = 20
 
+def _center_plot_view(layout):
+    """
+    move the view to the center of the current FFT displayed
+    """
+    layout._plot.center_view(layout.center_freq, layout.bandwidth)
+    
 def _select_center_freq(layout):
     layout.hor_key_con = 'CENT FREQ'
-    layout.plot_state.marker_sel = False
     util_state.select_center(layout)
+
 def _select_fstart(layout):
     layout.hor_key_con = 'START FREQ'
-    layout.plot_state.marker_sel = False
     util_state.select_fstart(layout)
     
 def _select_fstop(layout):
     layout.hor_key_con = 'STOP FREQ'
-    layout.plot_state.marker_sel = False
     util_state.select_fstop(layout)
     
 def _up_arrow_key(layout):
@@ -48,7 +52,9 @@ def _right_arrow_key(layout):
     """
     # TODO: use a dict
     if layout.hor_key_con == 'CENT FREQ':
-        layout._freq_plus.click()
+        if layout.enable_plot:
+            layout._freq_plus.click()
+            _center_plot_view(layout)
 
 
 def _left_arrow_key(layout):
@@ -57,14 +63,10 @@ def _left_arrow_key(layout):
     """
     # TODO: use a dict
     if layout.hor_key_con == 'CENT FREQ':
-        layout._freq_minus.click()
+        if layout.enable_plot:
+            layout._freq_minus.click()
+            _center_plot_view(layout)
         
-def _center_plot_view(layout):
-    """
-    move the view to the center of the current FFT displayed
-    """
-    layout._plot.center_view(layout.center_freq, layout.bandwidth)
-
 def _update_grid(layout):
     """
     disable/enable plot grid in layout
@@ -79,10 +81,10 @@ def _update_mhold(layout):
     layout.plot_state.mhold = not(layout.plot_state.mhold)
         
     if layout.plot_state.mhold:
-        layout._plot.add_mhold(layout.plot_state)
+        layout._plot.add_mhold()
         
     else:
-        layout._plot.remove_mhold(layout.plot_state)
+        layout._plot.remove_mhold()
         
 def _marker_control(layout):
     """
@@ -91,7 +93,6 @@ def _marker_control(layout):
     # if marker is on and selected, turn off
     if layout.plot_state.marker_sel:
         layout.plot_state.disable_marker()
-        layout.hor_key_con = 'CENT FREQ'
         layout._plot.remove_marker()
         if layout.plot_state.delta:
             layout.plot_state.sel_delta()
@@ -105,7 +106,6 @@ def _marker_control(layout):
     elif not layout.plot_state.marker:
                
         layout._plot.add_marker()
-        layout.hor_key_con = True
         layout.marker_ind = layout.points / 2
         layout.plot_state.enable_marker()
         layout.plot_state.sel_marker()
@@ -137,6 +137,8 @@ def _find_peak(layout):
     if not layout.plot_state.marker:
         _marker_control(layout)
     layout.plot_state.peak = not(layout.plot_state.peak)
+def _enable_plot(layout):
+    layout.enable_plot = not(layout.enable_plot)
     
 def _trigger_control(layout):
     """
@@ -171,6 +173,7 @@ hotkey_dict = {'1': _select_fstart,
                 'H': _update_mhold,
                 'M': _marker_control,
                 'P': _find_peak,
+                'R': _enable_plot,
                 'T': _trigger_control
                 } 
                 

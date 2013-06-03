@@ -20,12 +20,10 @@ class plot_state(object):
     def disable_marker(self):
         self.marker = False
         self.marker_sel = False
-        print 'disabled marker'
         
     def enable_marker(self):
         self.marker = True
         self.marker_sel = True
-        print 'enabled marker'
         
     def sel_marker(self):
         self.marker_sel = True
@@ -34,11 +32,11 @@ class plot_state(object):
     def disable_delta(self):
         self.delta = False
         self.delta_sel = False
-        print 'disable d'
+
     def enable_delta(self):
         self.delta = True
         self.delta_sel = True
-        print 'enabled d'
+
     def sel_delta(self):
         self.delta_sel = True
         self.marker_sel = False

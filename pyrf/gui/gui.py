@@ -13,7 +13,7 @@ and placed to left of the controls.
 import sys
 import socket
 from contextlib import contextmanager
-import hotkey_util as hk
+import control_util as cu
 from PySide import QtGui, QtCore
 from util import frequency_text
 from util import hotkey_util
@@ -46,6 +46,8 @@ PLOT_YMAX = 40
 LNEG_NUM = -5000
 LEVELED_TRIGGER_TYPE = 'LEVEL'
 NONE_TRIGGER_TYPE = 'NONE'
+MARKER_OFFSET = 0
+
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -134,7 +136,7 @@ class MainPanel(QtGui.QWidget):
         self.bandwidth = None
         self.decimation_factor = None
         self.decimation_points = None
-
+        self._pow = None
         self.marker_ind = None
         self.delta_ind = None
         self.marker_step = None
@@ -147,7 +149,7 @@ class MainPanel(QtGui.QWidget):
         self._plot.grid(True)
         self.window_freq = None
         self.freq_range = None
-
+        self.enable_plot = True
         self._vrt_context = {}
         self.initDUT()
         self.initUI()
@@ -164,6 +166,8 @@ class MainPanel(QtGui.QWidget):
         yield self.dut.capture(self.points, 1)
 
     def receive_vrt(self, packet):
+        
+
         if packet.is_data_packet():
             if any(x not in self._vrt_context for x in (
                     'reflevel', 'rffreq', 'bandwidth')):
@@ -172,11 +176,12 @@ class MainPanel(QtGui.QWidget):
             self.dut.capture(self.points, 1)
             # compute FFT
             pow_data = compute_fft(self.dut, packet, self._vrt_context)
-                        
+            if self.enable_plot:
+                self._pow = pow_data
             # grab center frequency/bandwidth to calculate axis width/height
             self.center_freq = self._vrt_context['rffreq']
             self.bandwidth = self._vrt_context['bandwidth']
-
+            
             start_freq = (self.center_freq) - (self.bandwidth / 2)
             stop_freq = (self.center_freq) + (self.bandwidth / 2)
 
@@ -341,7 +346,7 @@ class MainPanel(QtGui.QWidget):
     def _freq_controls(self):
         cfreq = QtGui.QPushButton('Center Frequency')
         self._cfreq = cfreq
-        cfreq.clicked.connect(lambda: hk._select_center_freq(self))
+        cfreq.clicked.connect(lambda: cu._select_center_freq(self))
         
         
         freq = QtGui.QLineEdit("")
@@ -394,7 +399,7 @@ class MainPanel(QtGui.QWidget):
     def _fstart_controls(self):
         fstart = QtGui.QPushButton('Start Frequency')
         self._fstart = fstart
-        fstart.clicked.connect(lambda: hk._select_fstart(self))
+        fstart.clicked.connect(lambda: cu._select_fstart(self))
         freq = QtGui.QLineEdit("")
         if self.center_freq != None:
             freq.setText("%0.1f", (self.center_freq/1e6))
@@ -404,7 +409,7 @@ class MainPanel(QtGui.QWidget):
     def _fstop_controls(self):
         fstop = QtGui.QPushButton('Stop Frequency')
         self._fstop = fstop
-        fstop.clicked.connect(lambda: hk._select_fstop(self))
+        fstop.clicked.connect(lambda: cu._select_fstop(self))
         freq = QtGui.QLineEdit("")
         if self.center_freq != None:
             freq.setText("%0.1f", (self.center_freq/1e6))
@@ -469,7 +474,8 @@ class MainPanel(QtGui.QWidget):
             dut.decimation(d)
         
     def update_plot(self, pow_data, start_freq, stop_freq):
-        
+        if not self.enable_plot:
+            pow_data = self._pow
         self._plot.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         if start_freq != None and stop_freq != None:
             # update the frequency range (Hz)
@@ -527,19 +533,27 @@ class MainPanel(QtGui.QWidget):
             elif self.marker_ind >= len(pow_data):
                 self.marker_ind = len(pow_data) - 1
 
-            self._plot.marker_point.setPos(float(self.marker_ind)/float(len(pow_data)))
+    
             marker_text = 'Frequency: %0.1f MHz \n Power %d dBm' % (self.freq_range[self.marker_ind]/1e6, pow_data[self.marker_ind])
 
+            zeroy = [pow_data[self.marker_ind] + MARKER_OFFSET] 
+            zerox = [self.freq_range[self.marker_ind]]
+            self._plot.marker_point.clear()
+            self._plot.marker_point.addPoints(x = zerox, 
+                                                    y = zeroy, 
+                                                    symbol = '+', 
+                                                    size = 20, pen = 'w', 
+                                                    brush = (0,100,255))
+            
             self._plot.marker_label.setText(text = marker_text, color =(0,100,255))
             window_freq = self._plot.view_box.viewRange()[0]
-            self._plot.marker_label.setPos(window_freq[0] + 5e6, PLOT_YMAX + 5)
+            self._plot.marker_label.setPos(window_freq[0] + 0.05*(window_freq[1] - window_freq[0]), PLOT_YMAX + 5)
             
     def update_delta(self, pow_data):
-    
-        if self.plot_state.mhold:
-            pow_data = self.mhold_fft
-
         if self.plot_state.delta:
+            
+            if self.plot_state.mhold:
+                pow_data = self.mhold_fft      
 
             if self.delta_ind == None:
                 self.delta_ind = len(pow_data) / 2
@@ -550,13 +564,20 @@ class MainPanel(QtGui.QWidget):
             elif self.delta_ind >= len(pow_data):
                 self.delta_ind = len(pow_data) - 1
 
-            self._plot.delta_point.setPos(float(self.delta_ind)/float(len(pow_data)))
+            zeroy = [pow_data[self.delta_ind] + MARKER_OFFSET]
+            zerox = [self.freq_range[self.delta_ind]]
+            self._plot.delta_point.clear()
+            self._plot.delta_point.addPoints(x = zerox, 
+                                                    y = zeroy, 
+                                                    symbol = '+', 
+                                                    size = 20, pen = 'w', 
+                                                    brush = (255,50,0))
             delta_text = 'Frequency: %0.1f MHz \n Power %d dBm' % (self.freq_range[self.delta_ind]/1e6, pow_data[self.delta_ind])
 
             self._plot.delta_label.setText(text = delta_text, color =(255,50,0))
             window_freq = self._plot.view_box.viewRange()[0]
-  
-            self._plot.delta_label.setPos((window_freq[0] + window_freq[1])/2 - 20e6, PLOT_YMAX + 5)
+
+            self._plot.delta_label.setPos((window_freq[0] + window_freq[1])/2 - 0.15*(window_freq[1] - window_freq[0]), PLOT_YMAX + 5)            
             
             if self.plot_state.marker:
 
@@ -566,8 +587,8 @@ class MainPanel(QtGui.QWidget):
 
                 self._plot.diff_label.setText(text = delta_text, color =(0,255,50))
                 window_freq = self._plot.view_box.viewRange()[0]
-      
-                self._plot.diff_label.setPos((window_freq[0] + window_freq[1])/2 + 20e6, PLOT_YMAX + 5)
+                
+                self._plot.diff_label.setPos((window_freq[0] + window_freq[1])/2 + 0.2*(window_freq[1] - window_freq[0]), PLOT_YMAX + 5)
             else:
                 self._plot.diff_label.setText(text= '')
     @contextmanager
