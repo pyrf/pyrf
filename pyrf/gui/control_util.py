@@ -8,6 +8,7 @@ PLOT_YMAX = 20
 NORMAL_COLOR = 'NONE'
 MARKER_COLOR =  'rgb(0,100,255)'
 DELTA_COLOR = 'rgb(255,50,0)'
+MHOLD_COLOR = 'Yellow'
 SELECTED_TEXT = 'Yellow'
 NORMAL_TEXT = 'BLACK'      
 def _center_plot_view(layout):
@@ -85,11 +86,11 @@ def _mhold_control(layout):
     layout.plot_state.mhold = not(layout.plot_state.mhold)
         
     if layout.plot_state.mhold:
-        gui_state.enable_mhold(layout)
+        gui_state.change_item_color(layout._mhold,  MHOLD_COLOR, NORMAL_TEXT)
         layout._plot.add_mhold()
         
     else:
-        gui_state.disable_mhold(layout)
+        gui_state.change_item_color(layout._mhold,  NORMAL_COLOR, NORMAL_TEXT)
         layout._plot.remove_mhold()
         
 def _marker_control(layout):
