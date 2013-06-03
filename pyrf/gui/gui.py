@@ -125,6 +125,7 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
+        dut.reset()
         self.points = 1024
         
         self.plot_state = plot_state()
@@ -166,7 +167,6 @@ class MainPanel(QtGui.QWidget):
         yield self.dut.capture(self.points, 1)
 
     def receive_vrt(self, packet):
-        
 
         if packet.is_data_packet():
             if any(x not in self._vrt_context for x in (
@@ -214,16 +214,18 @@ class MainPanel(QtGui.QWidget):
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-
         grid.setColumnMinimumWidth(0, 400)
         grid.addWidget(self._plot.window,0,0,10,1)
                 
         y = 0
-
-        device_label = QtGui.QLabel('Device Controls')
-        device_label.setScaledContents(True)
-        device_label.setMaximumHeight(10)
-        grid.addWidget(device_label, y, 2, 1, 1)
+        trig = self._trigger_control()
+        grid.addWidget(trig, y, 1, 1, 1)
+        mark = self._marker_control()
+        grid.addWidget(mark, y, 2, 1, 1)
+        delta = self._delta_control()
+        grid.addWidget(delta, y, 3, 1, 1)
+        mhold = self._mhold_control()
+        grid.addWidget(mhold, y, 4, 1, 1)
         y += 1
         grid.addWidget(self._antenna_control(), y, 1, 1, 2)
         grid.addWidget(self._bpf_control(), y, 3, 1, 2)
@@ -257,7 +259,39 @@ class MainPanel(QtGui.QWidget):
 
         self.setLayout(grid)
         self.show()
-          
+    
+    def _trigger_control(self):
+        trigger = QtGui.QPushButton('Trigger', self)
+        trigger.setMaximumHeight(25)
+
+        trigger.clicked.connect(lambda: cu._trigger_control(self))
+        self._trigger = trigger
+        return trigger
+    
+    def _marker_control(self):
+        marker = QtGui.QPushButton('Marker', self)
+        marker.setMaximumHeight(20)
+
+        marker.clicked.connect(lambda: cu._marker_control(self))
+        self._marker = marker
+        return marker
+        
+    def _delta_control(self):
+        delta = QtGui.QPushButton('Delta', self)
+        delta.setMaximumHeight(20)
+
+        delta.clicked.connect(lambda: cu._delta_control(self))
+        self._delta = delta
+        return delta
+        
+    def _mhold_control(self):
+        mhold = QtGui.QPushButton('Max Hold', self)
+        mhold.setMaximumHeight(20)
+
+        mhold.clicked.connect(lambda: cu._mhold_control(self))
+        self._mhold = mhold
+        return mhold
+    
     @inlineCallbacks
     def _read_update_antenna_box(self):
         ant = yield self.dut.antenna()
@@ -493,7 +527,7 @@ class MainPanel(QtGui.QWidget):
             self.trig_set = TriggerSettings(LEVELED_TRIGGER_TYPE, 
                                                     min(freq_region), 
                                                     max(freq_region),
-                                                    self._plot.amptrig_line.value()) 
+                                                    self._plot.amptrig_line.value() + 5) 
             self.dut.trigger(self.trig_set)
     
     def update_mhold(self, pow_data):
