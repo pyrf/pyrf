@@ -1,16 +1,12 @@
 
 class plot_state(object):
-    
     """
     Class to hold all the GUI's plotitem states
     """
 
     def __init__(self):
-        
-
         self.grid = True
         self.mhold = False
-        self.fft = True
         self.trig = False
         self.trig_sel = False
         self.marker = False
@@ -18,7 +14,18 @@ class plot_state(object):
         self.peak = False
         self.delta = False
         self.delta_sel= False
-        
+        self.mhold_fft = None
+        self.center_freq = None
+        self.bandwidth = None
+        self.decimation_factor = None
+        self.decimation_points = None
+        self._pow = None
+        self.marker_ind  = None
+        self.delta_ind = None
+        self.freq_range = None
+        self.enable_plot = True
+        self.points = 1024
+        self.hor_key_con = 'CENT FREQ'
     def disable_marker(self):
         self.marker = False
         self.marker_sel = False
@@ -30,7 +37,6 @@ class plot_state(object):
     def sel_marker(self):
         self.marker_sel = True
         self.delta_sel = False
-        self.trig_sel = False
         
     def disable_delta(self):
         self.delta = False
@@ -43,21 +49,13 @@ class plot_state(object):
     def sel_delta(self):
         self.delta_sel = True
         self.marker_sel = False
-        self.trig_sel = False
     
     def enable_trig(self):
         self.trig = True
-        self.trig_sel = True
- 
+
     def disable_trig(self):
         self.trig = False
-        self.trig_sel = False 
-        
-    def sel_trig(self):
-        self.trig_sel = True
-        self.delta_sel = False
-        self.marker_sel = False
-        
+
 def select_fstart(layout):
     layout._fstart.setStyleSheet('background-color: rgb(255,84,0); color: white;')
     layout._cfreq.setStyleSheet("")
@@ -75,7 +73,7 @@ def select_fstop(layout):
 
 def change_item_color(item, textColor, backgroundColor, buttonStyle = None):
     if buttonStyle == None:
-        item.setStyleSheet("Background-color: %s; color: %s;" % (textColor, backgroundColor)) 
+        item.setStyleSheet("Background-color: %s; color: %s; " % (textColor, backgroundColor)) 
 
     else:
         item.setStyleSheet("Background-color: %s; color: %s; border-style %s;border-width: 12px; border-radius: 2px; min-width: 5.8em; min-height: 1.5em" % (textColor, backgroundColor, buttonStyle)) 

@@ -1,8 +1,7 @@
 import pyqtgraph as pg
 import numpy as np
-PLOT_YMIN = -140
-PLOT_YMAX = 20
-INITIAL_FREQ = 2450e6
+import constants
+
 class plot(object):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -16,7 +15,7 @@ class plot(object):
         self.window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
-        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        self.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
         self.window.setLabel('left', text = 'Power', units = 'dBm')
         
         # initialize fft curve
@@ -48,7 +47,7 @@ class plot(object):
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
         self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
-
+        self.grid(True)
     def add_marker(self):
         self.window.addItem(self.marker_point) 
         self.window.addItem(self.marker_label)
@@ -84,7 +83,7 @@ class plot(object):
         
     def center_view(self,f,bw):
         self.window.setXRange(f - (bw/2),f + (bw / 2))
-        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        self.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
         
     def grid(self,state):
         self.window.showGrid(state,state)

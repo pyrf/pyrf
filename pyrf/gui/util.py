@@ -1,6 +1,7 @@
 
 from control_util import *
 import numpy as np
+import constants
 def frequency_text(hz):
     """
     return hz as readable text in Hz, kHz, MHz or GHz
