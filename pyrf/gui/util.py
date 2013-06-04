@@ -17,12 +17,10 @@ def hotkey_util(layout,event):
     """
     modify elements in the gui layout based on which key was pressed
     """
-
     if arrow_dict.has_key(str(event.key())):
         hotkey =  arrow_dict[str(event.key())]
     else:
         hotkey = str(event.text()).upper()
-        
     if hotkey_dict.has_key(hotkey):
         hotkey_dict[hotkey](layout)
         

@@ -20,12 +20,11 @@ class plot(object):
         self.window.setLabel('left', text = 'Power', units = 'dBm')
         
         # initialize fft curve
-        self.fft_curve = self.window.plot(pen = 'g')
+        self.fft_curve = self.window.plot(pen = (0,255,236))
         self.marker_point = pg.ScatterPlotItem()
         
-        
         # initialize max hold curve
-        self.mhold_curve = pg.PlotCurveItem(pen = 'y')
+        self.mhold_curve = pg.PlotCurveItem(pen = (255,84,0))
         
         # keep values in mhold buff
         self.mhold_buf = np.zeros(1024)

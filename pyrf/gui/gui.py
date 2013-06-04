@@ -19,11 +19,12 @@ from util import frequency_text
 from util import hotkey_util
 from util import find_max_index
 from util import find_nearest_index
+
 import pyqtgraph as pg
 import numpy as np
 from plot_widget import plot
 
-from gui_config import plot_state
+import gui_config
 
 
 from pyrf.gui.util import frequency_text
@@ -45,10 +46,11 @@ PLOT_YMIN = -140
 PLOT_YMAX = 40
 LNEG_NUM = -5000
 LEVELED_TRIGGER_TYPE = 'LEVEL'
-NONE_TRIGGER_TYPE = 'NONE'
-MARKER_OFFSET = 0
-
-
+NONE_TYPE = 'NONE'
+marker_OFFSET = 0
+FFT_COLOR = 'rgb(0,210,20)'
+SELECTED_TEXT = 'White'
+NORMAL_TEXT = 'BLACK'
 class MainWindow(QtGui.QMainWindow):
     """
     The main window and menus
@@ -110,7 +112,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
-        self.setMinimumWidth(820)
+        self.setMinimumWidth(920)
         self.setMinimumHeight(300)
         self.setWindowTitle('PyRF: %s' % name)
 
@@ -125,10 +127,9 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
-        dut.reset()
         self.points = 1024
         
-        self.plot_state = plot_state()
+        self.plot_state = gui_config.plot_state()
         self.mhold_fft = None
         
         self.trig_set = None
@@ -224,8 +225,11 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(mark, y, 2, 1, 1)
         delta = self._delta_control()
         grid.addWidget(delta, y, 3, 1, 1)
+        peak = self._peak_control()
+        grid.addWidget(peak, y, 4, 1, 1)
+        y += 1
         mhold = self._mhold_control()
-        grid.addWidget(mhold, y, 4, 1, 1)
+        grid.addWidget(mhold, y, 1, 1, 1)
         y += 1
         grid.addWidget(self._antenna_control(), y, 1, 1, 2)
         grid.addWidget(self._bpf_control(), y, 3, 1, 2)
@@ -262,36 +266,46 @@ class MainPanel(QtGui.QWidget):
     
     def _trigger_control(self):
         trigger = QtGui.QPushButton('Trigger', self)
-        trigger.setMaximumHeight(25)
-
         trigger.clicked.connect(lambda: cu._trigger_control(self))
         self._trigger = trigger
         return trigger
     
     def _marker_control(self):
-        marker = QtGui.QPushButton('Marker', self)
-        marker.setMaximumHeight(20)
-
+        marker = QtGui.QPushButton('Marker 1', self)
         marker.clicked.connect(lambda: cu._marker_control(self))
         self._marker = marker
         return marker
         
     def _delta_control(self):
-        delta = QtGui.QPushButton('Delta', self)
-        delta.setMaximumHeight(20)
-
+        delta = QtGui.QPushButton('Marker 2', self)
         delta.clicked.connect(lambda: cu._delta_control(self))
         self._delta = delta
         return delta
+    
+    def _peak_control(self):
+        peak = QtGui.QPushButton('Peak', self)
+        peak.clicked.connect(lambda: cu._find_peak(self))
+        self._peak = peak
+        return peak
         
     def _mhold_control(self):
         mhold = QtGui.QPushButton('Max Hold', self)
-        mhold.setMaximumHeight(20)
-
         mhold.clicked.connect(lambda: cu._mhold_control(self))
         self._mhold = mhold
         return mhold
-    
+        
+    def _grid_control(self):
+        plot_grid = QtGui.QPushButton('Grid', self)
+        plot_grid.clicked.connect(lambda: cu._grid_control(self))
+        self._plot_grid = plot_grid
+        return plot_grid
+
+    def _center_control(self):
+        center = QtGui.QPushButton('Center View', self)
+        center.clicked.connect(lambda: cu._center_plot_view(self))
+        self._center = center
+        return center
+           
     @inlineCallbacks
     def _read_update_antenna_box(self):
         ant = yield self.dut.antenna()
@@ -515,12 +529,16 @@ class MainPanel(QtGui.QWidget):
             # update the frequency range (Hz)
             self.freq_range = np.linspace(start_freq,stop_freq , len(pow_data))
        
-        
+        self.update_fft(pow_data)
         self.update_mhold(pow_data)
         self.update_marker(pow_data)
         self.update_delta(pow_data)
-        # plot the standard FFT curve
-        self._plot.fft_curve.setData(self.freq_range,pow_data,pen = 'g')
+        
+    def update_fft(self, pow_data):
+        if self.plot_state.fft:
+            self._plot.fft_curve.setData(self.freq_range,pow_data)
+        else:
+            self._plot.fft_curve.clear()
 
     def update_trig(self):
             freq_region = self._plot.freqtrig_lines.getRegion()
@@ -547,6 +565,9 @@ class MainPanel(QtGui.QWidget):
         if self.plot_state.marker:
             if self.plot_state.mhold:
                 pow_data = self.mhold_fft
+                text_color = (255,84,0)
+            else:
+                text_color = (0,255,236)
             if self.plot_state.peak:
                 # code to restrict peak within triggers
                 #if self.plot_state.trig:
@@ -567,19 +588,18 @@ class MainPanel(QtGui.QWidget):
             elif self.marker_ind >= len(pow_data):
                 self.marker_ind = len(pow_data) - 1
 
-    
             marker_text = 'Frequency: %0.1f MHz \n Power %d dBm' % (self.freq_range[self.marker_ind]/1e6, pow_data[self.marker_ind])
 
-            zeroy = [pow_data[self.marker_ind] + MARKER_OFFSET] 
+            zeroy = [pow_data[self.marker_ind] + marker_OFFSET] 
             zerox = [self.freq_range[self.marker_ind]]
             self._plot.marker_point.clear()
             self._plot.marker_point.addPoints(x = zerox, 
                                                     y = zeroy, 
                                                     symbol = '+', 
                                                     size = 20, pen = 'w', 
-                                                    brush = (0,100,255))
+                                                    brush = 'w')
             
-            self._plot.marker_label.setText(text = marker_text, color =(0,100,255))
+            self._plot.marker_label.setText(text = marker_text, color = text_color)
             window_freq = self._plot.view_box.viewRange()[0]
             self._plot.marker_label.setPos(window_freq[0] + 0.05*(window_freq[1] - window_freq[0]), PLOT_YMAX + 5)
             
@@ -588,7 +608,10 @@ class MainPanel(QtGui.QWidget):
             
             if self.plot_state.mhold:
                 pow_data = self.mhold_fft      
-
+                text_color = (255,84,0)
+            else:
+                text_color = (0,255,236)
+                
             if self.delta_ind == None:
                 self.delta_ind = len(pow_data) / 2
             
@@ -598,17 +621,17 @@ class MainPanel(QtGui.QWidget):
             elif self.delta_ind >= len(pow_data):
                 self.delta_ind = len(pow_data) - 1
 
-            zeroy = [pow_data[self.delta_ind] + MARKER_OFFSET]
+            zeroy = [pow_data[self.delta_ind] + marker_OFFSET]
             zerox = [self.freq_range[self.delta_ind]]
             self._plot.delta_point.clear()
             self._plot.delta_point.addPoints(x = zerox, 
                                                     y = zeroy, 
                                                     symbol = '+', 
                                                     size = 20, pen = 'w', 
-                                                    brush = (255,50,0))
+                                                    brush = 'w')
             delta_text = 'Frequency: %0.1f MHz \n Power %d dBm' % (self.freq_range[self.delta_ind]/1e6, pow_data[self.delta_ind])
-
-            self._plot.delta_label.setText(text = delta_text, color =(255,50,0))
+        
+            self._plot.delta_label.setText(text = delta_text, color = text_color)
             window_freq = self._plot.view_box.viewRange()[0]
 
             self._plot.delta_label.setPos((window_freq[0] + window_freq[1])/2 - 0.15*(window_freq[1] - window_freq[0]), PLOT_YMAX + 5)            
@@ -619,7 +642,7 @@ class MainPanel(QtGui.QWidget):
                 power_diff = np.abs((pow_data[self.delta_ind]) - (pow_data[self.marker_ind]))
                 delta_text = 'Delta : %0.1f MHz \nDelta %d dBm' % (freq_diff, power_diff )
 
-                self._plot.diff_label.setText(text = delta_text, color =(0,255,50))
+                self._plot.diff_label.setText(text = delta_text, color = text_color)
                 window_freq = self._plot.view_box.viewRange()[0]
                 
                 self._plot.diff_label.setPos((window_freq[0] + window_freq[1])/2 + 0.2*(window_freq[1] - window_freq[0]), PLOT_YMAX + 5)
