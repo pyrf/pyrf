@@ -15,15 +15,15 @@ def _center_plot_view(layout):
     layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth)
     
 def _select_center_freq(layout):
-    layout.hor_key_con = 'CENT FREQ'
+    layout.freq_sel = 'CENT'
     gui_state.select_center(layout)
 
 def _select_fstart(layout):
-    layout.hor_key_con = 'START FREQ'
+    layout.freq_sel = 'START'
     gui_state.select_fstart(layout)
     
 def _select_fstop(layout):
-    layout.hor_key_con = 'STOP FREQ'
+    layout.freq_sel = 'STOP'
     gui_state.select_fstop(layout)
     
 def _up_arrow_key(layout):
@@ -53,7 +53,7 @@ def _right_arrow_key(layout):
     handle arrow key right action
     """
     # TODO: use a dict
-    if layout.plot_state.hor_key_con == 'CENT FREQ':
+    if layout.plot_state.freq_sel == 'CENT':
         if layout.plot_state.enable_plot:
             layout._freq_plus.click()
         if layout.plot_state.mhold:
@@ -65,7 +65,7 @@ def _left_arrow_key(layout):
     handle left arrow key action
     """
     # TODO: use a dict
-    if layout.plot_state.hor_key_con == 'CENT FREQ':
+    if layout.plot_state.freq_sel == 'CENT':
         if layout.plot_state.enable_plot:
             layout._freq_minus.click()
         if layout.plot_state.mhold:
@@ -75,8 +75,13 @@ def _grid_control(layout):
     """
     disable/enable plot grid in layout
     """
+    
     layout.plot_state.grid = not(layout.plot_state.grid)
     layout._plot.grid(layout.plot_state.grid)
+    if layout.plot_state.grid:
+        gui_state.change_item_color(layout._grid,  constants.ORANGE, constants.WHITE)
+    else:
+        gui_state.change_item_color(layout._grid,  constants.NORMAL_COLOR, constants.BLACK)
 
 def _mhold_control(layout):
     """
@@ -161,8 +166,12 @@ def _find_peak(layout):
     layout.plot_state.peak = not(layout.plot_state.peak)
     
 def _enable_plot(layout):
-    layout.plot_state.enable_plot = not(layout.plot_state.enable_plot)
     
+    layout.plot_state.enable_plot = not(layout.plot_state.enable_plot)
+    if not layout.plot_state.enable_plot:
+        gui_state.change_item_color(layout._pause,  constants.ORANGE, constants.WHITE)
+    else:
+        gui_state.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
 def _trigger_control(layout):
     """
     disable/enable triggers in the layout plot
