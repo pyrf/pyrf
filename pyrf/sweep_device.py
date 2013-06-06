@@ -74,6 +74,10 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     points = device.FULL_BW / ideal_bin_size
     points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
 
+    # FIXME: truncate to left-hand sweep area for now
+    fstart = max(device.MIN_TUNABLE - usable2, fstart)
+    fstop = min(device.MAX_TUNABLE - dc_offset2, fstop)
+
     decimation = 1
     ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
     min_decimation = max(2, device.MIN_DECIMATION)
