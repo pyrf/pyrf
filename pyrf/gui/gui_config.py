@@ -33,10 +33,11 @@ class plot_state(object):
         self.start_freq = None
         self.stop_freq = None
         
-        
         self.enable_plot = True
         
         self.freq_sel = 'CENT'
+    
+    
     def disable_marker(self):
         self.marker = False
         self.marker_sel = False
@@ -75,7 +76,10 @@ class plot_state(object):
             self.start_freq = (self.center_freq) - (self.bandwidth / 2)
             self.stop_freq = (self.center_freq) + (self.bandwidth / 2)
         # TODO: UPDATE TO CHANGE FOR FSTART/FSTOP
-        
+    
+    def reset_freq_bounds(self):
+            self.start_freq = None
+            self.stop_freq = None
 def select_fstart(layout):
     layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._cfreq.setStyleSheet("")

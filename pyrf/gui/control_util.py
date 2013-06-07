@@ -96,6 +96,7 @@ def _mhold_control(layout):
     else:  
         gui_state.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
         layout._plot.remove_mhold()
+        layout.plot_state.mhold_fft = None
         
 def _marker_control(layout):
     """
@@ -172,6 +173,7 @@ def _enable_plot(layout):
         gui_state.change_item_color(layout._pause,  constants.ORANGE, constants.WHITE)
     else:
         gui_state.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
+        layout.dut.capture(layout.plot_state.points, 1)
 def _trigger_control(layout):
     """
     disable/enable triggers in the layout plot
