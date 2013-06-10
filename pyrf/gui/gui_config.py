@@ -1,5 +1,7 @@
 import constants
 import numpy as np
+
+
 class plot_state(object):
     """
     Class to hold all the GUI's plot states
@@ -22,7 +24,6 @@ class plot_state(object):
         self.delta_ind = None
         self.peak = False
         
-        self.pause_fft = None
         self.freq_range = None
         self.points = constants.STARTUP_POINTS
         
@@ -80,6 +81,8 @@ class plot_state(object):
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
+            
+
 def select_fstart(layout):
     layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._cfreq.setStyleSheet("")
@@ -97,7 +100,7 @@ def select_fstop(layout):
 
 def change_item_color(item, textColor, backgroundColor, buttonStyle = None):
     if buttonStyle == None:
-        item.setStyleSheet("Background-color: %s; color: %s; " % (textColor, backgroundColor)) 
+        item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
     else:
         item.setStyleSheet("Background-color: %s; color: %s; border-style %s;border-width: 12px; border-radius: 2px; min-width: 5.8em; min-height: 1.5em" % (textColor, backgroundColor, buttonStyle)) 
     

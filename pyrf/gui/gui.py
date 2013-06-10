@@ -152,9 +152,11 @@ class MainPanel(QtGui.QWidget):
             # grab center frequency/bandwidth to calculate axis width/height
             self.plot_state.center_freq = self._vrt_context['rffreq']
             self.plot_state.bandwidth = self._vrt_context['bandwidth']
+            
             self.plot_state.start_freq = (self.plot_state.center_freq) - (self.plot_state.bandwidth / 2)
             self.plot_state.stop_freq = (self.plot_state.center_freq) + (self.plot_state.bandwidth / 2)
-            self._update_freq_edit()
+            if self._freq_edit.text() == '':
+                self._update_freq_edit()
             self.update_plot()
         else:
             self._vrt_context.update(packet.fields)
@@ -254,49 +256,57 @@ class MainPanel(QtGui.QWidget):
         self.show()
     
     def _trigger_control(self):
-        trigger = QtGui.QPushButton('(T)rigger', self)
+        trigger = QtGui.QPushButton('Trigger', self)
+        trigger.setToolTip("<span style=\"color:black;\">[T]<br>Turn the Triggers on/off</span>") 
         trigger.clicked.connect(lambda: cu._trigger_control(self))
         self._trigger = trigger
         return trigger
     
     def _marker_control(self):
         marker = QtGui.QPushButton('(M)arker 1', self)
+        marker.setToolTip("<span style=\"color:black;\">[M]<br>Turn Marker 1 on/off</span>") 
         marker.clicked.connect(lambda: cu._marker_control(self))
         self._marker = marker
         return marker
         
     def _delta_control(self):
-        delta = QtGui.QPushButton('Mar(k)er 2', self)
+        delta = QtGui.QPushButton('Marker 2', self)
+        delta.setToolTip("<span style=\"color:black;\">[K]<br>Turn Marker 2 on/off</span>") 
         delta.clicked.connect(lambda: cu._delta_control(self))
         self._delta = delta
         return delta
     
     def _peak_control(self):
         peak = QtGui.QPushButton('(P)eak', self)
+        peak.setToolTip("<span style=\"color:black;\">[P]<br>Find peak of the selected spectrum</span>") 
         peak.clicked.connect(lambda: cu._find_peak(self))
         self._peak = peak
         return peak
         
     def _mhold_control(self):
-        mhold = QtGui.QPushButton('Max (H)old', self)
+        mhold = QtGui.QPushButton('Max Hold', self)
+        mhold.setToolTip("<span style=\"color:black;\">[H]<br>Turn the Max Hold on/off</span>") 
         mhold.clicked.connect(lambda: cu._mhold_control(self))
         self._mhold = mhold
         return mhold
         
     def _grid_control(self):
-        plot_grid = QtGui.QPushButton('(G)rid', self)
+        plot_grid = QtGui.QPushButton('Grid', self)
+        plot_grid.setToolTip("<span style=\"color:black;\">[G]<br>Turn the Grid on/off</span>") 
         plot_grid.clicked.connect(lambda: cu._grid_control(self))
         self._grid = plot_grid
         return plot_grid
 
     def _center_control(self):
-        center = QtGui.QPushButton('(C)enter View', self)
+        center = QtGui.QPushButton('Center View', self)
+        center.setToolTip("<span style=\"color:black;\">[C]<br>Center the Plot View around the available spectrum</span>") 
         center.clicked.connect(lambda: cu._center_plot_view(self))
         self._center = center
         return center
         
     def _pause_control(self):
-        pause = QtGui.QPushButton('(Space Bar) Pause', self)
+        pause = QtGui.QPushButton('Pause', self)
+        pause.setToolTip("<span style=\"color:black;\">[Space Bar]<br>Pause the plot window</span>") 
         pause.clicked.connect(lambda: cu._enable_plot(self))
         self._pause = pause
         return pause
@@ -378,24 +388,22 @@ class MainPanel(QtGui.QWidget):
         self._update_freq_edit() # once immediately in case of long delay
         self.plot_state.center_freq = yield self.dut.freq()
         self._update_freq_edit()
-
+        
     def _update_freq_edit(self):
+
         "Update the frequency edit box from self.plot_state.center_freq"
-        if self._freq_edit.text() == '':
-            self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
-        
-        if self._fstart_edit.text() == '':
-            self._fstart_edit.setText("%0.1f" % (self.plot_state.start_freq/ 1e6))
-        
-        if self._fstop_edit.text() == '':
-            self._fstop_edit.setText("%0.1f" % (self.plot_state.stop_freq/ 1e6))
+
+        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
+        self._fstart_edit.setText("%0.1f" % (self.plot_state.start_freq/ 1e6))
+        self._fstop_edit.setText("%0.1f" % (self.plot_state.stop_freq/ 1e6))
     
     def _freq_controls(self):
-        cfreq = QtGui.QPushButton('  (2) Center Frequency')
+        cfreq = QtGui.QPushButton('Center Frequency')
+        cfreq.setToolTip("<span style=\"color:black;\">[2]<br>Tune the center frequency</span>") 
+
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        
-        
+
         freq = QtGui.QLineEdit("")
         self._freq_edit = freq
         def write_freq():
@@ -444,7 +452,7 @@ class MainPanel(QtGui.QWidget):
     
     def _fstart_controls(self):
         fstart = QtGui.QPushButton('Start Frequency')
-        fstart.setToolTip('[1] Stop frequency')
+        fstart.setToolTip("<span style=\"color:black;\">[1]<br>Tune the start frequency</span>")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
         freq = QtGui.QLineEdit("")
@@ -455,7 +463,7 @@ class MainPanel(QtGui.QWidget):
         
     def _fstop_controls(self):
         fstop = QtGui.QPushButton('Stop Frequency')
-        fstop.setToolTip('[3] Stop frequency')
+        fstop.setToolTip("<span style=\"color:black;\">[3]<br>Tune the stop frequency</span>") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
         freq = QtGui.QLineEdit("")
@@ -528,12 +536,8 @@ class MainPanel(QtGui.QWidget):
         with self.paused_stream() as dut:
             dut.decimation(d)
         
-    def update_plot(self):
-
-        
+    def update_plot(self):      
         self._plot.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
-        
-
         self.plot_state.update_freq_range(self.plot_state.start_freq,
                                                 self.plot_state.stop_freq , 
                                                 len(self.pow_data))
@@ -572,10 +576,6 @@ class MainPanel(QtGui.QWidget):
                 pow_ = self.pow_data
             if self.plot_state.marker_ind  == None:
                 self.plot_state.marker_ind  = len(pow_) / 2
-            
-            if self.plot_state.peak:
-                self.plot_state.marker_ind  = find_max_index(pow_)
-                self.plot_state.peak = False
 
             elif self.plot_state.marker_ind  < 0:
                 self.plot_state.marker_ind  = 0

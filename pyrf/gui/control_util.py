@@ -1,7 +1,9 @@
 from pyrf.config import TriggerSettings
+import util
 import pyqtgraph as pg
 import gui_config as gui_state
 import constants
+
 def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
@@ -164,7 +166,8 @@ def _delta_control(layout):
 def _find_peak(layout):
     if not layout.plot_state.marker:
         _marker_control(layout)
-    layout.plot_state.peak = not(layout.plot_state.peak)
+    layout.plot_state.marker_ind = util.find_max_index(layout.pow_data)
+    layout.update_marker()
     
 def _enable_plot(layout):
     
