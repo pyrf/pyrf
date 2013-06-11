@@ -31,14 +31,10 @@ class plot(object):
         self.mhold_curve.setData(self.mhold_buf)
        
        # initialize marker
-        self.marker_label = pg.TextItem(anchor = (0,0))
         self.marker_point = pg.ScatterPlotItem()
 
         # initialize delta
-        self.delta_label = pg.TextItem(anchor = (0,0))
         self.delta_point = pg.ScatterPlotItem()
-
-        self.diff_label = pg.TextItem(anchor = (0,0))
         
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
@@ -50,21 +46,15 @@ class plot(object):
         self.grid(True)
     def add_marker(self):
         self.window.addItem(self.marker_point) 
-        self.window.addItem(self.marker_label)
         
     def remove_marker(self):
         self.window.removeItem(self.marker_point)
-        self.window.removeItem(self.marker_label)
     
     def add_delta(self):
         self.window.addItem(self.delta_point) 
-        self.window.addItem(self.delta_label)
-        self.window.addItem(self.diff_label)
     
     def remove_delta(self):
         self.window.removeItem(self.delta_point)
-        self.window.removeItem(self.delta_label)
-        self.window.removeItem(self.diff_label)
     
     def add_mhold(self):
         self.window.addItem(self.mhold_curve)

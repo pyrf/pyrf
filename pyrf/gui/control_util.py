@@ -58,9 +58,7 @@ def _right_arrow_key(layout):
     if layout.plot_state.freq_sel == 'CENT':
         if layout.plot_state.enable_plot:
             layout._freq_plus.click()
-        if layout.plot_state.mhold:
             layout.plot_state.mhold_fft = None
-            
 
 def _left_arrow_key(layout):
     """
@@ -70,7 +68,6 @@ def _left_arrow_key(layout):
     if layout.plot_state.freq_sel == 'CENT':
         if layout.plot_state.enable_plot:
             layout._freq_minus.click()
-        if layout.plot_state.mhold:
             layout.plot_state.mhold_fft = None
 
 def _grid_control(layout):
@@ -109,26 +106,30 @@ def _marker_control(layout):
         gui_state.change_item_color(layout._marker, constants.NORMAL_COLOR, constants.BLACK)
         layout.plot_state.disable_marker()
         layout._plot.remove_marker()
+        layout._marker_lab.setText('')
+        layout._marker.setDown(False)
         if layout.plot_state.delta:
-            gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE, constants.PRESSED_BUTTON)
+            gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.BLACK)
             layout.plot_state.sel_delta()
-
-    
+            layout._delta.setDown(True)
+            
     # if marker is on and not selected, select
     elif not layout.plot_state.marker_sel and layout.plot_state.marker: 
         if layout.plot_state.delta_sel:
             gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
+            layout._delta.setDown(False)
         layout.plot_state.sel_marker()
-        
-        gui_state.change_item_color(layout._marker,  constants.ORANGE, constants.WHITE, constants.PRESSED_BUTTON)
+        layout._marker.setDown(True)
+        gui_state.change_item_color(layout._marker,  constants.ORANGE, constants.BLACK)
 
     # if marker is off, turn on and select
     elif not layout.plot_state.marker:
-        gui_state.change_item_color(layout._marker,  constants.ORANGE, constants.WHITE, constants.PRESSED_BUTTON)
+        gui_state.change_item_color(layout._marker,  constants.ORANGE, constants.BLACK)
         if layout.plot_state.delta_sel:
             gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
-        
+            layout._delta.setDown(False)
         layout._plot.add_marker()
+        layout._marker.setDown(True)
         layout.plot_state.enable_marker()
         
 def _delta_control(layout):
@@ -141,22 +142,30 @@ def _delta_control(layout):
         gui_state.change_item_color(layout._delta, constants.NORMAL_COLOR ,constants.BLACK)
         layout.plot_state.disable_delta()
         layout._plot.remove_delta()
+        layout._delta.setDown(False)
+        layout._delta_lab.setText('')
+        layout._diff_lab.setText('')
         if layout.plot_state.marker:
             layout.plot_state.sel_marker()
-            gui_state.change_item_color(layout._marker, constants.ORANGE, constants.WHITE, constants.PRESSED_BUTTON)
+            layout._marker.setDown(True)
+            gui_state.change_item_color(layout._marker, constants.ORANGE, constants.BLACK)
     
     # if delta is on and not selected, select
     elif not layout.plot_state.delta_sel and layout.plot_state.delta: 
-        gui_state.change_item_color(layout._delta, constants.ORANGE, constants.WHITE, constants.PRESSED_BUTTON)
+        gui_state.change_item_color(layout._delta, constants.ORANGE, constants.BLACK)
+        layout._delta.setDown(True)
         if layout.plot_state.marker_sel:
             gui_state.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
+            layout._marker.setDown(False)
         layout.plot_state.sel_delta()
 
     # if delta is off, turn on and select
     elif not layout.plot_state.delta:
-        gui_state.change_item_color(layout._delta, constants.ORANGE, constants.WHITE, constants.PRESSED_BUTTON)
+        gui_state.change_item_color(layout._delta, constants.ORANGE, constants.BLACK)
+        layout._delta.setDown(True)
         if layout.plot_state.marker_sel:
             gui_state.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
+            layout._marker.setDown(False)
         
         layout.plot_state.enable_delta() 
         layout.plot_state.sel_delta()        
@@ -166,7 +175,10 @@ def _delta_control(layout):
 def _find_peak(layout):
     if not layout.plot_state.marker:
         _marker_control(layout)
-    layout.plot_state.marker_ind = util.find_max_index(layout.pow_data)
+    if layout.plot_state.mhold:
+       layout.plot_state.marker_ind = util.find_max_index(layout.plot_state.mhold_fft) 
+    else:
+        layout.plot_state.marker_ind = util.find_max_index(layout.pow_data)
     layout.update_marker()
     
 def _enable_plot(layout):

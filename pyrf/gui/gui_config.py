@@ -98,11 +98,7 @@ def select_fstop(layout):
     layout._fstart.setStyleSheet("")
     layout._cfreq.setStyleSheet("")
 
-def change_item_color(item, textColor, backgroundColor, buttonStyle = None):
-    if buttonStyle == None:
+def change_item_color(item, textColor, backgroundColor):
         item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
-    else:
-        item.setStyleSheet("Background-color: %s; color: %s; border-style %s;border-width: 12px; border-radius: 2px; min-width: 5.8em; min-height: 1.5em" % (textColor, backgroundColor, buttonStyle)) 
-    
-    
+
     
