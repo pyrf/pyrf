@@ -100,8 +100,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
-        self.setMinimumWidth(920)
-        self.setMinimumHeight(300)
+        self.setMinimumWidth(1140)
+        self.setMinimumHeight(400)
         self.setWindowTitle('PyRF: %s' % name)
 
     def closeEvent(self, event):
@@ -161,7 +161,6 @@ class MainPanel(QtGui.QWidget):
         else:
             self._vrt_context.update(packet.fields)
 
-
     def keyPressEvent(self, event):
         hotkey_util(self, event)
            
@@ -176,13 +175,15 @@ class MainPanel(QtGui.QWidget):
             click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
 
             if self.plot_state.marker_sel:
+                self._marker.setDown(True)
                 self.plot_state.marker_ind  = find_nearest_index(click_freq, self.plot_state.freq_range)
                 self.update_marker()
             
             elif self.plot_state.delta_sel:
+                self._delta.setDown(True)
                 self.plot_state.delta_ind = find_nearest_index(click_freq, self.plot_state.freq_range)
                 self.update_delta()
-    
+            self.update_diff()
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
@@ -571,6 +572,7 @@ class MainPanel(QtGui.QWidget):
         self.update_mhold()
         self.update_marker()
         self.update_delta()
+        self.update_diff()
         
     def update_fft(self):
             self._plot.fft_curve.setData(self.plot_state.freq_range,self.pow_data)
@@ -600,7 +602,7 @@ class MainPanel(QtGui.QWidget):
                 pow_ = self.pow_data
                 self._marker_lab.setStyleSheet('color: %s;' % constants.TEAL)
             if self.plot_state.marker_ind  == None:
-                self.plot_state.marker_ind  = len(pow_) / 2
+                self.plot_state.marker_ind  = len(pow_) / 2 
 
             elif self.plot_state.marker_ind  < 0:
                 self.plot_state.marker_ind  = 0
@@ -624,15 +626,13 @@ class MainPanel(QtGui.QWidget):
         if self.plot_state.delta:
             if self.plot_state.mhold:
                 pow_ = self.plot_state.mhold_fft
-                self._diff_lab.setStyleSheet('color: %s;' % constants.ORANGE)
                 self._delta_lab.setStyleSheet('color: %s;' % constants.ORANGE)
             else:
                 pow_ = self.pow_data
-                self._diff_lab.setStyleSheet('color: %s;' % constants.TEAL)
                 self._delta_lab.setStyleSheet('color: %s;' % constants.TEAL)           
             
             if self.plot_state.delta_ind == None:
-                self.plot_state.delta_ind = len(pow_) / 2
+                self.plot_state.delta_ind = (len(pow_) / 2)
             elif self.plot_state.delta_ind < 0:
                 self.plot_state.delta_ind = 0
                 
@@ -651,13 +651,21 @@ class MainPanel(QtGui.QWidget):
                                                     size = 20, pen = 'w', 
                                                     brush = 'w')
 
-            if self.plot_state.marker:
-                freq_diff = np.abs((self.plot_state.freq_range[self.plot_state.delta_ind]/1e6) - (self.plot_state.freq_range[self.plot_state.marker_ind ]/1e6))
-                power_diff = np.abs((pow_[self.plot_state.delta_ind]) - (pow_[self.plot_state.marker_ind ]))
-                delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
-                self._diff_lab.setText(delta_text)
-            else:
-                self._diff_lab.setText('')
+    def update_diff(self):
+        if self.plot_state.mhold:
+            pow_ = self.plot_state.mhold_fft
+            self._diff_lab.setStyleSheet('color: %s;' % constants.ORANGE)
+        else:
+            pow_ = self.pow_data
+            self._diff_lab.setStyleSheet('color: %s;' % constants.TEAL)  
+            
+        if self.plot_state.marker and self.plot_state.delta:
+            freq_diff = np.abs((self.plot_state.freq_range[self.plot_state.delta_ind]/1e6) - (self.plot_state.freq_range[self.plot_state.marker_ind ]/1e6))
+            power_diff = np.abs((pow_[self.plot_state.delta_ind]) - (pow_[self.plot_state.marker_ind ]))
+            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
+            self._diff_lab.setText(delta_text)
+        else:
+            self._diff_lab.setText('')
 
     
     @contextmanager

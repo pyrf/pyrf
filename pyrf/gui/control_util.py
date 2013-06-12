@@ -86,52 +86,35 @@ def _mhold_control(layout):
     """
     disable/enable max hold curve in the plot
     """
-    layout.plot_state.mhold = not(layout.plot_state.mhold)
-        
-    if layout.plot_state.mhold:
-        gui_state.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)
-        layout._plot.add_mhold()
-        
-    else:  
-        gui_state.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
-        layout._plot.remove_mhold()
-        layout.plot_state.mhold_fft = None
+    if layout.plot_state.enable_plot:
+        layout.plot_state.mhold = not(layout.plot_state.mhold)
+            
+        if layout.plot_state.mhold:
+            gui_state.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)
+            layout._plot.add_mhold()            
+        else:  
+            gui_state.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
+            layout._plot.remove_mhold()
+            layout.plot_state.mhold_fft = None
         
 def _marker_control(layout):
     """
     disable/enable marker
     """
+
     # if marker is on and selected, turn off
     if layout.plot_state.marker_sel:
-        gui_state.change_item_color(layout._marker, constants.NORMAL_COLOR, constants.BLACK)
-        layout.plot_state.disable_marker()
-        layout._plot.remove_marker()
-        layout._marker_lab.setText('')
-        layout._marker.setDown(False)
-        if layout.plot_state.delta:
-            gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.BLACK)
-            layout.plot_state.sel_delta()
-            layout._delta.setDown(True)
+        layout.plot_state.disable_marker(layout)
+
             
     # if marker is on and not selected, select
     elif not layout.plot_state.marker_sel and layout.plot_state.marker: 
-        if layout.plot_state.delta_sel:
-            gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
-            layout._delta.setDown(False)
-        layout.plot_state.sel_marker()
-        layout._marker.setDown(True)
-        gui_state.change_item_color(layout._marker,  constants.ORANGE, constants.BLACK)
+        layout.plot_state.enable_marker(layout)
 
     # if marker is off, turn on and select
     elif not layout.plot_state.marker:
-        gui_state.change_item_color(layout._marker,  constants.ORANGE, constants.BLACK)
-        if layout.plot_state.delta_sel:
-            gui_state.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
-            layout._delta.setDown(False)
-        layout._plot.add_marker()
-        layout._marker.setDown(True)
-        layout.plot_state.enable_marker()
-        
+        layout.plot_state.enable_marker(layout)
+
 def _delta_control(layout):
     """
     disable/enable delta marker
@@ -139,48 +122,31 @@ def _delta_control(layout):
 
     # if delta is on and selected, turn off
     if layout.plot_state.delta_sel:
-        gui_state.change_item_color(layout._delta, constants.NORMAL_COLOR ,constants.BLACK)
-        layout.plot_state.disable_delta()
-        layout._plot.remove_delta()
-        layout._delta.setDown(False)
-        layout._delta_lab.setText('')
-        layout._diff_lab.setText('')
-        if layout.plot_state.marker:
-            layout.plot_state.sel_marker()
-            layout._marker.setDown(True)
-            gui_state.change_item_color(layout._marker, constants.ORANGE, constants.BLACK)
+        layout.plot_state.disable_delta(layout)
     
     # if delta is on and not selected, select
     elif not layout.plot_state.delta_sel and layout.plot_state.delta: 
-        gui_state.change_item_color(layout._delta, constants.ORANGE, constants.BLACK)
-        layout._delta.setDown(True)
-        if layout.plot_state.marker_sel:
-            gui_state.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
-            layout._marker.setDown(False)
-        layout.plot_state.sel_delta()
+        layout.plot_state.enable_delta(layout)
 
     # if delta is off, turn on and select
     elif not layout.plot_state.delta:
-        gui_state.change_item_color(layout._delta, constants.ORANGE, constants.BLACK)
-        layout._delta.setDown(True)
-        if layout.plot_state.marker_sel:
-            gui_state.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
-            layout._marker.setDown(False)
-        
-        layout.plot_state.enable_delta() 
-        layout.plot_state.sel_delta()        
-        layout._plot.add_delta()
-
+        layout.plot_state.enable_delta(layout)   
 
 def _find_peak(layout):
-    if not layout.plot_state.marker:
+    if not layout.plot_state.marker and not layout.plot_state.delta:
         _marker_control(layout)
+
     if layout.plot_state.mhold:
-       layout.plot_state.marker_ind = util.find_max_index(layout.plot_state.mhold_fft) 
+       peak = util.find_max_index(layout.plot_state.mhold_fft) 
     else:
-        layout.plot_state.marker_ind = util.find_max_index(layout.pow_data)
-    layout.update_marker()
-    
+        peak = util.find_max_index(layout.pow_data)
+    if layout.plot_state.marker_sel:
+        layout.update_marker()
+        layout.plot_state.marker_ind = peak
+    elif layout.plot_state.delta_sel:
+        layout.update_delta()
+        layout.plot_state.delta_ind = peak
+        
 def _enable_plot(layout):
     
     layout.plot_state.enable_plot = not(layout.plot_state.enable_plot)
@@ -189,27 +155,18 @@ def _enable_plot(layout):
     else:
         gui_state.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
         layout.dut.capture(layout.plot_state.points, 1)
+
 def _trigger_control(layout):
     """
     disable/enable triggers in the layout plot
     """
-    layout.plot_state.trig = not(layout.plot_state.trig)
- 
+    # if triggers are already enabled, disable them
     if layout.plot_state.trig:
-        gui_state.change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
-        layout.plot_state.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
-                                                layout.plot_state.center_freq - 10e6, 
-                                                layout.plot_state.center_freq + 10e6,-100) 
-        layout.dut.trigger(layout.plot_state.trig_set)
-        layout._plot.add_trigger(layout.plot_state.center_freq)
+        layout.plot_state.disable_trig(layout)
     
     else:
-        gui_state.change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
-        layout._plot.remove_trigger()
-        layout.plot_state.trig_set = TriggerSettings(constants.NONE_TRIGGER_TYPE,
-                                                layout.plot_state.center_freq - 10e6, 
-                                                layout.plot_state.center_freq + 10e6,-100) 
-        layout.dut.trigger(layout.plot_state.trig_set)
+        layout.plot_state.enable_trig(layout)
+
     
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
