@@ -33,7 +33,7 @@ class SweepDevice(object):
     def __init__(self, real_device, async_callback=None):
         self.real_device = real_device
         self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-        if hasattr(real_device, 'vrt_callback'):
+        if hasattr(self.connector, 'vrt_callback'):
             if not async_callback:
                 raise SweepDeviceError(
                     "async_callback required for async operation")
