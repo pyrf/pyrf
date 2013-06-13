@@ -30,7 +30,7 @@ class SweepDevice(object):
     """
     def __init__(self, real_device, async_callback=None):
         self.real_device = real_device
-        self.sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
+        self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
         if hasattr(real_device, 'vrt_callback'):
             if not async_callback:
                 raise SweepDeviceError(
@@ -67,17 +67,16 @@ class SweepDevice(object):
         self.real_device.abort()
         self.real_device.flush()
 
-        plan = plan_sweep(self.real_device,
+        self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, bins, min_points, max_points)
-        self.plan = plan # in case caller is interested, not used internally
 
         self.real_device.sweep_clear()
-        for ss in plan:
+        for ss in self.plan:
             steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
             assert ss.points <= 32*1024, 'large captures not implemented'
             self.real_device.sweep_add(
                 fstart=ss.fcenter,
-                fstop=fstart + (steps + 0.5) * ss.fstep,
+                fstop=ss.fcenter + (steps + 0.5) * ss.fstep,
                 fstep=ss.fstep,
                 fshift=ss.fshift,
                 decimation=ss.decimation,
@@ -94,32 +93,55 @@ class SweepDevice(object):
             return
 
         self._start_sweep()
-        for 
+        result = None
+        while result is None:
+            result = self._vrt_receive(self.real_device.read())
+        return result
 
     def _start_sweep(self):
-        self.sweep_id = (self.sweep_id + 1) & (2**32 - 1)
+        self._sweep_id = (self.sweep_id + 1) & (2**32 - 1)
+        self._vrt_context = {}
+        self._ss_index = 0
+        self._ss_received = 0
+        self.bins = []
+        self.real_device.sweep_iterations(1)
         self.real_device.sweep_start(self.sweep_id)
-        self.vrt_context = {}
-        self.ss_index = 0
 
     def _vrt_receive(self, packet):
         if packet.is_context_packet():
-            self.vrt_context.update(packet.fields)
+            self._vrt_context.update(packet.fields)
             return
-        if vrt_context.get('sweepid') != self.sweep_id:
+        if _vrt_context.get('sweepid') != self.sweep_id:
             return # not our data
         assert 'reflevel' in vrt_context, (
             "missing required context, sweep failed")
 
-        # collect and compute bins
-        bins = []
-        for ss in plan:
-            kept = 0
-            while kept < ss.bins_keep:
-                yield self.real_device.read()
+        pow_data = compute_fft(self.real_device, packet, self._vrt_context)
 
-                freq += ss.fstep
-                kept += ss.bins_run
+        # collect and compute bins
+        ss = self.plan[self._ss_index]
+        take = min(ss.bins_run, ss.bins_keep - self._ss_received)
+        self.bins.extend(pow_data[ss.bins_skip:ss.bins_skip + take])
+        self._ss_received += take
+        if self._ss_received < ss.bins_keep:
+            return
+
+        self._ss_received = 0
+        self._ss_index += 1
+        if self._ss_index < len(self.plan):
+            return
+
+        # done the complete sweep
+        # XXX: in case sweep_iterations() does not work
+        self.real_device.abort()
+        self.real_device.flush()
+
+        if self.async_callback:
+            self.real_device.vrt_callback = None
+            self.async_callback(self.fstart, self.fstop, self.bins)
+            return
+        return (self.fstart, self.fstop, self.bins)
+
 
 
 def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
@@ -160,10 +182,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
       the range of frequencies around center that may be affected by
       a DC offset and should not be used
 
-    :returns: a list of SweepStep namedtuples:
-
-       (fstart, fstep, fshift, decimation, points, 
-       bins_skip, bins_run, bins_keep)
+    :returns: (actual fstart, actual fstop, list of SweepStep instances)
 
     The caller would then use each of these tuples to do the following:
 
@@ -238,4 +257,4 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     if device.MAX_TUNABLE - dc_offset2 < fstop:
         raise NotImplemented # yet
 
-    return out
+    return (fstart, fstop, out)
