@@ -122,6 +122,9 @@ class SweepDevice(object):
         assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
+        if self._ss_index is None:
+            return # more data than we asked for
+
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
 
         # collect and compute bins
