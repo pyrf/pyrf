@@ -1,7 +1,9 @@
 import math
+import random
 from collections import namedtuple
 
 from pyrf.numpy_util import compute_fft
+from pyrf.config import SweepEntry
 
 SweepStep = namedtuple('SweepStep', '''
     fcenter
@@ -46,7 +48,7 @@ class SweepDevice(object):
     connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
-            fstart, fstop, bins, callback, antenna=1, rfgain='vlow', ifgain=0,
+            fstart, fstop, bins, antenna=1, rfgain='vlow', ifgain=0,
             min_points=128, max_points=8192):
         """
         Initiate a capture of power spectral density in the linear domain by
@@ -66,6 +68,8 @@ class SweepDevice(object):
         """
         self.real_device.abort()
         self.real_device.flush()
+        self.real_device.reset()
+        self.real_device.request_read_perm()
 
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, bins, min_points, max_points)
@@ -73,8 +77,9 @@ class SweepDevice(object):
         self.real_device.sweep_clear()
         for ss in self.plan:
             steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
-            assert ss.points <= 32*1024, 'large captures not implemented'
-            self.real_device.sweep_add(
+            assert ss.points <= 32*1024, ('large captures not implemented: %s'
+                % (ss.points,))
+            self.real_device.sweep_add(SweepEntry(
                 fstart=ss.fcenter,
                 fstop=ss.fcenter + (steps + 0.5) * ss.fstep,
                 fstep=ss.fstep,
@@ -85,7 +90,7 @@ class SweepDevice(object):
                 ifgain=ifgain,
                 spp=ss.points,
                 ppb=1,
-                )
+                ))
 
         if self.async_callback:
             self.connector.vrt_callback = self._vrt_receive
@@ -99,21 +104,21 @@ class SweepDevice(object):
         return result
 
     def _start_sweep(self):
-        self._sweep_id = (self.sweep_id + 1) & (2**32 - 1)
+        self._sweep_id = (self._sweep_id + 1) & (2**32 - 1)
         self._vrt_context = {}
         self._ss_index = 0
         self._ss_received = 0
         self.bins = []
         self.real_device.sweep_iterations(1)
-        self.real_device.sweep_start(self.sweep_id)
+        self.real_device.sweep_start(self._sweep_id)
 
     def _vrt_receive(self, packet):
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
             return
-        if _vrt_context.get('sweepid') != self.sweep_id:
+        if self._vrt_context.get('sweepid') != self._sweep_id:
             return # not our data
-        assert 'reflevel' in vrt_context, (
+        assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
@@ -247,10 +252,10 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
             fstep=usable_bw,
             fshift=fshift,
             decimation=decimation,
-            points=points,
+            points=int(points),
             bins_skip=int(left_bin),
-            bins_run=int(usable_bins),
-            bins_keep=int(round((fstop - fstart) / bin_size)),
+            bins_run=int(min(usable_bins, bins_keep)),
+            bins_keep=int(bins_keep),
             ))
 
     # region 2: right-hand edge
