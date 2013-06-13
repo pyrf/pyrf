@@ -90,11 +90,9 @@ def _mhold_control(layout):
         layout.plot_state.mhold = not(layout.plot_state.mhold)
             
         if layout.plot_state.mhold:
-            gui_state.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)
-            layout._plot.add_mhold()            
+            gui_state.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
         else:  
             gui_state.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
-            layout._plot.remove_mhold()
             layout.plot_state.mhold_fft = None
         
 def _marker_control(layout):
@@ -140,13 +138,14 @@ def _find_peak(layout):
        peak = util.find_max_index(layout.plot_state.mhold_fft) 
     else:
         peak = util.find_max_index(layout.pow_data)
+    
     if layout.plot_state.marker_sel:
         layout.update_marker()
         layout.plot_state.marker_ind = peak
     elif layout.plot_state.delta_sel:
         layout.update_delta()
         layout.plot_state.delta_ind = peak
-        
+    layout.update_diff()
 def _enable_plot(layout):
     
     layout.plot_state.enable_plot = not(layout.plot_state.enable_plot)
@@ -167,7 +166,6 @@ def _trigger_control(layout):
     else:
         layout.plot_state.enable_trig(layout)
 
-    
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
                 '3': _select_fstop,

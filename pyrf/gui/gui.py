@@ -88,7 +88,9 @@ class MainWindow(QtGui.QMainWindow):
                     'Connection Failed, please try again\n\n'
                     'Enter a hostname or IP address:')
     def open_hotkey_dialog(self):
-        ok = QtGui.QMessageBox(self,'derpity derp', 'herp')
+        # dont do anything
+        x = 1
+        
     @inlineCallbacks
     def open_device(self, name):
         dut = WSA4000(connector=TwistedConnector(self._reactor))
@@ -100,7 +102,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
-        self.setMinimumWidth(1140)
+        self.setMinimumWidth(1360)
         self.setMinimumHeight(400)
         self.setWindowTitle('PyRF: %s' % name)
 
@@ -115,9 +117,7 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
-                
         self.plot_state = gui_config.plot_state()
-
         # plot window
         self._plot = plot(self)
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
@@ -165,100 +165,115 @@ class MainPanel(QtGui.QWidget):
         hotkey_util(self, event)
            
     def mousePressEvent(self, event):
-        click_pos =  event.pos().x() - 68
-        plot_window_width = self._plot.window.width() - 68
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            click_pos =  event.pos().x() - 68
+            plot_window_width = self._plot.window.width() - 68
 
-        if click_pos < plot_window_width and click_pos > 0:
+            if click_pos < plot_window_width and click_pos > 0:
 
-            window_freq = self._plot.view_box.viewRange()[0]
-            window_bw =  (window_freq[1] - window_freq[0])
-            click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
+                window_freq = self._plot.view_box.viewRange()[0]
+                window_bw =  (window_freq[1] - window_freq[0])
+                click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
 
-            if self.plot_state.marker_sel:
-                self._marker.setDown(True)
-                self.plot_state.marker_ind  = find_nearest_index(click_freq, self.plot_state.freq_range)
-                self.update_marker()
-            
-            elif self.plot_state.delta_sel:
-                self._delta.setDown(True)
-                self.plot_state.delta_ind = find_nearest_index(click_freq, self.plot_state.freq_range)
-                self.update_delta()
-            self.update_diff()
+                if self.plot_state.marker_sel:
+                    self._marker.setDown(True)
+                    self.plot_state.marker_ind  = find_nearest_index(click_freq, self.plot_state.freq_range)
+                    self.update_marker()
+                
+                elif self.plot_state.delta_sel:
+                    self._delta.setDown(True)
+                    self.plot_state.delta_ind = find_nearest_index(click_freq, self.plot_state.freq_range)
+                    self.update_delta()
+                self.update_diff()
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        grid.setColumnMinimumWidth(0, 600)
-        grid.setColumnMinimumWidth(1, 600)
-        grid.setColumnMinimumWidth(2, 600)
+        grid.setColumnMinimumWidth(0, 300)
+        grid.setColumnMinimumWidth(1, 300)
+        grid.setColumnMinimumWidth(2, 300)
+        grid.setColumnMinimumWidth(3, 300)
+        grid.setColumnMinimumWidth(4, 300)
+        grid.setColumnMinimumWidth(5, 300)
+        grid.setColumnMinimumWidth(6, 300)
+        grid.setColumnMinimumWidth(7, 300)
 
         # add plot widget
-        grid.addWidget(self._plot.window,0,0,10,3)
-                
+        plot_width = 8
+        grid.addWidget(self._plot.window,1,0,10,plot_width)
+
+        marker_label, delta_label, diff_label = self._marker_labels()
+        grid.addWidget(marker_label, 1, 1,1, 1)
+        grid.addWidget(delta_label, 1, 3,1, 1)
+        grid.addWidget(diff_label , 1, 5,1, 1)
+        
+        x = 0    
         y = 0
         trig = self._trigger_control()
-        grid.addWidget(trig, y, 3, 1, 1)
+        grid.addWidget(trig, y, x, 1, 1)
         mark = self._marker_control()
-        grid.addWidget(mark, y, 4, 1, 1)
+        grid.addWidget(mark, y, x + 1, 1, 1)
         delta = self._delta_control()
-        grid.addWidget(delta, y, 5, 1, 1)
+        grid.addWidget(delta, y, x + 2, 1, 1)
         mhold = self._mhold_control()
-        grid.addWidget(mhold, y, 6, 1, 1)
+        grid.addWidget(mhold, y, x + 3, 1, 1)
         
-        y += 1
+        x = 4
         pause = self._pause_control()
-        grid.addWidget(pause, y, 3, 1, 1)
+        grid.addWidget(pause, y, x, 1, 1)
         peak = self._peak_control()
-        grid.addWidget(peak, y, 4, 1, 1)
+        grid.addWidget(peak, y, x + 1, 1, 1)
         grid_en = self._grid_control()
-        grid.addWidget(grid_en, y, 5, 1, 1)
+        grid.addWidget(grid_en, y, x + 2, 1, 1)
         cu._grid_control(self)
         center = self._center_control()
-        grid.addWidget(center, y, 6, 1, 1)
-
-        y += 1
-        grid.addWidget(self._antenna_control(), y, 3, 1, 2)
-        grid.addWidget(self._bpf_control(), y, 5, 1, 2)
+        grid.addWidget(center, y, x + 3, 1, 1)
         
-        y += 1
-        grid.addWidget(self._gain_control(), y, 3, 1, 2)
-        grid.addWidget(QtGui.QLabel('IF Gain:'), y, 5, 1, 1)
-        grid.addWidget(self._ifgain_control(), y, 6, 1, 1)
+        x = plot_width
+        grid.addWidget(self._antenna_control(), y, x, 1, 2)
+        grid.addWidget(self._bpf_control(), y, x + 2, 1, 2)
         
+        x = plot_width 
+        y += 1
+        grid.addWidget(self._gain_control(), y, x, 1, 2)
+        grid.addWidget(QtGui.QLabel('IF Gain:'), y, x + 2, 1, 1)
+        grid.addWidget(self._ifgain_control(), y, x + 3, 1, 1)
+        
+        x = plot_width
         y += 1
         fstart_bt, fstart_txt = self._fstart_controls()
-        grid.addWidget(fstart_bt, y, 3, 1, 1)
-        grid.addWidget(fstart_txt, y, 4, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, 6, 1, 1)
+        grid.addWidget(fstart_bt, y, x, 1, 1)
+        grid.addWidget(fstart_txt, y, x + 1, 1, 2)
+        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
         
+        x = plot_width
         y += 1
         cfreq, freq, steps, freq_plus, freq_minus = self._freq_controls()
-        grid.addWidget(cfreq, y, 3, 1, 1)
-        grid.addWidget(freq, y, 4, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, 6, 1, 1)
+        grid.addWidget(cfreq, y, x, 1, 1)
+        grid.addWidget(freq, y, x + 1, 1, 2)
+        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
         
+        x = plot_width
         y += 1
         fstop_bt, fstop_txt = self._fstop_controls()
-        grid.addWidget(fstop_bt, y, 3, 1, 1)
-        grid.addWidget(fstop_txt, y, 4, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, 6, 1, 1)
+        grid.addWidget(fstop_bt, y, x, 1, 1)
+        grid.addWidget(fstop_txt, y, x + 1, 1, 2)
+        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
         
         # select center freq
         gui_config.select_center(self)
-        y += 1
-        grid.addWidget(freq_minus, y, 3, 1, 1)
-        grid.addWidget(steps, y, 4, 1, 2)
-        grid.addWidget(freq_plus, y, 6, 1, 1)
         
+        x = plot_width
+        y += 1
+        grid.addWidget(freq_minus, y, x, 1, 1)
+        grid.addWidget(steps, y, x + 1, 1, 2)
+        grid.addWidget(freq_plus, y, x + 3, 1, 1)
+        
+        x = plot_width
         y += 1
         span, rbw = self._span_rbw_controls()
-        grid.addWidget(span, y, 3, 1, 2)
-        grid.addWidget(rbw, y, 5, 1, 2)
-        
-        marker_label, delta_label, diff_label = self._marker_labels()
-        grid.addWidget(marker_label, 0, 0,1, 1)
-        grid.addWidget(delta_label, 0, 1,1, 1)
-        grid.addWidget(diff_label , 0, 2,1, 1)
-        
+        grid.addWidget(span, y, x, 1, 2)
+        grid.addWidget(rbw, y, x + 2, 1, 2)
+               
         self.setLayout(grid)
         self.show()
     
@@ -544,55 +559,53 @@ class MainPanel(QtGui.QWidget):
             dut.decimation(d)
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
-        marker_label.setAlignment(4)
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
         marker_label.setMinimumHeight(25)
         self._marker_lab = marker_label
         
         delta_label = QtGui.QLabel('')
-        delta_label.setAlignment(4)
         delta_label.setStyleSheet('color: %s;' % constants.TEAL)
         delta_label.setMinimumHeight(25)
         self._delta_lab = delta_label
         
         diff_label = QtGui.QLabel('')
-        diff_label.setAlignment(4)
         diff_label.setStyleSheet('color: %s;' % constants.TEAL)
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
         
     def update_plot(self):      
-        self._plot.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
         self.plot_state.update_freq_range(self.plot_state.start_freq,
                                                 self.plot_state.stop_freq , 
                                                 len(self.pow_data))
        
         self.update_fft()
-        self.update_mhold()
         self.update_marker()
         self.update_delta()
         self.update_diff()
         
     def update_fft(self):
-            self._plot.fft_curve.setData(self.plot_state.freq_range,self.pow_data)
-
-    def update_trig(self):
-            freq_region = self._plot.freqtrig_lines.getRegion()
-            self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE, 
-                                                    min(freq_region), 
-                                                    max(freq_region),
-                                                    self._plot.amptrig_line.value()) 
-            self.dut.trigger(self.trig_set)
-    
-    def update_mhold(self):
         if self.plot_state.mhold:
             if (self.plot_state.mhold_fft == None or len(self.plot_state.mhold_fft) != len(self.pow_data)):
                 self.plot_state.mhold_fft = np.zeros(len(self.pow_data)) + constants.LNEG_NUM
-                
+            
             self.plot_state.mhold_fft = np.maximum(self.plot_state.mhold_fft,self.pow_data)
-            self._plot.mhold_curve.setData(self.plot_state.freq_range,self.plot_state.mhold_fft)
+            self._plot.fft_curve.setData(x = self.plot_state.freq_range,
+                                            y = self.plot_state.mhold_fft, 
+                                            pen = constants.ORANGE_NUM)
+        else:
+            self._plot.fft_curve.setData(x = self.plot_state.freq_range, 
+                                            y = self.pow_data, 
+                                            pen = constants.TEAL_NUM)
 
+    def update_trig(self):
+            freq_region = self._plot.freqtrig_lines.getRegion()
+            self.plot_state.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE, 
+                                                    min(freq_region), 
+                                                    max(freq_region),
+                                                    self._plot.amptrig_line.value()) 
+            self.dut.trigger(self.plot_state.trig_set)
+    
     def update_marker(self):
         if self.plot_state.marker:
             if self.plot_state.mhold:

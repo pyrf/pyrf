@@ -8,7 +8,7 @@ NONE_TRIGGER_TYPE = 'NONE'
 
 # Plot Constants
 PLOT_YMIN = -160
-PLOT_YMAX = 40
+PLOT_YMAX = 20
 LNEG_NUM = -5000
 
 # Colors

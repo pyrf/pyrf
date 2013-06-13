@@ -19,17 +19,9 @@ class plot(object):
         self.window.setLabel('left', text = 'Power', units = 'dBm')
         
         # initialize fft curve
-        self.fft_curve = self.window.plot(pen = (0,255,236))
+        self.fft_curve = self.window.plot(pen = constants.TEAL_NUM)
         self.marker_point = pg.ScatterPlotItem()
-        
-        # initialize max hold curve
-        self.mhold_curve = pg.PlotCurveItem(pen = (255,84,0))
-        
-        # keep values in mhold buff
-        self.mhold_buf = np.zeros(1024)
-        self.mhold_buf[0] = 0 
-        self.mhold_curve.setData(self.mhold_buf)
-       
+  
        # initialize marker
         self.marker_point = pg.ScatterPlotItem()
 
@@ -55,15 +47,9 @@ class plot(object):
     
     def remove_delta(self):
         self.window.removeItem(self.delta_point)
-    
-    def add_mhold(self):
-        self.window.addItem(self.mhold_curve)
-
-    def remove_mhold(self):
-        self.window.removeItem(self.mhold_curve)
-    
-    def add_trigger(self,f):
-        self.freqtrig_lines.setRegion([f - 10e6, f + 10e6])
+        
+    def add_trigger(self,fstart, fstop):
+        self.freqtrig_lines.setRegion([fstart,fstop])
         self.window.addItem(self.amptrig_line)
         self.window.addItem(self.freqtrig_lines)
                 

@@ -12,8 +12,9 @@ class plot_state(object):
         
         self.mhold = False
         self.mhold_fft = None
-        self.trig = False
         
+        self.trig = False
+        self.trig_set = None
         self.marker = False
         self.marker_sel = False
         self.marker_ind = None
@@ -68,7 +69,7 @@ class plot_state(object):
         change_item_color(layout._delta, constants.ORANGE, constants.WHITE)
         layout._plot.add_delta()
         layout._delta.setDown(True)
-        
+        layout.update_delta()
         if self.marker:
             self.marker_sel = False             
             change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
@@ -86,23 +87,23 @@ class plot_state(object):
         if self.marker:
             self.enable_marker(layout)
     
-    def enable_trig(self, layout):
-        self.trig = True
-        change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
-        layout._plot.remove_trigger()
-        layout.plot_state.trig_set = TriggerSettings(constants.NONE_TRIGGER_TYPE,
-                                                layout.plot_state.center_freq - 10e6, 
-                                                layout.plot_state.center_freq + 10e6,-100) 
-        layout.dut.trigger(layout.plot_state.trig_set)
-        
     def disable_trig(self, layout):
         self.trig = False
+        change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
+        layout._plot.remove_trigger()
+        self.trig_set.trigtype = constants.NONE_TRIGGER_TYPE
+        layout.dut.trigger(self.trig_set)
+        
+    def enable_trig(self, layout):
+        self.trig = True
         change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
-        layout.plot_state.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
-                                                layout.plot_state.center_freq - 10e6, 
-                                                layout.plot_state.center_freq + 10e6,-100) 
-        layout.dut.trigger(layout.plot_state.trig_set)
-        layout._plot.add_trigger(layout.plot_state.center_freq)
+        if self.trig_set == None:
+            self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
+                                                    self.center_freq + 10e6, 
+                                                    self.center_freq - 10e6,-100) 
+        self.trig_set.trigtype = constants.LEVELED_TRIGGER_TYPE
+        layout.dut.trigger(self.trig_set)
+        layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
         
     def update_freq_range(self, start, stop, size):
         self.freq_range = np.linspace(start, stop, size)
