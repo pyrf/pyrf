@@ -11,7 +11,7 @@ class WSA42(object):
     """
     FULL_BW = 128*M
     USABLE_BW = 66*M
-    MIN_TUNABLE = 64*M
+    MIN_TUNABLE = 96*M
     MAX_TUNABLE = 2048*M
     MIN_DECIMATION = 4
     MAX_DECIMATION = 256
@@ -20,13 +20,20 @@ class WSA42(object):
 
 class TestPlanSweep(unittest.TestCase):
     def _plan42(self, start, stop, count, expected, min_points=128,
-            max_points=8192):
+            max_points=8192, fstart=None, fstop=None):
         """
         Develop a plan for sweeping with a WSA42, verify that
         it matches the expected plan
         """
-        result = plan_sweep(WSA42, start, stop, count, min_points=min_points)
+        rfstart, rfstop, result = plan_sweep(WSA42, start, stop, count,
+            min_points=min_points)
         self.assertEquals(result, [SweepStep(*s) for s in expected])
+        if fstart is None:
+            fstart = start
+        if fstop is None:
+            fstop = stop
+        self.assertEquals(rfstart, fstart)
+        self.assertEquals(rfstop, fstop)
 
     def test_simple_within_sweep_single_exact(self):
         self._plan42(100*M, 132*M, 64,
@@ -47,11 +54,11 @@ class TestPlanSweep(unittest.TestCase):
     def test_simple_within_sweep_double_points_up(self):
         self._plan42(100*M, 164*M, 129,
             [(133*M, 32*M, 0, 1, 512, 124, 128, 256)])
-    
+
     def test_simple_within_sweep_double_points_half(self):
         self._plan42(100*M, 164*M, 64,
             [(133*M, 32*M, 0, 1, 128, 31, 32, 64)])
-    
+
     def test_simple_within_sweep_double_points_min(self):
         self._plan42(100*M, 164*M, 32,
             [(133*M, 32*M, 0, 1, 128, 31, 32, 64)])
@@ -73,6 +80,10 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 102*M, 8192,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 8192)])
 
+    def test_xxx_truncate_to_left_sweep(self):
+        self._plan42(0, 2048*M, 200,
+            [(96*M, 32*M, 0, 1, 128, 31, 32, 1984)],
+            fstart=63*M, fstop=2047*M)
 
     #def test_vlow_plus_normal(self):
     #    self._plan4k(30*M, 67*M, 50*K,
