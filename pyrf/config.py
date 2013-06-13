@@ -32,7 +32,8 @@ class SweepEntry(object):
 
     :param fstart: starting frequency in Hz
     :param fstop: ending frequency in Hz
-    :param shift: the frequency shift in Hz
+    :param fstep: frequency step in Hz
+    :param fshift: the frequency shift in Hz
     :param decimation: the decimation value (0 or 4 - 1023)
     :param antenna: the antenna (1 or 2)
     :param gain: the RF gain value ('high', 'medium', 'low' or 'vlow')

@@ -3,6 +3,8 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 
+from pyrf.units import M
+
 class WSA4000(object):
     """
     Interface for WSA4000
@@ -26,9 +28,17 @@ class WSA4000(object):
 
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
-    M = 10**6
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
+
+    FULL_BW = 125*M
+    USABLE_BW = 90*M
+    MIN_TUNABLE = 90*M
+    MAX_TUNABLE = 10000*M
+    MIN_DECIMATION = 4
+    MAX_DECIMATION = 1023
+    DECIMATED_USABLE = 0.5
+    DC_OFFSET_BW = 240000 # XXX: an educated guess
 
     def __init__(self, connector=None):
         if not connector:
@@ -499,6 +509,19 @@ class WSA4000(object):
 
         yield ent
 
+    @sync_async
+    def sweep_iterations(self, count=None):
+        """
+        Set the number of iterations for the complete sweep list,
+
+        :param count: the number of iterations, 0 for infinite
+        :returns: the current number of iterations if count is None
+        """
+        if count is None:
+            number = yield self.scpiget(":sweep:list:iterations?")
+            yield int(number)
+        else:
+            self.scpiset(":sweep:list:iterations %d" % (count,))
 
     def sweep_clear(self):
         """
