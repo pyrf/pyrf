@@ -77,8 +77,8 @@ class SweepDevice(object):
         self.real_device.sweep_clear()
         for ss in self.plan:
             steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
-            assert ss.points <= 32*1024, ('large captures not implemented: %s'
-                % (ss.points,))
+            if ss.points > 32*1024:
+                raise SweepDeviceError('large captures not yet supported')
             self.real_device.sweep_add(SweepEntry(
                 fstart=ss.fcenter,
                 fstop=min(ss.fcenter + (steps + 0.5) * ss.fstep,
