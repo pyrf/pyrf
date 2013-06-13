@@ -139,6 +139,7 @@ class SweepDevice(object):
 
         # done the complete sweep
         # XXX: in case sweep_iterations() does not work
+        self._ss_index = None
         self.real_device.abort()
         self.real_device.flush()
 
@@ -246,10 +247,13 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
 
         usable_bw = usable_bins * bin_size
 
-        bins_keep = round((fstop - fstart) / bin_size)
+        fcenter = fstart + usable2
+        max_steps = math.floor((device.MAX_TUNABLE - fstart) / usable_bw)
+        bins_keep = min(round((fstop - fstart) / bin_size),
+            max_steps * usable_bins)
         sweep_steps = math.ceil(bins_keep / usable_bins)
         out.append(SweepStep(
-            fcenter=fstart + usable2,
+            fcenter=fcenter,
             fstep=usable_bw,
             fshift=fshift,
             decimation=decimation,
