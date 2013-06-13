@@ -81,7 +81,8 @@ class SweepDevice(object):
                 % (ss.points,))
             self.real_device.sweep_add(SweepEntry(
                 fstart=ss.fcenter,
-                fstop=ss.fcenter + (steps + 0.5) * ss.fstep,
+                fstop=min(ss.fcenter + (steps + 0.5) * ss.fstep,
+                    self.real_device.MAX_TUNABLE),
                 fstep=ss.fstep,
                 fshift=ss.fshift,
                 decimation=ss.decimation,
