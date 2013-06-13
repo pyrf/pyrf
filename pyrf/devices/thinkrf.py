@@ -509,6 +509,19 @@ class WSA4000(object):
 
         yield ent
 
+    @sync_async
+    def sweep_iterations(self, count=None):
+        """
+        Set the number of iterations for the complete sweep list,
+
+        :param count: the number of iterations, 0 for infinite
+        :returns: the current number of iterations if count is None
+        """
+        if count is None:
+            number = yield self.scpiget(":sweep:list:iterations?")
+            yield int(number)
+        else:
+            self.scpiset(":sweep:list:iterations %d" % (count,))
 
     def sweep_clear(self):
         """
