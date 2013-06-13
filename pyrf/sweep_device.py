@@ -1,8 +1,10 @@
 import math
 from collections import namedtuple
 
+from pyrf.numpy_util import compute_fft
+
 SweepStep = namedtuple('SweepStep', '''
-    fstart
+    fcenter
     fstep
     fshift
     decimation
@@ -11,6 +13,114 @@ SweepStep = namedtuple('SweepStep', '''
     bins_run
     bins_keep
     ''')
+
+class SweepDeviceError(Exception):
+    pass
+
+class SweepDevice(object):
+    """
+    Virtual device that generates power levels from a range of
+    frequencies by sweeping the frequencies with a real device
+    and piecing together FFT results.
+
+    :param real_device: device that will will be used for capturing data,
+                        typically a :class:`WSA4000` instance.
+    :param callback: callback to use for async operation (not used if
+                     real_device is using a :class:`PlainSocketConnector`)
+    """
+    def __init__(self, real_device, async_callback=None):
+        self.real_device = real_device
+        self.sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
+        if hasattr(real_device, 'vrt_callback'):
+            if not async_callback:
+                raise SweepDeviceError(
+                    "async_callback required for async operation")
+            # disable receiving data until we are expecting it
+            self.connector.vrt_callback = None
+        else:
+            if async_callback:
+                raise SweepDeviceError(
+                    "async_callback not applicable for sync operation")
+        self.async_callback = async_callback
+
+    connector = property(lambda self: self.real_device.connector)
+
+    def capture_power_spectrum(self,
+            fstart, fstop, bins, callback, antenna=1, rfgain='vlow', ifgain=0,
+            min_points=128, max_points=8192):
+        """
+        Initiate a capture of power spectral density in the linear domain by
+        setting up a sweep list and starting a single sweep.
+
+        :param fstart: starting frequency in Hz
+        :type fstart: float
+        :param fstop: ending frequency in Hz
+        :type fstop: float
+        :param bins: FFT bins requested (number produced likely more)
+        :type bins: int
+        :param min_points: smallest number of points per capture from real_device
+        :type min_points: int
+        :param max_points: largest number of points per capture from real_device
+                           (due to decimation limits points returned may be larger)
+        :type max_points: int
+        """
+        self.real_device.abort()
+        self.real_device.flush()
+
+        plan = plan_sweep(self.real_device,
+            fstart, fstop, bins, min_points, max_points)
+        self.plan = plan # in case caller is interested, not used internally
+
+        self.real_device.sweep_clear()
+        for ss in plan:
+            steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
+            assert ss.points <= 32*1024, 'large captures not implemented'
+            self.real_device.sweep_add(
+                fstart=ss.fcenter,
+                fstop=fstart + (steps + 0.5) * ss.fstep,
+                fstep=ss.fstep,
+                fshift=ss.fshift,
+                decimation=ss.decimation,
+                antenna=antenna,
+                gain=rfgain,
+                ifgain=ifgain,
+                spp=ss.points,
+                ppb=1,
+                )
+
+        if self.async_callback:
+            self.connector.vrt_callback = self._vrt_receive
+            self._start_sweep()
+            return
+
+        self._start_sweep()
+        for 
+
+    def _start_sweep(self):
+        self.sweep_id = (self.sweep_id + 1) & (2**32 - 1)
+        self.real_device.sweep_start(self.sweep_id)
+        self.vrt_context = {}
+        self.ss_index = 0
+
+    def _vrt_receive(self, packet):
+        if packet.is_context_packet():
+            self.vrt_context.update(packet.fields)
+            return
+        if vrt_context.get('sweepid') != self.sweep_id:
+            return # not our data
+        assert 'reflevel' in vrt_context, (
+            "missing required context, sweep failed")
+
+        # collect and compute bins
+        bins = []
+        for ss in plan:
+            kept = 0
+            while kept < ss.bins_keep:
+                yield self.real_device.read()
+
+                freq += ss.fstep
+                kept += ss.bins_run
+
 
 def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     """
@@ -111,11 +221,10 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
 
         usable_bw = usable_bins * bin_size
 
-        start = fstart + usable2
         bins_keep = round((fstop - fstart) / bin_size)
         sweep_steps = math.ceil(bins_keep / usable_bins)
         out.append(SweepStep(
-            fstart=start,
+            fcenter=fstart + usable2,
             fstep=usable_bw,
             fshift=fshift,
             decimation=decimation,
