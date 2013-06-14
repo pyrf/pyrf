@@ -12,7 +12,7 @@ class WSA42(object):
     FULL_BW = 128*M
     USABLE_BW = 66*M
     MIN_TUNABLE = 96*M
-    MAX_TUNABLE = 2048*M
+    MAX_TUNABLE = 2044*M
     MIN_DECIMATION = 4
     MAX_DECIMATION = 256
     DECIMATED_USABLE = 0.5
@@ -82,8 +82,8 @@ class TestPlanSweep(unittest.TestCase):
 
     def test_xxx_truncate_to_left_sweep(self):
         self._plan42(0, 2048*M, 200,
-            [(96*M, 32*M, 0, 1, 128, 31, 32, 1984)],
-            fstart=63*M, fstop=2047*M)
+            [(96*M, 32*M, 0, 1, 128, 31, 32, 1952)],
+            fstart=63*M, fstop=2043*M)
 
     #def test_vlow_plus_normal(self):
     #    self._plan4k(30*M, 67*M, 50*K,

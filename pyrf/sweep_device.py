@@ -33,7 +33,7 @@ class SweepDevice(object):
     def __init__(self, real_device, async_callback=None):
         self.real_device = real_device
         self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-        if hasattr(real_device, 'vrt_callback'):
+        if hasattr(self.connector, 'vrt_callback'):
             if not async_callback:
                 raise SweepDeviceError(
                     "async_callback required for async operation")
@@ -122,6 +122,9 @@ class SweepDevice(object):
         assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
+        if self._ss_index is None:
+            return # more data than we asked for
+
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
 
         # collect and compute bins
@@ -139,6 +142,7 @@ class SweepDevice(object):
 
         # done the complete sweep
         # XXX: in case sweep_iterations() does not work
+        self._ss_index = None
         self.real_device.abort()
         self.real_device.flush()
 
@@ -246,10 +250,13 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
 
         usable_bw = usable_bins * bin_size
 
-        bins_keep = round((fstop - fstart) / bin_size)
+        fcenter = fstart + usable2
+        max_steps = math.floor((device.MAX_TUNABLE - fstart) / usable_bw)
+        bins_keep = min(round((fstop - fstart) / bin_size),
+            max_steps * usable_bins)
         sweep_steps = math.ceil(bins_keep / usable_bins)
         out.append(SweepStep(
-            fcenter=fstart + usable2,
+            fcenter=fcenter,
             fstep=usable_bw,
             fshift=fshift,
             decimation=decimation,
