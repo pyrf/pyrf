@@ -10,8 +10,13 @@ class plot_state(object):
         
         self.grid = False
         
+        self.ant = 1
+        self.gain = 'vlow'
+        self.if_gain = 0 
         self.mhold = False
         self.mhold_fft = None
+        
+        self.bin_size = constants.INIT_BIN_SIZE
         
         self.trig = False
         self.trig_set = None
@@ -24,15 +29,14 @@ class plot_state(object):
         self.delta_ind = None
         self.peak = False
         
-        self.freq_range = None
-        self.points = constants.STARTUP_POINTS
+        self.freq_range = None        
+        self.center_freq = constants.INIT_CENTER_FREQ
         
-        self.center_freq = None
-        self.bandwidth = None
+        self.bandwidth = constants.INIT_BANDWIDTH
         self.decimation_factor = None
         self.decimation_points = None
-        self.start_freq = None
-        self.stop_freq = None
+        self.fstart = self.center_freq - self.bandwidth / 2
+        self.fstop = self.center_freq + self.bandwidth / 2
         
         self.enable_plot = True
         
@@ -108,11 +112,11 @@ class plot_state(object):
     def update_freq_range(self, start, stop, size):
         self.freq_range = np.linspace(start, stop, size)
         
-    def update_freq(self,state):
-        if state == 'CENT':
-            self.start_freq = (self.center_freq) - (self.bandwidth / 2)
-            self.stop_freq = (self.center_freq) + (self.bandwidth / 2)
-        # TODO: UPDATE TO CHANGE FOR FSTART/FSTOP
+
+
+    def update_freq_set(self,fstart = None, fstop = None, fcenter = None, rbw = None, bandwidth = None):
+        if rbw != None:
+            self.bin_size = int(self.bandwidth/1e3 / rbw)
     
     def reset_freq_bounds(self):
             self.start_freq = None

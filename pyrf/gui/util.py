@@ -52,10 +52,7 @@ def find_nearest_index(value, array):
     idx = (np.abs(array-value)).argmin()
     return idx
     
-def html_text_conv(text,size,color):
-    """
-    returns the given text in an HTML format with proper format     
-    """
+
 
       
 

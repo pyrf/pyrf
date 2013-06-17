@@ -25,6 +25,7 @@ import gui_config
 
 from pyrf.gui.util import frequency_text
 from pyrf.devices.thinkrf import WSA4000
+from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.util import read_data_and_context
 from pyrf.config import TriggerSettings
@@ -59,8 +60,6 @@ class MainWindow(QtGui.QMainWindow):
     def initUI(self):
         openAction = QtGui.QAction('&Open Device', self)
         openAction.triggered.connect(self.open_device_dialog)
-        hotKeyAction = QtGui.QAction('&Hotkey List', self)
-        hotKeyAction.triggered.connect(self.open_hotkey_dialog)
         exitAction = QtGui.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
@@ -68,8 +67,7 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
-        helpMenu = menubar.addMenu('&Help')
-        helpMenu.addAction(hotKeyAction)
+
 
         self.setWindowTitle('PyRF')
 
@@ -87,10 +85,7 @@ class MainWindow(QtGui.QMainWindow):
                 name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
                     'Connection Failed, please try again\n\n'
                     'Enter a hostname or IP address:')
-    def open_hotkey_dialog(self):
-        # dont do anything
-        x = 1
-        
+       
     @inlineCallbacks
     def open_device(self, name):
         dut = WSA4000(connector=TwistedConnector(self._reactor))
@@ -117,49 +112,49 @@ class MainPanel(QtGui.QWidget):
     def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
+        self.sweep_dut = SweepDevice(self.dut, self.receive_vrt)
         self.plot_state = gui_config.plot_state()
+        
         # plot window
         self._plot = plot(self)
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
         self._vrt_context = {}
-        self.initDUT()
+        
         self.initUI()
-
+        self.update_freq()
+        self.initDUT()
+        
     @inlineCallbacks
     def initDUT(self):
         yield self.dut.request_read_perm()
-        self.plot_state.center_freq = yield self.dut.freq()
-        self.decimation_factor = yield self.dut.decimation()
+        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
+                                                  self.plot_state.fstop,
+                                                  self.plot_state.bin_size,
+                                                  antenna = self.plot_state.ant,
+                                                  rfgain = self.plot_state.gain,
+                                                  ifgain = self.plot_state.if_gain)
 
-        yield self.dut.flush()
-        yield self.dut.request_read_perm()
-        self.dut.connector.vrt_callback = self.receive_vrt
-        yield self.dut.capture(self.plot_state.points, 1)
+    def receive_vrt(self, fstart, fstop, pow_):
 
-    def receive_vrt(self, packet):
-
-        if packet.is_data_packet():
-            if any(x not in self._vrt_context for x in (
-                    'reflevel', 'rffreq', 'bandwidth')):
-                return
-            if not self.plot_state.enable_plot:
-                return
-            # queue up the next capture while we update
-            self.dut.capture(self.plot_state.points, 1)
-            # compute FFT
-            self.pow_data = compute_fft(self.dut, packet, self._vrt_context)          
-            
-            # grab center frequency/bandwidth to calculate axis width/height
-            self.plot_state.center_freq = self._vrt_context['rffreq']
-            self.plot_state.bandwidth = self._vrt_context['bandwidth']
-            
-            self.plot_state.start_freq = (self.plot_state.center_freq) - (self.plot_state.bandwidth / 2)
-            self.plot_state.stop_freq = (self.plot_state.center_freq) + (self.plot_state.bandwidth / 2)
-            if self._freq_edit.text() == '':
-                self._update_freq_edit()
-            self.update_plot()
-        else:
-            self._vrt_context.update(packet.fields)
+        if not self.    plot_state.enable_plot:
+            return
+        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
+                                                  self.plot_state.fstop,
+                                                  self.plot_state.bin_size,
+                                                  antenna = self.plot_state.ant,
+                                                  rfgain = self.plot_state.gain,
+                                                  ifgain = self.plot_state.if_gain)
+        
+        # compute FFT
+        self.pow_data = pow_        
+        self.plot_state.start_freq = fstart
+        self.plot_state.stop_freq = fstop
+        # grab center frequency/bandwidth to calculate axis width/height
+                    
+        self.plot_state.bandwidth = fstop - fstart
+        
+        self.plot_state.center_freq = fstart + (self.plot_state.bandwidth / 2)
+        self.update_plot()
 
     def keyPressEvent(self, event):
         hotkey_util(self, event)
@@ -230,7 +225,6 @@ class MainPanel(QtGui.QWidget):
         
         x = plot_width
         grid.addWidget(self._antenna_control(), y, x, 1, 2)
-        grid.addWidget(self._bpf_control(), y, x + 2, 1, 2)
         
         x = plot_width 
         y += 1
@@ -259,9 +253,6 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(fstop_txt, y, x + 1, 1, 2)
         grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
         
-        # select center freq
-        gui_config.select_center(self)
-        
         x = plot_width
         y += 1
         grid.addWidget(freq_minus, y, x, 1, 1)
@@ -270,10 +261,9 @@ class MainPanel(QtGui.QWidget):
         
         x = plot_width
         y += 1
-        span, rbw = self._span_rbw_controls()
-        grid.addWidget(span, y, x, 1, 2)
+        rbw = self._rbw_controls()
         grid.addWidget(rbw, y, x + 2, 1, 2)
-               
+        self.update_freq()
         self.setLayout(grid)
         self.show()
     
@@ -333,114 +323,49 @@ class MainPanel(QtGui.QWidget):
         self._pause = pause
         return pause
            
-    @inlineCallbacks
-    def _read_update_antenna_box(self):
-        ant = yield self.dut.antenna()
-        self._antenna_box.setCurrentIndex(ant - 1)
-
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
         self._antenna_box = antenna
-        self._read_update_antenna_box()
+        
         def new_antenna():
-            with self.paused_stream() as dut:
-                dut.antenna(int(antenna.currentText().split()[-1]))
+            self.plot_state.ant = (int(antenna.currentText().split()[-1]))
+        
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
 
-    @inlineCallbacks
-    def _read_update_bpf_box(self):
-        bpf = yield self.dut.preselect_filter()
-        self._bpf_box.setCurrentIndex(0 if bpf else 1)
-
-    def _bpf_control(self):
-        bpf = QtGui.QComboBox(self)
-        bpf.addItem("BPF On")
-        bpf.addItem("BPF Off")
-        self._bpf_box = bpf
-        self._read_update_bpf_box()
-        def new_bpf():
-            with self.paused_stream() as dut:
-                dut.preselect_filter("On" in bpf.currentText())
-        bpf.currentIndexChanged.connect(new_bpf)
-        return bpf
-
-    @inlineCallbacks
-    def _read_update_gain_box(self):
-        gain = yield self.dut.gain()
-        self._gain_box.setCurrentIndex(self._gain_values.index(gain))
-
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
-        gain_values = ['High', 'Med', 'Low', 'VLow']
+        gain_values = ['VLow', 'Low', 'Med', 'High']
         for g in gain_values:
             gain.addItem("RF Gain: %s" % g)
         self._gain_values = [g.lower() for g in gain_values]
         self._gain_box = gain
-        self._read_update_gain_box()
         def new_gain():
-            g = gain.currentText().split()[-1].lower().encode('ascii')
-            with self.paused_stream() as dut:
-                dut.gain(g)
+            self.plot_state.gain = gain.currentText().split()[-1].lower().encode('ascii')
         gain.currentIndexChanged.connect(new_gain)
         return gain
-
-    @inlineCallbacks
-    def _read_update_ifgain_box(self):
-        ifgain = yield self.dut.ifgain()
-        self._ifgain_box.setValue(int(ifgain))
 
     def _ifgain_control(self):
         ifgain = QtGui.QSpinBox(self)
         ifgain.setRange(-10, 25)
         ifgain.setSuffix(" dB")
         self._ifgain_box = ifgain
-        self._read_update_ifgain_box()
         def new_ifgain():
-            with self.paused_stream() as dut:
-                dut.ifgain(ifgain.value())
+            self.plot_state.if_gain = ifgain.value()
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
-
-    @inlineCallbacks
-    def _read_update_freq_edit(self):
-        "Get current frequency from self.dut and update the edit box"
-        self._update_freq_edit() # once immediately in case of long delay
-        self.plot_state.center_freq = yield self.dut.freq()
-        self._update_freq_edit()
-        
-    def _update_freq_edit(self):
-
-        "Update the frequency edit box from self.plot_state.center_freq"
-
-        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
-        self._fstart_edit.setText("%0.1f" % (self.plot_state.start_freq/ 1e6))
-        self._fstop_edit.setText("%0.1f" % (self.plot_state.stop_freq/ 1e6))
-    
+            
     def _freq_controls(self):
         cfreq = QtGui.QPushButton('Center Frequency')
         cfreq.setToolTip("<span style=\"color:black;\">[2]<br>Tune the center frequency</span>") 
-
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-
-        freq = QtGui.QLineEdit("")
+        freq = QtGui.QLineEdit("2450e6")
         self._freq_edit = freq
-        def write_freq():
-            try:
-                f = float(freq.text())
-            except ValueError:
-                return
-            if f < constants.MIN_FREQ:
-                freq.setText(str(constants.MIN_FREQ))
-            elif f> constants.MAX_FREQ:
-                freq.setText(str(constants.MAX_FREQ))
-            else:
-                self.set_freq_mhz(f)
-        freq.editingFinished.connect(write_freq)
-
+        freq.editingFinished.connect(self.update_freq)
+        freq.textChanged.connect(lambda: cu._select_center_freq(self))
         steps = QtGui.QComboBox(self)
         steps.addItem("Adjust: 1 MHz")
         steps.addItem("Adjust: 2.5 MHz")
@@ -458,11 +383,9 @@ class MainPanel(QtGui.QWidget):
             try:
                 f = float(freq.text())
             except ValueError:
-                self._update_freq_edit()
                 return
             delta = float(steps.currentText().split()[1]) * factor
-            freq.setText("%0.1f" % (f + delta))
-            write_freq()
+            self.update_freq(delta)
         freq_minus = QtGui.QPushButton('-')
         freq_minus.clicked.connect(lambda: freq_step(-1))
         self._freq_minus = freq_minus
@@ -477,9 +400,9 @@ class MainPanel(QtGui.QWidget):
         fstart.setToolTip("<span style=\"color:black;\">[1]<br>Tune the start frequency</span>")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
-        freq = QtGui.QLineEdit("")
-        if self.plot_state.center_freq != None:
-            freq.setText("%0.1f", (self.plot_state.center_freq/1e6))
+        freq = QtGui.QLineEdit(str(self.plot_state.fstart/constants.MHZ))
+        freq.textChanged.connect(lambda: cu._select_fstart(self))
+        freq.editingFinished.connect(self.update_freq)
         self._fstart_edit = freq
         return fstart, freq
         
@@ -488,75 +411,51 @@ class MainPanel(QtGui.QWidget):
         fstop.setToolTip("<span style=\"color:black;\">[3]<br>Tune the stop frequency</span>") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
-        freq = QtGui.QLineEdit("")
-        if self.plot_state.center_freq != None:
-            freq.setText("%0.1f", (self.plot_state.center_freq/1e6))
+        freq = QtGui.QLineEdit(str(self.plot_state.fstop/constants.MHZ))
+        freq.textChanged.connect(lambda: cu._select_fstop(self))
+        freq.editingFinished.connect(self.update_freq)
         self._fstop_edit = freq
         return fstop, freq
            
-    @inlineCallbacks
-    def _read_update_span_rbw_boxes(self):
-        self.decimation_factor = yield self.dut.decimation()
-        self._span_box.setCurrentIndex(
-            self._decimation_values.index(self.decimation_factor))
-        self._update_rbw_box()
 
-    def _update_rbw_box(self):
-        d = self.decimation_factor
-        for i, p in enumerate(self._points_values):
-            r = constants.DEVICE_FULL_SPAN / d / p
-            self._rbw_box.setItemText(i, "RBW: %s" % frequency_text(r))
-            if self.plot_state.decimation_points and self.plot_state.decimation_points == d * p:
-                self._rbw_box.setCurrentIndex(i)
-        self.points = self._points_values[self._rbw_box.currentIndex()]
-
-    def _span_rbw_controls(self):
-        span = QtGui.QComboBox(self)
-        decimation_values = [1] + [2 ** x for x in range(2, 10)]
-        for d in decimation_values:
-            span.addItem("Span: %s" % frequency_text(constants.DEVICE_FULL_SPAN / d))
-        self._decimation_values = decimation_values
-        self._span_box = span
-        def new_span():
-            self.set_decimation(decimation_values[span.currentIndex()])
-            self._update_rbw_box()
-            self.plot_state.reset_freq_bounds()
-            
-        span.currentIndexChanged.connect(new_span)
-
+    def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
-        self._points_values = [2 ** x for x in range(8, 16)]
+        self._points_values = constants.RBW_VALUES
         self._rbw_box = rbw
-        rbw.addItems([str(p) for p in self._points_values])
-        self._read_update_span_rbw_boxes()
-
+        rbw.addItems([str(p) + ' KHz' for p in self._points_values])
         def new_rbw():
-            self.plot_state.points = self._points_values[rbw.currentIndex()]
-            self.decimation_points = self.decimation_factor * self.plot_state.points
-            with self.paused_stream() as dut:
-                dut.spp(self.plot_state.points)
-        rbw.setCurrentIndex(self._points_values.index(1024))
+            self.plot_state.update_freq_set(rbw = self._points_values[rbw.currentIndex()])
+            print self.plot_state.bin_size
+        rbw.setCurrentIndex(3)
         rbw.currentIndexChanged.connect(new_rbw)
-        return span, rbw
+        return rbw
 
-    def set_freq_mhz(self, f):
-        # TODO: HOOK FSTART/FSTOP CHANGE HERE
-        if self.plot_state.freq_sel == 'CENT':
-            self.plot_state.center_freq = f * 1e6
-            
-            # reset max hold whenever frequency is changed
-            self.plot_state.mhold_fft = None
-            
-            with self.paused_stream() as dut:
-                dut.freq(self.plot_state.center_freq)
-        self.plot_state.update_freq(self.plot_state.freq_sel)
-        self._update_freq_edit()
-            
+    def update_freq(self, delta = None):
+        
+        if delta == None:
+            delta = 0                
 
-    def set_decimation(self, d):
-        self.decimation_factor = 1 if d == 0 else d
-        with self.paused_stream() as dut:
-            dut.decimation(d)
+        if self.plot_state.freq_sel == 'CENTER':
+            f = (float(self._freq_edit.text()) + delta) * constants.MHZ
+            if f > constants.MAX_FREQ or f < constants.MIN_FREQ:
+                return
+            self.plot_state.center_freq = f
+            self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
+        
+        if self.plot_state.freq_sel == 'FSTART':
+            f = (float(self._fstart_edit.text()) + delta) * constants.MHZ 
+            if f > (constants.MAX_FREQ) or f < (constants.MIN_FREQ) or f > self.plot_state.fstop:
+                return
+            self.plot_state.fstart = f
+            self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
+            
+        if self.plot_state.freq_sel == 'FSTOP': 
+            f = (float(self._fstop_edit.text()) + delta) * constants.MHZ 
+            if f > constants.MAX_FREQ or f < constants.MIN_FREQ or f < self.plot_state.fstart:
+                return
+            self.plot_state.fstop = f
+            self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
+
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
@@ -574,7 +473,8 @@ class MainPanel(QtGui.QWidget):
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
         
-    def update_plot(self):      
+    def update_plot(self):
+        
         self.plot_state.update_freq_range(self.plot_state.start_freq,
                                                 self.plot_state.stop_freq , 
                                                 len(self.pow_data))

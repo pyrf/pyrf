@@ -17,15 +17,15 @@ def _center_plot_view(layout):
     layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth)
     
 def _select_center_freq(layout):
-    layout.freq_sel = 'CENT'
+    layout.plot_state.freq_sel = 'CENT'
     gui_state.select_center(layout)
 
 def _select_fstart(layout):
-    layout.freq_sel = 'START'
+    layout.plot_state.freq_sel = 'FSTART'
     gui_state.select_fstart(layout)
     
 def _select_fstop(layout):
-    layout.freq_sel = 'STOP'
+    layout.plot_state.freq_sel = 'FSTOP'
     gui_state.select_fstop(layout)
     
 def _up_arrow_key(layout):
@@ -153,7 +153,12 @@ def _enable_plot(layout):
         gui_state.change_item_color(layout._pause,  constants.ORANGE, constants.WHITE)
     else:
         gui_state.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
-        layout.dut.capture(layout.plot_state.points, 1)
+        layout.sweep_dut.capture_power_spectrum(layout.plot_state.fstart, 
+                                          layout.plot_state.fstop,
+                                          layout.plot_state.bin_size,
+                                          antenna = layout.plot_state.ant,
+                                          rfgain = layout.plot_state.gain,
+                                          ifgain = layout.plot_state.if_gain)
 
 def _trigger_control(layout):
     """
