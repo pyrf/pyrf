@@ -85,6 +85,12 @@ class TestPlanSweep(unittest.TestCase):
             [(96*M, 32*M, 0, 1, 128, 31, 32, 1952)],
             fstart=63*M, fstop=2043*M)
 
+    def test_empty_range(self):
+        self._plan42(2400*M, 2400*M, 500, [])
+
+    def test_invalid_range(self):
+        self._plan42(2400*M, 2300*M, 500, [], fstop=2400*M)
+
     #def test_vlow_plus_normal(self):
     #    self._plan4k(30*M, 67*M, 50*K,
     #        [(0, 37187500, 4, 2048, 553, 983, 312),

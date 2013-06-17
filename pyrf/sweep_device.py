@@ -94,10 +94,15 @@ class SweepDevice(object):
                 ))
 
         if self.async_callback:
+            if not self.plan:
+                self.async_callback(self.fstart, self.fstop, [])
+                return
             self.connector.vrt_callback = self._vrt_receive
             self._start_sweep()
             return
 
+        if not self.plan:
+            return (self.fstart, self.fstop, [])
         self._start_sweep()
         result = None
         while result is None:
@@ -209,13 +214,16 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     usable2 = device.USABLE_BW / 2.0
     dc_offset2 = device.DC_OFFSET_BW / 2.0
 
-    ideal_bin_size = (fstop - fstart) / float(bins)
-    points = device.FULL_BW / ideal_bin_size
-    points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
-
     # FIXME: truncate to left-hand sweep area for now
     fstart = max(device.MIN_TUNABLE - usable2, fstart)
     fstop = min(device.MAX_TUNABLE - dc_offset2, fstop)
+
+    if fstop <= fstart:
+        return (fstart, fstart, [])
+
+    ideal_bin_size = (fstop - fstart) / float(bins)
+    points = device.FULL_BW / ideal_bin_size
+    points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
 
     decimation = 1
     ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
@@ -251,6 +259,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
         usable_bw = usable_bins * bin_size
 
         fcenter = fstart + usable2
+        # FIXME: fstop not being updated here
         max_steps = math.floor((device.MAX_TUNABLE - fstart) / usable_bw)
         bins_keep = min(round((fstop - fstart) / bin_size),
             max_steps * usable_bins)
