@@ -135,8 +135,7 @@ class MainPanel(QtGui.QWidget):
                                                   ifgain = self.plot_state.if_gain)
 
     def receive_vrt(self, fstart, fstop, pow_):
-
-        if not self.    plot_state.enable_plot:
+        if not self.plot_state.enable_plot:
             return
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
                                                   self.plot_state.fstop,
@@ -144,16 +143,7 @@ class MainPanel(QtGui.QWidget):
                                                   antenna = self.plot_state.ant,
                                                   rfgain = self.plot_state.gain,
                                                   ifgain = self.plot_state.if_gain)
-        
-        # compute FFT
-        self.pow_data = pow_        
-        self.plot_state.start_freq = fstart
-        self.plot_state.stop_freq = fstop
-        # grab center frequency/bandwidth to calculate axis width/height
-                    
-        self.plot_state.bandwidth = fstop - fstart
-        
-        self.plot_state.center_freq = fstart + (self.plot_state.bandwidth / 2)
+        self.pow_data = pow_
         self.update_plot()
 
     def keyPressEvent(self, event):
@@ -244,6 +234,12 @@ class MainPanel(QtGui.QWidget):
         cfreq, freq, steps, freq_plus, freq_minus = self._freq_controls()
         grid.addWidget(cfreq, y, x, 1, 1)
         grid.addWidget(freq, y, x + 1, 1, 2)
+        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
+        x = plot_width
+        y += 1
+        bw_bt, bw_txt = self._bw_controls()
+        grid.addWidget(bw_bt, y, x, 1, 1)
+        grid.addWidget(bw_txt, y, x + 1, 1, 2)
         grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
         
         x = plot_width
@@ -362,10 +358,13 @@ class MainPanel(QtGui.QWidget):
         cfreq.setToolTip("<span style=\"color:black;\">[2]<br>Tune the center frequency</span>") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq = QtGui.QLineEdit("2450e6")
+        freq = QtGui.QLineEdit(str(self.plot_state.center_freq/constants.MHZ))
         self._freq_edit = freq
-        freq.editingFinished.connect(self.update_freq)
-        freq.textChanged.connect(lambda: cu._select_center_freq(self))
+        def freq_change():
+            cu._select_center_freq(self)
+            self.update_freq()
+            self.update_freq_edit()
+        freq.returnPressed.connect(lambda: freq_change())
         steps = QtGui.QComboBox(self)
         steps.addItem("Adjust: 1 MHz")
         steps.addItem("Adjust: 2.5 MHz")
@@ -375,7 +374,6 @@ class MainPanel(QtGui.QWidget):
         self.fstep = float(steps.currentText().split()[1])
         def freq_step_change():
             self.fstep = float(steps.currentText().split()[1])
-        
         steps.currentIndexChanged.connect(freq_step_change)
         steps.setCurrentIndex(2)
         self._fstep_box = steps
@@ -395,29 +393,50 @@ class MainPanel(QtGui.QWidget):
         
         return cfreq, freq, steps, freq_plus, freq_minus
     
+    def _bw_controls(self):
+        bw = QtGui.QPushButton('Span')
+        bw.setToolTip("<span style=\"color:black;\">[3]<br>Change the bandwidth of the current plot</span>")
+        self._bw = bw
+        bw.clicked.connect(lambda: cu._select_bw(self))
+        bw_edit = QtGui.QLineEdit(str(self.plot_state.bandwidth/constants.MHZ))
+        def freq_change():
+            cu._select_bw(self)
+            self.update_freq()
+            self.update_freq_edit()
+            
+        bw_edit.returnPressed.connect(lambda: freq_change())
+        self._bw_edit = bw_edit
+        return bw, bw_edit
+    
     def _fstart_controls(self):
         fstart = QtGui.QPushButton('Start Frequency')
         fstart.setToolTip("<span style=\"color:black;\">[1]<br>Tune the start frequency</span>")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
         freq = QtGui.QLineEdit(str(self.plot_state.fstart/constants.MHZ))
-        freq.textChanged.connect(lambda: cu._select_fstart(self))
-        freq.editingFinished.connect(self.update_freq)
+        def freq_change():
+            cu._select_fstart(self)
+            self.update_freq()
+            self.update_freq_edit()
+            
+        freq.returnPressed.connect(lambda: freq_change())
         self._fstart_edit = freq
         return fstart, freq
         
     def _fstop_controls(self):
         fstop = QtGui.QPushButton('Stop Frequency')
-        fstop.setToolTip("<span style=\"color:black;\">[3]<br>Tune the stop frequency</span>") 
+        fstop.setToolTip("<span style=\"color:black;\">[4]<br>Tune the stop frequency</span>") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
         freq = QtGui.QLineEdit(str(self.plot_state.fstop/constants.MHZ))
-        freq.textChanged.connect(lambda: cu._select_fstop(self))
-        freq.editingFinished.connect(self.update_freq)
+        def freq_change():
+            cu._select_fstop(self)   
+            self.update_freq()
+            self.update_freq_edit()            
+        freq.returnPressed.connect(lambda: freq_change())
         self._fstop_edit = freq
         return fstop, freq
            
-
     def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
         self._points_values = constants.RBW_VALUES
@@ -425,8 +444,7 @@ class MainPanel(QtGui.QWidget):
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
         def new_rbw():
             self.plot_state.update_freq_set(rbw = self._points_values[rbw.currentIndex()])
-            print self.plot_state.bin_size
-        rbw.setCurrentIndex(3)
+        rbw.setCurrentIndex(0)
         rbw.currentIndexChanged.connect(new_rbw)
         return rbw
 
@@ -434,28 +452,39 @@ class MainPanel(QtGui.QWidget):
         
         if delta == None:
             delta = 0                
-
-        if self.plot_state.freq_sel == 'CENTER':
+        if self.plot_state.freq_sel == 'CENT':
             f = (float(self._freq_edit.text()) + delta) * constants.MHZ
             if f > constants.MAX_FREQ or f < constants.MIN_FREQ:
                 return
-            self.plot_state.center_freq = f
-            self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
-        
-        if self.plot_state.freq_sel == 'FSTART':
+            self.plot_state.update_freq_set(fcenter = f)
+
+        elif self.plot_state.freq_sel == 'FSTART':
             f = (float(self._fstart_edit.text()) + delta) * constants.MHZ 
             if f > (constants.MAX_FREQ) or f < (constants.MIN_FREQ) or f > self.plot_state.fstop:
                 return
-            self.plot_state.fstart = f
-            self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
+            self.plot_state.update_freq_set(fstart = f)
             
-        if self.plot_state.freq_sel == 'FSTOP': 
+        elif self.plot_state.freq_sel == 'FSTOP': 
+            
             f = (float(self._fstop_edit.text()) + delta) * constants.MHZ 
             if f > constants.MAX_FREQ or f < constants.MIN_FREQ or f < self.plot_state.fstart:
+                print 'invalid freq'
                 return
-            self.plot_state.fstop = f
-            self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
-
+            self.plot_state.update_freq_set(fstop = f)
+        
+        elif self.plot_state.freq_sel == 'BW': 
+            f = (float(self._bw_edit.text()) + delta) * constants.MHZ
+            print f
+            if f < constants.MIN_FREQ:
+                return
+            self.plot_state.update_freq_set(bw = f)
+    
+    def update_freq_edit(self):
+        print self.plot_state.fstop
+        self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
+        self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
+        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
+        self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
@@ -475,8 +504,8 @@ class MainPanel(QtGui.QWidget):
         
     def update_plot(self):
         
-        self.plot_state.update_freq_range(self.plot_state.start_freq,
-                                                self.plot_state.stop_freq , 
+        self.plot_state.update_freq_range(self.plot_state.fstart,
+                                                self.plot_state.fstop , 
                                                 len(self.pow_data))
        
         self.update_fft()

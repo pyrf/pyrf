@@ -16,7 +16,7 @@ class plot_state(object):
         self.mhold = False
         self.mhold_fft = None
         
-        self.bin_size = constants.INIT_BIN_SIZE
+        
         
         self.trig = False
         self.trig_set = None
@@ -31,15 +31,12 @@ class plot_state(object):
         
         self.freq_range = None        
         self.center_freq = constants.INIT_CENTER_FREQ
-        
         self.bandwidth = constants.INIT_BANDWIDTH
-        self.decimation_factor = None
-        self.decimation_points = None
         self.fstart = self.center_freq - self.bandwidth / 2
         self.fstop = self.center_freq + self.bandwidth / 2
-        
+        self.bin_size = constants.INIT_BIN_SIZE
+        self.rbw = self.bandwidth / self.bin_size
         self.enable_plot = True
-        
         self.freq_sel = 'CENT'
     
     def enable_marker(self, layout):
@@ -114,10 +111,45 @@ class plot_state(object):
         
 
 
-    def update_freq_set(self,fstart = None, fstop = None, fcenter = None, rbw = None, bandwidth = None):
-        if rbw != None:
-            self.bin_size = int(self.bandwidth/1e3 / rbw)
-    
+    def update_freq_set(self,
+                          fstart = None, 
+                          fstop = None, 
+                          fcenter = None, 
+                          rbw = None, 
+                          bw = None):
+        
+        if fcenter != None:
+            print 'fcenter change'
+            self.center_freq = fcenter
+            self.fstart = fcenter - (self.bandwidth / 2)
+            self.fstop = fcenter + (self.bandwidth / 2)
+            self.bin_size = int((self.bandwidth) / self.rbw)
+        
+        elif fstart != None:
+            print 'start change'
+            self.fstart = fstart
+            self.bandwidth = self.fstop - fstart
+            self.center_freq = fstart + (self.bandwidth / 2)
+            self.bin_size = int((self.bandwidth) / self.rbw)
+        
+        elif fstop != None:
+            print 'fstop change'
+            self.fstop = fstop
+            self.bandwidth = fstop - self.fstart
+            self.center_freq = fstop - (self.bandwidth / 2)
+            self.bin_size = int((self.bandwidth) / self.rbw)
+
+        elif rbw != None:
+            self.rbw = rbw * 1e3
+            self.bin_size = int((self.bandwidth) / self.rbw)
+        
+        elif bw != None:
+            print 'bandwidth changed'
+            print bw
+            self.bandwidth = bw
+            self.fstart = (self.center_freq - self.bandwidth / 2)
+            self.fstop = (self.center_freq + self.bandwidth / 2)
+            self.bin_size = int((self.bandwidth) / self.rbw)
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
@@ -127,17 +159,26 @@ def select_fstart(layout):
     layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._cfreq.setStyleSheet("")
     layout._fstop.setStyleSheet("")
-
+    layout._bw.setStyleSheet("")
+    
 def select_center(layout):
     layout._cfreq.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._fstart.setStyleSheet("")
+    layout._fstop.setStyleSheet("")
+    layout._bw.setStyleSheet("")
+    
+def select_bw(layout):
+    layout._bw.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._fstart.setStyleSheet("")
+    layout._cfreq.setStyleSheet("")
     layout._fstop.setStyleSheet("")
 
 def select_fstop(layout):
     layout._fstop.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._cfreq.setStyleSheet("")
-
+    layout._bw.setStyleSheet("")
+    
 def change_item_color(item, textColor, backgroundColor):
         item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
 

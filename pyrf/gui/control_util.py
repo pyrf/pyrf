@@ -19,6 +19,10 @@ def _center_plot_view(layout):
 def _select_center_freq(layout):
     layout.plot_state.freq_sel = 'CENT'
     gui_state.select_center(layout)
+    
+def _select_bw(layout):
+    layout.plot_state.freq_sel = 'BW'
+    gui_state.select_bw(layout)
 
 def _select_fstart(layout):
     layout.plot_state.freq_sel = 'FSTART'
@@ -173,7 +177,8 @@ def _trigger_control(layout):
 
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
-                '3': _select_fstop,
+                '3': _select_bw,
+                '4': _select_fstop,
                 'UP KEY': _up_arrow_key, 
                 'DOWN KEY': _down_arrow_key,
                 'RIGHT KEY': _right_arrow_key,
