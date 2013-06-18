@@ -119,21 +119,18 @@ class plot_state(object):
                           bw = None):
         
         if fcenter != None:
-            print 'fcenter change'
             self.center_freq = fcenter
             self.fstart = fcenter - (self.bandwidth / 2)
             self.fstop = fcenter + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
         
         elif fstart != None:
-            print 'start change'
             self.fstart = fstart
             self.bandwidth = self.fstop - fstart
             self.center_freq = fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
         
         elif fstop != None:
-            print 'fstop change'
             self.fstop = fstop
             self.bandwidth = fstop - self.fstart
             self.center_freq = fstop - (self.bandwidth / 2)
@@ -144,8 +141,6 @@ class plot_state(object):
             self.bin_size = int((self.bandwidth) / self.rbw)
         
         elif bw != None:
-            print 'bandwidth changed'
-            print bw
             self.bandwidth = bw
             self.fstart = (self.center_freq - self.bandwidth / 2)
             self.fstop = (self.center_freq + self.bandwidth / 2)

@@ -1,7 +1,7 @@
 import math
 import random
 from collections import namedtuple
-
+import time
 from pyrf.numpy_util import compute_fft
 from pyrf.config import SweepEntry
 
@@ -68,14 +68,14 @@ class SweepDevice(object):
         """
         self.real_device.abort()
         self.real_device.flush()
-        self.real_device.reset()
         self.real_device.request_read_perm()
 
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, bins, min_points, max_points)
 
         self.real_device.sweep_clear()
-        for ss in self.plan:
+
+        for ss in self.plan:           
             steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
             if ss.points > 32*1024:
                 raise SweepDeviceError('large captures not yet supported')
