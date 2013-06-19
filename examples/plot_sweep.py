@@ -15,7 +15,7 @@ dut = WSA4000()
 dut.connect(sys.argv[1])
 sd = SweepDevice(dut)
 
-fstart, fstop, bins = sd.capture_power_spectrum(0e9, 10e9, 2000, rfgain='high')
+fstart, fstop, bins = sd.capture_power_spectrum(5300e6, 5500e6, 2000, rfgain='high', antenna = 2)
 
 # setup my graph
 fig = figure(1)

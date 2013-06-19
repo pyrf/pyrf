@@ -58,21 +58,18 @@ def _right_arrow_key(layout):
     """
     handle arrow key right action
     """
-    # TODO: use a dict
-    if layout.plot_state.freq_sel == 'CENT':
-        if layout.plot_state.enable_plot:
-            layout._freq_plus.click()
-            layout.plot_state.mhold_fft = None
+
+    if layout.plot_state.enable_plot:
+        layout._freq_plus.click()
+        layout.plot_state.mhold_fft = None
 
 def _left_arrow_key(layout):
     """
     handle left arrow key action
     """
-    # TODO: use a dict
-    if layout.plot_state.freq_sel == 'CENT':
-        if layout.plot_state.enable_plot:
-            layout._freq_minus.click()
-            layout.plot_state.mhold_fft = None
+    if layout.plot_state.enable_plot:
+        layout._freq_minus.click()
+        layout.plot_state.mhold_fft = None
 
 def _grid_control(layout):
     """

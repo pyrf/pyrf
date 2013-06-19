@@ -119,9 +119,15 @@ class plot_state(object):
                           bw = None):
         
         if fcenter != None:
-            self.center_freq = fcenter
+            
             self.fstart = fcenter - (self.bandwidth / 2)
+            if self.fstart < constants.MIN_FREQ:
+                self.fstart = constants.MIN_FREQ
             self.fstop = fcenter + (self.bandwidth / 2)
+            if self.fstop > constants.MAX_FREQ:    
+                self.fstop = constants.MAX_FREQ
+            self.bandwidth = self.fstop - self.fstart
+            self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
         
         elif fstart != None:
@@ -141,10 +147,18 @@ class plot_state(object):
             self.bin_size = int((self.bandwidth) / self.rbw)
         
         elif bw != None:
-            self.bandwidth = bw
-            self.fstart = (self.center_freq - self.bandwidth / 2)
-            self.fstop = (self.center_freq + self.bandwidth / 2)
+
+            self.fstart = (self.center_freq - (bw / 2))
+            self.fstop = (self.center_freq + (bw / 2))
+            if self.fstart < constants.MIN_FREQ:
+                self.fstart = constants.MIN_FREQ
+            if self.fstop > constants.MAX_FREQ:    
+                self.fstop = constants.MAX_FREQ
+            self.bandwidth = self.fstop - self.fstart
+            self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
+            if self.bin_size < 1:
+                self.bin_size = 1
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None

@@ -107,6 +107,7 @@ class SweepDevice(object):
         result = None
         while result is None:
             result = self._vrt_receive(self.real_device.read())
+            print result
         return result
 
     def _start_sweep(self):
@@ -131,7 +132,6 @@ class SweepDevice(object):
             return # more data than we asked for
 
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
-
         # collect and compute bins
         ss = self.plan[self._ss_index]
         take = min(ss.bins_run, ss.bins_keep - self._ss_received)

@@ -121,10 +121,8 @@ class MainPanel(QtGui.QWidget):
         self.initUI()
         self.update_freq()
         self.initDUT()
-        
-    @inlineCallbacks
+       
     def initDUT(self):
-        yield self.dut.reset()
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
                                                   self.plot_state.fstop,
                                                   self.plot_state.bin_size,
@@ -257,6 +255,7 @@ class MainPanel(QtGui.QWidget):
         y += 1
         rbw = self._rbw_controls()
         grid.addWidget(rbw, y, x + 2, 1, 2)
+        cu._select_fstart(self)
         self.update_freq()
         self.setLayout(grid)
         self.show()
@@ -382,6 +381,7 @@ class MainPanel(QtGui.QWidget):
                 return
             delta = float(steps.currentText().split()[1]) * factor
             self.update_freq(delta)
+            self.update_freq_edit()   
         freq_minus = QtGui.QPushButton('-')
         freq_minus.clicked.connect(lambda: freq_step(-1))
         self._freq_minus = freq_minus
@@ -441,7 +441,7 @@ class MainPanel(QtGui.QWidget):
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
         def new_rbw():
             self.plot_state.update_freq_set(rbw = self._points_values[rbw.currentIndex()])
-        rbw.setCurrentIndex(0)
+        rbw.setCurrentIndex(1)
         rbw.currentIndexChanged.connect(new_rbw)
         return rbw
 
@@ -450,27 +450,38 @@ class MainPanel(QtGui.QWidget):
         if delta == None:
             delta = 0                
         if self.plot_state.freq_sel == 'CENT':
-            f = (float(self._freq_edit.text()) + delta) * constants.MHZ
+            try:
+                f = (float(self._freq_edit.text()) + delta) * constants.MHZ
+            except ValueError:
+                return
             if f > constants.MAX_FREQ or f < constants.MIN_FREQ:
                 return
             self.plot_state.update_freq_set(fcenter = f)
 
         elif self.plot_state.freq_sel == 'FSTART':
-            f = (float(self._fstart_edit.text()) + delta) * constants.MHZ 
+            try:
+                f = (float(self._fstart_edit.text()) + delta) * constants.MHZ 
+            except ValueError:
+                return
             if f > (constants.MAX_FREQ) or f < (constants.MIN_FREQ) or f > self.plot_state.fstop:
                 return
             self.plot_state.update_freq_set(fstart = f)
             
         elif self.plot_state.freq_sel == 'FSTOP': 
-            
-            f = (float(self._fstop_edit.text()) + delta) * constants.MHZ 
+            try:
+                f = (float(self._fstop_edit.text()) + delta) * constants.MHZ 
+            except ValueError:
+                return
             if f > constants.MAX_FREQ or f < constants.MIN_FREQ or f < self.plot_state.fstart:
                 return
             self.plot_state.update_freq_set(fstop = f)
         
         elif self.plot_state.freq_sel == 'BW': 
-            f = (float(self._bw_edit.text()) + delta) * constants.MHZ
-            if f < constants.MIN_FREQ:
+            try:
+                f = (float(self._bw_edit.text()) + delta) * constants.MHZ
+            except ValueError:
+                return
+            if f < 0:
                 return
             self.plot_state.update_freq_set(bw = f)
     
@@ -479,6 +490,7 @@ class MainPanel(QtGui.QWidget):
         self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
         self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
+    
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
@@ -510,7 +522,7 @@ class MainPanel(QtGui.QWidget):
     def update_fft(self):
         if self.plot_state.mhold:
             if (self.plot_state.mhold_fft == None or len(self.plot_state.mhold_fft) != len(self.pow_data)):
-                self.plot_state.mhold_fft = np.zeros(len(self.pow_data)) + constants.LNEG_NUM
+                self.plot_state.mhold_fft = self.pow_data
             
             self.plot_state.mhold_fft = np.maximum(self.plot_state.mhold_fft,self.pow_data)
             self._plot.fft_curve.setData(x = self.plot_state.freq_range,
