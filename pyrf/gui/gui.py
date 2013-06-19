@@ -311,7 +311,7 @@ class MainPanel(QtGui.QWidget):
         
     def _pause_control(self):
         pause = QtGui.QPushButton('Pause', self)
-        pause.setToolTip("<span style=\"color:black;\">[Space Bar]<br>Pause the plot window</span>") 
+        pause.setToolTip("[Space Bar] pause the plot window") 
         pause.clicked.connect(lambda: cu._enable_plot(self))
         self._pause = pause
         return pause
