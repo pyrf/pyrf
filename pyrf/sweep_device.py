@@ -57,9 +57,10 @@ class SweepDevice(object):
 
     def capture_power_spectrum(self,
             fstart, fstop, bins, antenna=1, rfgain='vlow', ifgain=0,
+            triggers=None, continuous=False,
             min_points=128, max_points=8192):
         """
-        Initiate a capture of power spectral density in the linear domain by
+        Initiate a capture of power spectral density by
         setting up a sweep list and starting a single sweep.
 
         :param fstart: starting frequency in Hz
@@ -68,11 +69,21 @@ class SweepDevice(object):
         :type fstop: float
         :param bins: FFT bins requested (number produced likely more)
         :type bins: int
+        :param antenna: active antenna port
+        :param rfgain: RF gain setting (when available)
+        :param ifgain: IF gain setting
+        :param triggers: list of :class:`TriggerSettings` instances or None
+        :param continuous: not yet implemented
+        :type continuous: bool
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         :param max_points: largest number of points per capture from real_device
                            (due to decimation limits points returned may be larger)
         :type max_points: int
+
+        When triggers are provided nothing will be captured until one of the
+        triggers is satisfied. The trigger data received is combined with a full
+        sweep before being returned.
         """
         self.real_device.abort()
         self.real_device.flush()
@@ -308,3 +319,42 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
         raise NotImplemented # yet
 
     return (fstart, fstop, out)
+
+
+def trim_sweep_plan(device, plan, fstart, fstop):
+    """
+    :param device: a device class or instance such as
+                   :class:`WSA4000`
+    :param plan: list of :class:`SweepStep` instances
+    :param fstart: starting frequency in Hz
+    :type fstart: float
+    :param fstop: ending frequency in Hz
+    :type fstop: float
+
+    produce a new sweep plan consisting of captures from the passed
+    sweep plan that overlap with the range fstart to fstop.
+    """
+
+    if fstop <= fstart:
+        return []
+
+    out = []
+    for ss in plan:
+        steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
+        bin_width = float(device.FULL_BW) / ss.points
+        start_centered = ss.bins_skip - ss.points / 2
+        start_off = start_centered * bin_width
+        stop_centered = start_centered + ss.bins_run
+        stop_off = stop_centered  * bin_width
+
+        start_step = math.floor((fstart - ss.fcenter - start_off) / ss.fstep)
+        stop_step = math.ceil((fstop - ss.fcenter - stop_off) / ss.fstep)
+        if steps <= start_step or stop_step <= 0:
+            continue
+
+        trim_left = min(0, start_step)
+        trim_right = steps - min(steps, stop_steps)
+        out.append(SweepStep(
+            fcenter=ss.fcenter + trim_left * ss.fstep,
+            fstep=ss.fstep,
+            fshift=ss.fshift,
