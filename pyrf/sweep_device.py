@@ -43,7 +43,15 @@ class SweepDevice(object):
             if async_callback:
                 raise SweepDeviceError(
                     "async_callback not applicable for sync operation")
+        self._prev_sweep_id = None
         self.async_callback = async_callback
+        self.context_bytes_received = 0
+        self.data_bytes_received = 0
+        self.data_bytes_processed = 0
+        self.martian_bytes_discarded = 0
+        self.past_end_bytes_discarded = 0
+        self.fft_calculation_seconds = 0.0
+        self.bin_collection_seconds = 0.0
 
     connector = property(lambda self: self.real_device.connector)
 
@@ -75,7 +83,7 @@ class SweepDevice(object):
 
         self.real_device.sweep_clear()
 
-        for ss in self.plan:           
+        for ss in self.plan:
             steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
             if ss.points > 32*1024:
                 raise SweepDeviceError('large captures not yet supported')
@@ -111,6 +119,7 @@ class SweepDevice(object):
         return result
 
     def _start_sweep(self):
+        self._prev_sweep_id = self._sweep_id
         self._sweep_id = (self._sweep_id + 1) & (2**32 - 1)
         self._vrt_context = {}
         self._ss_index = 0
@@ -120,23 +129,42 @@ class SweepDevice(object):
         self.real_device.sweep_start(self._sweep_id)
 
     def _vrt_receive(self, packet):
+        packet_bytes = packet.size * 4
+
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
+            self.context_bytes_received += packet_bytes
             return
-        if self._vrt_context.get('sweepid') != self._sweep_id:
+
+        self.data_bytes_received += packet_bytes
+        sweep_id = self._vrt_context.get('sweepid')
+        if sweep_id != self._sweep_id:
+            if sweep_id == self._prev_sweep_id:
+                self.past_end_bytes_discarded += packet_bytes
+            else:
+                self.martian_bytes_discarded += packet_bytes
             return # not our data
         assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
         if self._ss_index is None:
+            self.past_end_bytes_discarded += packet_bytes
             return # more data than we asked for
 
+        fft_start_time = time.time()
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
         # collect and compute bins
+        collect_start_time = time.time()
         ss = self.plan[self._ss_index]
         take = min(ss.bins_run, ss.bins_keep - self._ss_received)
         self.bins.extend(pow_data[ss.bins_skip:ss.bins_skip + take])
         self._ss_received += take
+        collect_stop_time = time.time()
+
+        self.fft_calculation_seconds += collect_start_time - fft_start_time
+        self.bin_collection_seconds += collect_stop_time - collect_start_time
+        self.data_bytes_processed += take * 4
+
         if self._ss_received < ss.bins_keep:
             return
 
