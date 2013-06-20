@@ -1,5 +1,5 @@
 
-from control_util import *
+import  control_util 
 import numpy as np
 import constants
 def frequency_text(hz):
@@ -18,12 +18,12 @@ def hotkey_util(layout,event):
     """
     modify elements in the gui layout based on which key was pressed
     """
-    if arrow_dict.has_key(str(event.key())):
-        hotkey =  arrow_dict[str(event.key())]
+    if control_util.arrow_dict.has_key(str(event.key())):
+        hotkey =  control_util.arrow_dict[str(event.key())]
     else:
         hotkey = str(event.text()).upper()
-    if hotkey_dict.has_key(hotkey):
-        hotkey_dict[hotkey](layout)
+    if control_util.hotkey_dict.has_key(hotkey):
+        control_util.hotkey_dict[hotkey](layout)
         
 def find_max_index(array):
     """
@@ -52,6 +52,32 @@ def find_nearest_index(value, array):
     idx = (np.abs(array-value)).argmin()
     return idx
     
+def select_fstart(layout):
+    layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._cfreq.setStyleSheet("")
+    layout._fstop.setStyleSheet("")
+    layout._bw.setStyleSheet("")
+    
+def select_center(layout):
+    layout._cfreq.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._fstart.setStyleSheet("")
+    layout._fstop.setStyleSheet("")
+    layout._bw.setStyleSheet("")
+    
+def select_bw(layout):
+    layout._bw.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._fstart.setStyleSheet("")
+    layout._cfreq.setStyleSheet("")
+    layout._fstop.setStyleSheet("")
+
+def select_fstop(layout):
+    layout._fstop.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._fstart.setStyleSheet("")
+    layout._cfreq.setStyleSheet("")
+    layout._bw.setStyleSheet("")
+    
+def change_item_color(item, textColor, backgroundColor):
+        item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
 
 
       

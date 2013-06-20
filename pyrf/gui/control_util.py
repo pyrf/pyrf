@@ -8,32 +8,40 @@ def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
     """
-    layout._plot.center_view(layout.center_freq, layout.bandwidth)
-    
-def _center_plot_view(layout):
-    """
-    move the view to the center of the current FFT displayed
-    """
     layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth)
     
 def _select_center_freq(layout):
+    """
+    select the center freq for arrow control
+    """
     layout.plot_state.freq_sel = 'CENT'
-    gui_state.select_center(layout)
+    util.select_center(layout)
     
 def _select_bw(layout):
+    """
+    select the bw for arrow control
+    """
     layout.plot_state.freq_sel = 'BW'
-    gui_state.select_bw(layout)
+    util.select_bw(layout)
 
 def _select_fstart(layout):
+    """
+    select the fstart for arrow control
+    """
     layout.plot_state.freq_sel = 'FSTART'
-    gui_state.select_fstart(layout)
+    util.select_fstart(layout)
     
 def _select_fstop(layout):
+    """
+    select the fstop for arrow control
+    """
     layout.plot_state.freq_sel = 'FSTOP'
-    gui_state.select_fstop(layout)
+    util.select_fstop(layout)
     
 def _up_arrow_key(layout):
-    
+    """
+    increase the step size of the +/- buttons
+    """
     step = layout._fstep_box.currentIndex() + 1
     max_step = layout._fstep_box.count()
     if step > max_step - 1:
@@ -44,7 +52,9 @@ def _up_arrow_key(layout):
     layout._fstep_box.setCurrentIndex(step)
 
 def _down_arrow_key(layout):
-
+    """
+    decrease the step size of the +/- buttons
+    """
     step = layout._fstep_box.currentIndex() - 1
     max_step = layout._fstep_box.count()
     if step > max_step - 1:
@@ -75,13 +85,12 @@ def _grid_control(layout):
     """
     disable/enable plot grid in layout
     """
-    
     layout.plot_state.grid = not(layout.plot_state.grid)
     layout._plot.grid(layout.plot_state.grid)
     if layout.plot_state.grid:
-        gui_state.change_item_color(layout._grid,  constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._grid,  constants.ORANGE, constants.WHITE)
     else:
-        gui_state.change_item_color(layout._grid,  constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._grid,  constants.NORMAL_COLOR, constants.BLACK)
 
 def _mhold_control(layout):
     """
@@ -91,16 +100,15 @@ def _mhold_control(layout):
         layout.plot_state.mhold = not(layout.plot_state.mhold)
             
         if layout.plot_state.mhold:
-            gui_state.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
+            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
         else:  
-            gui_state.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
+            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
             layout.plot_state.mhold_fft = None
         
 def _marker_control(layout):
     """
     disable/enable marker
     """
-
     # if marker is on and selected, turn off
     if layout.plot_state.marker_sel:
         layout.plot_state.disable_marker(layout)
@@ -116,7 +124,7 @@ def _marker_control(layout):
 
 def _delta_control(layout):
     """
-    disable/enable delta marker
+    disable/enable delta (marker 2)
     """
 
     # if delta is on and selected, turn off
@@ -132,6 +140,9 @@ def _delta_control(layout):
         layout.plot_state.enable_delta(layout)   
 
 def _find_peak(layout):
+    """
+    move the selected marker to the maximum point of the spectrum
+    """
     if not layout.plot_state.marker and not layout.plot_state.delta:
         _marker_control(layout)
 
@@ -148,12 +159,14 @@ def _find_peak(layout):
         layout.plot_state.delta_ind = peak
     layout.update_diff()
 def _enable_plot(layout):
-    
+    """
+    pause/unpause the plot
+    """
     layout.plot_state.enable_plot = not(layout.plot_state.enable_plot)
     if not layout.plot_state.enable_plot:
-        gui_state.change_item_color(layout._pause,  constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._pause,  constants.ORANGE, constants.WHITE)
     else:
-        gui_state.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
         layout.sweep_dut.capture_power_spectrum(layout.plot_state.fstart, 
                                           layout.plot_state.fstop,
                                           layout.plot_state.bin_size,

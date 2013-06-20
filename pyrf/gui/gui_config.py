@@ -1,4 +1,5 @@
 import constants
+import util
 import numpy as np
 from pyrf.config import TriggerSettings
 class plot_state(object):
@@ -42,13 +43,13 @@ class plot_state(object):
     def enable_marker(self, layout):
         self.marker = True
         self.marker_sel = True
-        change_item_color(layout._marker,  constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._marker,  constants.ORANGE, constants.WHITE)
         layout._plot.add_marker()
         layout._marker.setDown(True)
         layout.update_marker()
         if layout.plot_state.delta_sel:
             self.delta_sel = False
-            change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
+            util.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
             layout._delta.setDown(False)
             
 
@@ -56,7 +57,7 @@ class plot_state(object):
         
         self.marker = False
         self.marker_sel = False
-        change_item_color(layout._marker, constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._marker, constants.NORMAL_COLOR, constants.BLACK)
         layout._marker.setDown(False)
         layout._plot.remove_marker()
         layout._marker_lab.setText('')
@@ -67,19 +68,19 @@ class plot_state(object):
     def enable_delta(self, layout):
         self.delta = True
         self.delta_sel = True
-        change_item_color(layout._delta, constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._delta, constants.ORANGE, constants.WHITE)
         layout._plot.add_delta()
         layout._delta.setDown(True)
         layout.update_delta()
         if self.marker:
             self.marker_sel = False             
-            change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
+            util.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
             layout._marker.setDown(False)
             
     def disable_delta(self, layout):
         self.delta = False
         self.delta_sel = False
-        change_item_color(layout._delta, constants.NORMAL_COLOR ,constants.BLACK)
+        util.change_item_color(layout._delta, constants.NORMAL_COLOR ,constants.BLACK)
         layout._delta.setDown(False)
         layout._plot.remove_delta()
         layout._delta_lab.setText('')
@@ -90,14 +91,14 @@ class plot_state(object):
     
     def disable_trig(self, layout):
         self.trig = False
-        change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
         layout._plot.remove_trigger()
         self.trig_set.trigtype = constants.NONE_TRIGGER_TYPE
         layout.dut.trigger(self.trig_set)
         
     def enable_trig(self, layout):
         self.trig = True
-        change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
+        util.change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
         if self.trig_set == None:
             self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
                                                     self.center_freq + 10e6, 
@@ -119,7 +120,6 @@ class plot_state(object):
                           bw = None):
         
         if fcenter != None:
-            
             self.fstart = fcenter - (self.bandwidth / 2)
             if self.fstart < constants.MIN_FREQ:
                 self.fstart = constants.MIN_FREQ
@@ -129,25 +129,38 @@ class plot_state(object):
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
+            if self.bin_size < 1:
+                self.bin_size = 1
         
         elif fstart != None:
+            if fstart >= self.fstop:
+                fstart = self.fstop - constants.MIN_BW
             self.fstart = fstart
             self.bandwidth = self.fstop - fstart
             self.center_freq = fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
-        
+            if self.bin_size < 1:
+                self.bin_size = 1
+                
         elif fstop != None:
+            if fstop <= self.fstart:
+                fstop = self.fstart + constants.MIN_BW
             self.fstop = fstop
             self.bandwidth = fstop - self.fstart
             self.center_freq = fstop - (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
-
+            if self.bin_size < 1:
+                self.bin_size = 1
+                
         elif rbw != None:
             self.rbw = rbw * 1e3
             self.bin_size = int((self.bandwidth) / self.rbw)
+            if self.bin_size < 1:
+                self.bin_size = 1
         
         elif bw != None:
-
+            if bw < constants.MIN_BW:
+                bw = constants.MIN_BW
             self.fstart = (self.center_freq - (bw / 2))
             self.fstop = (self.center_freq + (bw / 2))
             if self.fstart < constants.MIN_FREQ:
@@ -159,36 +172,46 @@ class plot_state(object):
             self.bin_size = int((self.bandwidth) / self.rbw)
             if self.bin_size < 1:
                 self.bin_size = 1
+                
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
-            
 
-def select_fstart(layout):
-    layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
-    layout._cfreq.setStyleSheet("")
-    layout._fstop.setStyleSheet("")
-    layout._bw.setStyleSheet("")
-    
-def select_center(layout):
-    layout._cfreq.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
-    layout._fstart.setStyleSheet("")
-    layout._fstop.setStyleSheet("")
-    layout._bw.setStyleSheet("")
-    
-def select_bw(layout):
-    layout._bw.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
-    layout._fstart.setStyleSheet("")
-    layout._cfreq.setStyleSheet("")
-    layout._fstop.setStyleSheet("")
+class debug(object):
+    """
+    Class to hold all the GUI's debug stats
+    """
 
-def select_fstop(layout):
-    layout._fstop.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
-    layout._fstart.setStyleSheet("")
-    layout._cfreq.setStyleSheet("")
-    layout._bw.setStyleSheet("")
+    def __init__(self,mode):
+        self.enable = mode
+        self.fps = None
+        self.fps_timer = 0
+        self.cap_speed = None
+        self.cap_speed_timer = 0
+        
+    def print_stats(self):
+        
+        print 'fps: ', self.fps, 'speed: ', self.cap_speed/1e6
     
-def change_item_color(item, textColor, backgroundColor):
-        item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
