@@ -147,7 +147,7 @@ class SweepDevice(object):
             "missing required context, sweep failed")
 
         if self._ss_index is None:
-            self.past_end_bytes_discarded += packet_byte
+            self.past_end_bytes_discarded += packet_bytes
             return # more data than we asked for
 
         fft_start_time = time.time()
