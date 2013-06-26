@@ -89,12 +89,8 @@ class MainWindow(QtGui.QMainWindow):
             yield dut.reset()
         else:
             yield dut.flush()
-        if '--debug' in sys.argv:
-            debugMode = True
-        else:
-            debugMode = False
         self.dut = dut
-        self.setCentralWidget(MainPanel(dut,debugMode))
+        self.setCentralWidget(MainPanel(dut))
         self.setMinimumWidth(1360)
         self.setMinimumHeight(400)
         self.setWindowTitle('PyRF: %s' % name)
@@ -110,12 +106,11 @@ class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
-    def __init__(self, dut,debugMode):
+    def __init__(self, dut):
         super(MainPanel, self).__init__()
         self.dut = dut
         self.sweep_dut = SweepDevice(self.dut, self.receive_vrt)
         self.plot_state = gui_config.plot_state()
-        self.debug_mode = gui_config.debug(debugMode)
         # plot window
         self._plot = plot(self)
         self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
@@ -134,12 +129,7 @@ class MainPanel(QtGui.QWidget):
 
     def receive_vrt(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
-            return
-        if self.debug_mode.enable:
-            self.debug_mode.cap_speed = (fstop - fstart) /  (time.clock() - self.debug_mode.cap_speed_timer)
-            self.debug_mode.cap_speed_timer = time.clock()
-            self.debug_mode.print_stats()
-        
+            return        
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
                                                   self.plot_state.fstop,
                                                   self.plot_state.bin_size,
@@ -516,10 +506,7 @@ class MainPanel(QtGui.QWidget):
         return marker_label,delta_label, diff_label
         
     def update_plot(self):
-        if self.debug_mode.enable:
-            self.debug_mode.fps =  1/(time.clock() - self.debug_mode.fps_timer)
-            self.debug_mode.fps_timer = time.clock()
-        
+       
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop , 
                                               len(self.pow_data))
@@ -530,11 +517,7 @@ class MainPanel(QtGui.QWidget):
         self.update_diff()
         
     def update_fft(self):
-        # if len(self.pow_data) > 2000:
-            # self.pow_data = self.pow_data[:2000]
-            # self.plot_state.update_freq_range(self.plot_state.fstart,
-                                                  # self.plot_state.fstop , 
-                                                  # len(self.pow_data))
+
         if self.plot_state.mhold:
             if (self.plot_state.mhold_fft == None or len(self.plot_state.mhold_fft) != len(self.pow_data)):
                 self.plot_state.mhold_fft = self.pow_data

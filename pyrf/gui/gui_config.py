@@ -177,22 +177,6 @@ class plot_state(object):
             self.start_freq = None
             self.stop_freq = None
 
-class debug(object):
-    """
-    Class to hold all the GUI's debug stats
-    """
-
-    def __init__(self,mode):
-        self.enable = mode
-        self.fps = None
-        self.fps_timer = 0
-        self.cap_speed = None
-        self.cap_speed_timer = 0
-        
-    def print_stats(self):
-        
-        print 'fps: ', self.fps, 'speed: ', self.cap_speed/1e6
-    
     
     
     
