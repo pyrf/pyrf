@@ -115,12 +115,18 @@ class TestTrimSweepPlan(unittest.TestCase):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 121*M,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
 
-    def test_trim_all(self):
+    def test_trim_all_right(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 150*M, 160*M,
             [])
+
+    def test_trim_all_left(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 70*M, 90*M,
             [])
+
+    def test_trim_all_zero(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 120*M,
             [])
+
+    def test_trim_all_negative(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 110*M,
             [])
