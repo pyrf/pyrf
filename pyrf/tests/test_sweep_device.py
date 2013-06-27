@@ -103,11 +103,15 @@ class TestTrimSweepPlan(unittest.TestCase):
             fstart, fstop)
         self.assertEquals(result, [SweepStep(*s) for s in expected])
 
-    def test_no_trim(self):
+    def test_no_trim_outside(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 90*M, 150*M,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+
+    def test_no_trim_exact(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 100*M, 132*M,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+
+    def test_no_trim_inside(self):
         self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 121*M,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
 

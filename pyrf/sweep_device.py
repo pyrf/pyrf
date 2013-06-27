@@ -348,7 +348,7 @@ def trim_sweep_plan(device, plan, fstart, fstop):
         stop_off = stop_centered * bin_width - ss.fshift
 
         start_step = math.floor((fstart - ss.fcenter - start_off) / ss.fstep)
-        stop_step = math.ceil((fstop - ss.fcenter - stop_off) / ss.fstep)
+        stop_step = steps - math.ceil((fstop - ss.fcenter - stop_off) / ss.fstep)
         if steps <= start_step or stop_step <= 0:
             continue
 
