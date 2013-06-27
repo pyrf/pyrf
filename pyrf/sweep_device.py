@@ -362,7 +362,7 @@ def trim_sweep_plan(device, plan, fstart, fstop):
             if last_stop <= fstart:
                 continue
 
-        trim_left = min(0, start_step)
+        trim_left = max(0, start_step)
         trim_right = steps - min(steps, stop_step)
         out.append(SweepStep(
             fcenter=ss.fcenter + trim_left * ss.fstep,
