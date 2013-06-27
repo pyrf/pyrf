@@ -1,6 +1,6 @@
 import unittest
 
-from pyrf.sweep_device import plan_sweep, SweepStep
+from pyrf.sweep_device import plan_sweep, SweepStep, trim_sweep_plan
 from pyrf.devices.thinkrf import WSA4000
 from pyrf.units import M
 
@@ -96,3 +96,25 @@ class TestPlanSweep(unittest.TestCase):
     #        [(0, 37187500, 4, 2048, 553, 983, 312),
     #         (90*M, 0, 1, 8192, 655, 1507, 460),])
 
+
+class TestTrimSweepPlan(unittest.TestCase):
+    def _trim42(self, plan, fstart, fstop, expected):
+        result = trim_sweep_plan(WSA42, [SweepStep(*s) for s in plan],
+            fstart, fstop)
+        self.assertEquals(result, [SweepStep(*s) for s in expected])
+
+    def test_no_trim(self):
+        self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 90*M, 150*M,
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+        self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 100*M, 132*M,
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+        self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 121*M,
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+
+    def test_trim_all(self):
+        self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 150*M, 160*M,
+            [])
+        self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 120*M,
+            [])
+        self._trim42([(133*M, 32*M, 0, 1, 256, 62, 64, 64)], 120*M, 110*M,
+            [])
