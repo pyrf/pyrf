@@ -315,6 +315,7 @@ class MainPanel(QtGui.QWidget):
            
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
+        antenna.setToolTip("Choose Antenna") 
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
         self._antenna_box = antenna
@@ -327,6 +328,7 @@ class MainPanel(QtGui.QWidget):
 
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
+        gain.setToolTip("Choose RF Gain setting") 
         gain_values = ['VLow', 'Low', 'Med', 'High']
         for g in gain_values:
             gain.addItem("RF Gain: %s" % g)
@@ -339,6 +341,7 @@ class MainPanel(QtGui.QWidget):
 
     def _ifgain_control(self):
         ifgain = QtGui.QSpinBox(self)
+        ifgain.setToolTip("Choose IF Gain setting")
         ifgain.setRange(-10, 25)
         ifgain.setSuffix(" dB")
         self._ifgain_box = ifgain
@@ -419,7 +422,7 @@ class MainPanel(QtGui.QWidget):
         
     def _fstop_controls(self):
         fstop = QtGui.QPushButton('Stop Frequency')
-        fstop.setToolTip("<[4]Tune the stop frequency") 
+        fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
         freq = QtGui.QLineEdit(str(self.plot_state.fstop/constants.MHZ))
@@ -433,6 +436,7 @@ class MainPanel(QtGui.QWidget):
            
     def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
+        rbw.setToolTip("Change the RBW of the FFT plot")
         self._points_values = constants.RBW_VALUES
         self._rbw_box = rbw
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
