@@ -27,7 +27,7 @@ def plot_sweep(fstart, fstop, bins):
 
     # show graph
     show()
-    reactor.callLater(2, reactor.stop)
+    reactor.callLater(2 ** -4, reactor.stop)
 
 def start_sweep(v):
     global sd
