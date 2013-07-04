@@ -192,7 +192,8 @@ class SweepDevice(object):
         for t in triggers:
             if t.trigtype != 'LEVEL':
                 raise SweepDeviceError('only level triggers supported')
-            tplan = trim_sweep_plan(self.plan, t.fstart, t.fstop)
+            tplan = trim_sweep_plan(self.real_device, 
+                self.plan, t.fstart, t.fstop)
             for ss in tplan:
                 entries.append(ss.to_sweep_entry(self.real_device,
                     level_fstart=t.fstart,
