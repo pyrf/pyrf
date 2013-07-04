@@ -55,6 +55,47 @@ class SweepStep(namedtuple('SweepStep', '''
         return math.ceil(float(self.bins_keep) / self.bins_run)
 
 
+    def trim(self, device, fstart, fstop):
+        """
+        Create a SweepStep that only includes steps within fstart to fstop
+        or return None if no part of this SweepStep overlaps
+        """
+        steps = self.steps
+        bin_width = float(device.FULL_BW) / self.decimation / self.points
+        start_centered = self.bins_skip - self.points / 2
+        start_off = start_centered * bin_width - self.fshift
+        stop_centered = start_centered + self.bins_run
+        stop_off = stop_centered * bin_width - self.fshift
+
+        start_step = math.floor((fstart - self.fcenter - start_off) / self.fstep)
+        stop_step = steps + math.ceil(
+            (fstop - self.fcenter - stop_off) / self.fstep)
+        if steps <= start_step or stop_step <= 0:
+            return
+
+        last_bins_run = self.bins_keep % self.bins_run
+        if steps - 1 == start_step and last_bins_run:
+            # starting from last step special case: fstart might be
+            # after the remaining samples
+            last_stop_centered = start_centered + last_bins_run
+            last_stop_off = last_stop_centered * bin_width - self.fshift
+            last_stop = self.fcenter + steps * self.fstep + last_stop_off
+            if last_stop <= fstart:
+                return
+
+        trim_left = max(0, start_step)
+        trim_right = steps - min(steps, stop_step)
+        return SweepStep(
+            fcenter=self.fcenter + trim_left * self.fstep,
+            fstep=self.fstep,
+            fshift=self.fshift,
+            decimation=self.decimation,
+            points=self.points,
+            bins_skip=self.bins_skip,
+            bins_run=self.bins_run,
+            bins_keep=self.bins_keep - (trim_left + trim_right) * self.bins_run,
+            )
+
 
 class SweepDeviceError(Exception):
     pass
@@ -408,40 +449,9 @@ def trim_sweep_plan(device, plan, fstart, fstop):
 
     out = []
     for ss in plan:
-        steps = ss.steps
-        bin_width = float(device.FULL_BW) / ss.decimation / ss.points
-        start_centered = ss.bins_skip - ss.points / 2
-        start_off = start_centered * bin_width - ss.fshift
-        stop_centered = start_centered + ss.bins_run
-        stop_off = stop_centered * bin_width - ss.fshift
-
-        start_step = math.floor((fstart - ss.fcenter - start_off) / ss.fstep)
-        stop_step = steps + math.ceil((fstop - ss.fcenter - stop_off) / ss.fstep)
-        if steps <= start_step or stop_step <= 0:
-            continue
-
-        last_bins_run = ss.bins_keep % ss.bins_run
-        if steps - 1 == start_step and last_bins_run:
-            # starting from last step special case: fstart might be
-            # after the remaining samples
-            last_stop_centered = start_centered + last_bins_run
-            last_stop_off = last_stop_centered * bin_width - ss.fshift
-            last_stop = ss.fcenter + steps * ss.fstep + last_stop_off
-            if last_stop <= fstart:
-                continue
-
-        trim_left = max(0, start_step)
-        trim_right = steps - min(steps, stop_step)
-        out.append(SweepStep(
-            fcenter=ss.fcenter + trim_left * ss.fstep,
-            fstep=ss.fstep,
-            fshift=ss.fshift,
-            decimation=ss.decimation,
-            points=ss.points,
-            bins_skip=ss.bins_skip,
-            bins_run=ss.bins_run,
-            bins_keep=ss.bins_keep - (trim_left + trim_right) * ss.bins_run,
-            ))
+        trimmed = ss.trim(device, fstart, fstop)
+        if trimmed:
+            out.append(trimmed)
     return out
 
 
