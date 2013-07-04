@@ -135,7 +135,7 @@ class SweepDevice(object):
         return self._perform_full_sweep(result)
 
 
-    def _perform_trigger_sweep(self, triggers, device_settings):
+    def _perform_trigger_sweep(self, triggers):
         entries = []
 
         if not triggers:
