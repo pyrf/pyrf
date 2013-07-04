@@ -241,7 +241,7 @@ class SweepDevice(object):
             result = self._vrt_receive(self.real_device.read())
         return result
 
-    def _start_sweep(self):
+    def _start_sweep(self, trigger=False):
         self._prev_sweep_id = self._sweep_id
         self._sweep_id = (self._sweep_id + 1) & (2**32 - 1)
         self._vrt_context = {}
