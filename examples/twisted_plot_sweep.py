@@ -32,7 +32,8 @@ def plot_sweep(fstart, fstop, bins):
 def start_sweep(v):
     global sd
     sd = SweepDevice(dut, plot_sweep)
-    sd.capture_power_spectrum(0e9, 10e9, 2000, rfgain='high')
+    sd.capture_power_spectrum(0e9, 10e9, 2000,
+        {'gain': 'high', 'antenna': 1})
 
 # connect to wsa
 dut = WSA4000(connector=TwistedConnector(reactor))
