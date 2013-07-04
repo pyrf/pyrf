@@ -128,6 +128,8 @@ class SweepDevice(object):
                 raise SweepDeviceError(
                     "async_callback not applicable for sync operation")
         self._prev_sweep_id = None
+        self._trigger_sweep = False
+        self._trigger_data = {}
         self.async_callback = async_callback
         self.context_bytes_received = 0
         self.data_bytes_received = 0
@@ -250,6 +252,7 @@ class SweepDevice(object):
         self.bins = []
         self.real_device.sweep_iterations(1)
         self.real_device.sweep_start(self._sweep_id)
+        self._trigger_sweep = trigger
 
     def _vrt_receive(self, packet):
         packet_bytes = packet.size * 4
@@ -270,11 +273,18 @@ class SweepDevice(object):
         assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
+        freq = self._vrt_context['rffreq']
+        if self._trigger_sweep:
+            self._trigger_data[freq] = packet
+            return
+
         if self._ss_index is None:
             self.past_end_bytes_discarded += packet_bytes
             return # more data than we asked for
 
         fft_start_time = time.time()
+        # replace with trigger data when available
+        packet = self._trigger_data.get(freq, packet)
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
 
         # collect and compute bins
@@ -300,6 +310,7 @@ class SweepDevice(object):
         # done the complete sweep
         # XXX: in case sweep_iterations() does not work
         self._ss_index = None
+        self._trigger_data = {}
         self.real_device.abort()
         self.real_device.flush()
 
