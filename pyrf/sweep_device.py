@@ -184,7 +184,7 @@ class SweepDevice(object):
         if result == 'async waiting':
             return
 
-        return self._perform_full_sweep(result)
+        return self._perform_full_sweep()
 
 
     def _perform_trigger_sweep(self, triggers):
@@ -220,7 +220,7 @@ class SweepDevice(object):
             result = self._vrt_receive(self.real_device.read())
 
 
-    def _perform_full_sweep(self, trigger_result):
+    def _perform_full_sweep(self):
         self.real_device.sweep_clear()
 
         for ss in self.plan:
