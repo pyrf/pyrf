@@ -447,11 +447,6 @@ def trim_sweep_plan(device, plan, fstart, fstop):
     sweep plan that overlap with the range fstart to fstop.
     """
 
-    out = []
-    for ss in plan:
-        trimmed = ss.trim(device, fstart, fstop)
-        if trimmed:
-            out.append(trimmed)
-    return out
-
+    trimmed = (ss.trim(device, fstart, fstop) for ss in plan)
+    return [t for t in trimmed if t]
 
