@@ -16,7 +16,7 @@ dut.connect(sys.argv[1])
 sd = SweepDevice(dut)
 
 fstart, fstop, bins = sd.capture_power_spectrum(0e9, 10e9, 2000,
-    {'rfgain': 'high'})
+    {'gain': 'high', 'antenna': 1})
 
 # setup my graph
 fig = figure(1)
