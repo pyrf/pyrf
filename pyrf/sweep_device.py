@@ -129,6 +129,7 @@ class SweepDevice(object):
                     "async_callback not applicable for sync operation")
         self._prev_sweep_id = None
         self._trigger_sweep = False
+        self._trigger_id = None
         self._trigger_data = {}
         self.async_callback = async_callback
         self.context_bytes_received = 0
@@ -252,6 +253,8 @@ class SweepDevice(object):
         self.real_device.sweep_iterations(1)
         self.real_device.sweep_start(self._sweep_id)
         self._trigger_sweep = trigger
+        if trigger:
+            self._trigger_id = self._sweep_id
 
     def _vrt_receive(self, packet):
         packet_bytes = packet.size * 4
@@ -263,7 +266,7 @@ class SweepDevice(object):
 
         self.data_bytes_received += packet_bytes
         sweep_id = self._vrt_context.get('sweepid')
-        if sweep_id != self._sweep_id:
+        if sweep_id not in (self._sweep_id, self._trigger_id):
             if sweep_id == self._prev_sweep_id:
                 self.past_end_bytes_discarded += packet_bytes
             else:
@@ -273,7 +276,7 @@ class SweepDevice(object):
             "missing required context, sweep failed")
 
         freq = self._vrt_context['rffreq']
-        if self._trigger_sweep:
+        if self._trigger_sweep or sweep_id == self._trigger_id:
             self._trigger_data[freq] = packet
             return
 
