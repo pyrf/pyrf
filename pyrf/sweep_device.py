@@ -48,8 +48,7 @@ class SweepStep(namedtuple('SweepStep', '''
             decimation=self.decimation,
             spp=self.points,
             ppb=1,
-            **kwargs,
-            ))
+            **kwargs)
 
 
 class SweepDeviceError(Exception):
@@ -129,7 +128,7 @@ class SweepDevice(object):
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, bins, min_points, max_points)
 
-        result = self._perform_trigger_sweep(triggers):
+        result = self._perform_trigger_sweep(triggers)
         if result == 'async waiting':
             return
 
@@ -150,8 +149,7 @@ class SweepDevice(object):
                     level_fstart=t.fstart,
                     level_fstop=t.fstop,
                     level_amplitude=t.amplitude,
-                    **self.device_settings,
-                    ))
+                    **self.device_settings))
         if not entries:
             return
 
@@ -178,8 +176,7 @@ class SweepDevice(object):
             if ss.points > 32*1024:
                 raise SweepDeviceError('large captures not yet supported')
             self.real_device.sweep_add(ss.to_sweep_entry(self.real_device,
-                **self.device_settings,
-                ))
+                **self.device_settings))
 
         if self.async_callback:
             if not self.plan:
