@@ -213,11 +213,10 @@ class SweepDevice(object):
             self.connector.vrt_callback = self._vrt_receive
             self._start_sweep(trigger=True)
             return 'async waiting'
+        assert not self._trigger_data
         self._start_sweep(trigger=True)
-        result = None
-        while result is None:
+        while not self._trigger_data:
             result = self._vrt_receive(self.real_device.read())
-        return result
 
 
     def _perform_full_sweep(self, trigger_result):
