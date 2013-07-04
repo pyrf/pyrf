@@ -60,6 +60,9 @@ class SweepStep(namedtuple('SweepStep', '''
         Create a SweepStep that only includes steps within fstart to fstop
         or return None if no part of this SweepStep overlaps
         """
+        if fstop <= fstart:
+            return
+
         steps = self.steps
         bin_width = float(device.FULL_BW) / self.decimation / self.points
         start_centered = self.bins_skip - self.points / 2
@@ -443,9 +446,6 @@ def trim_sweep_plan(device, plan, fstart, fstop):
     produce a new sweep plan consisting of captures from the passed
     sweep plan that overlap with the range fstart to fstop.
     """
-
-    if fstop <= fstart:
-        return []
 
     out = []
     for ss in plan:
