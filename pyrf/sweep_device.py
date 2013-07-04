@@ -195,7 +195,7 @@ class SweepDevice(object):
         for t in triggers:
             if t.trigtype != 'LEVEL':
                 raise SweepDeviceError('only level triggers supported')
-            tplan = trim_sweep_plan(self.real_device, 
+            tplan = trim_sweep_plan(self.real_device,
                 self.plan, t.fstart, t.fstop)
             for ss in tplan:
                 entries.append(ss.to_sweep_entry(self.real_device,
@@ -278,6 +278,8 @@ class SweepDevice(object):
         freq = self._vrt_context['rffreq']
         if self._trigger_sweep or sweep_id == self._trigger_id:
             self._trigger_data[freq] = packet
+            if self._trigger_sweep and self.async_callback:
+                self._perform_full_sweep()
             return
 
         if self._ss_index is None:
