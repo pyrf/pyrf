@@ -10,10 +10,7 @@ class plot_state(object):
     def __init__(self):
         
         self.grid = False
-        
-        self.ant = 1
-        self.gain = 'vlow'
-        self.if_gain = 0 
+        self.dev_set = {'gain' : 'vlow', 'antenna' : 1, 'ifgain' : 0} 
         self.mhold = False
         self.mhold_fft = None
         

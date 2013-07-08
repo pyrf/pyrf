@@ -123,9 +123,9 @@ class MainPanel(QtGui.QWidget):
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
                                                   self.plot_state.fstop,
                                                   self.plot_state.bin_size,
-                                                  antenna = self.plot_state.ant,
-                                                  rfgain = self.plot_state.gain,
-                                                  ifgain = self.plot_state.if_gain)
+                                                  self.plot_state.dev_set,
+                                                  triggers = self.plot_state.trig_set)
+
 
     def receive_vrt(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
@@ -133,9 +133,8 @@ class MainPanel(QtGui.QWidget):
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
                                                   self.plot_state.fstop,
                                                   self.plot_state.bin_size,
-                                                  antenna = self.plot_state.ant,
-                                                  rfgain = self.plot_state.gain,
-                                                  ifgain = self.plot_state.if_gain)
+                                                  self.plot_state.dev_set,
+                                                  triggers = [self.plot_state.trig_set])
         
         self.pow_data = pow_
 
@@ -321,7 +320,7 @@ class MainPanel(QtGui.QWidget):
         self._antenna_box = antenna
         
         def new_antenna():
-            self.plot_state.ant = (int(antenna.currentText().split()[-1]))
+            self.plot_state.dev_set['antenna'] = (int(antenna.currentText().split()[-1]))
         
         antenna.currentIndexChanged.connect(new_antenna)
         return antenna
@@ -335,7 +334,7 @@ class MainPanel(QtGui.QWidget):
         self._gain_values = [g.lower() for g in gain_values]
         self._gain_box = gain
         def new_gain():
-            self.plot_state.gain = gain.currentText().split()[-1].lower().encode('ascii')
+            self.plot_state.dev_set['gain'] = gain.currentText().split()[-1].lower().encode('ascii')
         gain.currentIndexChanged.connect(new_gain)
         return gain
 
@@ -346,7 +345,7 @@ class MainPanel(QtGui.QWidget):
         ifgain.setSuffix(" dB")
         self._ifgain_box = ifgain
         def new_ifgain():
-            self.plot_state.if_gain = ifgain.value()
+            self.plot_state.dev_set['ifgain'] = ifgain.value()
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
             
