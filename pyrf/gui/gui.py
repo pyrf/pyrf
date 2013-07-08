@@ -120,11 +120,12 @@ class MainPanel(QtGui.QWidget):
         self.initDUT()
        
     def initDUT(self):
+    
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
                                                   self.plot_state.fstop,
                                                   self.plot_state.bin_size,
                                                   self.plot_state.dev_set,
-                                                  triggers = self.plot_state.trig_set)
+                                                  triggers = [self.plot_state.trig_set])
 
 
     def receive_vrt(self, fstart, fstop, pow_):
@@ -136,6 +137,7 @@ class MainPanel(QtGui.QWidget):
                                                   self.plot_state.dev_set,
                                                   triggers = [self.plot_state.trig_set])
         
+        print self.plot_state.trig_set
         self.pow_data = pow_
 
         self.update_plot()

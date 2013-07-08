@@ -17,7 +17,9 @@ class plot_state(object):
         
         
         self.trig = False
-        self.trig_set = None
+        self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
+                                        2300e6 + 10e6, 
+                                        2500e6 - 10e6,-100)
         self.marker = False
         self.marker_sel = False
         self.marker_ind = None
@@ -90,18 +92,19 @@ class plot_state(object):
         self.trig = False
         util.change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
         layout._plot.remove_trigger()
-        self.trig_set.trigtype = constants.NONE_TRIGGER_TYPE
-        layout.dut.trigger(self.trig_set)
+        self.trig_set = None
+
         
     def enable_trig(self, layout):
         self.trig = True
         util.change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
-        if self.trig_set == None:
-            self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
-                                                    self.center_freq + 10e6, 
-                                                    self.center_freq - 10e6,-100) 
-        self.trig_set.trigtype = constants.LEVELED_TRIGGER_TYPE
-        layout.dut.trigger(self.trig_set)
+
+        self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
+                                                self.center_freq + 10e6, 
+                                                self.center_freq - 10e6,-100)
+    
+       
+        
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
         
     def update_freq_range(self, start, stop, size):

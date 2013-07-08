@@ -18,7 +18,7 @@ sd = SweepDevice(dut)
 
 fstart, fstop, bins = sd.capture_power_spectrum(2.4e9, 2.5e9, 2000,
     {'gain': 'high', 'antenna': 1},
-    [TriggerSettings('LEVEL', 2.43e9, 2.45e9, -70)])
+    [TriggerSettings('LEVEL', 2.4e9, 2.5e9, -70)])
 
 # setup my graph
 fig = figure(1)
