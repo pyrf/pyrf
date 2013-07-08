@@ -5,16 +5,100 @@ import time
 from pyrf.numpy_util import compute_fft
 from pyrf.config import SweepEntry
 
-SweepStep = namedtuple('SweepStep', '''
-    fcenter
-    fstep
-    fshift
-    decimation
-    points
-    bins_skip
-    bins_run
-    bins_keep
-    ''')
+class SweepStep(namedtuple('SweepStep', '''
+        fcenter
+        fstep
+        fshift
+        decimation
+        points
+        bins_skip
+        bins_run
+        bins_keep
+        ''')):
+    """
+    Data structure used by SweepDevice for planning sweeps
+
+    :param fcenter: starting center frequency in Hz
+    :param fstep: frequency increment each step in Hz
+    :param fshift: frequency shift in Hz
+    :param decimation: decimation value
+    :param points: samples to capture
+    :param bins_skip: number of FFT bins to skip from left
+    :param bins_run: number of usable FFT bins each step
+    :param bins_keep: total number of bins to keep from all steps
+    """
+    __slots__ = []
+
+    def to_sweep_entry(self, device, **kwargs):
+        """
+        Create a SweepEntry for device matching this SweepStep,
+
+        extra parameters (gain, antenna etc.) may be provided as keyword
+        parameters
+        """
+        if self.points > 32*1024:
+            raise SweepDeviceError('large captures not yet supported')
+
+        return SweepEntry(
+            fstart=self.fcenter,
+            fstop=min(self.fcenter + (self.steps + 0.5) * self.fstep,
+                device.MAX_TUNABLE),
+            fstep=self.fstep,
+            fshift=self.fshift,
+            decimation=self.decimation,
+            spp=self.points,
+            ppb=1,
+            **kwargs)
+
+    @property
+    def steps(self):
+        return math.ceil(float(self.bins_keep) / self.bins_run)
+
+
+    def trim(self, device, fstart, fstop):
+        """
+        Create a SweepStep that only includes steps within fstart to fstop
+        or return None if no part of this SweepStep overlaps
+        """
+        if fstop <= fstart:
+            return
+
+        steps = self.steps
+        bin_width = float(device.FULL_BW) / self.decimation / self.points
+        start_centered = self.bins_skip - self.points / 2
+        start_off = start_centered * bin_width - self.fshift
+        stop_centered = start_centered + self.bins_run
+        stop_off = stop_centered * bin_width - self.fshift
+
+        start_step = math.floor((fstart - self.fcenter - start_off) / self.fstep)
+        stop_step = steps + math.ceil(
+            (fstop - self.fcenter - stop_off) / self.fstep)
+        if steps <= start_step or stop_step <= 0:
+            return
+
+        last_bins_run = self.bins_keep % self.bins_run
+        if steps - 1 == start_step and last_bins_run:
+            # starting from last step special case: fstart might be
+            # after the remaining samples
+            last_stop_centered = start_centered + last_bins_run
+            last_stop_off = last_stop_centered * bin_width - self.fshift
+            last_stop = self.fcenter + steps * self.fstep + last_stop_off
+            if last_stop <= fstart:
+                return
+
+        trim_left = max(0, start_step)
+        trim_right = steps - min(steps, stop_step)
+        return SweepStep(
+            fcenter=self.fcenter + trim_left * self.fstep,
+            fstep=self.fstep,
+            fshift=self.fshift,
+            decimation=self.decimation,
+            points=self.points,
+            bins_skip=self.bins_skip,
+            bins_run=self.bins_run,
+            bins_keep=self.bins_keep - (trim_left + trim_right) * self.bins_run,
+            )
+
 
 class SweepDeviceError(Exception):
     pass
@@ -44,6 +128,9 @@ class SweepDevice(object):
                 raise SweepDeviceError(
                     "async_callback not applicable for sync operation")
         self._prev_sweep_id = None
+        self._trigger_sweep = False
+        self._trigger_id = None
+        self._trigger_data = {}
         self.async_callback = async_callback
         self.context_bytes_received = 0
         self.data_bytes_received = 0
@@ -56,10 +143,11 @@ class SweepDevice(object):
     connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
-            fstart, fstop, bins, antenna=1, rfgain='vlow', ifgain=0,
+            fstart, fstop, bins, device_settings=None,
+            triggers=None, continuous=False,
             min_points=128, max_points=8192):
         """
-        Initiate a capture of power spectral density in the linear domain by
+        Initiate a capture of power spectral density by
         setting up a sweep list and starting a single sweep.
 
         :param fstart: starting frequency in Hz
@@ -68,12 +156,23 @@ class SweepDevice(object):
         :type fstop: float
         :param bins: FFT bins requested (number produced likely more)
         :type bins: int
+        :param device_settings: antenna, gain and other device settings
+        :type dict:
+        :param triggers: list of :class:`TriggerSettings` instances or None
+        :param continuous: not yet implemented
+        :type continuous: bool
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         :param max_points: largest number of points per capture from real_device
                            (due to decimation limits points returned may be larger)
         :type max_points: int
+
+        When triggers are provided nothing will be captured until one of the
+        triggers is satisfied. The trigger data received is combined with a full
+        sweep before being returned.
         """
+        self.device_settings = device_settings
+
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.request_read_perm()
@@ -81,25 +180,52 @@ class SweepDevice(object):
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, bins, min_points, max_points)
 
+        result = self._perform_trigger_sweep(triggers)
+        if result == 'async waiting':
+            return
+
+        return self._perform_full_sweep()
+
+
+    def _perform_trigger_sweep(self, triggers):
+        entries = []
+
+        if not triggers:
+            return
+        for t in triggers:
+            if t.trigtype != 'LEVEL':
+                raise SweepDeviceError('only level triggers supported')
+            tplan = trim_sweep_plan(self.real_device,
+                self.plan, t.fstart, t.fstop)
+            for ss in tplan:
+                entries.append(ss.to_sweep_entry(self.real_device,
+                    level_fstart=t.fstart,
+                    level_fstop=t.fstop,
+                    level_amplitude=t.amplitude,
+                    **self.device_settings))
+        if not entries:
+            return
+
+        self.real_device.sweep_clear()
+        for e in entries:
+            self.real_device.sweep_add(e)
+
+        if self.async_callback:
+            self.connector.vrt_callback = self._vrt_receive
+            self._start_sweep(trigger=True)
+            return 'async waiting'
+        assert not self._trigger_data
+        self._start_sweep(trigger=True)
+        while not self._trigger_data:
+            result = self._vrt_receive(self.real_device.read())
+
+
+    def _perform_full_sweep(self):
         self.real_device.sweep_clear()
 
         for ss in self.plan:
-            steps = math.ceil(float(ss.bins_keep) / ss.bins_run)
-            if ss.points > 32*1024:
-                raise SweepDeviceError('large captures not yet supported')
-            self.real_device.sweep_add(SweepEntry(
-                fstart=ss.fcenter,
-                fstop=min(ss.fcenter + (steps + 0.5) * ss.fstep,
-                    self.real_device.MAX_TUNABLE),
-                fstep=ss.fstep,
-                fshift=ss.fshift,
-                decimation=ss.decimation,
-                antenna=antenna,
-                gain=rfgain,
-                ifgain=ifgain,
-                spp=ss.points,
-                ppb=1,
-                ))
+            self.real_device.sweep_add(ss.to_sweep_entry(self.real_device,
+                **self.device_settings))
 
         if self.async_callback:
             if not self.plan:
@@ -118,7 +244,7 @@ class SweepDevice(object):
             print result
         return result
 
-    def _start_sweep(self):
+    def _start_sweep(self, trigger=False):
         self._prev_sweep_id = self._sweep_id
         self._sweep_id = (self._sweep_id + 1) & (2**32 - 1)
         self._vrt_context = {}
@@ -127,6 +253,9 @@ class SweepDevice(object):
         self.bins = []
         self.real_device.sweep_iterations(1)
         self.real_device.sweep_start(self._sweep_id)
+        self._trigger_sweep = trigger
+        if trigger:
+            self._trigger_id = self._sweep_id
 
     def _vrt_receive(self, packet):
         packet_bytes = packet.size * 4
@@ -138,7 +267,7 @@ class SweepDevice(object):
 
         self.data_bytes_received += packet_bytes
         sweep_id = self._vrt_context.get('sweepid')
-        if sweep_id != self._sweep_id:
+        if sweep_id not in (self._sweep_id, self._trigger_id):
             if sweep_id == self._prev_sweep_id:
                 self.past_end_bytes_discarded += packet_bytes
             else:
@@ -147,11 +276,20 @@ class SweepDevice(object):
         assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
+        freq = self._vrt_context['rffreq']
+        if self._trigger_sweep or sweep_id == self._trigger_id:
+            self._trigger_data[freq] = packet
+            if self._trigger_sweep and self.async_callback:
+                self._perform_full_sweep()
+            return
+
         if self._ss_index is None:
             self.past_end_bytes_discarded += packet_bytes
             return # more data than we asked for
 
         fft_start_time = time.time()
+        # replace with trigger data when available
+        packet = self._trigger_data.get(freq, packet)
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
         # collect and compute bins
         collect_start_time = time.time()
@@ -176,6 +314,7 @@ class SweepDevice(object):
         # done the complete sweep
         # XXX: in case sweep_iterations() does not work
         self._ss_index = None
+        self._trigger_data = {}
         self.real_device.abort()
         self.real_device.flush()
 
@@ -308,3 +447,22 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
         raise NotImplemented # yet
 
     return (fstart, fstop, out)
+
+
+def trim_sweep_plan(device, plan, fstart, fstop):
+    """
+    :param device: a device class or instance such as
+                   :class:`WSA4000`
+    :param plan: list of :class:`SweepStep` instances
+    :param fstart: starting frequency in Hz
+    :type fstart: float
+    :param fstop: ending frequency in Hz
+    :type fstop: float
+
+    produce a new sweep plan consisting of captures from the passed
+    sweep plan that overlap with the range fstart to fstop.
+    """
+
+    trimmed = (ss.trim(device, fstart, fstop) for ss in plan)
+    return [t for t in trimmed if t]
+
