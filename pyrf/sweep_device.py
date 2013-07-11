@@ -132,6 +132,7 @@ class SweepDevice(object):
         self._trigger_id = None
         self._trigger_data = {}
         self.async_callback = async_callback
+        self.continuous = False
         self.context_bytes_received = 0
         self.data_bytes_received = 0
         self.data_bytes_processed = 0
@@ -159,7 +160,7 @@ class SweepDevice(object):
         :param device_settings: antenna, gain and other device settings
         :type dict:
         :param triggers: list of :class:`TriggerSettings` instances or None
-        :param continuous: not yet implemented
+        :param continuous: async continue after first sweep
         :type continuous: bool
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
@@ -171,7 +172,11 @@ class SweepDevice(object):
         triggers is satisfied. The trigger data received is combined with a full
         sweep before being returned.
         """
+        if continuous and not self.async_callback:
+            raise SweepDeviceError(
+                "continuous mode only applies to async operation")
         self.device_settings = device_settings
+        self.continuous = continuous
 
         self.real_device.abort()
         self.real_device.flush()
@@ -252,7 +257,8 @@ class SweepDevice(object):
         self._ss_index = 0
         self._ss_received = 0
         self.bins = []
-        self.real_device.sweep_iterations(0 if trigger else 1)
+        self.real_device.sweep_iterations(
+            0 if trigger or self.continuous else 1)
         self.real_device.sweep_start(self._sweep_id)
         self._trigger_sweep = trigger
         if trigger:
@@ -314,14 +320,19 @@ class SweepDevice(object):
 
         # done the complete sweep
         # XXX: in case sweep_iterations() does not work
-        self._ss_index = None
-        self._trigger_data = {}
-        self.real_device.abort()
-        self.real_device.flush()
+        if not self.continuous:
+            self._ss_index = None
+            self._trigger_data = {}
+            self.real_device.abort()
+            self.real_device.flush()
 
         if self.async_callback:
             self.real_device.vrt_callback = None
             self.async_callback(self.fstart, self.fstop, self.bins)
+            if self.continuous:
+                self._ss_index = 0
+                self._ss_received = 0
+                self.bins = []
             return
         return (self.fstart, self.fstop, self.bins)
 
