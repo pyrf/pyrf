@@ -108,8 +108,7 @@ class MainPanel(QtGui.QWidget):
     """
     def __init__(self, dut):
         super(MainPanel, self).__init__()
-        self.dut = dut
-        self.sweep_dut = SweepDevice(self.dut, self.receive_vrt)
+        self.sweep_dut = SweepDevice(dut, self.receive_vrt)
         self.plot_state = gui_config.plot_state()
         # plot window
         self._plot = plot(self)
@@ -618,9 +617,4 @@ class MainPanel(QtGui.QWidget):
             self._diff_lab.setText(delta_text)
         else:
             self._diff_lab.setText('')
-
-    
-    @contextmanager
-    def paused_stream(self):
-        yield self.dut
 
