@@ -127,7 +127,6 @@ class MainPanel(QtGui.QWidget):
                                                   self.plot_state.dev_set,
                                                   triggers = [self.plot_state.trig_set])
 
-        print self.plot_state.trig_set
     def receive_vrt(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
             return        
