@@ -189,7 +189,6 @@ class SweepDevice(object):
 
     def _perform_trigger_sweep(self, triggers):
         entries = []
-
         if not triggers:
             return
         for t in triggers:
@@ -199,6 +198,8 @@ class SweepDevice(object):
                 self.plan, t.fstart, t.fstop)
             for ss in tplan:
                 entries.append(ss.to_sweep_entry(self.real_device,
+                    dwell_us=1,
+                    trigtype=t.trigtype,
                     level_fstart=t.fstart,
                     level_fstop=t.fstop,
                     level_amplitude=t.amplitude,
@@ -250,7 +251,7 @@ class SweepDevice(object):
         self._ss_index = 0
         self._ss_received = 0
         self.bins = []
-        self.real_device.sweep_iterations(1)
+        self.real_device.sweep_iterations(0 if trigger else 1)
         self.real_device.sweep_start(self._sweep_id)
         self._trigger_sweep = trigger
         if trigger:
