@@ -96,9 +96,10 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('PyRF: %s' % name)
 
     def closeEvent(self, event):
-        self.dut.abort()
-        self.dut.flush()
-        self.dut.reset()
+        if self.dut:
+            self.dut.abort()
+            self.dut.flush()
+            self.dut.reset()
         event.accept()
         self._reactor.stop()
 
