@@ -132,13 +132,11 @@ class MainPanel(QtGui.QWidget):
                                               self.plot_state.dev_set,
                                               triggers = triggers)
 
-        print self.plot_state.trig_set
     def receive_vrt(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
             return
         self.update_sweep()
 
-        print self.plot_state.trig_set
         self.pow_data = pow_
 
         self.update_plot()
