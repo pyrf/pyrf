@@ -124,7 +124,7 @@ class MainPanel(QtGui.QWidget):
 
     def update_sweep(self):
         triggers = []
-        if self.plot_state.trig_set.amplitude > -100:
+        if self.plot_state.trig_set:
             triggers = [self.plot_state.trig_set]
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
