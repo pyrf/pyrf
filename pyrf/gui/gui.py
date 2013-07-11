@@ -543,7 +543,7 @@ class MainPanel(QtGui.QWidget):
                                                     min(freq_region), 
                                                     max(freq_region),
                                                     self._plot.amptrig_line.value()) 
-            self.dut.trigger(self.plot_state.trig_set)
+            self.update_sweep()
     
     def update_marker(self):
         if self.plot_state.marker:
