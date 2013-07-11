@@ -120,29 +120,30 @@ class MainPanel(QtGui.QWidget):
         self.initDUT()
        
     def initDUT(self):
-    
-        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
-                                                  self.plot_state.fstop,
-                                                  self.plot_state.bin_size,
-                                                  self.plot_state.dev_set,
-                                                  triggers = [self.plot_state.trig_set])
+        self.update_sweep()
+
+    def update_sweep(self):
+        triggers = []
+        if self.plot_state.trig_set.amplitude > -100:
+            triggers = [self.plot_state.trig_set]
+        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
+                                              self.plot_state.fstop,
+                                              self.plot_state.bin_size,
+                                              self.plot_state.dev_set,
+                                              triggers = triggers)
 
         print self.plot_state.trig_set
     def receive_vrt(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
-            return        
-        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
-                                                  self.plot_state.fstop,
-                                                  self.plot_state.bin_size,
-                                                  self.plot_state.dev_set,
-                                                  triggers = [self.plot_state.trig_set])
-        
+            return
+        self.update_sweep()
+
         print self.plot_state.trig_set
         self.pow_data = pow_
 
         self.update_plot()
 
-        
+
     def keyPressEvent(self, event):
         hotkey_util(self, event)
            
