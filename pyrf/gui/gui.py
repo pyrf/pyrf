@@ -125,7 +125,9 @@ class MainPanel(QtGui.QWidget):
         self.read_sweep()
 
     def read_sweep(self):
-
+        #TODO: find cleaner way to do this
+        self.plot_state.dev_set.pop('freq', None)
+        self.plot_state.dev_set.pop('trigger', None)
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.bin_size,
@@ -134,6 +136,7 @@ class MainPanel(QtGui.QWidget):
     def read_trigg(self):
         
         device_set = self.plot_state.dev_set
+        #TODO: find cleaner way to do this
         device_set['freq'] = self.plot_state.center_freq
         device_set['trigger'] = self.plot_state.trig_set
 
@@ -489,12 +492,10 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.update_freq_set(fstop = f)
         
         elif self.plot_state.freq_sel == 'BW':
-            print 'got here'
             try:
                 f = (float(self._bw_edit.text()) + delta) * constants.MHZ
             except ValueError:
                 return
-            print f
             if f < 0:
                 return
             self.plot_state.update_freq_set(bw = f)

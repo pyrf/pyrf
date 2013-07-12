@@ -91,7 +91,7 @@ class plot_state(object):
         util.change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
         layout._plot.remove_trigger()
         self.trig_set = None
-
+        util.enable_freq_cont(layout)
         
     def enable_trig(self, layout):
         self.trig = True
@@ -105,7 +105,7 @@ class plot_state(object):
         layout._bw_edit.setText('100.0')
         layout.update_freq()
         layout.update_freq_edit()
-        
+        util.disable_freq_cont(layout)
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
         
     def update_freq_range(self, start, stop, size):

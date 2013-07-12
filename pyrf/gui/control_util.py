@@ -174,13 +174,15 @@ def _trigger_control(layout):
     """
     disable/enable triggers in the layout plot
     """
-    # if triggers are already enabled, disable them
+
     if layout.plot_state.trig:
         layout.plot_state.disable_trig(layout)
+        
     
     else:
         layout.plot_state.enable_trig(layout)
-
+        _select_center_freq(layout)
+        
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
                 '3': _select_bw,

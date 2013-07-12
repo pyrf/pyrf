@@ -87,8 +87,7 @@ class captureDevice(object):
         if self.async_callback:
             strt_ind = int(0 + 0.1 * (self.bin_size))
             stp_ind = int(self.bin_size - 0.1 * (self.bin_size))
-            print stp_ind
-            self.async_callback(self.fstart, self.fstop, pow_data[strt_ind:stp_ind ])
+            self.async_callback(self.fstart, self.fstop, pow_data[strt_ind:stp_ind])
             return
         return (self.fstart, self.fstop, pow_data)
         

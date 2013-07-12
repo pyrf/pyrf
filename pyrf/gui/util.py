@@ -77,10 +77,22 @@ def select_fstop(layout):
     layout._bw.setStyleSheet("")
     
 def change_item_color(item, textColor, backgroundColor):
-        item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
+    item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
 
-
-      
-
+def enable_freq_cont(layout):
+    layout._bw.setEnabled(True)
+    layout._bw_edit.setEnabled(True)
+    layout._fstart.setEnabled(True)
+    layout._fstart_edit.setEnabled(True)
+    layout._fstop.setEnabled(True)
+    layout._fstop_edit.setEnabled(True)
+    
+def disable_freq_cont(layout):
+    layout._bw.setEnabled(False)
+    layout._bw_edit.setEnabled(False)
+    layout._fstart.setEnabled(False)
+    layout._fstart_edit.setEnabled(False)
+    layout._fstop.setEnabled(False)
+    layout._fstop_edit.setEnabled(False)
 
 
