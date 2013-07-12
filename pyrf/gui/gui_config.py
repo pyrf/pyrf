@@ -17,9 +17,7 @@ class plot_state(object):
         
         
         self.trig = False
-        self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
-                                        2300e6 + 10e6, 
-                                        2500e6 - 10e6,-100)
+        self.trig_set = None
         self.marker = False
         self.marker_sel = False
         self.marker_ind = None
@@ -102,8 +100,11 @@ class plot_state(object):
         self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
                                                 self.center_freq + 10e6, 
                                                 self.center_freq - 10e6,-100)
-    
-       
+        
+        layout.plot_state.freq_sel = 'BW'
+        layout._bw_edit.setText('100.0')
+        layout.update_freq()
+        layout.update_freq_edit()
         
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
         

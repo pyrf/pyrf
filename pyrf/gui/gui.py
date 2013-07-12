@@ -25,7 +25,7 @@ from pyrf.devices.thinkrf import WSA4000
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings
-
+from pyrf.capture_device import captureDevice
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -109,7 +109,9 @@ class MainPanel(QtGui.QWidget):
     """
     def __init__(self, dut):
         super(MainPanel, self).__init__()
-        self.sweep_dut = SweepDevice(dut, self.receive_vrt)
+        self.dut = dut
+        self.sweep_dut = SweepDevice(dut, self.receive_data)
+        self.cap_dut = captureDevice(dut, self.receive_data)
         self.plot_state = gui_config.plot_state()
         # plot window
         self._plot = plot(self)
@@ -120,22 +122,31 @@ class MainPanel(QtGui.QWidget):
         self.initDUT()
        
     def initDUT(self):
-        self.update_sweep()
+        self.read_sweep()
 
-    def update_sweep(self):
-        triggers = []
-        if self.plot_state.trig_set:
-            triggers = [self.plot_state.trig_set]
+    def read_sweep(self):
+
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.bin_size,
                                               self.plot_state.dev_set,
-                                              triggers = triggers)
+                                              continuous = True)
+    def read_trigg(self):
+        
+        device_set = self.plot_state.dev_set
+        device_set['freq'] = self.plot_state.center_freq
+        device_set['trigger'] = self.plot_state.trig_set
 
-    def receive_vrt(self, fstart, fstop, pow_):
+        self.cap_dut.capture_power_spectrum(device_set,self.plot_state.bin_size)
+
+
+    def receive_data(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
             return
-        self.update_sweep()
+        if self.plot_state.trig_set:
+            self.read_trigg()
+        else:
+            self.read_sweep()
 
         self.pow_data = pow_
 
@@ -477,11 +488,13 @@ class MainPanel(QtGui.QWidget):
                 return
             self.plot_state.update_freq_set(fstop = f)
         
-        elif self.plot_state.freq_sel == 'BW': 
+        elif self.plot_state.freq_sel == 'BW':
+            print 'got here'
             try:
                 f = (float(self._bw_edit.text()) + delta) * constants.MHZ
             except ValueError:
                 return
+            print f
             if f < 0:
                 return
             self.plot_state.update_freq_set(bw = f)
@@ -540,9 +553,9 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE, 
                                                     min(freq_region), 
                                                     max(freq_region),
-                                                    self._plot.amptrig_line.value()) 
-            self.update_sweep()
-    
+                                                    self._plot.amptrig_line.value())
+            if self.plot_state.trig_set:
+                self.dut.trigger(self.plot_state.trig_set)
     def update_marker(self):
         if self.plot_state.marker:
             if self.plot_state.mhold:

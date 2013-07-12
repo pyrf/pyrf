@@ -584,4 +584,55 @@ class WSA4000(object):
         :returns: 'RUNNING' or 'STOPPED'
         """
         yield self.scpiget(":TRACE:STREAM:STATUS?")
+    
+    def apply_device_settings(self, settings):
+        """
+        This command takes a dict of device settings, and applies them to the 
+        WSA
+
+        :param settings: dict containing settings such as gain,antenna,etc
+        """
+        
+        for s in settings:
+            if s == 'freq':
+                self.freq(settings[s])
+            if s == 'antenna':
+                self.antenna(settings[s])
+            elif s == 'gain':
+                self.gain(settings[s])
+            elif s == 'ifgain':
+                self.ifgain(settings[s])
+            elif s == 'fshift':
+                self.fshift(settings[s])
+            elif s == 'decimation':
+                self.decimation(settings[s])
+            elif s == 'spp':
+                self.spp(settings[s])
+            elif s == 'ppb':
+                self.ppb(settings[s])
+            elif s == 'trigger':
+                self.trigger(settings[s])
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
