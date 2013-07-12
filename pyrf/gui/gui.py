@@ -96,9 +96,10 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('PyRF: %s' % name)
 
     def closeEvent(self, event):
-        self.dut.abort()
-        self.dut.flush()
-        self.dut.reset()
+        if self.dut:
+            self.dut.abort()
+            self.dut.flush()
+            self.dut.reset()
         event.accept()
         self._reactor.stop()
 
@@ -108,8 +109,7 @@ class MainPanel(QtGui.QWidget):
     """
     def __init__(self, dut):
         super(MainPanel, self).__init__()
-        self.dut = dut
-        self.sweep_dut = SweepDevice(self.dut, self.receive_vrt)
+        self.sweep_dut = SweepDevice(dut, self.receive_vrt)
         self.plot_state = gui_config.plot_state()
         # plot window
         self._plot = plot(self)
@@ -120,28 +120,28 @@ class MainPanel(QtGui.QWidget):
         self.initDUT()
        
     def initDUT(self):
-    
-        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
-                                                  self.plot_state.fstop,
-                                                  self.plot_state.bin_size,
-                                                  self.plot_state.dev_set,
-                                                  triggers = [self.plot_state.trig_set])
+        self.update_sweep()
+
+    def update_sweep(self):
+        triggers = []
+        if self.plot_state.trig_set:
+            triggers = [self.plot_state.trig_set]
+        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
+                                              self.plot_state.fstop,
+                                              self.plot_state.bin_size,
+                                              self.plot_state.dev_set,
+                                              triggers = triggers)
 
     def receive_vrt(self, fstart, fstop, pow_):
         if not self.plot_state.enable_plot:
-            return        
-        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart, 
-                                                  self.plot_state.fstop,
-                                                  self.plot_state.bin_size,
-                                                  self.plot_state.dev_set,
-                                                  triggers = [self.plot_state.trig_set])
-        
-        print self.plot_state.trig_set
+            return
+        self.update_sweep()
+
         self.pow_data = pow_
 
         self.update_plot()
 
-        
+
     def keyPressEvent(self, event):
         hotkey_util(self, event)
            
@@ -541,7 +541,7 @@ class MainPanel(QtGui.QWidget):
                                                     min(freq_region), 
                                                     max(freq_region),
                                                     self._plot.amptrig_line.value()) 
-            self.dut.trigger(self.plot_state.trig_set)
+            self.update_sweep()
     
     def update_marker(self):
         if self.plot_state.marker:
@@ -616,9 +616,4 @@ class MainPanel(QtGui.QWidget):
             self._diff_lab.setText(delta_text)
         else:
             self._diff_lab.setText('')
-
-    
-    @contextmanager
-    def paused_stream(self):
-        yield self.dut
 

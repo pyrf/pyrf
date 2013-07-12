@@ -132,6 +132,7 @@ class SweepDevice(object):
         self._trigger_id = None
         self._trigger_data = {}
         self.async_callback = async_callback
+        self.continuous = False
         self.context_bytes_received = 0
         self.data_bytes_received = 0
         self.data_bytes_processed = 0
@@ -159,7 +160,7 @@ class SweepDevice(object):
         :param device_settings: antenna, gain and other device settings
         :type dict:
         :param triggers: list of :class:`TriggerSettings` instances or None
-        :param continuous: not yet implemented
+        :param continuous: async continue after first sweep
         :type continuous: bool
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
@@ -171,7 +172,11 @@ class SweepDevice(object):
         triggers is satisfied. The trigger data received is combined with a full
         sweep before being returned.
         """
+        if continuous and not self.async_callback:
+            raise SweepDeviceError(
+                "continuous mode only applies to async operation")
         self.device_settings = device_settings
+        self.continuous = continuous
 
         self.real_device.abort()
         self.real_device.flush()
@@ -189,7 +194,6 @@ class SweepDevice(object):
 
     def _perform_trigger_sweep(self, triggers):
         entries = []
-
         if not triggers:
             return
         for t in triggers:
@@ -199,6 +203,8 @@ class SweepDevice(object):
                 self.plan, t.fstart, t.fstop)
             for ss in tplan:
                 entries.append(ss.to_sweep_entry(self.real_device,
+                    dwell_us=1,
+                    trigtype=t.trigtype,
                     level_fstart=t.fstart,
                     level_fstop=t.fstop,
                     level_amplitude=t.amplitude,
@@ -206,25 +212,20 @@ class SweepDevice(object):
         if not entries:
             return
 
-        self.real_device.sweep_clear()
-        for e in entries:
-            self.real_device.sweep_add(e)
-
         if self.async_callback:
             self.connector.vrt_callback = self._vrt_receive
-            self._start_sweep(trigger=True)
+            self._start_sweep(entries, trigger=True)
             return 'async waiting'
         assert not self._trigger_data
-        self._start_sweep(trigger=True)
+        self._start_sweep(entries, trigger=True)
         while not self._trigger_data:
             result = self._vrt_receive(self.real_device.read())
 
 
     def _perform_full_sweep(self):
-        self.real_device.sweep_clear()
-
+        entries = []
         for ss in self.plan:
-            self.real_device.sweep_add(ss.to_sweep_entry(self.real_device,
+            entries.append(ss.to_sweep_entry(self.real_device,
                 **self.device_settings))
 
         if self.async_callback:
@@ -232,25 +233,32 @@ class SweepDevice(object):
                 self.async_callback(self.fstart, self.fstop, [])
                 return
             self.connector.vrt_callback = self._vrt_receive
-            self._start_sweep()
+            self._start_sweep(entries)
             return
 
         if not self.plan:
             return (self.fstart, self.fstop, [])
-        self._start_sweep()
+        self._start_sweep(entries)
         result = None
         while result is None:
             result = self._vrt_receive(self.real_device.read())
         return result
 
-    def _start_sweep(self, trigger=False):
+    def _start_sweep(self, entries, trigger=False):
+        self.real_device.abort()
+        self.real_device.flush()
+        self.real_device.sweep_clear()
+        assert entries, "starting sweep with no sweep entries"
+        for e in entries:
+            self.real_device.sweep_add(e)
         self._prev_sweep_id = self._sweep_id
         self._sweep_id = (self._sweep_id + 1) & (2**32 - 1)
         self._vrt_context = {}
         self._ss_index = 0
         self._ss_received = 0
         self.bins = []
-        self.real_device.sweep_iterations(1)
+        self.real_device.sweep_iterations(
+            0 if trigger or self.continuous else 1)
         self.real_device.sweep_start(self._sweep_id)
         self._trigger_sweep = trigger
         if trigger:
@@ -312,14 +320,19 @@ class SweepDevice(object):
 
         # done the complete sweep
         # XXX: in case sweep_iterations() does not work
-        self._ss_index = None
-        self._trigger_data = {}
-        self.real_device.abort()
-        self.real_device.flush()
+        if not self.continuous:
+            self._ss_index = None
+            self._trigger_data = {}
+            self.real_device.abort()
+            self.real_device.flush()
 
         if self.async_callback:
             self.real_device.vrt_callback = None
             self.async_callback(self.fstart, self.fstop, self.bins)
+            if self.continuous:
+                self._ss_index = 0
+                self._ss_received = 0
+                self.bins = []
             return
         return (self.fstart, self.fstop, self.bins)
 

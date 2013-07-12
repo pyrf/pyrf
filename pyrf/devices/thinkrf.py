@@ -454,6 +454,8 @@ class WSA4000(object):
         self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
+        self.scpiset(":sweep:entry:dwell %d,%d" %
+            (entry.dwell_s, entry.dwell_us))
         self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
         self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
         self.scpiset(":sweep:entry:save")
