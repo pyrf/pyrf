@@ -168,7 +168,7 @@ def _enable_plot(layout):
         
     else:
         util.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
-        layout.update_sweep()
+        layout.read_sweep()
 
 def _trigger_control(layout):
     """
@@ -177,8 +177,7 @@ def _trigger_control(layout):
 
     if layout.plot_state.trig:
         layout.plot_state.disable_trig(layout)
-        
-    
+           
     else:
         layout.plot_state.enable_trig(layout)
         _select_center_freq(layout)
