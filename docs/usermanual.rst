@@ -155,13 +155,13 @@ described in :ref:`planned-development`.
 
 .. _demo-gui:
 
-GUI
----
+Spectrum Analyzer GUI
+---------------------
 
-.. image:: wsa4000demo.png
-   :alt: wsa4000gui screen shot
+.. image:: speca-gui.png
+   :alt: speca-gui screen shot
 
-``wsa4000gui`` is a cross-platform GUI application built with the
+``speca-gui`` is a cross-platform GUI application built with the
 Qt_ toolkit and PySide_ bindings for Python.
 
 .. _Qt: http://qt.digia.com/
@@ -169,7 +169,7 @@ Qt_ toolkit and PySide_ bindings for Python.
 
 The GUI may be launched with the command::
 
-  wsa4000gui <hostname> [--reset]
+  speca-gui <hostname> [--reset]
 
 If *hostname* is not specified a dialog will appear asking you to enter one.
 If ``--reset`` is used the WSA will be reset to defaults before the GUI
