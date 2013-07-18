@@ -17,10 +17,10 @@ Links
 * `Documentation for this API <http://www.pyrf.org>`_
 * `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
 
-GUI Example Included
---------------------
+Spectrum Analyzer GUI
+---------------------
 
-.. image:: https://raw.github.com/pyrf/pyrf/master/docs/wsa4000demo.png
-   :alt: wsa4000gui screen shot
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui.png
+   :alt: speca-gui screen shot
 
 
