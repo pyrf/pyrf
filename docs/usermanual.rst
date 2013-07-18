@@ -8,87 +8,68 @@ Installation
 ------------
 
 
-Install from PyPI::
-
-   pip install pyrf
-
-Or Obtain the Development Version::
-
-   git clone git://github.com/pyrf/pyrf.git
-
-(Or `Download a Stable Release <https://github.com/pyrf/pyrf/tags>`_)
-
-Then Install from Source or Extracted Tarball/Zip file::
-
-   python setup.py install
+Windows Installation
+~~~~~~~~~~~~~~~~~~~~
 
 
-Installing GUI Requirements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Download and install, in the order as listed, the latest version of:
 
-On Debian/Ubuntu::
+* `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
+* `setuptools <https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py>`_
+* `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
+ e.g. "pywin32-218.win32-py2.7.exe"
+
+Add ``Python27`` and ``Python27\Scripts`` directories to your PATH environment
+variable.  e.g. if using the default install path, add::
+
+  ;C:\Python27;C:\Python27\Scripts
+
+Open a Command Prompt window and run the following to download the lastest
+library package::
+
+  easy_install -U numpy
+  easy_install -U pyside
+  easy_install -U zope.interface
+  easy_install -U twisted
+  easy_install -U qt4reactor
+
+With ``pyrf``, first time running, use::
+
+  easy_install pyrf
+
+Next update usage, use::
+
+  easy_install -U pyrf
+
+If ``easy_install`` failed for any of the libraries above, download the latest
+version for ``32-bit Python 2.7`` directly from:
+
+* `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_
+ (e.g. "numpy-1.x.x-win32-superpack-python2.7.exe")
+* `PySide <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
+ (e.g. "PySide-1.x.x.win32-py2.7.exe")
+* `zope.interface <http://pypi.python.org/pypi/zope.interface#download>`_
+ (e.g. "zope.interface-x.x.x.win32-py2.7.exe")
+* `Twisted <http://twistedmatrix.com/trac/>`_
+ (e.g. "Twisted-x.x.x.win32-py2.7.msi")
+* `pywin32 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
+ (e.g. "pywin32-xxx.win32-py2.7.exe")
+* `qtreactor <https://github.com/pyrf/qtreactor/releases>`_,
+ extract it then switch to the qtreactor directory and run::
+
+  python setup.py install
+
+
+Debian/Ubuntu Installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use packaged requirements::
 
    apt-get install python-pyside python-twisted python-numpy \
    	python-zope.interface python-pip python-scipy
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
 
-
-On Windows:
-
-   Download and install, in the order as listed, the latest version of:
-
-   * `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
-   * `PyPI setup tools <https://pypi.python.org/pypi/setuptools>`_
-   * `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
-     e.g. "pywin32-218.win32-py2.7.exe"
-
-   Add ``Python27`` and ``Python27\Scripts`` directories to your PATH environment
-   variable.  e.g. if using the default install path, add::
-
-      ;C:\Python27;C:\Python27\Scripts
-
-   Open a Command Prompt window and run the following to download the lastest
-   library package::
-   
-      easy_install -U numpy
-      easy_install -U pyside
-      easy_install -U zope.interface
-      easy_install -U twisted
-      easy_install -U qt4reactor
-      
-   (Or in one line: ``easy_install -U numpy pyside zope.interface twisted qt4reactor``)
-   
-   With ``pyrf``, first time running, use::
-   
-      easy_install pyrf 
-   
-   Next update usage, use::
-
-      easy_install -U pyrf
-   
-   If ``easy_install`` failed for any of the libraries above, download the latest
-   version for ``32-bit Python 2.7`` directly from:
-   
-   * `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_
-     (e.g. "numpy-1.x.x-win32-superpack-python2.7.exe")
-   * `PySide <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
-     (e.g. "PySide-1.x.x.win32-py2.7.exe")
-   * `zope.interface <http://pypi.python.org/pypi/zope.interface#download>`_
-     (e.g. "zope.interface-x.x.x.win32-py2.7.exe")
-   * `Twisted <http://twistedmatrix.com/trac/>`_
-     (e.g. "Twisted-x.x.x.win32-py2.7.msi")
-   * `pywin32 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
-     (e.g. "pywin32-xxx.win32-py2.7.exe")
-   * `qtreactor <https://github.com/pyrf/qtreactor/tags>`_,
-     extract it then switch to the qtreactor directory and run::
-
-      python setup.py install
-
-
-Installing GUI Requirements from Source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-On Debian/Ubuntu::
+Or install GUI requirements from source::
 
    apt-get install qt-sdk python-dev cmake \
 	libblas-dev libatlas-dev liblapack-dev gfortran
@@ -98,20 +79,33 @@ On Debian/Ubuntu::
    pip install -r gui-requirements.txt
 
 
-Building EXE Version of GUI
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source Installation
+~~~~~~~~~~~~~~~~~~~
 
-On Windows:
+Download the development version::
 
-   Install the GUI requirements above and make sure you can launch the GUI.
+   git clone git://github.com/pyrf/pyrf.git
+   cd pyrf
+   python setup.py install
 
-   Find and install the
-   `latest version of py2exe for 32-bit Python2.7 <http://sourceforge.net/projects/py2exe/files/py2exe/>`_
-   e.g. "py2exe-0.6.9.win32-py2.7.exe".
+Or `download a stable release <https://github.com/pyrf/pyrf/releases>`_, then
+from the source directory::
 
-   Then switch to your pyrf directory and run::
+   python setup.py install
 
-      python setup.py py2exe
+
+Building Standalone Spectrum Analyzer EXE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Find and install the
+`latest version of py2exe for 32-bit Python2.7 <http://sourceforge.net/projects/py2exe/files/py2exe/>`_
+e.g. "py2exe-0.6.9.win32-py2.7.exe".
+
+Then switch to your pyrf directory and run::
+
+  python setup.py py2exe
+
+
 
 API for WSA4000 RF Receiver
 ---------------------------

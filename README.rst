@@ -5,10 +5,10 @@
 Hardware Support
 ----------------
 
-This library currently supports development for the `WSA4000 Platform`_,
-but may support additional hardware in the future.
+This library currently supports development for the `ThinkRF WSA4000`_,
+and upcoming WSA5000 platforms.
 
-.. _WSA4000 Platform: http://www.thinkrf.com/products.html
+.. _ThinkRF WSA4000: http://www.thinkrf.com/
 
 Links
 -----
