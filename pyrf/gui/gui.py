@@ -91,7 +91,7 @@ class MainWindow(QtGui.QMainWindow):
             yield dut.flush()
         self.dut = dut
         self.setCentralWidget(MainPanel(dut))
-        self.setMinimumWidth(1360)
+        self.setMinimumWidth(846)
         self.setMinimumHeight(400)
         self.setWindowTitle('PyRF: %s' % name)
 
