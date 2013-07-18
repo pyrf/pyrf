@@ -165,10 +165,10 @@ Spectrum Analyzer GUI
    :alt: speca-gui screen shot
 
 ``speca-gui`` is a cross-platform GUI application built with the
-Qt_ toolkit and PySide_ bindings for Python.
+Qt_ toolkit and PySideProject_ bindings for Python.
 
 .. _Qt: http://qt.digia.com/
-.. _PySide: http://qt-project.org/wiki/PySide
+.. _PySideProject: http://qt-project.org/wiki/PySide
 
 The GUI may be launched with the command::
 
