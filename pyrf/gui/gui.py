@@ -132,7 +132,7 @@ class MainPanel(QtGui.QWidget):
                                               self.plot_state.fstop,
                                               self.plot_state.bin_size,
                                               self.plot_state.dev_set,
-                                              continuous = True)
+                                              continuous = False)
     def read_trigg(self):
         
         device_set = self.plot_state.dev_set
