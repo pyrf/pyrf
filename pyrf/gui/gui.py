@@ -192,9 +192,9 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(self._plot.window,1,0,10,plot_width)
 
         marker_label, delta_label, diff_label = self._marker_labels()
-        grid.addWidget(marker_label, 1, 1,1, 1)
-        grid.addWidget(delta_label, 1, 3,1, 1)
-        grid.addWidget(diff_label , 1, 5,1, 1)
+        grid.addWidget(marker_label, 1, 1, 1, 2)
+        grid.addWidget(delta_label, 1, 3, 1, 2)
+        grid.addWidget(diff_label , 1, 5, 1, 2)
         
         x = 0    
         y = 0
