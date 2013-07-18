@@ -314,7 +314,7 @@ class MainPanel(QtGui.QWidget):
         return plot_grid
 
     def _center_control(self):
-        center = QtGui.QPushButton('Center View', self)
+        center = QtGui.QPushButton('Recenter', self)
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
         center.clicked.connect(lambda: cu._center_plot_view(self))
         self._center = center
@@ -365,7 +365,7 @@ class MainPanel(QtGui.QWidget):
         return ifgain
             
     def _freq_controls(self):
-        cfreq = QtGui.QPushButton('Center Frequency')
+        cfreq = QtGui.QPushButton('Center')
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
@@ -420,7 +420,7 @@ class MainPanel(QtGui.QWidget):
         return bw, bw_edit
     
     def _fstart_controls(self):
-        fstart = QtGui.QPushButton('Start Frequency')
+        fstart = QtGui.QPushButton('Start')
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
@@ -435,7 +435,7 @@ class MainPanel(QtGui.QWidget):
         return fstart, freq
         
     def _fstop_controls(self):
-        fstop = QtGui.QPushButton('Stop Frequency')
+        fstop = QtGui.QPushButton('Stop')
         fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
