@@ -3,4 +3,4 @@ PySide
 zope.interface
 twisted
 -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
-
+-e git://github.com/mfarhan12/pyqtgraph

@@ -29,14 +29,15 @@ Installing GUI Requirements
 On Debian/Ubuntu::
 
    apt-get install python-pyside python-twisted python-numpy \
-   	python-zope.interface python-pip
+   	python-zope.interface python-pip python-scipy
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
+
 
 On Windows:
 
    Download and install, in the order as listed, the latest version of:
 
-   * `32-bit version of Python 2.7.x <http://www.python.org/download/releases/>`_
+   * `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
    * `PyPI setup tools <https://pypi.python.org/pypi/setuptools>`_
    * `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
      e.g. "pywin32-218.win32-py2.7.exe"
@@ -89,9 +90,12 @@ Installing GUI Requirements from Source
 
 On Debian/Ubuntu::
 
-   apt-get install qt-sdk python-dev cmake
+   apt-get install qt-sdk python-dev cmake \
+	libblas-dev libatlas-dev liblapack-dev gfortran
+   export BLAS=/usr/lib/libblas/libblas.so
+   export ATLAS=/usr/lib/atlas-base/libatlas.so
+   export LAPACK=/usr/lib/lapack/liblapack.so
    pip install -r gui-requirements.txt
-
 
 
 Building EXE Version of GUI

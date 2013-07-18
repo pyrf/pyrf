@@ -3,6 +3,8 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 
+from pyrf.units import M
+
 class WSA4000(object):
     """
     Interface for WSA4000
@@ -26,9 +28,17 @@ class WSA4000(object):
 
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
-    M = 10**6
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
+
+    FULL_BW = 125*M
+    USABLE_BW = 90*M
+    MIN_TUNABLE = 90*M
+    MAX_TUNABLE = 10000*M
+    MIN_DECIMATION = 4
+    MAX_DECIMATION = 1023
+    DECIMATED_USABLE = 0.5
+    DC_OFFSET_BW = 240000 # XXX: an educated guess
 
     def __init__(self, connector=None):
         if not connector:
@@ -444,6 +454,8 @@ class WSA4000(object):
         self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
+        self.scpiset(":sweep:entry:dwell %d,%d" %
+            (entry.dwell_s, entry.dwell_us))
         self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
         self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
         self.scpiset(":sweep:entry:save")
@@ -499,6 +511,19 @@ class WSA4000(object):
 
         yield ent
 
+    @sync_async
+    def sweep_iterations(self, count=None):
+        """
+        Set the number of iterations for the complete sweep list,
+
+        :param count: the number of iterations, 0 for infinite
+        :returns: the current number of iterations if count is None
+        """
+        if count is None:
+            number = yield self.scpiget(":sweep:list:iterations?")
+            yield int(number)
+        else:
+            self.scpiset(":sweep:list:iterations %d" % (count,))
 
     def sweep_clear(self):
         """
@@ -559,4 +584,55 @@ class WSA4000(object):
         :returns: 'RUNNING' or 'STOPPED'
         """
         yield self.scpiget(":TRACE:STREAM:STATUS?")
+    
+    def apply_device_settings(self, settings):
+        """
+        This command takes a dict of device settings, and applies them to the 
+        WSA
+
+        :param settings: dict containing settings such as gain,antenna,etc
+        """
+        
+        for s in settings:
+            if s == 'freq':
+                self.freq(settings[s])
+            if s == 'antenna':
+                self.antenna(settings[s])
+            elif s == 'gain':
+                self.gain(settings[s])
+            elif s == 'ifgain':
+                self.ifgain(settings[s])
+            elif s == 'fshift':
+                self.fshift(settings[s])
+            elif s == 'decimation':
+                self.decimation(settings[s])
+            elif s == 'spp':
+                self.spp(settings[s])
+            elif s == 'ppb':
+                self.ppb(settings[s])
+            elif s == 'trigger':
+                self.trigger(settings[s])
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
