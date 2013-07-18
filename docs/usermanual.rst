@@ -16,22 +16,22 @@ Download and install, in the order as listed, the latest version of:
 
 * `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
 * `setuptools <https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py>`_
-* `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
-  e.g. "pywin32-218.win32-py2.7.exe"
 
 Add ``Python27`` and ``Python27\Scripts`` directories to your PATH environment
 variable.  e.g. if using the default install path, add::
 
   ;C:\Python27;C:\Python27\Scripts
+:
+Open a Command Prompt window and run the following to download the requirements::
 
-Open a Command Prompt window and run the following to download the lastest
-library package::
-
+  easy_install -U pywin32
   easy_install -U numpy
   easy_install -U pyside
   easy_install -U zope.interface
   easy_install -U twisted
   easy_install -U qt4reactor
+  easy_install -U pyqtgraph
+  easy_install -U scipy
 
 With ``pyrf``, first time running, use::
 
@@ -44,6 +44,8 @@ Next update usage, use::
 If ``easy_install`` failed for any of the libraries above, download the latest
 version for ``32-bit Python 2.7`` directly from:
 
+* `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
+  (e.g. "pywin32-218.win32-py2.7.exe")
 * `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_
   (e.g. "numpy-1.x.x-win32-superpack-python2.7.exe")
 * `PySide <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
