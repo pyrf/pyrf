@@ -263,7 +263,7 @@ class MainPanel(QtGui.QWidget):
         x = plot_width
         y += 1
         rbw = self._rbw_controls()
-        grid.addWidget(QtGui.QLabel('Resolution Bandwidth:'), y, x, 1, 1)
+        grid.addWidget(QtGui.QLabel('Resolution\nBandwidth:'), y, x, 1, 1)
         grid.addWidget(rbw, y, x + 1, 1, 3)
                     
         cu._select_fstart(self)
