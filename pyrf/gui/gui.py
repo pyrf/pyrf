@@ -43,12 +43,14 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, name=None):
         super(MainWindow, self).__init__()
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+        self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.initUI()
-
+        
 
         self.show()
     
     def initUI(self):
+        # self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
@@ -78,9 +80,11 @@ class MainPanel(QtGui.QWidget):
     The spectrum view and controls
     """
     def __init__(self, name):
+
+        super(MainPanel, self).__init__()
+        self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.dut = None
         self.control_widgets = []
-        super(MainPanel, self).__init__()
         self.setMinimumWidth(800)
         self.setMinimumHeight(400)
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
