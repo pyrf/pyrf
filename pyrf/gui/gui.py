@@ -25,7 +25,7 @@ from pyrf.devices.thinkrf import WSA4000
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings
-from pyrf.capture_device import captureDevice
+from pyrf.capture_device import CaptureDevice
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -111,7 +111,7 @@ class MainPanel(QtGui.QWidget):
         super(MainPanel, self).__init__()
         self.dut = dut
         self.sweep_dut = SweepDevice(dut, self.receive_data)
-        self.cap_dut = captureDevice(dut, self.receive_data)
+        self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.plot_state = gui_config.plot_state()
         # plot window
         self._plot = plot(self)

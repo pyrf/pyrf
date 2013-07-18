@@ -3,9 +3,11 @@ from pyrf.config import TriggerSettings
 
 USABLE_BW = 100e6
 
-class captureDeviceError(Exception):
+class CaptureDeviceError(Exception):
     pass
-class captureDevice(object):
+
+
+class CaptureDevice(object):
     """
     Virtual device that returns power levels generated from a single data packet
     (packet returned will have a span of 100MHz)
@@ -21,13 +23,13 @@ class captureDevice(object):
         self.connector = self.real_device.connector
         if hasattr(self.connector, 'vrt_callback'):
             if not async_callback:
-                raise captureDeviceError(
+                raise CaptureDeviceError(
                     "async_callback required for async operation")
             # disable receiving data until we are expecting it
             self.connector.vrt_callback = None
         else:
             if async_callback:
-                raise captureDeviceError(
+                raise CaptureDeviceError(
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
 
