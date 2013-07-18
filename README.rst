@@ -23,4 +23,6 @@ Spectrum Analyzer GUI
 .. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui.png
    :alt: speca-gui screen shot
 
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui-2.png
+   :alt: speca-gui screen shot
 

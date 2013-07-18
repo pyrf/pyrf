@@ -37,6 +37,9 @@ Spectrum Analyzer GUI
 .. image:: speca-gui.png
    :alt: speca-gui screen shot
 
+.. image:: speca-gui-2.png
+   :alt: speca-gui screen shot
+
 Indices and tables
 ==================
 

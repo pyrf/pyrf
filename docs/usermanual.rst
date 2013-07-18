@@ -161,6 +161,9 @@ Spectrum Analyzer GUI
 .. image:: speca-gui.png
    :alt: speca-gui screen shot
 
+.. image:: speca-gui-2.png
+   :alt: speca-gui screen shot
+
 ``speca-gui`` is a cross-platform GUI application built with the
 Qt_ toolkit and PySide_ bindings for Python.
 
