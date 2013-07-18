@@ -64,7 +64,7 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu.addAction(exitAction)
 
 
-        self.setWindowTitle('PyRF')
+        self.setWindowTitle('Spectrum Analyzer')
 
     def open_device_dialog(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
@@ -93,7 +93,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(MainPanel(dut))
         self.setMinimumWidth(846)
         self.setMinimumHeight(400)
-        self.setWindowTitle('PyRF: %s' % name)
+        self.setWindowTitle('Spectrum Analyzer: %s' % name)
 
     def closeEvent(self, event):
         if self.dut:
