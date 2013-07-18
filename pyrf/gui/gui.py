@@ -26,11 +26,15 @@ from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings
 from pyrf.capture_device import captureDevice
+
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
     def inlineCallbacks(fn):
         pass
+
+WINDOW_WIDTH = 1400
+WINDOW_HEIGHT = 400
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -38,23 +42,20 @@ class MainWindow(QtGui.QMainWindow):
     """
     def __init__(self, name=None):
         super(MainWindow, self).__init__()
+        self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
         self.initUI()
-        self.dut = None
-        self._reactor = self._get_reactor()
-        if len(sys.argv) > 1:
-            self.open_device(sys.argv[1])
-        else:
-            self.open_device_dialog()
+
+
         self.show()
-
-    def _get_reactor(self):
-        # late import because installReactor is being used
-        from twisted.internet import reactor
-        return reactor
-
+    
     def initUI(self):
+        name = None
+        if len(sys.argv) > 1:
+            name = sys.argv[1]
+        self.mainPanel = MainPanel(name)
+        self.setCentralWidget(self.mainPanel)
         openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect(self.open_device_dialog)
+        openAction.triggered.connect( self.mainPanel.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
@@ -62,17 +63,49 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
-
-
         self.setWindowTitle('PyRF')
-
+    
+    def closeEvent(self, event):
+        if self.mainPanel.dut:
+            self.mainPanel.dut.abort()
+            self.mainPanel.dut.flush()
+            self.mainPanel.dut.reset()
+        event.accept()
+        self.mainPanel._reactor.stop()          
+       
+class MainPanel(QtGui.QWidget):
+    """
+    The spectrum view and controls
+    """
+    def __init__(self, name):
+        self.dut = None
+        self.control_widgets = []
+        super(MainPanel, self).__init__()
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(400)
+        self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+        self.plot_state = gui_config.plot_state()
+        # plot window
+        self._plot = plot(self)
+        self._vrt_context = {}
+        self.initUI()
+        self.disable_controls()
+        self._reactor = self._get_reactor()
+        if name:
+            self.open_device(name)
+        else:
+            self.open_device_dialog()
+               
+    def _get_reactor(self):
+        # late import because installReactor is being used
+        from twisted.internet import reactor
+        return reactor
     def open_device_dialog(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
             'Enter a hostname or IP address:')
         while True:
             if not ok:
                 return
-
             try:
                 self.open_device(name)
                 break
@@ -80,48 +113,15 @@ class MainWindow(QtGui.QMainWindow):
                 name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
                     'Connection Failed, please try again\n\n'
                     'Enter a hostname or IP address:')
-       
+
     @inlineCallbacks
     def open_device(self, name):
         dut = WSA4000(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
-        if '--reset' in sys.argv:
-            yield dut.reset()
-        else:
-            yield dut.flush()
-        self.dut = dut
-        self.setCentralWidget(MainPanel(dut))
-        self.setMinimumWidth(1360)
-        self.setMinimumHeight(400)
-        self.setWindowTitle('PyRF: %s' % name)
-
-    def closeEvent(self, event):
-        if self.dut:
-            self.dut.abort()
-            self.dut.flush()
-            self.dut.reset()
-        event.accept()
-        self._reactor.stop()
-
-class MainPanel(QtGui.QWidget):
-    """
-    The spectrum view and controls
-    """
-    def __init__(self, dut):
-        super(MainPanel, self).__init__()
         self.dut = dut
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = captureDevice(dut, self.receive_data)
-        self.plot_state = gui_config.plot_state()
-        # plot window
-        self._plot = plot(self)
-        self.mhz_bottom, self.mhz_top = (f/10**6 for f in dut.SWEEP_FREQ_RANGE)
-        self._vrt_context = {}
-        self.initUI()
-        self.update_freq()
-        self.initDUT()
-       
-    def initDUT(self):
+        self.enable_controls()
         self.read_sweep()
 
     def read_sweep(self):
@@ -133,8 +133,8 @@ class MainPanel(QtGui.QWidget):
                                               self.plot_state.bin_size,
                                               self.plot_state.dev_set,
                                               continuous = True)
+
     def read_trigg(self):
-        
         device_set = self.plot_state.dev_set
         #TODO: find cleaner way to do this
         device_set['freq'] = self.plot_state.center_freq
@@ -150,36 +150,36 @@ class MainPanel(QtGui.QWidget):
             self.read_trigg()
         else:
             self.read_sweep()
-
         self.pow_data = pow_
-
         self.update_plot()
 
 
     def keyPressEvent(self, event):
-        hotkey_util(self, event)
+        if self.dut:
+            hotkey_util(self, event)
            
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            click_pos =  event.pos().x() - 68
-            plot_window_width = self._plot.window.width() - 68
+        if self.dut:
+            if event.button() == QtCore.Qt.MouseButton.LeftButton:
+                click_pos =  event.pos().x() - 68
+                plot_window_width = self._plot.window.width() - 68
 
-            if click_pos < plot_window_width and click_pos > 0:
+                if click_pos < plot_window_width and click_pos > 0:
 
-                window_freq = self._plot.view_box.viewRange()[0]
-                window_bw =  (window_freq[1] - window_freq[0])
-                click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
+                    window_freq = self._plot.view_box.viewRange()[0]
+                    window_bw =  (window_freq[1] - window_freq[0])
+                    click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
 
-                if self.plot_state.marker_sel:
-                    self._marker.setDown(True)
-                    self.plot_state.marker_ind  = find_nearest_index(click_freq, self.plot_state.freq_range)
-                    self.update_marker()
-                
-                elif self.plot_state.delta_sel:
-                    self._delta.setDown(True)
-                    self.plot_state.delta_ind = find_nearest_index(click_freq, self.plot_state.freq_range)
-                    self.update_delta()
-                self.update_diff()
+                    if self.plot_state.marker_sel:
+                        self._marker.setDown(True)
+                        self.plot_state.marker_ind  = find_nearest_index(click_freq, self.plot_state.freq_range)
+                        self.update_marker()
+                    
+                    elif self.plot_state.delta_sel:
+                        self._delta.setDown(True)
+                        self.plot_state.delta_ind = find_nearest_index(click_freq, self.plot_state.freq_range)
+                        self.update_delta()
+                    self.update_diff()
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
@@ -276,6 +276,7 @@ class MainPanel(QtGui.QWidget):
         trigger.setToolTip("[T]\nTurn the Triggers on/off") 
         trigger.clicked.connect(lambda: cu._trigger_control(self))
         self._trigger = trigger
+        self.control_widgets.append(self._trigger)
         return trigger
     
     def _marker_control(self):
@@ -283,6 +284,7 @@ class MainPanel(QtGui.QWidget):
         marker.setToolTip("[M]\nTurn Marker 1 on/off") 
         marker.clicked.connect(lambda: cu._marker_control(self))
         self._marker = marker
+        self.control_widgets.append(self._marker)
         return marker
         
     def _delta_control(self):
@@ -290,6 +292,7 @@ class MainPanel(QtGui.QWidget):
         delta.setToolTip("[K]\nTurn Marker 2 on/off") 
         delta.clicked.connect(lambda: cu._delta_control(self))
         self._delta = delta
+        self.control_widgets.append(self._delta)
         return delta
     
     def _peak_control(self):
@@ -297,6 +300,7 @@ class MainPanel(QtGui.QWidget):
         peak.setToolTip("[P]\nFind peak of the selected spectrum") 
         peak.clicked.connect(lambda: cu._find_peak(self))
         self._peak = peak
+        self.control_widgets.append(self._peak)
         return peak
         
     def _mhold_control(self):
@@ -304,6 +308,7 @@ class MainPanel(QtGui.QWidget):
         mhold.setToolTip("[H]\nTurn the Max Hold on/off") 
         mhold.clicked.connect(lambda: cu._mhold_control(self))
         self._mhold = mhold
+        self.control_widgets.append(self._mhold)
         return mhold
         
     def _grid_control(self):
@@ -311,6 +316,7 @@ class MainPanel(QtGui.QWidget):
         plot_grid.setToolTip("[G]\nTurn the Grid on/off") 
         plot_grid.clicked.connect(lambda: cu._grid_control(self))
         self._grid = plot_grid
+        self.control_widgets.append(self._grid)
         return plot_grid
 
     def _center_control(self):
@@ -318,6 +324,7 @@ class MainPanel(QtGui.QWidget):
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
         center.clicked.connect(lambda: cu._center_plot_view(self))
         self._center = center
+        self.control_widgets.append(self._center)
         return center
         
     def _pause_control(self):
@@ -325,6 +332,7 @@ class MainPanel(QtGui.QWidget):
         pause.setToolTip("[Space Bar]\n pause the plot window") 
         pause.clicked.connect(lambda: cu._enable_plot(self))
         self._pause = pause
+        self.control_widgets.append(self._pause)
         return pause
            
     def _antenna_control(self):
@@ -333,7 +341,7 @@ class MainPanel(QtGui.QWidget):
         antenna.addItem("Antenna 1")
         antenna.addItem("Antenna 2")
         self._antenna_box = antenna
-        
+        self.control_widgets.append(self._antenna_box)
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(antenna.currentText().split()[-1]))
         
@@ -348,6 +356,7 @@ class MainPanel(QtGui.QWidget):
             gain.addItem("RF Gain: %s" % g)
         self._gain_values = [g.lower() for g in gain_values]
         self._gain_box = gain
+        self.control_widgets.append(self._gain_box)
         def new_gain():
             self.plot_state.dev_set['gain'] = gain.currentText().split()[-1].lower().encode('ascii')
         gain.currentIndexChanged.connect(new_gain)
@@ -359,6 +368,7 @@ class MainPanel(QtGui.QWidget):
         ifgain.setRange(-10, 25)
         ifgain.setSuffix(" dB")
         self._ifgain_box = ifgain
+        self.control_widgets.append(self._ifgain_box)
         def new_ifgain():
             self.plot_state.dev_set['ifgain'] = ifgain.value()
         ifgain.valueChanged.connect(new_ifgain)
@@ -371,6 +381,8 @@ class MainPanel(QtGui.QWidget):
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
         freq = QtGui.QLineEdit(str(self.plot_state.center_freq/constants.MHZ))
         self._freq_edit = freq
+        self.control_widgets.append(self._cfreq)
+        self.control_widgets.append(self._freq_edit)
         def freq_change():
             cu._select_center_freq(self)
             self.update_freq()
@@ -402,7 +414,9 @@ class MainPanel(QtGui.QWidget):
         freq_plus = QtGui.QPushButton('+')
         freq_plus.clicked.connect(lambda: freq_step(1))
         self._freq_plus = freq_plus
-        
+        self.control_widgets.append(self._freq_plus)
+        self.control_widgets.append(self._freq_minus)
+        self.control_widgets.append(self._fstep_box)
         return cfreq, freq, steps, freq_plus, freq_minus
     
     def _bw_controls(self):
@@ -417,6 +431,8 @@ class MainPanel(QtGui.QWidget):
             self.update_freq_edit()   
         bw_edit.returnPressed.connect(lambda: freq_change())
         self._bw_edit = bw_edit
+        self.control_widgets.append(self._bw_edit)
+        self.control_widgets.append(self._bw)
         return bw, bw_edit
     
     def _fstart_controls(self):
@@ -432,6 +448,8 @@ class MainPanel(QtGui.QWidget):
             
         freq.returnPressed.connect(lambda: freq_change())
         self._fstart_edit = freq
+        self.control_widgets.append(self._fstart)
+        self.control_widgets.append(self._fstart_edit)
         return fstart, freq
         
     def _fstop_controls(self):
@@ -446,6 +464,8 @@ class MainPanel(QtGui.QWidget):
             self.update_freq_edit()            
         freq.returnPressed.connect(lambda: freq_change())
         self._fstop_edit = freq
+        self.control_widgets.append(self._fstop)
+        self.control_widgets.append(self._fstop_edit)
         return fstop, freq
            
     def _rbw_controls(self):
@@ -458,6 +478,7 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.update_freq_set(rbw = self._points_values[rbw.currentIndex()])
         rbw.setCurrentIndex(0)
         rbw.currentIndexChanged.connect(new_rbw)
+        self.control_widgets.append(self._rbw_box)
         return rbw
 
     def update_freq(self, delta = None):
@@ -631,3 +652,12 @@ class MainPanel(QtGui.QWidget):
         else:
             self._diff_lab.setText('')
 
+    def enable_controls(self):
+        for item in self.control_widgets:
+            item.setEnabled(True)
+        
+    def disable_controls(self):
+        for item in self.control_widgets:
+            item.setEnabled(False)
+
+        
