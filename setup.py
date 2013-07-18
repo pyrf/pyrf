@@ -60,7 +60,7 @@ setup(
     test_suite='pyrf.tests',
     entry_points={
         'gui_scripts': [
-            "wsa4000gui = pyrf.gui.wsa4000gui:main",
+            "speca-gui = pyrf.gui.spectrum_analyzer:main",
             ],
         },
     **extras
