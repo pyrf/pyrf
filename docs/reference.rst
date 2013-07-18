@@ -88,6 +88,14 @@ pyrf.sweep_device
 
 .. automodule:: pyrf.sweep_device
    :members:
+   :undoc-members:
+
+pyrf.capture_device
+-----------------
+
+.. automodule:: pyrf.capture_device
+   :members:
+   :undoc-members:
 
 pyrf.connectors
 ---------------
