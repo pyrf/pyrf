@@ -83,6 +83,12 @@ pyrf.devices
    .. automethod:: trigger(settings=None)
 
 
+pyrf.sweep_device
+-----------------
+
+.. automodule:: pyrf.sweep_device
+   :members:
+
 pyrf.connectors
 ---------------
 
