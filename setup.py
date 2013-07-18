@@ -19,7 +19,7 @@ try:
                 },
             },
         'zipfile':None,
-        'windows':['wsa4000gui.py'],
+        'windows':['speca-gui.py'],
         })
 except ImportError:
     pass
