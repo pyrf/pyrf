@@ -45,12 +45,9 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
         self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.initUI()
-        
-
         self.show()
     
     def initUI(self):
-        # self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
@@ -136,7 +133,7 @@ class MainPanel(QtGui.QWidget):
                                               self.plot_state.fstop,
                                               self.plot_state.bin_size,
                                               self.plot_state.dev_set,
-                                              continuous = True)
+                                              continuous = False)
 
     def read_trigg(self):
         device_set = self.plot_state.dev_set
@@ -156,7 +153,6 @@ class MainPanel(QtGui.QWidget):
             self.read_sweep()
         self.pow_data = pow_
         self.update_plot()
-
 
     def keyPressEvent(self, event):
         if self.dut:
@@ -553,7 +549,6 @@ class MainPanel(QtGui.QWidget):
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop , 
                                               len(self.pow_data))
-
         self.update_fft()
         self.update_marker()
         self.update_delta()
@@ -590,6 +585,7 @@ class MainPanel(QtGui.QWidget):
             else:
                 pow_ = self.pow_data
                 self._marker_lab.setStyleSheet('color: %s;' % constants.TEAL)
+            
             if self.plot_state.marker_ind  == None:
                 self.plot_state.marker_ind  = len(pow_) / 2 
 
