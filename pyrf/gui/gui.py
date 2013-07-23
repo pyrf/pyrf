@@ -215,24 +215,16 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(pause, y, x, 1, 1)
         peak = self._peak_control()
         grid.addWidget(peak, y, x + 1, 1, 1)
-        grid_en = self._grid_control()
-        grid.addWidget(grid_en, y, x + 2, 1, 1)
-        cu._grid_control(self)
         center = self._center_control()
         grid.addWidget(center, y, x + 3, 1, 1)
         
         x = plot_width
-        grid.addWidget(self._antenna_control(), y, x, 1, 2)
+        
+        grid.addWidget(self._device_controls(), y, x, 2, 5)
         
         x = plot_width 
-        y += 1
-        grid.addWidget(self._gain_control(), y, x, 1, 2)
-        grid.addWidget(QtGui.QLabel('IF Gain:'), y, x + 2, 1, 1)
-        grid.addWidget(self._ifgain_control(), y, x + 3, 1, 1)
-        
-        
-        x = plot_width
-        y += 1
+        y += 2
+
         freq_group = self._freq_controls()
         grid.addWidget(freq_group, y, x, 4, 5)
         x = plot_width
@@ -242,15 +234,7 @@ class MainPanel(QtGui.QWidget):
         self.update_freq()
         self.setLayout(grid)
         self.show()
-    
-    def _trigger_control(self):
-        trigger = QtGui.QPushButton('Trigger', self)
-        trigger.setToolTip("[T]\nTurn the Triggers on/off") 
-        trigger.clicked.connect(lambda: cu._trigger_control(self))
-        self._trigger = trigger
-        self.control_widgets.append(self._trigger)
-        return trigger
-    
+        
     def _marker_control(self):
         marker = QtGui.QPushButton('Marker 1', self)
         marker.setToolTip("[M]\nTurn Marker 1 on/off") 
@@ -283,14 +267,6 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._mhold)
         return mhold
         
-    def _grid_control(self):
-        plot_grid = QtGui.QPushButton('Grid', self)
-        plot_grid.setToolTip("[G]\nTurn the Grid on/off") 
-        plot_grid.clicked.connect(lambda: cu._grid_control(self))
-        self._grid = plot_grid
-        self.control_widgets.append(self._grid)
-        return plot_grid
-
     def _center_control(self):
         center = QtGui.QPushButton('Recenter', self)
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
@@ -306,7 +282,26 @@ class MainPanel(QtGui.QWidget):
         self._pause = pause
         self.control_widgets.append(self._pause)
         return pause
-           
+    
+    def _device_controls(self):
+        dev_group = QtGui.QGroupBox("Device Control")
+        self.dev_group = dev_group
+        
+        dev_layout = QtGui.QVBoxLayout()
+        
+        first_row = QtGui.QHBoxLayout()
+        first_row.addWidget(self._antenna_control())
+        first_row.addWidget(self._trigger_control())
+        
+        second_row = QtGui.QHBoxLayout()
+        second_row.addWidget(self._gain_control())
+        second_row.addWidget(self._ifgain_control())
+        
+        dev_layout.addLayout(first_row)
+        dev_layout.addLayout(second_row)
+
+        dev_group.setLayout(dev_layout)         
+        return dev_group
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
         antenna.setToolTip("Choose Antenna") 
@@ -345,6 +340,14 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['ifgain'] = ifgain.value()
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
+    
+    def _trigger_control(self):
+        trigger = QtGui.QCheckBox("Trigger")
+        trigger.setToolTip("[T]\nTurn the Triggers on/off") 
+        trigger.clicked.connect(lambda: cu._trigger_control(self))
+        self._trigger = trigger
+        self.control_widgets.append(self._trigger)
+        return trigger
     
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")
