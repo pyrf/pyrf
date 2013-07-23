@@ -230,45 +230,14 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('IF Gain:'), y, x + 2, 1, 1)
         grid.addWidget(self._ifgain_control(), y, x + 3, 1, 1)
         
-        x = plot_width
-        y += 1
-        fstart_bt, fstart_txt = self._fstart_controls()
-        grid.addWidget(fstart_bt, y, x, 1, 1)
-        grid.addWidget(fstart_txt, y, x + 1, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
         
         x = plot_width
         y += 1
-        cfreq, freq, steps, freq_plus, freq_minus = self._freq_controls()
-        grid.addWidget(cfreq, y, x, 1, 1)
-        grid.addWidget(freq, y, x + 1, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
+        freq_group = self._freq_controls()
+        grid.addWidget(freq_group, y, x, 4, 5)
         x = plot_width
-        y += 1
-        bw_bt, bw_txt = self._bw_controls()
-        grid.addWidget(bw_bt, y, x, 1, 1)
-        grid.addWidget(bw_txt, y, x + 1, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
+        y += 4
         
-        x = plot_width
-        y += 1
-        fstop_bt, fstop_txt = self._fstop_controls()
-        grid.addWidget(fstop_bt, y, x, 1, 1)
-        grid.addWidget(fstop_txt, y, x + 1, 1, 2)
-        grid.addWidget(QtGui.QLabel('MHz'), y, x + 3, 1, 1)
-        
-        x = plot_width
-        y += 1
-        grid.addWidget(freq_minus, y, x, 1, 1)
-        grid.addWidget(steps, y, x + 1, 1, 2)
-        grid.addWidget(freq_plus, y, x + 3, 1, 1)
-        
-        x = plot_width
-        y += 1
-        rbw = self._rbw_controls()
-        grid.addWidget(QtGui.QLabel('Resolution\nBandwidth:'), y, x, 1, 1)
-        grid.addWidget(rbw, y, x + 1, 1, 3)
-                    
         cu._select_fstart(self)
         self.update_freq()
         self.setLayout(grid)
@@ -376,21 +345,75 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['ifgain'] = ifgain.value()
         ifgain.valueChanged.connect(new_ifgain)
         return ifgain
-            
+    
     def _freq_controls(self):
+        freq_group = QtGui.QGroupBox("Frequency Control")
+        self._freq_group = freq_group
+        
+        freq_layout = QtGui.QVBoxLayout()
+        
+        fstart_hbox = QtGui.QHBoxLayout()
+        fstart_bt, fstart_txt = self._fstart_controls()
+        fstart_hbox.addWidget(fstart_bt)
+        fstart_hbox.addWidget(fstart_txt)
+        fstart_hbox.addWidget(QtGui.QLabel('MHz'))
+        
+        cfreq_hbox = QtGui.QHBoxLayout()
+        cfreq_bt, cfreq_txt = self._center_freq()
+        cfreq_hbox.addWidget(cfreq_bt)
+        cfreq_hbox.addWidget(cfreq_txt)
+        cfreq_hbox.addWidget(QtGui.QLabel('MHz'))
+        
+        bw_hbox = QtGui.QHBoxLayout()
+        bw_bt, bw_txt = self._bw_controls()
+        bw_hbox.addWidget(bw_bt)
+        bw_hbox.addWidget(bw_txt)
+        bw_hbox.addWidget(QtGui.QLabel('MHz'))
+        
+        fstop_hbox = QtGui.QHBoxLayout()
+        fstop_bt, fstop_txt = self._fstop_controls()
+        fstop_hbox.addWidget(fstop_bt)
+        fstop_hbox.addWidget(fstop_txt)
+        fstop_hbox.addWidget(QtGui.QLabel('MHz'))
+        
+        freq_inc_hbox = QtGui.QHBoxLayout()
+        freq_inc_steps, freq_inc_minus, freq_inc_plus = self._freq_incr()
+        freq_inc_hbox.addWidget(freq_inc_minus)
+        freq_inc_hbox.addWidget(freq_inc_steps)
+        freq_inc_hbox.addWidget(freq_inc_plus)
+        
+        rbw_hbox = QtGui.QHBoxLayout()
+        rbw = self._rbw_controls()
+        rbw_hbox.addWidget(QtGui.QLabel('Resolution Bandwidth:'))
+        rbw_hbox.addWidget(rbw)
+        
+        freq_layout.addLayout(fstart_hbox)
+        freq_layout.addLayout(cfreq_hbox)
+        freq_layout.addLayout(bw_hbox)
+        freq_layout.addLayout(fstop_hbox)
+        freq_layout.addLayout(freq_inc_hbox)
+        freq_layout.addLayout(rbw_hbox)
+        freq_group.setLayout(freq_layout)
+        
+        return freq_group
+    def _center_freq(self):
         cfreq = QtGui.QPushButton('Center')
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.center_freq/constants.MHZ))
-        self._freq_edit = freq
+        freq_edit = QtGui.QLineEdit(str(self.plot_state.center_freq/constants.MHZ))
+        self._freq_edit = freq_edit
         self.control_widgets.append(self._cfreq)
         self.control_widgets.append(self._freq_edit)
         def freq_change():
             cu._select_center_freq(self)
             self.update_freq()
             self.update_freq_edit()
-        freq.returnPressed.connect(lambda: freq_change())
+        
+        freq_edit.returnPressed.connect(lambda: freq_change())
+        return cfreq, freq_edit
+    
+    def _freq_incr(self):
         steps = QtGui.QComboBox(self)
         steps.addItem("Adjust: 1 MHz")
         steps.addItem("Adjust: 2.5 MHz")
@@ -420,7 +443,8 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._freq_plus)
         self.control_widgets.append(self._freq_minus)
         self.control_widgets.append(self._fstep_box)
-        return cfreq, freq, steps, freq_plus, freq_minus
+        return  steps, freq_plus, freq_minus
+    
     
     def _bw_controls(self):
         bw = QtGui.QPushButton('Span')
