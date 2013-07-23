@@ -25,7 +25,7 @@ from pyrf.devices.thinkrf import WSA4000
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings
-from pyrf.capture_device import captureDevice
+from pyrf.capture_device import CaptureDevice
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -43,8 +43,9 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, name=None):
         super(MainWindow, self).__init__()
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
-        self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.initUI()
+
+
         self.show()
     
     def initUI(self):
@@ -62,26 +63,26 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
-        self.setWindowTitle('PyRF')
-    
+        self.setWindowTitle('Spectrum Analyzer')
+
+
     def closeEvent(self, event):
         if self.mainPanel.dut:
             self.mainPanel.dut.abort()
             self.mainPanel.dut.flush()
             self.mainPanel.dut.reset()
         event.accept()
-        self.mainPanel._reactor.stop()          
-       
+        self.mainPanel._reactor.stop()
+
+
 class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
     def __init__(self, name):
-
-        super(MainPanel, self).__init__()
-        self.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.dut = None
         self.control_widgets = []
+        super(MainPanel, self).__init__()
         self.setMinimumWidth(800)
         self.setMinimumHeight(400)
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
@@ -101,6 +102,7 @@ class MainPanel(QtGui.QWidget):
         # late import because installReactor is being used
         from twisted.internet import reactor
         return reactor
+
     def open_device_dialog(self):
         name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
             'Enter a hostname or IP address:')
@@ -121,7 +123,7 @@ class MainPanel(QtGui.QWidget):
         yield dut.connect(name)
         self.dut = dut
         self.sweep_dut = SweepDevice(dut, self.receive_data)
-        self.cap_dut = captureDevice(dut, self.receive_data)
+        self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
         self.read_sweep()
 
@@ -153,6 +155,7 @@ class MainPanel(QtGui.QWidget):
             self.read_sweep()
         self.pow_data = pow_
         self.update_plot()
+
 
     def keyPressEvent(self, event):
         if self.dut:
@@ -192,9 +195,9 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(self._plot.window,1,0,10,plot_width)
 
         marker_label, delta_label, diff_label = self._marker_labels()
-        grid.addWidget(marker_label, 1, 1,1, 1)
-        grid.addWidget(delta_label, 1, 3,1, 1)
-        grid.addWidget(diff_label , 1, 5,1, 1)
+        grid.addWidget(marker_label, 1, 1, 1, 2)
+        grid.addWidget(delta_label, 1, 3, 1, 2)
+        grid.addWidget(diff_label , 1, 5, 1, 2)
         
         x = 0    
         y = 0
@@ -263,7 +266,7 @@ class MainPanel(QtGui.QWidget):
         x = plot_width
         y += 1
         rbw = self._rbw_controls()
-        grid.addWidget(QtGui.QLabel('Resolution Bandwidth:'), y, x, 1, 1)
+        grid.addWidget(QtGui.QLabel('Resolution\nBandwidth:'), y, x, 1, 1)
         grid.addWidget(rbw, y, x + 1, 1, 3)
                     
         cu._select_fstart(self)
@@ -320,7 +323,7 @@ class MainPanel(QtGui.QWidget):
         return plot_grid
 
     def _center_control(self):
-        center = QtGui.QPushButton('Center View', self)
+        center = QtGui.QPushButton('Recenter', self)
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
         center.clicked.connect(lambda: cu._center_plot_view(self))
         self._center = center
@@ -375,7 +378,7 @@ class MainPanel(QtGui.QWidget):
         return ifgain
             
     def _freq_controls(self):
-        cfreq = QtGui.QPushButton('Center Frequency')
+        cfreq = QtGui.QPushButton('Center')
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
@@ -436,7 +439,7 @@ class MainPanel(QtGui.QWidget):
         return bw, bw_edit
     
     def _fstart_controls(self):
-        fstart = QtGui.QPushButton('Start Frequency')
+        fstart = QtGui.QPushButton('Start')
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
@@ -453,7 +456,7 @@ class MainPanel(QtGui.QWidget):
         return fstart, freq
         
     def _fstop_controls(self):
-        fstop = QtGui.QPushButton('Stop Frequency')
+        fstop = QtGui.QPushButton('Stop')
         fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
@@ -549,6 +552,7 @@ class MainPanel(QtGui.QWidget):
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop , 
                                               len(self.pow_data))
+
         self.update_fft()
         self.update_marker()
         self.update_delta()
@@ -585,7 +589,6 @@ class MainPanel(QtGui.QWidget):
             else:
                 pow_ = self.pow_data
                 self._marker_lab.setStyleSheet('color: %s;' % constants.TEAL)
-            
             if self.plot_state.marker_ind  == None:
                 self.plot_state.marker_ind  = len(pow_) / 2 
 
