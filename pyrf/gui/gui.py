@@ -52,8 +52,7 @@ class MainWindow(QtGui.QMainWindow):
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
-        self.mainPanel = MainPanel(name)
-        self.setCentralWidget(self.mainPanel)
+        self.mainPanel = MainPanel()
         openAction = QtGui.QAction('&Open Device', self)
         openAction.triggered.connect( self.mainPanel.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
@@ -64,8 +63,13 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
         self.setWindowTitle('Spectrum Analyzer')
-
-
+        self.setCentralWidget(self.mainPanel)
+        self.mainPanel.show()
+        if name:
+            self.mainPanel.open_device(name)
+        else:
+            self.mainPanel.open_device_dialog()
+    
     def closeEvent(self, event):
         if self.mainPanel.dut:
             self.mainPanel.dut.abort()
@@ -79,12 +83,12 @@ class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
-    def __init__(self, name):
+    def __init__(self):
         self.dut = None
         self.control_widgets = []
         super(MainPanel, self).__init__()
         self.setMinimumWidth(800)
-        self.setMinimumHeight(400)
+        self.setMinimumHeight(600)
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
         self.plot_state = gui_config.plot_state()
         # plot window
@@ -93,11 +97,7 @@ class MainPanel(QtGui.QWidget):
         self.initUI()
         self.disable_controls()
         self._reactor = self._get_reactor()
-        if name:
-            self.open_device(name)
-        else:
-            self.open_device_dialog()
-               
+
     def _get_reactor(self):
         # late import because installReactor is being used
         from twisted.internet import reactor
@@ -125,6 +125,7 @@ class MainPanel(QtGui.QWidget):
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
+        cu._select_fstart(self)
         self.read_sweep()
 
     def read_sweep(self):
@@ -188,100 +189,29 @@ class MainPanel(QtGui.QWidget):
         grid.setSpacing(10)
         for x in range(8):
             grid.setColumnMinimumWidth(x, 300)
-        grid.setRowMinimumHeight(10, 800)
+        grid.setRowMinimumHeight(14, 800)
 
         # add plot widget
         plot_width = 8
-        grid.addWidget(self._plot.window,1,0,10,plot_width)
+        grid.addWidget(self._plot.window,0,0,15,plot_width)
 
         marker_label, delta_label, diff_label = self._marker_labels()
-        grid.addWidget(marker_label, 1, 1, 1, 2)
-        grid.addWidget(delta_label, 1, 3, 1, 2)
-        grid.addWidget(diff_label , 1, 5, 1, 2)
-        
-        x = 0    
+        grid.addWidget(marker_label, 0, 1, 1, 2)
+        grid.addWidget(delta_label, 0, 3, 1, 2)
+        grid.addWidget(diff_label , 0, 5, 1, 2)
+ 
         y = 0
-        trig = self._trigger_control()
-        grid.addWidget(trig, y, x, 1, 1)
-        mark = self._marker_control()
-        grid.addWidget(mark, y, x + 1, 1, 1)
-        delta = self._delta_control()
-        grid.addWidget(delta, y, x + 2, 1, 1)
-        mhold = self._mhold_control()
-        grid.addWidget(mhold, y, x + 3, 1, 1)
-        
-        x = 4
-        pause = self._pause_control()
-        grid.addWidget(pause, y, x, 1, 1)
-        peak = self._peak_control()
-        grid.addWidget(peak, y, x + 1, 1, 1)
-        center = self._center_control()
-        grid.addWidget(center, y, x + 3, 1, 1)
-        
         x = plot_width
-        
         grid.addWidget(self._device_controls(), y, x, 2, 5)
-        
-        x = plot_width 
         y += 2
-
-        freq_group = self._freq_controls()
-        grid.addWidget(freq_group, y, x, 4, 5)
-        x = plot_width
+        grid.addWidget(self._freq_controls(), y, x, 4, 5)
         y += 4
-        
-        cu._select_fstart(self)
+        grid.addWidget(self._plot_controls(), y, x, 4, 5)
+
         self.update_freq()
         self.setLayout(grid)
-        self.show()
+
         
-    def _marker_control(self):
-        marker = QtGui.QPushButton('Marker 1', self)
-        marker.setToolTip("[M]\nTurn Marker 1 on/off") 
-        marker.clicked.connect(lambda: cu._marker_control(self))
-        self._marker = marker
-        self.control_widgets.append(self._marker)
-        return marker
-        
-    def _delta_control(self):
-        delta = QtGui.QPushButton('Marker 2', self)
-        delta.setToolTip("[K]\nTurn Marker 2 on/off") 
-        delta.clicked.connect(lambda: cu._delta_control(self))
-        self._delta = delta
-        self.control_widgets.append(self._delta)
-        return delta
-    
-    def _peak_control(self):
-        peak = QtGui.QPushButton('Peak', self)
-        peak.setToolTip("[P]\nFind peak of the selected spectrum") 
-        peak.clicked.connect(lambda: cu._find_peak(self))
-        self._peak = peak
-        self.control_widgets.append(self._peak)
-        return peak
-        
-    def _mhold_control(self):
-        mhold = QtGui.QPushButton('Max Hold', self)
-        mhold.setToolTip("[H]\nTurn the Max Hold on/off") 
-        mhold.clicked.connect(lambda: cu._mhold_control(self))
-        self._mhold = mhold
-        self.control_widgets.append(self._mhold)
-        return mhold
-        
-    def _center_control(self):
-        center = QtGui.QPushButton('Recenter', self)
-        center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
-        center.clicked.connect(lambda: cu._center_plot_view(self))
-        self._center = center
-        self.control_widgets.append(self._center)
-        return center
-        
-    def _pause_control(self):
-        pause = QtGui.QPushButton('Pause', self)
-        pause.setToolTip("[Space Bar]\n pause the plot window") 
-        pause.clicked.connect(lambda: cu._enable_plot(self))
-        self._pause = pause
-        self.control_widgets.append(self._pause)
-        return pause
     
     def _device_controls(self):
         dev_group = QtGui.QGroupBox("Device Control")
@@ -431,7 +361,7 @@ class MainPanel(QtGui.QWidget):
         self._fstep_box = steps
         def freq_step(factor):
             try:
-                f = float(freq.text())
+                f = float(self._freq_edit.text())
             except ValueError:
                 return
             delta = float(steps.currentText().split()[1]) * factor
@@ -557,6 +487,79 @@ class MainPanel(QtGui.QWidget):
         self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
     
+    def _plot_controls(self):
+
+        plot_group = QtGui.QGroupBox("Plot Control")
+        self._plot_group = plot_group
+        
+        plot_controls_layout = QtGui.QVBoxLayout()
+        
+        first_row = QtGui.QHBoxLayout()
+        first_row.addWidget(self._marker_control())
+        first_row.addWidget(self._delta_control())
+        
+        second_row = QtGui.QHBoxLayout()
+        second_row.addWidget(self._peak_control())
+        second_row.addWidget(self._mhold_control())
+        
+        third_row = QtGui.QHBoxLayout()
+        third_row.addWidget(self._pause_control())
+        third_row.addWidget(self._center_control())
+        
+        plot_controls_layout.addLayout(first_row)
+        plot_controls_layout.addLayout(second_row)
+        plot_controls_layout.addLayout(third_row)
+        
+        plot_group.setLayout(plot_controls_layout)
+        
+        return plot_group
+    def _marker_control(self):
+        marker = QtGui.QCheckBox('Marker 1')
+        marker.setToolTip("[M]\nTurn Marker 1 on/off") 
+        marker.clicked.connect(lambda: cu._marker_control(self))
+        self._marker = marker
+        self.control_widgets.append(self._marker)
+        return marker
+        
+    def _delta_control(self):
+        delta = QtGui.QCheckBox('Marker 2')
+        delta.setToolTip("[K]\nTurn Marker 2 on/off") 
+        delta.clicked.connect(lambda: cu._delta_control(self))
+        self._delta = delta
+        self.control_widgets.append(self._delta)
+        return delta
+    
+    def _peak_control(self):
+        peak = QtGui.QPushButton('Peak')
+        peak.setToolTip("[P]\nFind peak of the selected spectrum") 
+        peak.clicked.connect(lambda: cu._find_peak(self))
+        self._peak = peak
+        self.control_widgets.append(self._peak)
+        return peak
+        
+    def _mhold_control(self):
+        mhold = QtGui.QPushButton('Max Hold')
+        mhold.setToolTip("[H]\nTurn the Max Hold on/off") 
+        mhold.clicked.connect(lambda: cu._mhold_control(self))
+        self._mhold = mhold
+        self.control_widgets.append(self._mhold)
+        return mhold
+        
+    def _center_control(self):
+        center = QtGui.QPushButton('Recenter')
+        center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
+        center.clicked.connect(lambda: cu._center_plot_view(self))
+        self._center_bt = center
+        self.control_widgets.append(self._center_bt)
+        return center
+        
+    def _pause_control(self):
+        pause = QtGui.QPushButton('Pause')
+        pause.setToolTip("[Space Bar]\n pause the plot window") 
+        pause.clicked.connect(lambda: cu._enable_plot(self))
+        self._pause = pause
+        self.control_widgets.append(self._pause)
+        return pause
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
