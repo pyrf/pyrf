@@ -21,9 +21,9 @@ class WSA4000Properties(object):
     DC_OFFSET_BW = 240000 # XXX: an educated guess
 
 
-class WSA4000(object):
+class WSA(object):
     """
-    Interface for WSA4000
+    Interface for WSA4000 and WSA5000
 
     :param connector: Connector object to use for SCPI/VRT connections,
         defaults to a new
@@ -624,26 +624,6 @@ class WSA4000(object):
             elif s == 'trigger':
                 self.trigger(settings[s])
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
+# for backwards compatibility
+WSA4000 = WSA
