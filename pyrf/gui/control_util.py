@@ -81,17 +81,6 @@ def _left_arrow_key(layout):
         layout._freq_minus.click()
         layout.plot_state.mhold_fft = None
 
-def _grid_control(layout):
-    """
-    disable/enable plot grid in layout
-    """
-    layout.plot_state.grid = not(layout.plot_state.grid)
-    layout._plot.grid(layout.plot_state.grid)
-    if layout.plot_state.grid:
-        util.change_item_color(layout._grid,  constants.ORANGE, constants.WHITE)
-    else:
-        util.change_item_color(layout._grid,  constants.NORMAL_COLOR, constants.BLACK)
-
 def _mhold_control(layout):
     """
     disable/enable max hold curve in the plot
@@ -192,7 +181,6 @@ hotkey_dict = {'1': _select_fstart,
                 'LEFT KEY': _left_arrow_key,
                 'C': _center_plot_view,
                 'K': _delta_control,
-                'G': _grid_control,
                 'H': _mhold_control,
                 'M': _marker_control,
                 'P': _find_peak,
