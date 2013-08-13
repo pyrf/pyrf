@@ -18,8 +18,8 @@ from one processing block to the next.
 .. graphviz::
 
    digraph processing {
-      WSA4000 [shape=box];
-      WSA4000 -> FFT;
+      WSA [shape=box];
+      WSA -> FFT;
       FFT -> calibrate;
       calibrate -> spectrum;
       spectrum [shape=box];
@@ -28,7 +28,7 @@ from one processing block to the next.
 
 .. code-block:: python
 
-   wsa = WSA4000(host)
+   wsa = WSA(host)
    fft = fft_block(wsa)
    calibrate = calibrate_block(fft)
    spectrum = spectrum_display(calibrate)
@@ -44,15 +44,15 @@ producer interfaces have consumers connected.
 .. graphviz::
 
    digraph processing {
-      WSA4000 [shape=box];
-      WSA4000 -> FFT [style=dotted];
+      WSA [shape=box];
+      WSA -> FFT [style=dotted];
       FFT -> calibrate [style=dotted];
    }
 
 
 .. code-block:: python
 
-   wsa = WSA4000(host)
+   wsa = WSA(host)
    fft = fft_block(wsa)
    calibrate = calibrate_block(fft)
 
@@ -72,8 +72,8 @@ sent.  The body will contain the raw packet bytes.
 .. graphviz::
 
    digraph processing {
-      WSA4000_1 [shape=box];
-      WSA4000_2 [shape=box];
+      WSA_1 [shape=box];
+      WSA_2 [shape=box];
       subgraph cluster1 {
 	 label = "process #1";
 	 FFT_1 -> calibrate_1;
@@ -82,8 +82,8 @@ sent.  The body will contain the raw packet bytes.
 	 label = "process #2";
 	 FFT_2 -> calibrate_2;
       }
-      WSA4000_1 -> FFT_1;
-      WSA4000_2 -> FFT_2;
+      WSA_1 -> FFT_1;
+      WSA_2 -> FFT_2;
       calibrate_1 -> multi_spectrum;
       calibrate_2 -> multi_spectrum;
       multi_spectrum [shape=box];
@@ -94,10 +94,10 @@ sent.  The body will contain the raw packet bytes.
 
    process1 = process()
    process2 = process()
-   wsa1 = WSA4000(host1)
+   wsa1 = WSA(host1)
    fft1 = fft_block(wsa1, proc=process1)
    calibrate1 = calibrate_block(fft1, proc=process1)
-   wsa2 = WSA4000(host2)
+   wsa2 = WSA(host2)
    fft2 = fft_block(wsa2, proc=process2)
    calibrate2 = calibrate_block(fft2, proc=process2)
    multi_spectrum = multi_spectrum_display(calibrate1, calibrate2)

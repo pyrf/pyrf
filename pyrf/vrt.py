@@ -61,7 +61,7 @@ def vrt_packet_reader(raw_read):
 
 class ContextPacket(object):
     """
-    A Context Packet received from :meth:`pyrf.devices.thinkrf.WSA4000.read`
+    A Context Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`
 
     .. attribute:: fields
 
@@ -261,7 +261,7 @@ class IQData(object):
 
 class DataPacket(object):
     """
-    A Data Packet received from :meth:`pyrf.devices.thinkrf.WSA4000.read`
+    A Data Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`
 
     .. attribute:: data
 

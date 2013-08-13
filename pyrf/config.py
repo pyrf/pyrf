@@ -4,7 +4,7 @@ class TriggerSettingsError(Exception):
 
 class TriggerSettings(object):
     """
-    Trigger settings for :meth:`pyrf.devices.thinkrf.WSA4000.trigger`.
+    Trigger settings for :meth:`pyrf.devices.thinkrf.WSA.trigger`.
 
     :param trigtype: "LEVEL" or "NONE" to disable
     :param fstart: starting frequency in Hz
@@ -28,7 +28,7 @@ class TriggerSettings(object):
 
 class SweepEntry(object):
     """
-    Sweep entry for :meth:`pyrf.devices.thinkrf.WSA4000.sweep_add`
+    Sweep entry for :meth:`pyrf.devices.thinkrf.WSA.sweep_add`
 
     :param fstart: starting frequency in Hz
     :param fstop: ending frequency in Hz

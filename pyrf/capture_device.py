@@ -12,7 +12,7 @@ class CaptureDevice(object):
     Virtual device that returns power levels generated from a single data packet
     (packet returned will have a span of 100MHz)
     :param real_device: device that will will be used for capturing data,
-                        typically a :class:`WSA4000` instance.
+                        typically a :class:`pyrf.thinkrf.WSA` instance.
     :param callback: callback to use for async operation (not used if
                      real_device is using a :class:`PlainSocketConnector`)
 

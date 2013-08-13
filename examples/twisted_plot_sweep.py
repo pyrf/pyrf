@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyrf.devices.thinkrf import WSA4000
+from pyrf.devices.thinkrf import WSA
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.sweep_device import SweepDevice
 
@@ -36,7 +36,7 @@ def start_sweep(v):
         {'gain': 'high', 'antenna': 1})
 
 # connect to wsa
-dut = WSA4000(connector=TwistedConnector(reactor))
+dut = WSA(connector=TwistedConnector(reactor))
 d = dut.connect(sys.argv[1])
 d.addCallbacks(start_sweep, twisted.python.log.err)
 reactor.run()

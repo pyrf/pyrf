@@ -110,11 +110,11 @@ Then switch to your pyrf directory and run::
 
 
 
-API for WSA4000 RF Receiver
----------------------------
+API for WSA RF Receiver
+-----------------------
 
-:class:`pyrf.devices.thinkrf.WSA4000` is the class that provides access
-to WSA4000 devices.
+:class:`pyrf.devices.thinkrf.WSA` is the class that provides access
+to WSA4000 and WSA5000 devices.
 Its methods closely match the SCPI Command Set described in the
 Programmers Reference available in
 `ThinkRF Resources <http://www.thinkrf.com/resources>`_.
@@ -137,7 +137,7 @@ choose to use Twisted's inlineCallbacks function decorator to write Twisted
 code that resembles synchronous code by yielding the Deferred objects
 returned from the API.
 
-To use the asynchronous when a WSA4000 instance is created
+To use the asynchronous when a WSA instance is created
 you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
 instance as the connector parameter, as in :ref:`twisted-show-i-q`
 

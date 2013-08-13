@@ -183,7 +183,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PyRF.tex', u'API for RF receivers including ThinkRF WSA4000',
+  ('index', 'PyRF.tex',
+   u'API for RF receivers including ThinkRF WSA platform',
    u'ThinkRF Corporation', 'manual'),
 ]
 
@@ -213,7 +214,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pyrf', u'API for RF receivers including ThinkRF WSA4000',
+    ('index', 'pyrf',
+     u'API for RF receivers including ThinkRF WSA platform',
      [u'ThinkRF Corporation'], 1)
 ]
 
@@ -228,7 +230,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'PyRF', u'PyRF Documentation',
-   u'ThinkRF Corporation', 'PyRF', 'API for RF receivers including ThinkRF WSA4000',
+   u'ThinkRF Corporation', 'PyRF',
+   'API for RF receivers including ThinkRF WSA platform',
    'Miscellaneous'),
 ]
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyrf.devices.thinkrf import WSA4000
+from pyrf.devices.thinkrf import WSA
 from pyrf.config import TriggerSettings
 from pyrf.util import read_data_and_context
 from pyrf.numpy_util import compute_fft
@@ -12,7 +12,7 @@ import math
 from matplotlib.pyplot import plot, figure, axis, xlabel, ylabel, show
 
 # connect to wsa
-dut = WSA4000()
+dut = WSA()
 dut.connect(sys.argv[1])
 
 # setup test conditions

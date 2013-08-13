@@ -30,7 +30,8 @@ class WSA(object):
         :class:`PlainSocketConnector <pyrf.connectors.blocking.PlainSocketConnector>`
         instance
 
-    :meth:`connect() <WSA4000.connect>` must be called before other methods are used.
+    :meth:`connect() <pyrf.devices.thinkrf.WSA.connect>` must be called
+    before other methods are used.
 
     .. note::
 
@@ -101,7 +102,7 @@ class WSA(object):
     @sync_async
     def id(self):
         """
-        Returns the WSA4000's identification information string.
+        Returns the WSA's identification information string.
 
         :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
@@ -178,7 +179,7 @@ class WSA(object):
     def gain(self, gain=None):
         """
         This command sets or queries RFE quantized gain configuration.
-        The RF front end (RFE) of the WSA4000 consists of multiple quantized
+        The RF front end (RFE) of the WSA consists of multiple quantized
         gain stages. The gain corresponding to each user-selectable setting
         has been pre-calculated for either optimal sensitivity or linearity.
         The parameter defines the total quantized gain of the RFE.
@@ -246,16 +247,16 @@ class WSA(object):
 
     def reset(self):
         """
-        Resets the WSA4000 to its default settings. It does not affect
+        Resets the WSA to its default settings. It does not affect
         the registers or queues associated with the IEEE mandated commands.
         """
         self.scpiset(":*rst")
 
     def abort(self):
         """
-        This command will cause the WSA4000 to stop the data capturing,
+        This command will cause the WSA to stop the data capturing,
         whether in the manual trace block capture, triggering or sweeping
-        mode.  The WSA4000 will be put into the manual mode; in other
+        mode.  The WSA will be put into the manual mode; in other
         words, process such as streaming, trigger and sweep will be
         stopped.  The capturing process does not wait until the end of a
         packet to stop, it will stop immediately upon receiving the command.
@@ -265,7 +266,7 @@ class WSA(object):
 
     def flush(self):
         """
-        This command clears the WSA4000's internal data storage buffer of
+        This command clears the WSA's internal data storage buffer of
         any data that is waiting to be sent.  Thus, It is recommended that
         the flush command should be used when switching between different
         capture modes to clear up the remnants of packet.
@@ -570,7 +571,7 @@ class WSA(object):
         """
         This command begins the execution of the stream capture.
         It will also initiate data capturing.  Data packets will
-        be streamed (or pushed) from the WSA4000 whenever data
+        be streamed (or pushed) from the WSA whenever data
         is available.
 
         :param stream_id: optional unsigned 32-bit stream identifier

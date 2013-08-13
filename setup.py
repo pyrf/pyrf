@@ -24,7 +24,7 @@ setup(
     packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui'],
     url='https://github.com/pyrf/pyrf',
     license='BSD',
-    description='API for RF receivers including ThinkRF WSA4000',
+    description='API for RF receivers including ThinkRF WSA platforms',
     long_description=open('README.rst').read(),
     classifiers=[
         "Development Status :: 5 - Production/Stable",

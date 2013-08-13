@@ -8,7 +8,7 @@ def compute_fft(dut, data_pkt, context):
     the passed data and reference level.
 
     :param dut: WSA device
-    :type dut: pyrf.devices.thinkrf.WSA4000
+    :type dut: pyrf.devices.thinkrf.WSA
     :param data_pkt: packet containing samples
     :type data_pkt: pyrf.vrt.DataPacket
     :param context: dict containing context values

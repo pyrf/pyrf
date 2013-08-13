@@ -1,7 +1,6 @@
 import unittest
 
 from pyrf.sweep_device import plan_sweep, SweepStep, trim_sweep_plan
-from pyrf.devices.thinkrf import WSA4000
 from pyrf.units import M
 
 

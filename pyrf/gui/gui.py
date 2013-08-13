@@ -21,7 +21,7 @@ import constants
 import control_util as cu
 from plot_widget import plot
 import gui_config
-from pyrf.devices.thinkrf import WSA4000
+from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings
@@ -119,7 +119,7 @@ class MainPanel(QtGui.QWidget):
 
     @inlineCallbacks
     def open_device(self, name):
-        dut = WSA4000(connector=TwistedConnector(self._reactor))
+        dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         self.dut = dut
         self.sweep_dut = SweepDevice(dut, self.receive_data)

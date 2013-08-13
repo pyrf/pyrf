@@ -10,7 +10,7 @@ pyrf.devices
 
 .. module:: pyrf.devices.thinkrf
 
-.. autoclass:: WSA4000
+.. autoclass:: WSA
 
    .. automethod:: abort()
 

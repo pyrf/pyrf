@@ -19,17 +19,17 @@ Contents:
 Hardware Support
 ----------------
 
-This library currently supports development for the `WSA4000 Platform`_,
-but may support additional hardware in the future.
+This library currently supports development for the
+`ThinkRF WSA4000 and WSA5000`_ platforms.
 
-.. _WSA4000 Platform: http://www.thinkrf.com/products.html
+.. _ThinkRF WSA4000 and WSA5000: http://www.thinkrf.com/
 
 Links
 -----
 
 * `Official github page <https://github.com/pyrf/pyrf>`_
 * `Documentation for this API <http://www.pyrf.org>`_
-* `WSA4000 Documentation <http://www.thinkrf.com/resources>`_
+* `WSA4000/WSA5000 Documentation <http://www.thinkrf.com/resources>`_
 
 Spectrum Analyzer GUI
 ---------------------

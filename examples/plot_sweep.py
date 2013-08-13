@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyrf.devices.thinkrf import WSA4000
+from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
 
 import sys
@@ -11,7 +11,7 @@ from matplotlib.pyplot import plot, figure, axis, xlabel, ylabel, show
 import numpy as np
 
 # connect to wsa
-dut = WSA4000()
+dut = WSA()
 dut.connect(sys.argv[1])
 sd = SweepDevice(dut)
 

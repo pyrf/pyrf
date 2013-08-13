@@ -110,7 +110,7 @@ class SweepDevice(object):
     and piecing together FFT results.
 
     :param real_device: device that will will be used for capturing data,
-                        typically a :class:`WSA4000` instance.
+                        typically a :class:`pyrf.devices.thinkrf.WSA` instance.
     :param callback: callback to use for async operation (not used if
                      real_device is using a :class:`PlainSocketConnector`)
     """
@@ -341,7 +341,7 @@ class SweepDevice(object):
 def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     """
     :param device: a device class or instance such as
-                   :class:`pyrf.devices.thinkrf.WSA4000`
+                   :class:`pyrf.devices.thinkrf.WSA`
     :param fstart: starting frequency in Hz
     :type fstart: float
     :param fstop: ending frequency in Hz
@@ -465,7 +465,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
 def trim_sweep_plan(device, plan, fstart, fstop):
     """
     :param device: a device class or instance such as
-                   :class:`WSA4000`
+                   :class:`pyrf.devices.thinkrf.WSA`
     :param plan: list of :class:`SweepStep` instances
     :param fstart: starting frequency in Hz
     :type fstart: float
