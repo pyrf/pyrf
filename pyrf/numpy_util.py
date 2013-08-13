@@ -21,6 +21,7 @@ def compute_fft(dut, data_pkt, context):
     import numpy # import here so docstrings are visible even without numpy
 
     reference_level = context['reflevel']
+    prop = dut.properties
 
     iq_data = data_pkt.data.numpy_array()
     # i, q values here are 14-bit signed
@@ -28,7 +29,7 @@ def compute_fft(dut, data_pkt, context):
     q_data = numpy.array(iq_data[:,1], dtype=float)
 
     freq = context['rffreq']
-    for low, high, valid_data in dut.CAPTURE_FREQ_RANGES:
+    for low, high, valid_data in prop.CAPTURE_FREQ_RANGES:
         if low <= freq <= high:
             break
 
@@ -37,7 +38,7 @@ def compute_fft(dut, data_pkt, context):
     power_spectrum = _compute_fft(i_data, q_data)
 
     noiselevel_offset = (
-        reference_level - dut.NOISEFLOOR_CALIBRATION - dut.ADC_DYNAMIC_RANGE)
+        reference_level - prop.NOISEFLOOR_CALIBRATION - prop.ADC_DYNAMIC_RANGE)
     return power_spectrum + noiselevel_offset
 
 

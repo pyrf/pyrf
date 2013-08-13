@@ -5,6 +5,22 @@ from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 
 from pyrf.units import M
 
+class WSA4000Properties(object):
+    ADC_DYNAMIC_RANGE = 72.5
+    NOISEFLOOR_CALIBRATION = -10
+    CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
+    SWEEP_FREQ_RANGE = (90*M, 10000*M)
+
+    FULL_BW = 125*M
+    USABLE_BW = 90*M
+    MIN_TUNABLE = 90*M
+    MAX_TUNABLE = 10000*M
+    MIN_DECIMATION = 4
+    MAX_DECIMATION = 1023
+    DECIMATED_USABLE = 0.5
+    DC_OFFSET_BW = 240000 # XXX: an educated guess
+
+
 class WSA4000(object):
     """
     Interface for WSA4000
@@ -26,19 +42,7 @@ class WSA4000(object):
 
     """
 
-    ADC_DYNAMIC_RANGE = 72.5
-    NOISEFLOOR_CALIBRATION = -10
-    CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
-    SWEEP_FREQ_RANGE = (90*M, 10000*M)
-
-    FULL_BW = 125*M
-    USABLE_BW = 90*M
-    MIN_TUNABLE = 90*M
-    MAX_TUNABLE = 10000*M
-    MIN_DECIMATION = 4
-    MAX_DECIMATION = 1023
-    DECIMATED_USABLE = 0.5
-    DC_OFFSET_BW = 240000 # XXX: an educated guess
+    properties = None
 
     def __init__(self, connector=None):
         if not connector:
@@ -53,12 +57,19 @@ class WSA4000(object):
         :param host: the hostname or IP to connect to
         """
         yield self.connector.connect(host)
+        device_id = (yield self.scpiget(":*idn?"))
+        if device_id.startswith('ThinkRF,WSA4000'):
+            self.properties = WSA4000Properties
+        else:
+            self.properties = WSA5000Properties
 
     def disconnect(self):
         """
         close a connection to a wsa
         """
         self.connector.disconnect()
+        if self.properties:
+            del self.properties
 
     def scpiset(self, cmd):
         """

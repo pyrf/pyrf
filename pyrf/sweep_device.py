@@ -42,7 +42,7 @@ class SweepStep(namedtuple('SweepStep', '''
         return SweepEntry(
             fstart=self.fcenter,
             fstop=min(self.fcenter + (self.steps + 0.5) * self.fstep,
-                device.MAX_TUNABLE),
+                device.properties.MAX_TUNABLE),
             fstep=self.fstep,
             fshift=self.fshift,
             decimation=self.decimation,
@@ -354,25 +354,25 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
                        decimation limits points returned may be larger)
     :type max_points: int
 
-    The following device attributes are used in planning the sweep:
+    The following device properties are used in planning the sweep:
 
-    device.FULL_BW
+    device.properties.FULL_BW
       full width of the filter in Hz
-    device.USABLE_BW
+    device.properties.USABLE_BW
       usable portion before filter drop-off at edges in Hz
-    device.MIN_TUNABLE
+    device.properties.MIN_TUNABLE
       the lowest valid center frequency for arbitrary tuning in Hz,
       0(DC) is always assumed to be available for direct digitization
-    device.MAX_TUNABLE
+    device.properties.MAX_TUNABLE
       the highest valid center frequency for arbitrart tuning in Hz
-    device.MIN_DECIMATION
+    device.properties.MIN_DECIMATION
       the lowest valid decimation value above 1, 1(no decimation) is
       assumed to always be available
-    device.MAX_DECIMATION
+    device.properties.MAX_DECIMATION
       the highest valid decimation value, only powers of 2 will be used
-    device.DECIMATED_USABLE
+    device.properties.DECIMATED_USABLE
       the fraction decimated output containing usable data, float < 1.0
-    device.DC_OFFSET_BW
+    device.properties.DC_OFFSET_BW
       the range of frequencies around center that may be affected by
       a DC offset and should not be used
 
@@ -389,43 +389,44 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     6. bins_keep is the total number of selected bins to keep; for
        single captures bins_run == bins_keep
     """
+    prop = device.properties
     out = []
-    usable2 = device.USABLE_BW / 2.0
-    dc_offset2 = device.DC_OFFSET_BW / 2.0
+    usable2 = prop.USABLE_BW / 2.0
+    dc_offset2 = prop.DC_OFFSET_BW / 2.0
 
     # FIXME: truncate to left-hand sweep area for now
-    fstart = max(device.MIN_TUNABLE - usable2, fstart)
-    fstop = min(device.MAX_TUNABLE - dc_offset2, fstop)
+    fstart = max(prop.MIN_TUNABLE - usable2, fstart)
+    fstop = min(prop.MAX_TUNABLE - dc_offset2, fstop)
 
     if fstop <= fstart:
         return (fstart, fstart, [])
 
     ideal_bin_size = (fstop - fstart) / float(bins)
-    points = device.FULL_BW / ideal_bin_size
+    points = prop.FULL_BW / ideal_bin_size
     points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
 
     decimation = 1
     ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
-    min_decimation = max(2, device.MIN_DECIMATION)
-    max_decimation = 2 ** math.floor(math.log(device.MAX_DECIMATION, 2))
+    min_decimation = max(2, prop.MIN_DECIMATION)
+    max_decimation = 2 ** math.floor(math.log(prop.MAX_DECIMATION, 2))
     if max_points < points and min_decimation <= ideal_decimation:
         decimation = min(max_decimation, ideal_decimation)
         points /= decimation
-        decimated_bw = device.FULL_BW / decimation
-        decimation_edge_bins = math.ceil(points * device.DECIMATED_USABLE / 2.0)
+        decimated_bw = prop.FULL_BW / decimation
+        decimation_edge_bins = math.ceil(points * prop.DECIMATED_USABLE / 2.0)
         decimation_edge = decimation_edge_bins * decimated_bw / points
 
-    bin_size = device.FULL_BW / decimation / float(points)
+    bin_size = prop.FULL_BW / decimation / float(points)
 
     # there are three regions that need to be handled differently
     # region 0: direct digitization / "VLOW band"
-    if fstart < device.MIN_TUNABLE - usable2:
+    if fstart < prop.MIN_TUNABLE - usable2:
         raise NotImplemented # yet
 
     # region 1: left-hand sweep area
-    if device.MIN_TUNABLE - usable2 <= fstart:
+    if prop.MIN_TUNABLE - usable2 <= fstart:
         if decimation == 1:
-            left_edge = device.FULL_BW / 2.0 - usable2
+            left_edge = prop.FULL_BW / 2.0 - usable2
             left_bin = math.ceil(left_edge / bin_size)
             fshift = left_bin * bin_size - left_edge
             usable_bins = (usable2 - dc_offset2 - fshift) // bin_size
@@ -439,7 +440,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
 
         fcenter = fstart + usable2
         # FIXME: fstop not being updated here
-        max_steps = math.floor((device.MAX_TUNABLE - fstart) / usable_bw)
+        max_steps = math.floor((prop.MAX_TUNABLE - fstart) / usable_bw)
         bins_keep = min(round((fstop - fstart) / bin_size),
             max_steps * usable_bins)
         sweep_steps = math.ceil(bins_keep / usable_bins)
@@ -455,7 +456,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
             ))
 
     # region 2: right-hand edge
-    if device.MAX_TUNABLE - dc_offset2 < fstop:
+    if prop.MAX_TUNABLE - dc_offset2 < fstop:
         raise NotImplemented # yet
 
     return (fstart, fstop, out)

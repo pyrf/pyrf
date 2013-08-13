@@ -11,7 +11,7 @@ extras = {}
 try:
     import py2exe
     extras.update({
-        'windows':['SpectrumAnalyzerGUI.py'],
+        'windows':['spectrumAnalyzerGUI.py'],
         })
 except ImportError:
     pass
