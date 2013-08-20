@@ -19,6 +19,25 @@ class WSA4000Properties(object):
     MAX_DECIMATION = 1023
     DECIMATED_USABLE = 0.5
     DC_OFFSET_BW = 240000 # XXX: an educated guess
+    TUNING_RESOLUTION = 100000
+
+
+class WSA5000Properties(object):
+    ADC_DYNAMIC_RANGE = 72.5
+    NOISEFLOOR_CALIBRATION = -10
+    CAPTURE_FREQ_RANGES = [(0, 50*M, I_ONLY), (100*M, 20000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 20000*M)
+
+    FULL_BW = 125*M
+    USABLE_BW = 100*M
+    MIN_TUNABLE = 100*M
+    MAX_TUNABLE = 20000*M
+    MIN_DECIMATION = 2
+    MAX_DECIMATION = 512
+    DECIMATED_USABLE = 0.875 # XXX: to be confirmed
+    DC_OFFSET_BW = 240000 # XXX: an educated guess
+    TUNING_RESOLUTION = 100000
+
 
 
 class WSA(object):
