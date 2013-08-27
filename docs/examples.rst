@@ -5,6 +5,13 @@ Examples
 These examples may be found in the "examples" directory included
 with the PyRF source code.
 
+
+discovery.py
+------------
+
+This example detects WSA devices on the same network
+
+
 show_i_q.py
 -----------
 
@@ -37,23 +44,30 @@ Example output (truncated):
    4,-12
 
 
-plot_fft.py
------------
+matplotlib_plot_sweep.py
+------------------------
+
+This example connects to a device specified on the command line,
+and plots a complete sweep of the spectrum using NumPy_ and matplotlib_.
+
+.. _NumPy: http://numpy.scipy.org/
+.. _matplotlib: http://matplotlib.org/
+
+.. literalinclude:: ../examples/matplotlib_plot_sweep.py
+
+matplotlib_trigger_plot_fft.py
+------------------------------
 
 This example connects to a device specified on the command line,
 tunes it to a center frequency of 2.450 MHz
 and sets a trigger for a signal with an amplitude of -70 dBm or
 greater between 2.400 MHz and 2.480 MHz.
 
-When the trigger is satisfied the data is captured and rendered
-as a spectrum display using NumPy_ and matplotlib_.
+When the trigger is satisfied the data is captured and rendered.
 
-.. _NumPy: http://numpy.scipy.org/
-.. _matplotlib: http://matplotlib.org/
+.. literalinclude:: ../examples/matplotlib_trigger_plot_fft.png
 
-.. literalinclude:: ../examples/plot_fft.py
-
-.. figure:: plot_fft.png
+.. figure:: matplotlib_trigger_plot_fft.png
    :alt: plot_fft screen shot
 
    Example output of ``plot_fft.py``
