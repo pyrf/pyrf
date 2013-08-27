@@ -64,7 +64,8 @@ class SweepStep(namedtuple('SweepStep', '''
             return
 
         steps = self.steps
-        bin_width = float(device.FULL_BW) / self.decimation / self.points
+        bin_width = float(device.properties.FULL_BW
+            ) / self.decimation / self.points
         start_centered = self.bins_skip - self.points / 2
         start_off = start_centered * bin_width - self.fshift
         stop_centered = start_centered + self.bins_run
