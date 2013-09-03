@@ -68,7 +68,7 @@ def _compute_fft_i_only(i_data):
     power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(power_spectrum))
 
     median_index = len(fft_result) // 2
-    return fft_result[median_index+1:]
+    return power_spectrum[median_index+1:]
 
 def _calibrate_i_q(i_data, q_data):
     samples = len(i_data)
