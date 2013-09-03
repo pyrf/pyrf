@@ -281,6 +281,9 @@ class SweepDevice(object):
             else:
                 self.martian_bytes_discarded += packet_bytes
             return # not our data
+        # WORKAROUND for 5K not always sending reflevel
+        if 'reflevel' not in self._vrt_context:
+            self._vrt_context['reflevel'] = 0
         assert 'reflevel' in self._vrt_context, (
             "missing required context, sweep failed")
 
