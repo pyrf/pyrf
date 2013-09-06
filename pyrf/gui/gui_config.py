@@ -2,6 +2,8 @@ import constants
 import util
 import numpy as np
 from pyrf.config import TriggerSettings
+
+    
 class plot_state(object):
     """
     Class to hold all the GUI's plot states
@@ -13,8 +15,6 @@ class plot_state(object):
         self.dev_set = {'gain' : 'vlow', 'antenna' : 1, 'ifgain' : 0} 
         self.mhold = False
         self.mhold_fft = None
-        
-        
         
         self.trig = False
         self.trig_set = None
@@ -37,6 +37,9 @@ class plot_state(object):
         self.enable_plot = True
         self.freq_sel = 'CENT'
     
+    
+        self.trace_sel = constants.TRACES[0]                 
+        
     def enable_marker(self, layout):
         self.marker = True
         self.marker_sel = True

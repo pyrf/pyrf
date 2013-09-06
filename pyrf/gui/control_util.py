@@ -81,9 +81,48 @@ def _left_arrow_key(layout):
         layout._freq_minus.click()
         layout.plot_state.mhold_fft = None
 
-def _mhold_control(layout):
+def _max_hold(layout):
     """
-    disable/enable max hold curve in the plot
+    disable/enable max hold on a trace
+    """
+    if layout.plot_state.enable_plot:
+        layout.plot_state.mhold = not(layout.plot_state.mhold)
+            
+        if layout.plot_state.mhold:
+            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
+        else:  
+            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
+            layout.plot_state.mhold_fft = None
+            
+def _trace_write(layout):
+    """
+    disable/enable running FFT mode the selected trace
+    """
+    if layout.plot_state.enable_plot:
+        layout.plot_state.mhold = not(layout.plot_state.mhold)
+            
+        if layout.plot_state.mhold:
+            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
+        else:  
+            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
+            layout.plot_state.mhold_fft = None
+            
+def _blank_trace(layout):
+    """
+    disable/enable the selected trace
+    """
+    if layout.plot_state.enable_plot:
+        layout.plot_state.mhold = not(layout.plot_state.mhold)
+            
+        if layout.plot_state.mhold:
+            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
+        else:  
+            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
+            layout.plot_state.mhold_fft = None
+            
+def _store_race(layout):
+    """
+    store the current trace's data
     """
     if layout.plot_state.enable_plot:
         layout.plot_state.mhold = not(layout.plot_state.mhold)
@@ -181,7 +220,6 @@ hotkey_dict = {'1': _select_fstart,
                 'LEFT KEY': _left_arrow_key,
                 'C': _center_plot_view,
                 'K': _delta_control,
-                'H': _mhold_control,
                 'M': _marker_control,
                 'P': _find_peak,
                 'SPACE': _enable_plot,

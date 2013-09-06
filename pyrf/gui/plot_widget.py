@@ -2,6 +2,21 @@ import pyqtgraph as pg
 import numpy as np
 import constants
 
+class trace_state(object):
+    """
+    Class to hold all the GUI's traces
+    """
+    
+    def __init__(self,plot_area, trace_name):
+        self.name = trace_name
+        self.mhold = False
+        self.hold = False
+        self.blank = False
+        self.write = False
+        self.data = None
+        self.freq_range = None
+        self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
+        
 class plot(object):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -36,6 +51,15 @@ class plot(object):
         self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
         self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
         self.grid(True)
+        self.traces = []
+        
+        first_trace = constants.TRACES[0]    
+        for trace_name in constants.TRACES:
+            self.traces.append(trace_state(self,trace_name))
+        
+        # enable first trace on startup
+        self.traces[0].write = True
+        self.window.addItem(self.traces[0].curve) 
     def add_marker(self):
         self.window.addItem(self.marker_point) 
         

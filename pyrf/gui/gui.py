@@ -202,6 +202,9 @@ class MainPanel(QtGui.QWidget):
  
         y = 0
         x = plot_width
+
+        grid.addWidget(self._trace_controls(), y, x, 2, 5)
+        y += 2
         grid.addWidget(self._device_controls(), y, x, 2, 5)
         y += 2
         grid.addWidget(self._freq_controls(), y, x, 4, 5)
@@ -310,7 +313,7 @@ class MainPanel(QtGui.QWidget):
         fstop_hbox.addWidget(QtGui.QLabel('MHz'))
         
         freq_inc_hbox = QtGui.QHBoxLayout()
-        freq_inc_steps, freq_inc_minus, freq_inc_plus = self._freq_incr()
+        freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
         freq_inc_hbox.addWidget(freq_inc_minus)
         freq_inc_hbox.addWidget(freq_inc_steps)
         freq_inc_hbox.addWidget(freq_inc_plus)
@@ -487,6 +490,64 @@ class MainPanel(QtGui.QWidget):
         self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
     
+    def _trace_controls(self):
+        trace_group = QtGui.QGroupBox("")
+        self._trace_group = trace_group
+        
+        trace_controls_layout = QtGui.QVBoxLayout()
+        
+        # first row will contain the tabs
+        first_row = QtGui.QHBoxLayout()
+        
+        # add tabs for each trace
+        trace_tab = QtGui.QTabBar()
+                
+        for trace in constants.TRACES:
+            trace_tab.addTab(trace)
+        
+        self._trace_tab = trace_tab
+        self.control_widgets.append(self._trace_tab)
+        first_row.addWidget(trace_tab)
+        
+        # second row contains the tab attributes
+        second_row = QtGui.QHBoxLayout()
+        max_hold, write, store, blank = self._trace_checkboxes()
+        second_row.addWidget(max_hold)
+        second_row.addWidget(write)
+        second_row.addWidget(blank)
+        second_row.addWidget(store)
+        trace_controls_layout.addLayout(first_row)
+        trace_controls_layout.addLayout(second_row) 
+        trace_group.setLayout(trace_controls_layout)
+        return trace_group
+        
+    def _trace_checkboxes(self):
+        max_hold = QtGui.QRadioButton('Max Hold')
+        max_hold.clicked.connect(lambda: cu._max_hold(self))
+        self._max_hold = max_hold
+        self.control_widgets.append(self._max_hold)
+        
+        write = QtGui.QRadioButton('Write')
+        write.clicked.connect(lambda: cu._trace_write(self))
+        self._write = write
+        self.control_widgets.append(self._write)
+        
+        blank = QtGui.QRadioButton('Blank')
+        blank.clicked.connect(lambda: cu._blank_trace(self))
+        self._blank = blank
+        self.control_widgets.append(self._blank)
+        
+        store = QtGui.QCheckBox('Store')
+        store.clicked.connect(lambda: cu._store_trace(self))
+        self._store = store
+        self.control_widgets.append(self._store)
+        
+
+        return max_hold, write, store, blank
+        
+        
+        
+        
     def _plot_controls(self):
 
         plot_group = QtGui.QGroupBox("Plot Control")
@@ -500,7 +561,6 @@ class MainPanel(QtGui.QWidget):
         
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._peak_control())
-        second_row.addWidget(self._mhold_control())
         
         third_row = QtGui.QHBoxLayout()
         third_row.addWidget(self._pause_control())
@@ -536,15 +596,7 @@ class MainPanel(QtGui.QWidget):
         self._peak = peak
         self.control_widgets.append(self._peak)
         return peak
-        
-    def _mhold_control(self):
-        mhold = QtGui.QPushButton('Max Hold')
-        mhold.setToolTip("[H]\nTurn the Max Hold on/off") 
-        mhold.clicked.connect(lambda: cu._mhold_control(self))
-        self._mhold = mhold
-        self.control_widgets.append(self._mhold)
-        return mhold
-        
+                
     def _center_control(self):
         center = QtGui.QPushButton('Recenter')
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
@@ -590,18 +642,13 @@ class MainPanel(QtGui.QWidget):
         
     def update_fft(self):
 
-        if self.plot_state.mhold:
-            if (self.plot_state.mhold_fft == None or len(self.plot_state.mhold_fft) != len(self.pow_data)):
-                self.plot_state.mhold_fft = self.pow_data
-            
-            self.plot_state.mhold_fft = np.maximum(self.plot_state.mhold_fft,self.pow_data)
-            self._plot.fft_curve.setData(x = self.plot_state.freq_range,
-                                            y = self.plot_state.mhold_fft, 
-                                            pen = constants.ORANGE_NUM)
-        else:
-            self._plot.fft_curve.setData(x = self.plot_state.freq_range, 
-                                            y = self.pow_data, 
-                                            pen = constants.TEAL_NUM)
+        for trace in self._plot.traces:
+            if trace.write:
+                trace.data = self.pow_data
+                trace.curve.setData(x = self.plot_state.freq_range, 
+                                                y = (self.pow_data), 
+                                                pen = constants.TEAL_NUM)
+
 
     def update_trig(self):
             freq_region = self._plot.freqtrig_lines.getRegion()
