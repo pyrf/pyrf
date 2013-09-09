@@ -2,20 +2,39 @@ import pyqtgraph as pg
 import numpy as np
 import constants
 
-class trace_state(object):
+class trace(object):
     """
-    Class to hold all the GUI's traces
+    Class to represent a trace in the plot
     """
     
-    def __init__(self,plot_area, trace_name):
+    def __init__(self,plot_area, trace_name, trace_color):
         self.name = trace_name
         self.mhold = False
-        self.hold = False
         self.blank = False
         self.write = False
+        self.store = False
         self.data = None
-        self.freq_range = None
+        self.color = trace_color
         self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
+        
+    def update_curve(self,xdata, ydata):
+        
+        if self.store or self.blank:
+            return
+            
+        if self.mhold:
+            if (self.data == None or len(self.data) != len(ydata)):
+                self.data = ydata
+            
+            self.data = np.maximum(self.data,ydata)
+            self.curve.setData(x = xdata, 
+                                y = self.data, 
+                                pen = self.color)
+        elif self.write:
+            self.data = ydata
+            self.curve.setData(x = xdata, 
+                                y = ydata, 
+                                pen = self.color)
         
 class plot(object):
     """
@@ -54,11 +73,13 @@ class plot(object):
         self.traces = []
         
         first_trace = constants.TRACES[0]    
-        for trace_name in constants.TRACES:
-            self.traces.append(trace_state(self,trace_name))
+        for trace_name, trace_color in zip(constants.TRACES, constants.TRACE_COLORS):
+            self.traces.append(trace(self,trace_name,trace_color))
         
         # enable first trace on startup
         self.traces[0].write = True
+        self.traces[1].blank = True
+        self.traces[2].blank = True
         self.window.addItem(self.traces[0].curve) 
     def add_marker(self):
         self.window.addItem(self.marker_point) 

@@ -489,7 +489,7 @@ class MainPanel(QtGui.QWidget):
         self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
         self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
-    
+        self._center_bt.click()
     def _trace_controls(self):
         trace_group = QtGui.QGroupBox("")
         self._trace_group = trace_group
@@ -501,11 +501,20 @@ class MainPanel(QtGui.QWidget):
         
         # add tabs for each trace
         trace_tab = QtGui.QTabBar()
-                
-        for trace in constants.TRACES:
+        count = 0
+        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
             trace_tab.addTab(trace)
+            color = QtGui.QColor()
+            color.setRgb(r,g,b)
+            pixmap = QtGui.QPixmap(10,10)
+            pixmap.fill(color)
+            icon = QtGui.QIcon(pixmap)
+            trace_tab.setTabIcon(count,icon)
+            count += 1
         
         self._trace_tab = trace_tab
+        trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
+            
         self.control_widgets.append(self._trace_tab)
         first_row.addWidget(trace_tab)
         
@@ -531,7 +540,7 @@ class MainPanel(QtGui.QWidget):
         write.clicked.connect(lambda: cu._trace_write(self))
         self._write = write
         self.control_widgets.append(self._write)
-        
+        self._write.click()
         blank = QtGui.QRadioButton('Blank')
         blank.clicked.connect(lambda: cu._blank_trace(self))
         self._blank = blank
@@ -544,9 +553,7 @@ class MainPanel(QtGui.QWidget):
         
 
         return max_hold, write, store, blank
-        
-        
-        
+
         
     def _plot_controls(self):
 
@@ -563,7 +570,6 @@ class MainPanel(QtGui.QWidget):
         second_row.addWidget(self._peak_control())
         
         third_row = QtGui.QHBoxLayout()
-        third_row.addWidget(self._pause_control())
         third_row.addWidget(self._center_control())
         
         plot_controls_layout.addLayout(first_row)
@@ -605,13 +611,6 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._center_bt)
         return center
         
-    def _pause_control(self):
-        pause = QtGui.QPushButton('Pause')
-        pause.setToolTip("[Space Bar]\n pause the plot window") 
-        pause.clicked.connect(lambda: cu._enable_plot(self))
-        self._pause = pause
-        self.control_widgets.append(self._pause)
-        return pause
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
@@ -634,20 +633,14 @@ class MainPanel(QtGui.QWidget):
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop , 
                                               len(self.pow_data))
-
-        self.update_fft()
+        self.update_trace()
         self.update_marker()
         self.update_delta()
         self.update_diff()
         
-    def update_fft(self):
-
+    def update_trace(self):
         for trace in self._plot.traces:
-            if trace.write:
-                trace.data = self.pow_data
-                trace.curve.setData(x = self.plot_state.freq_range, 
-                                                y = (self.pow_data), 
-                                                pen = constants.TEAL_NUM)
+            trace.update_curve(self.plot_state.freq_range, self.pow_data)
 
 
     def update_trig(self):

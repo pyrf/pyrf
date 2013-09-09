@@ -1,9 +1,11 @@
-from pyrf.config import TriggerSettings
+from PySide import QtCore
 import util
 import pyqtgraph as pg
+from pyrf.config import TriggerSettings
 import gui_config as gui_state
 import constants
 from pyrf.util import read_data_and_context
+
 def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
@@ -80,58 +82,60 @@ def _left_arrow_key(layout):
     if layout.plot_state.enable_plot:
         layout._freq_minus.click()
         layout.plot_state.mhold_fft = None
-
+        
+def _trace_tab_change(layout):
+    """
+    change the selected trace
+    """
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    layout.plot_state.trace_sel = trace.name
+    if trace.write:
+        layout._write.click()
+    elif trace.mhold:
+        layout._max_hold.click()
+    elif trace.blank:
+        layout._blank.click()
+    
+    if layout._plot.traces[layout._trace_tab.currentIndex()].store:
+        state =  QtCore.Qt.CheckState.Checked
+    else:
+        state =  QtCore.Qt.CheckState.Unchecked
+    layout._store.setCheckState(state) 
+    
 def _max_hold(layout):
     """
     disable/enable max hold on a trace
     """
-    if layout.plot_state.enable_plot:
-        layout.plot_state.mhold = not(layout.plot_state.mhold)
-            
-        if layout.plot_state.mhold:
-            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
-        else:  
-            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
-            layout.plot_state.mhold_fft = None
+    layout._plot.traces[layout._trace_tab.currentIndex()].write = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].mhold = True
+    layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
             
 def _trace_write(layout):
     """
     disable/enable running FFT mode the selected trace
-    """
-    if layout.plot_state.enable_plot:
-        layout.plot_state.mhold = not(layout.plot_state.mhold)
-            
-        if layout.plot_state.mhold:
-            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
-        else:  
-            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
-            layout.plot_state.mhold_fft = None
-            
+    """        
+    layout._plot.traces[layout._trace_tab.currentIndex()].write = True
+    layout._plot.traces[layout._trace_tab.currentIndex()].mhold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
+
 def _blank_trace(layout):
     """
     disable/enable the selected trace
     """
-    if layout.plot_state.enable_plot:
-        layout.plot_state.mhold = not(layout.plot_state.mhold)
+    layout._plot.traces[layout._trace_tab.currentIndex()].write = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].mhold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].blank = True
+    layout._plot.traces[layout._trace_tab.currentIndex()].curve.clear()
+    layout._plot.traces[layout._trace_tab.currentIndex()].data = None
             
-        if layout.plot_state.mhold:
-            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
-        else:  
-            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
-            layout.plot_state.mhold_fft = None
-            
-def _store_race(layout):
+def _store_trace(layout):
     """
     store the current trace's data
     """
-    if layout.plot_state.enable_plot:
-        layout.plot_state.mhold = not(layout.plot_state.mhold)
-            
-        if layout.plot_state.mhold:
-            util.change_item_color(layout._mhold,  constants.ORANGE, constants.WHITE)           
-        else:  
-            util.change_item_color(layout._mhold,  constants.NORMAL_COLOR, constants.BLACK)
-            layout.plot_state.mhold_fft = None
+    if layout._store.checkState() is QtCore.Qt.CheckState.Checked:
+        layout._plot.traces[layout._trace_tab.currentIndex()].store = True
+    else:
+        layout._plot.traces[layout._trace_tab.currentIndex()].store = False
         
 def _marker_control(layout):
     """
@@ -186,17 +190,6 @@ def _find_peak(layout):
         layout.update_delta()
         layout.plot_state.delta_ind = peak
     layout.update_diff()
-def _enable_plot(layout):
-    """
-    pause/unpause the plot
-    """
-    layout.plot_state.enable_plot = not(layout.plot_state.enable_plot)
-    if not layout.plot_state.enable_plot:
-        util.change_item_color(layout._pause,  constants.ORANGE, constants.WHITE)
-        
-    else:
-        util.change_item_color(layout._pause,  constants.NORMAL_COLOR, constants.BLACK)
-        layout.read_sweep()
 
 def _trigger_control(layout):
     """
@@ -222,7 +215,6 @@ hotkey_dict = {'1': _select_fstart,
                 'K': _delta_control,
                 'M': _marker_control,
                 'P': _find_peak,
-                'SPACE': _enable_plot,
                 'T': _trigger_control
                 } 
                 
