@@ -615,7 +615,23 @@ class WSA(object):
         :returns: 'RUNNING' or 'STOPPED'
         """
         yield self.scpiget(":TRACE:STREAM:STATUS?")
-    
+
+    @sync_async
+    def attenuator(self, enable=None):
+        """
+        This command enables, disables or queries the WSA's RFE 20
+        dB attenuation.
+
+        :param enable: True or False to set; None to query
+        :returns: the current attenuator state
+        """
+        if enable is None:
+            enable = yield self.scpiget(":INPUT:ATTENUATOR?")
+            enable = bool(int(enable))
+        else:
+            self.scpiset(":INPUT:FILTER:ATTENUATOR %d" % int(enable))
+        yield enable
+
     def apply_device_settings(self, settings):
         """
         This command takes a dict of device settings, and applies them to the 
