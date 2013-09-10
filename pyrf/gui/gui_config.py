@@ -13,17 +13,13 @@ class plot_state(object):
         
         self.grid = False
         self.dev_set = {'gain' : 'vlow', 'antenna' : 1, 'ifgain' : 0} 
-        self.mhold = False
-        self.mhold_fft = None
         
         self.trig = False
         self.trig_set = None
         self.marker = False
-        self.marker_sel = False
         self.marker_ind = None
         
         self.delta = False
-        self.delta_sel = False
         self.delta_ind = None
         self.peak = False
         
@@ -35,10 +31,7 @@ class plot_state(object):
         self.bin_size = constants.INIT_BIN_SIZE
         self.rbw = self.bandwidth / self.bin_size
         self.enable_plot = True
-        self.freq_sel = 'CENT'
-    
-    
-        self.trace_sel = constants.TRACES[0]                 
+        self.freq_sel = 'CENT'              
         
     def enable_marker(self, layout):
         self.marker = True

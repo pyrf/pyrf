@@ -127,7 +127,11 @@ def _blank_trace(layout):
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = True
     layout._plot.traces[layout._trace_tab.currentIndex()].curve.clear()
     layout._plot.traces[layout._trace_tab.currentIndex()].data = None
-            
+    if layout._plot.traces[layout._marker_trace.currentIndex()] == layout._plot.traces[layout._trace_tab.currentIndex()]:
+       layout._marker_check.click() 
+    if layout._plot.traces[layout._delta_trace.currentIndex()] == layout._plot.traces[layout._trace_tab.currentIndex()]:
+       layout._delta_check.click() 
+       
 def _store_trace(layout):
     """
     store the current trace's data
@@ -141,35 +145,29 @@ def _marker_control(layout):
     """
     disable/enable marker
     """
-    # if marker is on and selected, turn off
-    if layout.plot_state.marker_sel:
-        layout.plot_state.disable_marker(layout)
-
-            
-    # if marker is on and not selected, select
-    elif not layout.plot_state.marker_sel and layout.plot_state.marker: 
-        layout.plot_state.enable_marker(layout)
-
-    # if marker is off, turn on and select
-    elif not layout.plot_state.marker:
-        layout.plot_state.enable_marker(layout)
-
+    if layout._marker_check.checkState() is QtCore.Qt.CheckState.Checked:
+        layout._marker_trace.setEnabled(True)
+        layout.plot_state.marker = True
+        layout._plot.add_marker()
+    else:
+        layout._marker_trace.setEnabled(False)  
+        layout.plot_state.marker = False
+        layout._plot.remove_marker()
+        layout._marker_lab.setText('')
 def _delta_control(layout):
     """
     disable/enable delta (marker 2)
     """
 
-    # if delta is on and selected, turn off
-    if layout.plot_state.delta_sel:
-        layout.plot_state.disable_delta(layout)
-    
-    # if delta is on and not selected, select
-    elif not layout.plot_state.delta_sel and layout.plot_state.delta: 
-        layout.plot_state.enable_delta(layout)
-
-    # if delta is off, turn on and select
-    elif not layout.plot_state.delta:
-        layout.plot_state.enable_delta(layout)   
+    if layout._delta_check.checkState() is QtCore.Qt.CheckState.Checked:
+        layout._delta_trace.setEnabled(True)
+        layout.plot_state.delta = True
+        layout._plot.add_delta()
+    else:
+        layout._delta_trace.setEnabled(False)  
+        layout.plot_state.delta = False
+        layout._plot.remove_delta()
+        layout._delta_lab.setText('')
 
 def _find_peak(layout):
     """

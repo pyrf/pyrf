@@ -174,16 +174,15 @@ class MainPanel(QtGui.QWidget):
                     window_bw =  (window_freq[1] - window_freq[0])
                     click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
 
-                    if self.plot_state.marker_sel:
-                        self._marker.setDown(True)
-                        self.plot_state.marker_ind  = find_nearest_index(click_freq, self.plot_state.freq_range)
+                    if self.plot_state.marker:
+                        self.plot_state.marker_ind = click_freq
                         self.update_marker()
                     
-                    elif self.plot_state.delta_sel:
-                        self._delta.setDown(True)
-                        self.plot_state.delta_ind = find_nearest_index(click_freq, self.plot_state.freq_range)
+                    elif self.plot_state.delta:
+                        print click_freq
+                        self.plot_state.delta_ind = click_freq
                         self.update_delta()
-                    self.update_diff()
+                    # self.update_diff()
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
@@ -205,16 +204,14 @@ class MainPanel(QtGui.QWidget):
 
         grid.addWidget(self._trace_controls(), y, x, 2, 5)
         y += 2
+        grid.addWidget(self._plot_controls(), y, x, 4, 5)
+        y += 5
         grid.addWidget(self._device_controls(), y, x, 2, 5)
         y += 2
         grid.addWidget(self._freq_controls(), y, x, 4, 5)
-        y += 4
-        grid.addWidget(self._plot_controls(), y, x, 4, 5)
-
+        
         self.update_freq()
         self.setLayout(grid)
-
-        
     
     def _device_controls(self):
         dev_group = QtGui.QGroupBox("Device Control")
@@ -491,7 +488,7 @@ class MainPanel(QtGui.QWidget):
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
         self._center_bt.click()
     def _trace_controls(self):
-        trace_group = QtGui.QGroupBox("")
+        trace_group = QtGui.QGroupBox("Traces")
         self._trace_group = trace_group
         
         trace_controls_layout = QtGui.QVBoxLayout()
@@ -563,37 +560,68 @@ class MainPanel(QtGui.QWidget):
         plot_controls_layout = QtGui.QVBoxLayout()
         
         first_row = QtGui.QHBoxLayout()
-        first_row.addWidget(self._marker_control())
-        first_row.addWidget(self._delta_control())
+        
+        marker_check, marker_trace = self._marker_control()
+        first_row.addWidget(marker_trace)
+        first_row.addWidget(marker_check)
+        
+        delta_check,delta_trace = self._delta_control()
+        first_row.addWidget(delta_trace)
+        first_row.addWidget(delta_check)
         
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._peak_control())
-        
-        third_row = QtGui.QHBoxLayout()
-        third_row.addWidget(self._center_control())
+        second_row.addWidget(self._center_control())
         
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
-        plot_controls_layout.addLayout(third_row)
         
         plot_group.setLayout(plot_controls_layout)
         
         return plot_group
     def _marker_control(self):
-        marker = QtGui.QCheckBox('Marker 1')
-        marker.setToolTip("[M]\nTurn Marker 1 on/off") 
-        marker.clicked.connect(lambda: cu._marker_control(self))
-        self._marker = marker
-        self.control_widgets.append(self._marker)
-        return marker
+        marker_trace = QtGui.QComboBox()
+        marker_trace.setEnabled(False)
+        marker_trace.setMaximumWidth(50)
+        count = 0
+        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
+            marker_trace.addItem(trace)
+            color = QtGui.QColor()
+            color.setRgb(r,g,b)
+            pixmap = QtGui.QPixmap(10,10)
+            pixmap.fill(color)
+            icon = QtGui.QIcon(pixmap)
+            marker_trace.setItemIcon(count,icon)
+            count += 1
+            
+        self._marker_trace = marker_trace
+        marker_check = QtGui.QCheckBox('Marker 1')
+        marker_check.clicked.connect(lambda: cu._marker_control(self))
+        self._marker_check = marker_check
+        self.control_widgets.append(self._marker_check)
+        return marker_check,marker_trace
         
     def _delta_control(self):
-        delta = QtGui.QCheckBox('Marker 2')
-        delta.setToolTip("[K]\nTurn Marker 2 on/off") 
-        delta.clicked.connect(lambda: cu._delta_control(self))
-        self._delta = delta
-        self.control_widgets.append(self._delta)
-        return delta
+        delta_trace = QtGui.QComboBox()
+        delta_trace.setEnabled(False)
+        delta_trace.setMaximumWidth(50)
+        count = 0
+        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
+            delta_trace.addItem(trace)
+            color = QtGui.QColor()
+            color.setRgb(r,g,b)
+            pixmap = QtGui.QPixmap(10,10)
+            pixmap.fill(color)
+            icon = QtGui.QIcon(pixmap)
+            delta_trace.setItemIcon(count,icon)
+            count += 1
+            
+        self._delta_trace = delta_trace
+        delta_check = QtGui.QCheckBox('Marker 2')
+        delta_check.clicked.connect(lambda: cu._delta_control(self))
+        self._delta_check = delta_check
+        self.control_widgets.append(self._delta_check)
+        return delta_check,delta_trace
     
     def _peak_control(self):
         peak = QtGui.QPushButton('Peak')
@@ -636,7 +664,7 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_delta()
-        self.update_diff()
+        # self.update_diff()
         
     def update_trace(self):
         for trace in self._plot.traces:
@@ -651,79 +679,84 @@ class MainPanel(QtGui.QWidget):
                                                     self._plot.amptrig_line.value())
             if self.plot_state.trig_set:
                 self.dut.trigger(self.plot_state.trig_set)
+    
     def update_marker(self):
-        if self.plot_state.marker:
-            if self.plot_state.mhold:
-                pow_ = self.plot_state.mhold_fft
-                self._marker_lab.setStyleSheet('color: %s;' % constants.ORANGE)
-            else:
-                pow_ = self.pow_data
-                self._marker_lab.setStyleSheet('color: %s;' % constants.TEAL)
-            if self.plot_state.marker_ind  == None:
-                self.plot_state.marker_ind  = len(pow_) / 2 
 
-            elif self.plot_state.marker_ind  < 0:
-                self.plot_state.marker_ind  = 0
-                
-            elif self.plot_state.marker_ind  >= len(pow_):
-                self.plot_state.marker_ind  = len(pow_) - 1
-           
-            marker_freq = [self.plot_state.freq_range[self.plot_state.marker_ind ]]
-            markerpause_ffter = [pow_[self.plot_state.marker_ind]]
-            marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (marker_freq[0]/1e6, markerpause_ffter[0])
-            self._marker_lab.setText(marker_text)
+        if self.plot_state.marker:
             
-            self._plot.marker_point.clear()
-            self._plot.marker_point.addPoints(x = marker_freq, 
-                                                    y = markerpause_ffter, 
-                                                    symbol = '+', 
-                                                    size = 20, pen = 'w', 
-                                                    brush = 'w')
+            trace = self._plot.traces[self._marker_trace.currentIndex()]
+            if not trace.blank:
+                pow_ = trace.data
+                self._marker_lab.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
+                                                                           trace.color[1],
+                                                          trace.color[2]))
+                if self.plot_state.marker_ind  == None:
+                    xpos = len(pow_) / 2 
+                else:
+                    xpos = find_nearest_index(self.plot_state.marker_ind, trace.freq_range)
+                    if xpos < 0:
+                        xpos  = 0
+                        
+                    elif xpos >= len(pow_):
+                        xpos  = len(pow_) - 1
+ 
+                marker_freq = [trace.freq_range[xpos]]
+                markerpause_ffter = [pow_[xpos]]
+                marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (marker_freq[0]/1e6, markerpause_ffter[0])
+                self._marker_lab.setText(marker_text)
+                
+                self._plot.marker_point.clear()
+                self._plot.marker_point.addPoints(x = marker_freq, 
+                                                        y = markerpause_ffter, 
+                                                        symbol = '+', 
+                                                        size = 20, pen = 'w', 
+                                                        brush = 'w')
 
     def update_delta(self):
         if self.plot_state.delta:
-            if self.plot_state.mhold:
-                pow_ = self.plot_state.mhold_fft
-                self._delta_lab.setStyleSheet('color: %s;' % constants.ORANGE)
-            else:
-                pow_ = self.pow_data
-                self._delta_lab.setStyleSheet('color: %s;' % constants.TEAL)           
-            
-            if self.plot_state.delta_ind == None:
-                self.plot_state.delta_ind = (len(pow_) / 2)
-            elif self.plot_state.delta_ind < 0:
-                self.plot_state.delta_ind = 0
+            trace = self._plot.traces[self._delta_trace.currentIndex()]
+            if not trace.blank:
+                pow_ = trace.data
+                self._delta_lab.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
+                                                                           trace.color[1],
+                                                          trace.color[2]))
+                if self.plot_state.delta_ind  == None:
+                    xpos = len(pow_) / 2 
+                else:
+                    xpos = find_nearest_index(self.plot_state.delta_ind, trace.freq_range)
+                    if xpos < 0:
+                        xpos  = 0
+                        
+                    elif xpos >= len(pow_):
+                        xpos  = len(pow_) - 1
+ 
+                delta_freq = [trace.freq_range[xpos]]
+                deltapause_ffter = [pow_[xpos]]
+                delta_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (delta_freq[0]/1e6, deltapause_ffter[0])
+                self._delta_lab.setText(delta_text)
                 
-            elif self.plot_state.delta_ind >= len(pow_):
-                self.plot_state.delta_ind = len(pow_) - 1
-            
-            delta_freq = [self.plot_state.freq_range[self.plot_state.delta_ind]]
-            delta_power = [pow_[self.plot_state.delta_ind]]
-            delta_text = 'Frequency: %0.1f MHz \n Power %0.2f dBm' % (delta_freq[0]/1e6, delta_power[0])
-            self._delta_lab.setText(delta_text)
-           
-            self._plot.delta_point.clear()
-            self._plot.delta_point.addPoints(x =delta_freq, 
-                                                    y = delta_power, 
-                                                    symbol = '+', 
-                                                    size = 20, pen = 'w', 
-                                                    brush = 'w')
+                self._plot.delta_point.clear()
+                self._plot.delta_point.addPoints(x = delta_freq, 
+                                                        y = deltapause_ffter, 
+                                                        symbol = '+', 
+                                                        size = 20, pen = 'w', 
+                                                        brush = 'w')
 
-    def update_diff(self):
-        if self.plot_state.mhold:
-            pow_ = self.plot_state.mhold_fft
-            self._diff_lab.setStyleSheet('color: %s;' % constants.ORANGE)
-        else:
-            pow_ = self.pow_data
-            self._diff_lab.setStyleSheet('color: %s;' % constants.TEAL)  
+    # def update_diff(self):
+        # if self.plot_state.mhold:
+            # pow_ = self.plot_state.mhold_fft
+            # self._diff_lab.setStyleSheet('color: %s;' % constants.ORANGE)
+        # else:
+            # pow_ = self.pow_data
+            # self._diff_lab.setStyleSheet('color: %s;' % constants.TEAL)  
             
-        if self.plot_state.marker and self.plot_state.delta:
-            freq_diff = np.abs((self.plot_state.freq_range[self.plot_state.delta_ind]/1e6) - (self.plot_state.freq_range[self.plot_state.marker_ind ]/1e6))
-            power_diff = np.abs((pow_[self.plot_state.delta_ind]) - (pow_[self.plot_state.marker_ind ]))
-            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
-            self._diff_lab.setText(delta_text)
-        else:
-            self._diff_lab.setText('')
+        # if self.plot_state.marker and self.plot_state.delta:
+            # freq_diff = np.abs((self.plot_state.freq_range[self.plot_state.delta_ind]/1e6) - (self.plot_state.freq_range[self.plot_state.marker_ind ]/1e6))
+            # power_diff = np.abs((pow_[self.plot_state.delta_ind]) - (pow_[self.plot_state.marker_ind ]))
+            # delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
+            # self._diff_lab.setText(delta_text)
+        # else:
+            # self._diff_lab.setText('')
 
     def enable_controls(self):
         for item in self.control_widgets:

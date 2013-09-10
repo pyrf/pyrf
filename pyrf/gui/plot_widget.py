@@ -14,6 +14,7 @@ class trace(object):
         self.write = False
         self.store = False
         self.data = None
+        self.freq_range = None
         self.color = trace_color
         self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
         
@@ -25,13 +26,14 @@ class trace(object):
         if self.mhold:
             if (self.data == None or len(self.data) != len(ydata)):
                 self.data = ydata
-            
+            self.freq_range = xdata
             self.data = np.maximum(self.data,ydata)
             self.curve.setData(x = xdata, 
                                 y = self.data, 
                                 pen = self.color)
         elif self.write:
             self.data = ydata
+            self.freq_range = xdata
             self.curve.setData(x = xdata, 
                                 y = ydata, 
                                 pen = self.color)
