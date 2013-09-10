@@ -6,6 +6,8 @@ from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 from pyrf.units import M
 
 class WSA4000Properties(object):
+    model = 'WSA4000'
+
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
@@ -23,6 +25,8 @@ class WSA4000Properties(object):
 
 
 class WSA5000Properties(object):
+    model = 'WSA5000'
+
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
     CAPTURE_FREQ_RANGES = [(0, 50*M, I_ONLY), (100*M, 20000*M, IQ)]
