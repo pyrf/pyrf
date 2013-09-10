@@ -646,28 +646,21 @@ class WSA(object):
 
         :param settings: dict containing settings such as gain,antenna,etc
         """
-        
-        for s in settings:
-            if s == 'freq':
-                self.freq(settings[s])
-            if s == 'antenna':
-                self.antenna(settings[s])
-            elif s == 'gain':
-                self.gain(settings[s])
-            elif s == 'ifgain':
-                self.ifgain(settings[s])
-            elif s == 'fshift':
-                self.fshift(settings[s])
-            elif s == 'decimation':
-                self.decimation(settings[s])
-            elif s == 'spp':
-                self.spp(settings[s])
-            elif s == 'ppb':
-                self.ppb(settings[s])
-            elif s == 'trigger':
-                self.trigger(settings[s])
-            elif s == 'attenuator':
-                self.attenuator(settings[s])
+        device_setting = {
+            'freq': self.freq,
+            'antenna': self.antenna,
+            'gain': self.gain,
+            'ifgain': self.ifgain,
+            'fshift': self.fshift,
+            'decimation': self.decimation,
+            'spp': self.spp,
+            'ppb': self.ppb,
+            'trigger': self.trigger,
+            'attenuator': self.attenuator,
+            }
+
+        for k, v in settings.iteritems():
+            device_setting[k](v)
 
 
 # for backwards compatibility
