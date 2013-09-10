@@ -46,6 +46,7 @@ class SweepEntry(object):
     :param level_fstart: level trigger starting frequency in Hz
     :param level_fstop: level trigger ending frequency in Hz
     :param level_amplitude: level trigger minimum in dBm
+    :param attenuator: enable/disable attenuator
     """
 
     def __init__(self,
@@ -64,7 +65,8 @@ class SweepEntry(object):
             dwell_us=0,
             level_fstart= 50000000,
             level_fstop=10000000000,
-            level_amplitude=-100):
+            level_amplitude=-100,
+            attenuator=True):
         self.fstart = fstart
         self.fstop = fstop
         self.fstep = fstep
@@ -81,6 +83,7 @@ class SweepEntry(object):
         self.level_fstart = level_fstart
         self.level_fstop = level_fstop
         self.level_amplitude = level_amplitude
+        self.attenuator = attenuator
 
 
     def __str__(self):
@@ -98,6 +101,7 @@ class SweepEntry(object):
             + "\tdwell_us: %s\n" % self.dwell_us
             + "\ttrigtype: %s\n" % self.trigtype
             + "\tlevel:fstart/fstop/famplitude: %d / %d / %d\n" % (self.level_fstart, self.level_fstop, self.level_amplitude)
+            + "\tattenuator: %s\n" % self.attenuator
             + ")")
 
 
