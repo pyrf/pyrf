@@ -493,6 +493,7 @@ class WSA(object):
             (entry.dwell_s, entry.dwell_us))
         self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
         self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
+        print int(entry.attenuator)
         self.scpiset(":sweep:entry:attenuator %d" % int(entry.attenuator))
         self.scpiset(":sweep:entry:save")
 
