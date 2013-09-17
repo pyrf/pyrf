@@ -264,6 +264,58 @@ class IQData(object):
         return a
 
 
+class DataArray(object):
+    """
+    Data Packet values as a lazy array read from *binary_data*.
+
+    :param bytes_per_sample: 1 for PSD8 data, 2 for I14 data or
+                             4 for I24 data
+    """
+    def __init__(self, binary_data, bytes_per_sample):
+        self._strdata = binary_data
+        self._bytes_per_sample = bytes_per_sample
+        self.data = None
+
+    def _update_data(self):
+        self._data = array.array({
+            1: 'b',
+            2: 'h',
+            4: 'l',}[self._bytes_per_sample])
+        self._data.fromstring(self._strdata)
+        if self._bytes_per_sample > 1 and sys.byteorder == 'little':
+            self._data.byteswap()
+
+    def __len__(self):
+        return len(self._strdata) / self._bytes_per_sample
+
+    def __getitem__(self, n):
+        if not self._data:
+            self._update_data()
+        return self._data[n]
+
+    def __iter__(self):
+        if not self._data:
+            self._update_data()
+        return iter(self._data)
+
+    def __reversed__(self):
+        if not self._data:
+            self._update_data()
+        return reversed(self._data)
+
+    def numpy_array(self):
+        """
+        return a numpy array for this data
+        """
+        a = numpy.frombuffer(self._strdata, dtype={
+            1: numpy.int8,
+            2: numpy.int16,
+            4: numpy.int32,}[self._bytes_per_sample])
+        if self._bytes_per_sample > 1:
+            a = a.newbyteorder('>')
+        return a
+
+
 class DataPacket(object):
     """
     A Data Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`
@@ -282,7 +334,14 @@ class DataPacket(object):
         self.tsf = tsf
 
         # interpret data
-        self.data = IQData(payload)
+        if self.stream_id == VRT_IFDATA_I14:
+            self.data = DataArray(payload, 2)
+        elif self.stream_id == VRT_IFDATA_PSD8:
+            self.data = DataArray(payload, 1)
+        elif self.stream_id == VRT_IFDATA_PSD24:
+            self.data = DataArray(payload, 4)
+        else:
+            self.data = IQData(payload)
 
 
     def is_data_packet(self):
