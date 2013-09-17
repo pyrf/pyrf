@@ -76,15 +76,16 @@ class ContextPacket(object):
         self.ptype = packet_type
         self.count = count
         self.size = size
-        (self.streamId, self.tsi, self.tsf,indicatorsField,) = struct.unpack(">IIQI", tmpstr[0:20])
+        (self.stream_id, self.tsi, self.tsf,indicatorsField,
+            ) = struct.unpack(">IIQI", tmpstr[0:20])
         self.fields = {}
 
         # now read all the indicators
-        if self.streamId == VRTRECEIVER:
+        if self.stream_id == VRTRECEIVER:
             self._parseReceiverContext(indicatorsField, tmpstr[20:])
-        elif self.streamId == VRTDIGITIZER:
+        elif self.stream_id == VRTDIGITIZER:
             self._parseDigitizerContext(indicatorsField, tmpstr[20:])
-        elif self.streamId == VRTCUSTOM:
+        elif self.stream_id == VRTCUSTOM:
             self._parseCustomContext(indicatorsField, tmpstr[20:])
 
 
@@ -191,7 +192,7 @@ class ContextPacket(object):
 
     def __str__(self):
         return ("Context #%02d [%d.%012d, 0x%08x " % (
-            self.count, self.tsi, self.tsf, self.streamId)
+            self.count, self.tsi, self.tsf, self.stream_id)
             ) + str(self.fields) + "]"
 
 
@@ -272,11 +273,11 @@ class DataPacket(object):
        a :class:`pyrf.vrt.IQData` object containing the packet data
     """
 
-    def __init__(self, count, size, streamId, tsi, tsf, payload):
+    def __init__(self, count, size, stream_id, tsi, tsf, payload):
         self.ptype = 1
         self.count = count
         self.size = size
-        self.streamId = streamId
+        self.stream_id = stream_id
         self.tsi = tsi
         self.tsf = tsf
 
