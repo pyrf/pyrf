@@ -24,4 +24,4 @@ def get_broadcast_addresses():
             out.append('.'.join(
                 str(int(a) | (int(m) ^ 255)) for a, m in zip(
                     addr.split('.'), mask.split('.'))))
-            print out
+    return out

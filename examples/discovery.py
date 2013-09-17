@@ -2,6 +2,7 @@
 import socket
 import struct
 import select
+import platform
 
 SERVERPORT = 18331
 DISCOVERY_RESPONSE_FORMAT = '>LL20sLL'
@@ -11,7 +12,14 @@ cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 cs.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 cs.setblocking(0)
 
-cs.sendto('Hello WSA', ('<broadcast>', SERVERPORT))
+if platform.system() == 'Windows':
+    import _windows_networks
+    destinations = _windows_networks.get_broadcast_addresses()
+else:
+    destinations = ['<broadcast>']
+
+for d in destinations:
+    cs.sendto('Hello WSA', (d, SERVERPORT))
 
 while True:
     ready, _, _ = select.select([cs], [], [], WAIT_TIME)
