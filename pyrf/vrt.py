@@ -280,7 +280,8 @@ class DataArray(object):
         self._data = array.array({
             1: 'b',
             2: 'h',
-            4: 'l',}[self._bytes_per_sample])
+            4: 'l' if array.array('l').itemsize == 4 else 'i',
+            }[self._bytes_per_sample])
         self._data.fromstring(self._strdata)
         if self._bytes_per_sample > 1 and sys.byteorder == 'little':
             self._data.byteswap()
