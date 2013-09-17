@@ -274,7 +274,7 @@ class DataArray(object):
     def __init__(self, binary_data, bytes_per_sample):
         self._strdata = binary_data
         self._bytes_per_sample = bytes_per_sample
-        self.data = None
+        self._data = None
 
     def _update_data(self):
         self._data = array.array({
@@ -307,6 +307,7 @@ class DataArray(object):
         """
         return a numpy array for this data
         """
+        import numpy
         a = numpy.frombuffer(self._strdata, dtype={
             1: numpy.int8,
             2: numpy.int16,
@@ -338,7 +339,7 @@ class DataPacket(object):
             self.data = DataArray(payload, 2)
         elif self.stream_id == VRT_IFDATA_PSD8:
             self.data = DataArray(payload, 1)
-        elif self.stream_id == VRT_IFDATA_PSD24:
+        elif self.stream_id == VRT_IFDATA_I24:
             self.data = DataArray(payload, 4)
         else:
             self.data = IQData(payload)
