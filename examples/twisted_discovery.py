@@ -3,6 +3,7 @@
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 import struct
+import platform
 
 WAIT_TIME = 0.125
 
@@ -14,8 +15,14 @@ class DiscoverWSAs(DatagramProtocol):
         import socket
         self.transport.socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.transport.socket.sendto("Hello WSA",
-            ('<broadcast>', self.SERVERPORT))
+        if platform.system() == 'Windows':
+            import _windows_networks
+            destinations = _windows_networks.get_broadcast_addresses()
+        else:
+            destinations = ['<broadcast>']
+        for d in destinations:
+            self.transport.socket.sendto("Hello WSA",
+                (d, self.SERVERPORT))
 
     def datagramReceived(self, data, (host, port)):
         resp = struct.unpack(self.DISCOVERY_RESPONSE_FORMAT, data)
