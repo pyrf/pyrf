@@ -9,7 +9,8 @@ class trace(object):
     
     def __init__(self,plot_area, trace_name, trace_color):
         self.name = trace_name
-        self.mhold = False
+        self.max_hold = False
+        self.min_hold = False
         self.blank = False
         self.write = False
         self.store = False
@@ -23,11 +24,19 @@ class trace(object):
         if self.store or self.blank:
             return
             
-        if self.mhold:
+        if self.max_hold:
             if (self.data == None or len(self.data) != len(ydata)):
                 self.data = ydata
             self.freq_range = xdata
             self.data = np.maximum(self.data,ydata)
+            self.curve.setData(x = xdata, 
+                                y = self.data, 
+                                pen = self.color)
+        elif self.min_hold:
+            if (self.data == None or len(self.data) != len(ydata)):
+                self.data = ydata
+            self.freq_range = xdata
+            self.data = np.minimum(self.data,ydata)
             self.curve.setData(x = xdata, 
                                 y = self.data, 
                                 pen = self.color)

@@ -73,7 +73,7 @@ def _right_arrow_key(layout):
 
     if layout.plot_state.enable_plot:
         layout._freq_plus.click()
-        layout.plot_state.mhold_fft = None
+        layout.plot_state.max_hold_fft = None
 
 def _left_arrow_key(layout):
     """
@@ -81,7 +81,7 @@ def _left_arrow_key(layout):
     """
     if layout.plot_state.enable_plot:
         layout._freq_minus.click()
-        layout.plot_state.mhold_fft = None
+        layout.plot_state.max_hold_fft = None
         
 def _trace_tab_change(layout):
     """
@@ -90,40 +90,61 @@ def _trace_tab_change(layout):
     trace = layout._plot.traces[layout._trace_tab.currentIndex()]
     layout.plot_state.trace_sel = trace.name
     if trace.write:
-        layout._write.click()
-    elif trace.mhold:
-        layout._max_hold.click()
+        layout._trace_attr['write'].click()
+    elif trace.max_hold:
+        layout._trace_attr['max_hold'].click()
+    elif trace.min_hold:
+        layout._trace_attr['min_hold'].click()
     elif trace.blank:
-        layout._blank.click()
+        layout._trace_attr['blank'].click()
     
     if layout._plot.traces[layout._trace_tab.currentIndex()].store:
         state =  QtCore.Qt.CheckState.Checked
     else:
         state =  QtCore.Qt.CheckState.Unchecked
-    layout._store.setCheckState(state) 
+    layout._trace_attr['store'].setCheckState(state) 
     
 def _max_hold(layout):
     """
     disable/enable max hold on a trace
     """
     layout._plot.traces[layout._trace_tab.currentIndex()].write = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].mhold = True
+    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = True
+    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
-            
+    layout._trace_attr['store'].setEnabled(True)   
+    
+def _min_hold(layout):
+    """
+    disable/enable min hold on a trace
+    """
+    layout._plot.traces[layout._trace_tab.currentIndex()].write = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = True
+    layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
+    layout._trace_attr['store'].setEnabled(True)   
+    
 def _trace_write(layout):
     """
     disable/enable running FFT mode the selected trace
     """        
     layout._plot.traces[layout._trace_tab.currentIndex()].write = True
-    layout._plot.traces[layout._trace_tab.currentIndex()].mhold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
-
+    layout._trace_attr['store'].setEnabled(True)
+    
 def _blank_trace(layout):
     """
     disable/enable the selected trace
     """
+    if layout._trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
+        layout._trace_attr['store'].click()
+    
+    layout._trace_attr['store'].setEnabled(False)
     layout._plot.traces[layout._trace_tab.currentIndex()].write = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].mhold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = False
+    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = True
     layout._plot.traces[layout._trace_tab.currentIndex()].curve.clear()
     layout._plot.traces[layout._trace_tab.currentIndex()].data = None
@@ -136,7 +157,7 @@ def _store_trace(layout):
     """
     store the current trace's data
     """
-    if layout._store.checkState() is QtCore.Qt.CheckState.Checked:
+    if layout._trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
         layout._plot.traces[layout._trace_tab.currentIndex()].store = True
     else:
         layout._plot.traces[layout._trace_tab.currentIndex()].store = False
@@ -176,8 +197,8 @@ def _find_peak(layout):
     if not layout.plot_state.marker and not layout.plot_state.delta:
         _marker_control(layout)
 
-    if layout.plot_state.mhold:
-       peak = util.find_max_index(layout.plot_state.mhold_fft) 
+    if layout.plot_state.max_hold:
+       peak = util.find_max_index(layout.plot_state.max_hold_fft) 
     else:
         peak = util.find_max_index(layout.pow_data)
     

@@ -517,8 +517,9 @@ class MainPanel(QtGui.QWidget):
         
         # second row contains the tab attributes
         second_row = QtGui.QHBoxLayout()
-        max_hold, write, store, blank = self._trace_checkboxes()
+        max_hold, min_hold, write, store, blank = self._trace_checkboxes()
         second_row.addWidget(max_hold)
+        second_row.addWidget(min_hold)
         second_row.addWidget(write)
         second_row.addWidget(blank)
         second_row.addWidget(store)
@@ -528,28 +529,32 @@ class MainPanel(QtGui.QWidget):
         return trace_group
         
     def _trace_checkboxes(self):
+    
+        trace_attr = {}
+        store = QtGui.QCheckBox('Store')
+        store.clicked.connect(lambda: cu._store_trace(self))
+        store.setEnabled(False)
+        trace_attr['store'] = store
+
         max_hold = QtGui.QRadioButton('Max Hold')
         max_hold.clicked.connect(lambda: cu._max_hold(self))
-        self._max_hold = max_hold
-        self.control_widgets.append(self._max_hold)
+        trace_attr['max_hold'] = max_hold
+        
+        min_hold = QtGui.QRadioButton('Min Hold')
+        min_hold.clicked.connect(lambda: cu._min_hold(self))
+        trace_attr['min_hold'] = min_hold
         
         write = QtGui.QRadioButton('Write')
         write.clicked.connect(lambda: cu._trace_write(self))
-        self._write = write
-        self.control_widgets.append(self._write)
-        self._write.click()
+        trace_attr['write'] = write
+         
         blank = QtGui.QRadioButton('Blank')
         blank.clicked.connect(lambda: cu._blank_trace(self))
-        self._blank = blank
-        self.control_widgets.append(self._blank)
+        trace_attr['blank'] = blank
         
-        store = QtGui.QCheckBox('Store')
-        store.clicked.connect(lambda: cu._store_trace(self))
-        self._store = store
-        self.control_widgets.append(self._store)
-        
-
-        return max_hold, write, store, blank
+        self._trace_attr = trace_attr
+        self._trace_attr['write'].click()
+        return max_hold, min_hold, write, store, blank
 
         
     def _plot_controls(self):
