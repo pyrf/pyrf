@@ -139,6 +139,23 @@ class WSA(object):
         yield self.scpiget(":*idn?")
 
     @sync_async
+    def rfe_mode(self, mode=None):
+        """
+        This command sets or queries the WSA's Receiver Front End mode of
+        operation.
+
+        :param mode: 'ZIF', 'DD', 'HDR', 'IQIN', 'SH' or None to query
+        :returns: the current RFE mode
+        """
+        if mode is None:
+            buf = yield self.scpiget(":INPUT:MODE?")
+            mode = buf.strip()
+        else:
+            self.scpiset(":INPUT:MODE %s" % mode)
+
+        yield mode
+
+    @sync_async
     def freq(self, freq=None):
         """
         This command sets or queries the tuned center frequency of the WSA.
@@ -149,7 +166,7 @@ class WSA(object):
         :returns: the frequency in Hz
         """
         if freq is None:
-            buf = yield self.scpiget("FREQ:CENTER?")
+            buf = yield self.scpiget(":FREQ:CENTER?")
             freq = int(buf)
         else:
             self.scpiset(":FREQ:CENTER %d\n" % freq)
