@@ -37,7 +37,7 @@ class WSA5000Properties(object):
     MIN_TUNABLE = 100*M
     MAX_TUNABLE = 20000*M
     MIN_DECIMATION = 2
-    MAX_DECIMATION = 512
+    MAX_DECIMATION = 1024
     DECIMATED_USABLE = 0.875 # XXX: to be confirmed
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
