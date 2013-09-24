@@ -494,7 +494,7 @@ class WSA(object):
         self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
         self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
         self.scpiset(":sweep:entry:attenuator %s" % (
-            'ENABLED' if entry.attenuator else 'DISABLED'))
+            1 if entry.attenuator else 0))
         self.scpiset(":sweep:entry:save")
 
     @sync_async
@@ -635,8 +635,7 @@ class WSA(object):
             enable = yield self.scpiget(":INPUT:ATTENUATOR?")
             enable = bool(int(enable))
         else:
-            self.scpiset(":INPUT:ATTENUATOR %s" %
-                'ENABLED' if enable else 'DISABLED')
+            self.scpiset(":INPUT:ATTENUATOR %s" % 1 if enable else 0)
         yield enable
 
     def apply_device_settings(self, settings):
