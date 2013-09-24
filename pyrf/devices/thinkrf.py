@@ -23,6 +23,10 @@ class WSA4000Properties(object):
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
 
+    SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
+        'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
 
 class WSA5000Properties(object):
     model = 'WSA5000'
@@ -42,6 +46,9 @@ class WSA5000Properties(object):
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
 
+    SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
+        'attenuator', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
 
 class WSA(object):
@@ -510,41 +517,11 @@ class WSA(object):
 
         entrystr = yield self.scpiget(":sweep:entry:read? %d" % index)
 
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fstart = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fstop = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fstep = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fshift = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.decimation = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.antenna = int(value)
-        (ent.gain, sep, entrystr) = entrystr.partition(',')
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.ifgain = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.spp = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.ppb = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.dwell_s = int(value)
-        (value, sep, trigstr) = entrystr.partition(',')
-        ent.dwell_us = int(value)
-
-        if trigstr == "NONE":
-            ent.trigtype = "NONE"
-        else:
-            (ent.trigtype, trigstr) = trigstr.split(',')
-            if ent.trigtype == "LEVEL":
-                (value, sep, trigstr) = trigstr.partition(',')
-                ent.level_fstart = int(value)
-                (value, sep, trigstr) = trigstr.partition(',')
-                ent.level_fstop = int(value)
-                (value, sep, trigstr) = trigstr.partition(',')
-                ent.level_amplitude = int(value)
+        values = entrystr.split(',')
+        for setting, value in zip(self.properties.SWEEP_SETTINGS, values):
+            if setting not in ('gain', 'trigtype'):
+                value = int(value)
+            setattr(ent, setting, value)
 
         yield ent
 
