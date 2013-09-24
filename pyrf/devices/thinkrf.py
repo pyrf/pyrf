@@ -619,6 +619,24 @@ class WSA(object):
             self.scpiset(":INPUT:ATTENUATOR %s" % 1 if enable else 0)
         yield enable
 
+    @sync_async
+    def errors(self):
+        """
+        Flush and return the list of errors from past commands
+        sent to the WSA. An empty list is returned when no errors
+        are present.
+        """
+        errors = []
+        while True:
+            error = yield self.scpiget(":SYSTEM:ERROR?")
+            num, message = error.strip().split(',', 1)
+            num = int(num)
+            message = message.strip('"')
+            if not num:
+                break
+            errors.append((num, message))
+        yield errors
+
     def apply_device_settings(self, settings):
         """
         This command takes a dict of device settings, and applies them to the 
