@@ -56,7 +56,8 @@ def vrt_packet_reader(raw_read):
         payload_size = (size - 5 - 1) * 4
         payload = yield raw_read(payload_size)
         trailer = yield raw_read(4)
-        yield DataPacket(count, size, stream_id, tsi, tsf, payload)
+        trailer = struct.unpack(">I", trailer)[0]
+        yield DataPacket(count, size, stream_id, tsi, tsf, payload, trailer)
 
     else:
         raise InvalidDataReceived("unknown packet type: %s" % packet_type)
@@ -327,7 +328,7 @@ class DataPacket(object):
        a :class:`pyrf.vrt.IQData` object containing the packet data
     """
 
-    def __init__(self, count, size, stream_id, tsi, tsf, payload):
+    def __init__(self, count, size, stream_id, tsi, tsf, payload, trailer):
         self.ptype = 1
         self.count = count
         self.size = size
@@ -344,6 +345,11 @@ class DataPacket(object):
             self.data = DataArray(payload, 4)
         else:
             self.data = IQData(payload)
+
+        self.valid_data = bool((trailer >> 18) & 1)
+        self.reference_lock = bool((trailer >> 17) & 1)
+        self.over_range = bool((trailer >> 13) & 1)
+        self.sample_loss = bool((trailer >> 12) & 1)
 
 
     def is_data_packet(self):
