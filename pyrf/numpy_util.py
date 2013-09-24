@@ -25,7 +25,7 @@ def compute_fft(dut, data_pkt, context):
     prop = dut.properties
 
     data = data_pkt.data.numpy_array()
-    if data_pkt.stream_id == VRT_IFDATA_I14Q14
+    if data_pkt.stream_id == VRT_IFDATA_I14Q14:
         i_data = numpy.array(data[:,0], dtype=float)
         q_data = numpy.array(data[:,1], dtype=float)
 
@@ -40,7 +40,7 @@ def compute_fft(dut, data_pkt, context):
         power_spectrum = _compute_fft(i_data, q_data)
 
     if data_pkt.stream_id in (VRT_IFDATA_I14, VRT_IFDATA_I24):
-        i_data = numpy.array(data, dypye=float)
+        i_data = numpy.array(data, dtype=float)
         power_spectrum = _compute_fft_i_only(i_data)
 
     if data_pkt.stream_id == VRT_IFDATA_PSD8:
@@ -76,7 +76,7 @@ def _compute_fft_i_only(i_data):
     power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
     power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(power_spectrum))
 
-    median_index = len(fft_result) // 2
+    median_index = len(power_spectrum) // 2
     return power_spectrum[median_index+1:]
 
 def _calibrate_i_q(i_data, q_data):
