@@ -122,7 +122,6 @@ def update_marker_traces(combo_box, traces):
     count = 0
     for (trace,(r,g,b)) in zip(traces, constants.TRACE_COLORS):
         if not trace.blank:
-            print trace.name
             combo_box.addItem(trace.name)
             color = QtGui.QColor()
             color.setRgb(r, g,b)

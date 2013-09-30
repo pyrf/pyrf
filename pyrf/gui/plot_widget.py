@@ -60,7 +60,7 @@ class marker(object):
         self.data_index = None
         
         # index of trace associated with marker
-        self.trace_index = None
+        self.trace_index = 0
         
     def enable(self, plot):
         
@@ -95,7 +95,7 @@ class marker(object):
         self.marker_plot.addPoints(x = [xpos], 
                                    y = [ypos], 
                                     symbol = '+', 
-                                    size = 20, pen = 'w', 
+                                    size = 20, pen = color, 
                                     brush = color)
 class plot(object):
     """

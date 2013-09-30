@@ -33,8 +33,6 @@ except ImportError:
     def inlineCallbacks(fn):
         pass
 
-WINDOW_WIDTH = 1400
-WINDOW_HEIGHT = 400
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -42,6 +40,9 @@ class MainWindow(QtGui.QMainWindow):
     """
     def __init__(self, name=None):
         super(MainWindow, self).__init__()
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        WINDOW_WIDTH = screen.width() * 0.7
+        WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
         self.initUI()
 
@@ -87,9 +88,9 @@ class MainPanel(QtGui.QWidget):
         self.dut = None
         self.control_widgets = []
         super(MainPanel, self).__init__()
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
-        self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        self.setMinimumWidth(screen.width() * 0.7)
+        self.setMinimumHeight(screen.height() * 0.6)
         self.plot_state = gui_config.plot_state()
         # plot window
         self._plot = plot(self)
@@ -176,15 +177,8 @@ class MainPanel(QtGui.QWidget):
                     window_freq = self._plot.view_box.viewRange()[0]
                     window_bw =  (window_freq[1] - window_freq[0])
                     click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
-
-                    if self.plot_state.marker:
-                        self.plot_state.marker_ind = click_freq
-                        self.update_marker()
-                    
-                    elif self.plot_state.delta:
-                        print click_freq
-                        self.plot_state.delta_ind = click_freq
-                        self.update_delta()
+                    index = find_nearest_index(click_freq, trace.freq_range)
+                    self._plot.markers[self._marker_tab.currentIndex()].data_index = index
                     # self.update_diff()
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -579,6 +573,7 @@ class MainPanel(QtGui.QWidget):
         first_row.addWidget(marker_tab)
         
         self._marker_tab = marker_tab
+        self.control_widgets.append(self._marker_tab)
         marker_check, marker_trace = self._marker_control()
         
         second_row = QtGui.QHBoxLayout()
@@ -638,7 +633,7 @@ class MainPanel(QtGui.QWidget):
         delta_label.setMinimumHeight(25)
         
         diff_label = QtGui.QLabel('')
-        diff_label.setStyleSheet('color: %s;' % constants.TEAL)
+        diff_label.setStyleSheet('color: %s;' % constants.WHITE)
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
@@ -651,7 +646,7 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
 
-        # self.update_diff()
+        self.update_diff()
         
     def update_trace(self):
         for trace in self._plot.traces:
@@ -668,45 +663,57 @@ class MainPanel(QtGui.QWidget):
                 self.dut.trigger(self.plot_state.trig_set)
     
     def update_marker(self):        
-            trace = self._plot.traces[self._marker_trace.currentIndex()]
-            pow_ = trace.data
-
-            if not trace.blank:
-                for marker, marker_label in zip(self._plot.markers, self.marker_labels):
-                    if marker.enabled:
+            
+            for marker, marker_label in zip(self._plot.markers, self.marker_labels):
+                if marker.enabled:
+                    trace = self._plot.traces[marker.trace_index]
+                    if not trace.blank:
                         marker_label.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
                                                                              trace.color[1],
                                                                             trace.color[2]))
 
-                        marker.update_pos(trace.freq_range, pow_)
-                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index], 
-                                                                                   pow_[marker.data_index])
+                        marker.update_pos(trace.freq_range, trace.data)
+                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
+                                                                                   trace.data[marker.data_index])
                         marker_label.setText(marker_text)
 
 
 
-    # def update_diff(self):
-        # if self.plot_state.mhold:
-            # pow_ = self.plot_state.mhold_fft
-            # self._diff_lab.setStyleSheet('color: %s;' % constants.ORANGE)
-        # else:
-            # pow_ = self.pow_data
-            # self._diff_lab.setStyleSheet('color: %s;' % constants.TEAL)  
+    def update_diff(self):
+
+
+        num_markers = 0
+        traces = []
+        data_indices = []
+        for marker in self._plot.markers:
+
+            if marker.enabled == True:
+                num_markers += 1
+                traces.append(self._plot.traces[marker.trace_index])
+                data_indices.append(marker.data_index)
+                
+        if num_markers == len(constants.MARKERS):
+            freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
-        # if self.plot_state.marker and self.plot_state.delta:
-            # freq_diff = np.abs((self.plot_state.freq_range[self.plot_state.delta_ind]/1e6) - (self.plot_state.freq_range[self.plot_state.marker_ind ]/1e6))
-            # power_diff = np.abs((pow_[self.plot_state.delta_ind]) - (pow_[self.plot_state.marker_ind ]))
-            # delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
-            # self._diff_lab.setText(delta_text)
-        # else:
-            # self._diff_lab.setText('')
+            power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
+            
+            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
+            self._diff_lab.setText(delta_text)
+        else:
+            self._diff_lab.setText('')
 
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
         
+        for key in self._trace_attr:
+            self._trace_attr[key].setEnabled(True)
+        
     def disable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(False)
+            
+        for key in self._trace_attr:
+            self._trace_attr[key].setEnabled(False)
 
         

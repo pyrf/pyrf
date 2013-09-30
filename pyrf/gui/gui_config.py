@@ -16,11 +16,7 @@ class plot_state(object):
         
         self.trig = False
         self.trig_set = None
-        self.marker = False
-        self.marker_ind = None
-        
-        self.delta = False
-        self.delta_ind = None
+
         self.peak = False
         
         self.freq_range = None        

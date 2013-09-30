@@ -183,17 +183,26 @@ def _marker_trace_control(layout):
     """
     change the trace that is currently associated with the marker
     """
-    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+    if layout._marker_trace is not None:
+        marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+        marker.trace_index = layout._marker_trace.currentIndex()
+    
 def _marker_tab_change(layout):
     """
     change the current selected marker
     """
+    for marker in layout._plot.markers:
+        marker.selected = False
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
     if marker.enabled:
         state =  QtCore.Qt.CheckState.Checked
     else:
         state =  QtCore.Qt.CheckState.Unchecked
     layout._marker_check.setCheckState(state) 
+    layout._marker_trace.setCurrentIndex(marker.trace_index)
+    marker.selected = True
+
+    
     
 def _find_peak(layout):
     """
