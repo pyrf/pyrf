@@ -1,6 +1,6 @@
-
-import  control_util 
 import numpy as np
+from PySide import QtGui, QtCore
+import  control_util 
 import constants
 def frequency_text(hz):
     """
@@ -53,30 +53,45 @@ def find_nearest_index(value, array):
     return idx
     
 def select_fstart(layout):
+    """
+    changes the color of the fstart button to orange and all others to default    
+    """
     layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._cfreq.setStyleSheet("")
     layout._fstop.setStyleSheet("")
     layout._bw.setStyleSheet("")
     
 def select_center(layout):
+    """
+    changes the color of the fcenter button to orange and all others to default    
+    """
     layout._cfreq.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._fstop.setStyleSheet("")
     layout._bw.setStyleSheet("")
     
 def select_bw(layout):
+    """
+    changes the color of the span button to orange and all others to default    
+    """
     layout._bw.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._cfreq.setStyleSheet("")
     layout._fstop.setStyleSheet("")
 
 def select_fstop(layout):
+    """
+    changes the color of the fstop button to orange and all others to default    
+    """
     layout._fstop.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._cfreq.setStyleSheet("")
     layout._bw.setStyleSheet("")
     
 def change_item_color(item, textColor, backgroundColor):
+    """
+    changes the color of the specified item with the specified text color/background color 
+    """
     item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
 
 def enable_freq_cont(layout):
@@ -95,4 +110,27 @@ def disable_freq_cont(layout):
     layout._fstop.setEnabled(False)
     layout._fstop_edit.setEnabled(False)
 
+def update_marker_traces(combo_box, traces):
+    """
+    update the available traces in a combo box   
+    """
+
+    index = combo_box.currentIndex()
+    if index < 0:
+        index = 0
+    combo_box.clear()
+    count = 0
+    for (trace,(r,g,b)) in zip(traces, constants.TRACE_COLORS):
+        if not trace.blank:
+            print trace.name
+            combo_box.addItem(trace.name)
+            color = QtGui.QColor()
+            color.setRgb(r, g,b)
+            pixmap = QtGui.QPixmap(10,10)
+            pixmap.fill(color)
+            icon = QtGui.QIcon(pixmap)
+            combo_box.setItemIcon(count,icon)
+            count += 1
+            
+    combo_box.setCurrentIndex(index)
 

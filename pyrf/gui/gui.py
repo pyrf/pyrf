@@ -16,7 +16,7 @@ import numpy as np
 import time
 from contextlib import contextmanager
 from util import find_max_index, find_nearest_index
-from util import hotkey_util
+from util import hotkey_util, update_marker_traces
 import constants
 import control_util as cu
 from plot_widget import plot
@@ -93,9 +93,11 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = gui_config.plot_state()
         # plot window
         self._plot = plot(self)
+        self._marker_trace = None
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
+
         self._reactor = self._get_reactor()
 
     def _get_reactor(self):
@@ -164,6 +166,7 @@ class MainPanel(QtGui.QWidget):
            
     def mousePressEvent(self, event):
         if self.dut:
+            trace = self._plot.traces[self._marker_trace.currentIndex()]
             if event.button() == QtCore.Qt.MouseButton.LeftButton:
                 click_pos =  event.pos().x() - 68
                 plot_window_width = self._plot.window.width() - 68
@@ -193,8 +196,11 @@ class MainPanel(QtGui.QWidget):
         # add plot widget
         plot_width = 8
         grid.addWidget(self._plot.window,0,0,15,plot_width)
-
+        
+        self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
+        self.marker_labels.append(marker_label)
+        self.marker_labels.append(delta_label)
         grid.addWidget(marker_label, 0, 1, 1, 2)
         grid.addWidget(delta_label, 0, 3, 1, 2)
         grid.addWidget(diff_label , 0, 5, 1, 2)
@@ -212,7 +218,77 @@ class MainPanel(QtGui.QWidget):
         
         self.update_freq()
         self.setLayout(grid)
+        
+    def _trace_controls(self):
+        trace_group = QtGui.QGroupBox("Traces")
+        self._trace_group = trace_group
+        
+        trace_controls_layout = QtGui.QVBoxLayout()
+        
+        # first row will contain the tabs
+        first_row = QtGui.QHBoxLayout()
+        
+        # add tabs for each trace
+        trace_tab = QtGui.QTabBar()
+        count = 0
+        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
+            trace_tab.addTab(trace)
+            color = QtGui.QColor()
+            color.setRgb(r,g,b)
+            pixmap = QtGui.QPixmap(10,10)
+            pixmap.fill(color)
+            icon = QtGui.QIcon(pixmap)
+            trace_tab.setTabIcon(count,icon)
+            count += 1
+        
+        self._trace_tab = trace_tab
+        trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
+            
+        self.control_widgets.append(self._trace_tab)
+        first_row.addWidget(trace_tab)
+        
+        # second row contains the tab attributes
+        second_row = QtGui.QHBoxLayout()
+        max_hold, min_hold, write, store, blank = self._trace_checkboxes()
+        second_row.addWidget(max_hold)
+        second_row.addWidget(min_hold)
+        second_row.addWidget(write)
+        second_row.addWidget(blank)
+        second_row.addWidget(store)
+        trace_controls_layout.addLayout(first_row)
+        trace_controls_layout.addLayout(second_row) 
+        trace_group.setLayout(trace_controls_layout)
+        return trace_group
+        
+    def _trace_checkboxes(self):
     
+        trace_attr = {}
+        store = QtGui.QCheckBox('Store')
+        store.clicked.connect(lambda: cu._store_trace(self))
+        store.setEnabled(False)
+        trace_attr['store'] = store
+
+        max_hold = QtGui.QRadioButton('Max Hold')
+        max_hold.clicked.connect(lambda: cu._max_hold(self))
+        trace_attr['max_hold'] = max_hold
+        
+        min_hold = QtGui.QRadioButton('Min Hold')
+        min_hold.clicked.connect(lambda: cu._min_hold(self))
+        trace_attr['min_hold'] = min_hold
+        
+        write = QtGui.QRadioButton('Write')
+        write.clicked.connect(lambda: cu._trace_write(self))
+        trace_attr['write'] = write
+         
+        blank = QtGui.QRadioButton('Blank')
+        blank.clicked.connect(lambda: cu._blank_trace(self))
+        trace_attr['blank'] = blank
+        
+        self._trace_attr = trace_attr
+        self._trace_attr['write'].click()
+        return max_hold, min_hold, write, store, blank
+
+        
     def _device_controls(self):
         dev_group = QtGui.QGroupBox("Device Control")
         self.dev_group = dev_group
@@ -487,76 +563,7 @@ class MainPanel(QtGui.QWidget):
         self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
         self._center_bt.click()
-    def _trace_controls(self):
-        trace_group = QtGui.QGroupBox("Traces")
-        self._trace_group = trace_group
-        
-        trace_controls_layout = QtGui.QVBoxLayout()
-        
-        # first row will contain the tabs
-        first_row = QtGui.QHBoxLayout()
-        
-        # add tabs for each trace
-        trace_tab = QtGui.QTabBar()
-        count = 0
-        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
-            trace_tab.addTab(trace)
-            color = QtGui.QColor()
-            color.setRgb(r,g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            trace_tab.setTabIcon(count,icon)
-            count += 1
-        
-        self._trace_tab = trace_tab
-        trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
-            
-        self.control_widgets.append(self._trace_tab)
-        first_row.addWidget(trace_tab)
-        
-        # second row contains the tab attributes
-        second_row = QtGui.QHBoxLayout()
-        max_hold, min_hold, write, store, blank = self._trace_checkboxes()
-        second_row.addWidget(max_hold)
-        second_row.addWidget(min_hold)
-        second_row.addWidget(write)
-        second_row.addWidget(blank)
-        second_row.addWidget(store)
-        trace_controls_layout.addLayout(first_row)
-        trace_controls_layout.addLayout(second_row) 
-        trace_group.setLayout(trace_controls_layout)
-        return trace_group
-        
-    def _trace_checkboxes(self):
-    
-        trace_attr = {}
-        store = QtGui.QCheckBox('Store')
-        store.clicked.connect(lambda: cu._store_trace(self))
-        store.setEnabled(False)
-        trace_attr['store'] = store
 
-        max_hold = QtGui.QRadioButton('Max Hold')
-        max_hold.clicked.connect(lambda: cu._max_hold(self))
-        trace_attr['max_hold'] = max_hold
-        
-        min_hold = QtGui.QRadioButton('Min Hold')
-        min_hold.clicked.connect(lambda: cu._min_hold(self))
-        trace_attr['min_hold'] = min_hold
-        
-        write = QtGui.QRadioButton('Write')
-        write.clicked.connect(lambda: cu._trace_write(self))
-        trace_attr['write'] = write
-         
-        blank = QtGui.QRadioButton('Blank')
-        blank.clicked.connect(lambda: cu._blank_trace(self))
-        trace_attr['blank'] = blank
-        
-        self._trace_attr = trace_attr
-        self._trace_attr['write'].click()
-        return max_hold, min_hold, write, store, blank
-
-        
     def _plot_controls(self):
 
         plot_group = QtGui.QGroupBox("Plot Control")
@@ -565,69 +572,46 @@ class MainPanel(QtGui.QWidget):
         plot_controls_layout = QtGui.QVBoxLayout()
         
         first_row = QtGui.QHBoxLayout()
+        marker_tab = QtGui.QTabBar()
+        for marker in constants.MARKERS:
+            marker_tab.addTab(marker)
+        marker_tab.currentChanged.connect(lambda: cu._marker_tab_change(self))
+        first_row.addWidget(marker_tab)
         
+        self._marker_tab = marker_tab
         marker_check, marker_trace = self._marker_control()
-        first_row.addWidget(marker_trace)
-        first_row.addWidget(marker_check)
-        
-        delta_check,delta_trace = self._delta_control()
-        first_row.addWidget(delta_trace)
-        first_row.addWidget(delta_check)
         
         second_row = QtGui.QHBoxLayout()
-        second_row.addWidget(self._peak_control())
-        second_row.addWidget(self._center_control())
+        second_row.addWidget(marker_trace)
+        second_row.addWidget(marker_check)
+                
+        third_row = QtGui.QHBoxLayout()
+        third_row.addWidget(self._peak_control())
+        third_row.addWidget(self._center_control())
         
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
+        plot_controls_layout.addLayout(third_row)
         
         plot_group.setLayout(plot_controls_layout)
         
         return plot_group
+        
     def _marker_control(self):
         marker_trace = QtGui.QComboBox()
         marker_trace.setEnabled(False)
         marker_trace.setMaximumWidth(50)
-        count = 0
-        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
-            marker_trace.addItem(trace)
-            color = QtGui.QColor()
-            color.setRgb(r,g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            marker_trace.setItemIcon(count,icon)
-            count += 1
-            
+        marker_trace.currentIndexChanged.connect(lambda: cu._marker_trace_control(self))
+        update_marker_traces(marker_trace, self._plot.traces)
+        
         self._marker_trace = marker_trace
-        marker_check = QtGui.QCheckBox('Marker 1')
+        marker_check = QtGui.QCheckBox('Enabled')
         marker_check.clicked.connect(lambda: cu._marker_control(self))
         self._marker_check = marker_check
+
         self.control_widgets.append(self._marker_check)
         return marker_check,marker_trace
-        
-    def _delta_control(self):
-        delta_trace = QtGui.QComboBox()
-        delta_trace.setEnabled(False)
-        delta_trace.setMaximumWidth(50)
-        count = 0
-        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
-            delta_trace.addItem(trace)
-            color = QtGui.QColor()
-            color.setRgb(r,g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            delta_trace.setItemIcon(count,icon)
-            count += 1
             
-        self._delta_trace = delta_trace
-        delta_check = QtGui.QCheckBox('Marker 2')
-        delta_check.clicked.connect(lambda: cu._delta_control(self))
-        self._delta_check = delta_check
-        self.control_widgets.append(self._delta_check)
-        return delta_check,delta_trace
-    
     def _peak_control(self):
         peak = QtGui.QPushButton('Peak')
         peak.setToolTip("[P]\nFind peak of the selected spectrum") 
@@ -648,12 +632,10 @@ class MainPanel(QtGui.QWidget):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % constants.TEAL)
         marker_label.setMinimumHeight(25)
-        self._marker_lab = marker_label
         
         delta_label = QtGui.QLabel('')
         delta_label.setStyleSheet('color: %s;' % constants.TEAL)
         delta_label.setMinimumHeight(25)
-        self._delta_lab = delta_label
         
         diff_label = QtGui.QLabel('')
         diff_label.setStyleSheet('color: %s;' % constants.TEAL)
@@ -668,7 +650,7 @@ class MainPanel(QtGui.QWidget):
                                               len(self.pow_data))
         self.update_trace()
         self.update_marker()
-        self.update_delta()
+
         # self.update_diff()
         
     def update_trace(self):
@@ -685,67 +667,23 @@ class MainPanel(QtGui.QWidget):
             if self.plot_state.trig_set:
                 self.dut.trigger(self.plot_state.trig_set)
     
-    def update_marker(self):
-
-        if self.plot_state.marker:
-            
+    def update_marker(self):        
             trace = self._plot.traces[self._marker_trace.currentIndex()]
-            if not trace.blank:
-                pow_ = trace.data
-                self._marker_lab.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
-                                                                           trace.color[1],
-                                                          trace.color[2]))
-                if self.plot_state.marker_ind  == None:
-                    xpos = len(pow_) / 2 
-                else:
-                    xpos = find_nearest_index(self.plot_state.marker_ind, trace.freq_range)
-                    if xpos < 0:
-                        xpos  = 0
-                        
-                    elif xpos >= len(pow_):
-                        xpos  = len(pow_) - 1
- 
-                marker_freq = [trace.freq_range[xpos]]
-                markerpause_ffter = [pow_[xpos]]
-                marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (marker_freq[0]/1e6, markerpause_ffter[0])
-                self._marker_lab.setText(marker_text)
-                
-                self._plot.marker_point.clear()
-                self._plot.marker_point.addPoints(x = marker_freq, 
-                                                        y = markerpause_ffter, 
-                                                        symbol = '+', 
-                                                        size = 20, pen = 'w', 
-                                                        brush = 'w')
+            pow_ = trace.data
 
-    def update_delta(self):
-        if self.plot_state.delta:
-            trace = self._plot.traces[self._delta_trace.currentIndex()]
             if not trace.blank:
-                pow_ = trace.data
-                self._delta_lab.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
-                                                                           trace.color[1],
-                                                          trace.color[2]))
-                if self.plot_state.delta_ind  == None:
-                    xpos = len(pow_) / 2 
-                else:
-                    xpos = find_nearest_index(self.plot_state.delta_ind, trace.freq_range)
-                    if xpos < 0:
-                        xpos  = 0
-                        
-                    elif xpos >= len(pow_):
-                        xpos  = len(pow_) - 1
- 
-                delta_freq = [trace.freq_range[xpos]]
-                deltapause_ffter = [pow_[xpos]]
-                delta_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (delta_freq[0]/1e6, deltapause_ffter[0])
-                self._delta_lab.setText(delta_text)
-                
-                self._plot.delta_point.clear()
-                self._plot.delta_point.addPoints(x = delta_freq, 
-                                                        y = deltapause_ffter, 
-                                                        symbol = '+', 
-                                                        size = 20, pen = 'w', 
-                                                        brush = 'w')
+                for marker, marker_label in zip(self._plot.markers, self.marker_labels):
+                    if marker.enabled:
+                        marker_label.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
+                                                                             trace.color[1],
+                                                                            trace.color[2]))
+
+                        marker.update_pos(trace.freq_range, pow_)
+                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index], 
+                                                                                   pow_[marker.data_index])
+                        marker_label.setText(marker_text)
+
+
 
     # def update_diff(self):
         # if self.plot_state.mhold:

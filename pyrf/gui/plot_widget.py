@@ -7,12 +7,12 @@ class trace(object):
     Class to represent a trace in the plot
     """
     
-    def __init__(self,plot_area, trace_name, trace_color):
+    def __init__(self,plot_area, trace_name, trace_color, blank = False, write = False):
         self.name = trace_name
         self.max_hold = False
         self.min_hold = False
-        self.blank = False
-        self.write = False
+        self.blank = blank
+        self.write = write
         self.store = False
         self.data = None
         self.freq_range = None
@@ -46,7 +46,57 @@ class trace(object):
             self.curve.setData(x = xdata, 
                                 y = ydata, 
                                 pen = self.color)
+
+class marker(object):
+    """
+    Class to represent a marker on the plot
+    """
+    def __init__(self,plot_area, marker_name):
+
+        self.name = marker_name
+        self.marker_plot = pg.ScatterPlotItem()
+        self.enabled = False
+        self.selected = False
+        self.data_index = None
         
+        # index of trace associated with marker
+        self.trace_index = None
+        
+    def enable(self, plot):
+        
+        self.enabled = True
+        plot.window.addItem(self.marker_plot)     
+    
+    def disable(self, plot):
+        
+        self.enabled = False
+        plot.window.removeItem(self.marker_plot)
+    
+    def update_pos(self, xdata, ydata):
+    
+        self.marker_plot.clear()
+        if self.data_index  == None:
+           self.data_index = len(ydata) / 2 
+   
+        if self.data_index < 0:
+           self.data_index = 0
+            
+        elif self.data_index >= len(ydata):
+            self.data_index = len(ydata) - 1
+
+        xpos = xdata[self.data_index]
+        
+        ypos = ydata[self.data_index]
+        if self.selected:
+            color = 'y'
+        else: 
+            color = 'w'
+            
+        self.marker_plot.addPoints(x = [xpos], 
+                                   y = [ypos], 
+                                    symbol = '+', 
+                                    size = 20, pen = 'w', 
+                                    brush = color)
 class plot(object):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -65,14 +115,7 @@ class plot(object):
         
         # initialize fft curve
         self.fft_curve = self.window.plot(pen = constants.TEAL_NUM)
-        self.marker_point = pg.ScatterPlotItem()
-  
-       # initialize marker
-        self.marker_point = pg.ScatterPlotItem()
-
-        # initialize delta
-        self.delta_point = pg.ScatterPlotItem()
-        
+         
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
@@ -83,27 +126,29 @@ class plot(object):
         self.grid(True)
         self.traces = []
         
-        first_trace = constants.TRACES[0]    
+        # add traces
+        first_trace = constants.TRACES[0]
+        count = 0
         for trace_name, trace_color in zip(constants.TRACES, constants.TRACE_COLORS):
-            self.traces.append(trace(self,trace_name,trace_color))
+            if count == 0:
+                blank_state = False
+                write_state = True
+            else:
+                blank_state = True
+                write_state = False
+            self.traces.append(trace(self,
+                                    trace_name,
+                                    trace_color, 
+                                    blank = blank_state,
+                                    write = write_state))
+            count += 1
+
+        self.window.addItem(self.traces[0].curve)
         
-        # enable first trace on startup
-        self.traces[0].write = True
-        self.traces[1].blank = True
-        self.traces[2].blank = True
-        self.window.addItem(self.traces[0].curve) 
-    def add_marker(self):
-        self.window.addItem(self.marker_point) 
-        
-    def remove_marker(self):
-        self.window.removeItem(self.marker_point)
-    
-    def add_delta(self):
-        self.window.addItem(self.delta_point) 
-    
-    def remove_delta(self):
-        self.window.removeItem(self.delta_point)
-        
+        self.markers = []
+        for marker_name in constants.MARKERS:
+            self.markers.append(marker(self, marker_name))
+            
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])
         self.window.addItem(self.amptrig_line)

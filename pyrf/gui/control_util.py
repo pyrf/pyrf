@@ -112,7 +112,8 @@ def _max_hold(layout):
     layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = True
     layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
-    layout._trace_attr['store'].setEnabled(True)   
+    layout._trace_attr['store'].setEnabled(True)
+    util.update_marker_traces(layout._marker_trace, layout._plot.traces)    
     
 def _min_hold(layout):
     """
@@ -123,6 +124,7 @@ def _min_hold(layout):
     layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = True
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
     layout._trace_attr['store'].setEnabled(True)   
+    util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
     
 def _trace_write(layout):
     """
@@ -133,6 +135,9 @@ def _trace_write(layout):
     layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
     layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
     layout._trace_attr['store'].setEnabled(True)
+    
+    if layout._marker_trace is not None:
+        util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
     
 def _blank_trace(layout):
     """
@@ -150,8 +155,7 @@ def _blank_trace(layout):
     layout._plot.traces[layout._trace_tab.currentIndex()].data = None
     if layout._plot.traces[layout._marker_trace.currentIndex()] == layout._plot.traces[layout._trace_tab.currentIndex()]:
        layout._marker_check.click() 
-    if layout._plot.traces[layout._delta_trace.currentIndex()] == layout._plot.traces[layout._trace_tab.currentIndex()]:
-       layout._delta_check.click() 
+    util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
        
 def _store_trace(layout):
     """
@@ -168,47 +172,43 @@ def _marker_control(layout):
     """
     if layout._marker_check.checkState() is QtCore.Qt.CheckState.Checked:
         layout._marker_trace.setEnabled(True)
-        layout.plot_state.marker = True
-        layout._plot.add_marker()
+        layout._plot.markers[layout._marker_tab.currentIndex()].enable(layout._plot)
     else:
         layout._marker_trace.setEnabled(False)  
-        layout.plot_state.marker = False
-        layout._plot.remove_marker()
-        layout._marker_lab.setText('')
-def _delta_control(layout):
-    """
-    disable/enable delta (marker 2)
-    """
+        layout._plot.markers[layout._marker_tab.currentIndex()].disable(layout._plot)
 
-    if layout._delta_check.checkState() is QtCore.Qt.CheckState.Checked:
-        layout._delta_trace.setEnabled(True)
-        layout.plot_state.delta = True
-        layout._plot.add_delta()
+        layout.marker_labels[layout._marker_tab.currentIndex()].setText('')
+
+def _marker_trace_control(layout):
+    """
+    change the trace that is currently associated with the marker
+    """
+    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+def _marker_tab_change(layout):
+    """
+    change the current selected marker
+    """
+    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+    if marker.enabled:
+        state =  QtCore.Qt.CheckState.Checked
     else:
-        layout._delta_trace.setEnabled(False)  
-        layout.plot_state.delta = False
-        layout._plot.remove_delta()
-        layout._delta_lab.setText('')
-
+        state =  QtCore.Qt.CheckState.Unchecked
+    layout._marker_check.setCheckState(state) 
+    
 def _find_peak(layout):
     """
     move the selected marker to the maximum point of the spectrum
     """
     if not layout.plot_state.marker and not layout.plot_state.delta:
         _marker_control(layout)
+    trace = layout._plot.traces[layout._marker_trace.currentIndex()]
 
-    if layout.plot_state.max_hold:
-       peak = util.find_max_index(layout.plot_state.max_hold_fft) 
-    else:
-        peak = util.find_max_index(layout.pow_data)
-    
-    if layout.plot_state.marker_sel:
-        layout.update_marker()
-        layout.plot_state.marker_ind = peak
-    elif layout.plot_state.delta_sel:
-        layout.update_delta()
-        layout.plot_state.delta_ind = peak
-    layout.update_diff()
+    peak = util.find_max_index(trace.data) 
+    print peak
+
+    layout.update_marker()
+    layout.plot_state.marker_ind = peak
+
 
 def _trigger_control(layout):
     """
@@ -231,7 +231,6 @@ hotkey_dict = {'1': _select_fstart,
                 'RIGHT KEY': _right_arrow_key,
                 'LEFT KEY': _left_arrow_key,
                 'C': _center_plot_view,
-                'K': _delta_control,
                 'M': _marker_control,
                 'P': _find_peak,
                 'T': _trigger_control
