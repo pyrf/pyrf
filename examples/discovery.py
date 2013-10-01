@@ -4,8 +4,9 @@ import struct
 import select
 import platform
 
+from pyrf.devices.thinkrf import DISCOVERY_UDP_PORT, DISCOVERY_QUERY
 
-SERVERPORT = 18331
+
 WSA_VERSION_RESPONSE_FORMAT = '>II'
 
 WSA5000_DISCOVERY_RESPONSE_FORMAT = WSA_VERSION_RESPONSE_FORMAT +'52s'
@@ -16,9 +17,6 @@ WSA5000_DISCOVERY_VERSION = 2
 
 WAIT_TIME = 0.125
 
-WSA_QUERY_CODE = 0x93315555
-WSA_QUERY_VERSION = 2
-DISCOVERY_QUERY_FORMAT =  '>LL'
 
 cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 cs.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -32,8 +30,8 @@ else:
 
 for d in destinations:
     # send query command to WSA
-    query_struct = struct.pack(DISCOVERY_QUERY_FORMAT , WSA_QUERY_CODE, WSA_QUERY_VERSION)
-    cs.sendto(query_struct, (d, SERVERPORT))
+    query_struct = DISCOVERY_QUERY
+    cs.sendto(query_struct, (d, DISCOVERY_UDP_PORT))
     
 while True:
     ready, _, _ = select.select([cs], [], [], WAIT_TIME)

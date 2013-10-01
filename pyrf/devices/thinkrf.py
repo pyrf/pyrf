@@ -5,6 +5,16 @@ from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 
 from pyrf.units import M
 
+import struct
+
+
+DISCOVERY_UDP_PORT = 18331
+_DISCOVERY_QUERY_CODE = 0x93315555
+_DISCOVERY_QUERY_VERSION = 2
+_DISCOVERY_QUERY_FORMAT = '>LL'
+DISCOVERY_QUERY = struct.pack(_DISCOVERY_QUERY_FORMAT,
+    _DISCOVERY_QUERY_CODE, _DISCOVERY_QUERY_VERSION)
+
 class WSA4000Properties(object):
     model = 'WSA4000'
 
