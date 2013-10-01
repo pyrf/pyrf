@@ -688,5 +688,21 @@ class WSA(object):
             device_setting[k](v)
 
 
+def parse_discovery_response(response):
+    """
+    Return (model, serial, firmware version) based on a discovery
+    response message
+    """
+    RESPONSE_HEADER_FORMAT = '>II'
+    WSA4000_DISCOVERY_VERSION = 1
+    WSA5000_FORMAT = '16s16s20s'
+
+    version = struct.unpack(RESPONSE_HEADER_FORMAT, response[:8])[1]
+    if version == WSA4000_DISCOVERY_VERSION:
+        return ('WSA4000', response[8:].split('\0', 1)[0], None)
+    return tuple(v.rstrip('\0') for v in struct.unpack(WSA5000_FORMAT,
+        response[8:]))
+
+
 # for backwards compatibility
 WSA4000 = WSA

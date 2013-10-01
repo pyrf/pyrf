@@ -4,19 +4,11 @@ import struct
 import select
 import platform
 
-from pyrf.devices.thinkrf import DISCOVERY_UDP_PORT, DISCOVERY_QUERY
+from pyrf.devices.thinkrf import (DISCOVERY_UDP_PORT, DISCOVERY_QUERY,
+    parse_discovery_response)
 
-
-WSA_VERSION_RESPONSE_FORMAT = '>II'
-
-WSA5000_DISCOVERY_RESPONSE_FORMAT = WSA_VERSION_RESPONSE_FORMAT +'52s'
-WSA4000_DISCOVERY_RESPONSE_FORMAT = WSA_VERSION_RESPONSE_FORMAT + '28s'
-
-WSA4000_DISCOVERY_VERSION = 1
-WSA5000_DISCOVERY_VERSION = 2
 
 WAIT_TIME = 0.125
-
 
 cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 cs.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -32,23 +24,13 @@ for d in destinations:
     # send query command to WSA
     query_struct = DISCOVERY_QUERY
     cs.sendto(query_struct, (d, DISCOVERY_UDP_PORT))
-    
+
 while True:
     ready, _, _ = select.select([cs], [], [], WAIT_TIME)
     if not ready:
         break
     data, (host, port) = cs.recvfrom(1024)
-    
-    # extract the version from the WSA
-    version = struct.unpack(WSA_VERSION_RESPONSE_FORMAT, data[0:8])[1]
-    
-    # determine if the device is a WSA4000
-    if version == WSA4000_DISCOVERY_VERSION :     
-        resp = struct.unpack(WSA4000_DISCOVERY_RESPONSE_FORMAT, data)
-        print 'WSA4000', resp[2].split('\0',1)[0], "at", host
-    
-    # determine if the device is a WSA5000
-    elif version == WSA5000_DISCOVERY_VERSION:
 
-        resp = struct.unpack(WSA5000_DISCOVERY_RESPONSE_FORMAT, data)
-        print resp[2][0:11], resp[2][16:25].rstrip('\x00'),"at", host
+    model, serial, firmware = parse_discovery_response(data)
+
+    print model, serial, firmware, 'at', host
