@@ -1,7 +1,6 @@
 from pyrf.numpy_util import compute_fft
 from pyrf.config import TriggerSettings
 
-USABLE_BW = 100e6
 
 class CaptureDeviceError(Exception):
     pass
@@ -10,7 +9,6 @@ class CaptureDeviceError(Exception):
 class CaptureDevice(object):
     """
     Virtual device that returns power levels generated from a single data packet
-    (packet returned will have a span of 100MHz)
     :param real_device: device that will will be used for capturing data,
                         typically a :class:`pyrf.thinkrf.WSA` instance.
     :param callback: callback to use for async operation (not used if
@@ -52,12 +50,14 @@ class CaptureDevice(object):
         :type class:`TriggerSettings`
         :param device_settings: antenna, gain and other device settings
         :type dict:
-        """      
+        """
+
+        prop = self.real_device.properties
 
         # setup the WSA device
         self.bin_size = bins
-        self.fstart = device_set['freq'] - USABLE_BW/2
-        self.fstop =  device_set['freq'] + USABLE_BW/2
+        self.fstart = device_set['freq'] - prop.USABLE_BW/2
+        self.fstop =  device_set['freq'] + prop.USABLE_BW/2
         self.real_device.apply_device_settings(device_set)
         
         self.real_device.abort()
@@ -92,12 +92,3 @@ class CaptureDevice(object):
             self.async_callback(self.fstart, self.fstop, pow_data[strt_ind:stp_ind])
             return
         return (self.fstart, self.fstop, pow_data)
-        
-        
-        
-            
-        
-        
-
-        
-
