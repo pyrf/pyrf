@@ -145,7 +145,7 @@ class SweepDevice(object):
     connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
-            fstart, fstop, bins, device_settings=None,
+            fstart, fstop, rbw, device_settings=None,
             triggers=None, continuous=False,
             min_points=128, max_points=8192):
         """
@@ -156,8 +156,9 @@ class SweepDevice(object):
         :type fstart: float
         :param fstop: ending frequency in Hz
         :type fstop: float
-        :param bins: FFT bins requested (number produced likely more)
-        :type bins: int
+        :param rbw: requested RBW in Hz (output RBW may be smaller than
+                    requested)
+        :type rbw: float
         :param device_settings: antenna, gain and other device settings
         :type dict:
         :param triggers: list of :class:`TriggerSettings` instances or None
@@ -184,7 +185,7 @@ class SweepDevice(object):
         self.real_device.request_read_perm()
 
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
-            fstart, fstop, bins, min_points, max_points)
+            fstart, fstop, rbw, min_points, max_points)
 
         result = self._perform_trigger_sweep(triggers)
         if result == 'async waiting':
@@ -342,7 +343,7 @@ class SweepDevice(object):
 
 
 
-def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
+def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     """
     :param device: a device class or instance such as
                    :class:`pyrf.devices.thinkrf.WSA`
@@ -350,8 +351,8 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     :type fstart: float
     :param fstop: ending frequency in Hz
     :type fstop: float
-    :param bins: FFT bins requested (number produced likely more)
-    :type bins: int
+    :param rbw: requested RBW in Hz (output RBW may be smaller than requested)
+    :type rbw: float
     :param min_points: smallest number of points per capture
     :type min_points: int
     :param max_points: largest number of points per capture (due to
@@ -405,8 +406,7 @@ def plan_sweep(device, fstart, fstop, bins, min_points=128, max_points=8192):
     if fstop <= fstart:
         return (fstart, fstart, [])
 
-    ideal_bin_size = (fstop - fstart) / float(bins)
-    points = prop.FULL_BW / ideal_bin_size
+    points = prop.FULL_BW / rbw
     points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
 
     decimation = 1

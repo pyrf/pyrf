@@ -32,7 +32,7 @@ def plot_sweep(fstart, fstop, bins):
 def start_sweep(v):
     global sd
     sd = SweepDevice(dut, plot_sweep)
-    sd.capture_power_spectrum(0e9, 10e9, 2000,
+    sd.capture_power_spectrum(0e9, 10e9, 5e6,
         {'gain': 'high', 'antenna': 1})
 
 # connect to wsa

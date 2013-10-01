@@ -145,7 +145,7 @@ class MainPanel(QtGui.QWidget):
         self.plot_state.dev_set.pop('trigger', None)
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
-                                              self.plot_state.bin_size,
+                                              self.plot_state.rbw,
                                               self.plot_state.dev_set,
                                               continuous = False)
 
@@ -155,7 +155,7 @@ class MainPanel(QtGui.QWidget):
         device_set['freq'] = self.plot_state.center_freq
         device_set['trigger'] = self.plot_state.trig_set
 
-        self.cap_dut.capture_power_spectrum(device_set,self.plot_state.bin_size)
+        self.cap_dut.capture_power_spectrum(device_set,self.plot_state.rbw)
 
 
     def receive_data(self, fstart, fstop, pow_):
