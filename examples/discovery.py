@@ -1,20 +1,36 @@
 #!/usr/bin/python
 import socket
 import struct
-import signal
+import select
+import platform
 
-SERVERPORT = 18331
-DISCOVERY_RESPONSE_FORMAT = '>LL20sLL'
-WAIT_TIME = 1
+from pyrf.devices.thinkrf import (DISCOVERY_UDP_PORT, DISCOVERY_QUERY,
+    parse_discovery_response)
+
+
+WAIT_TIME = 0.125
 
 cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 cs.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+cs.setblocking(0)
 
-cs.sendto('Hello WSA', ('<broadcast>', SERVERPORT))
+if platform.system() == 'Windows':
+    import _windows_networks
+    destinations = _windows_networks.get_broadcast_addresses()
+else:
+    destinations = ['<broadcast>']
 
-signal.alarm(WAIT_TIME) # toy example, alarm() is not for real code
+for d in destinations:
+    # send query command to WSA
+    query_struct = DISCOVERY_QUERY
+    cs.sendto(query_struct, (d, DISCOVERY_UDP_PORT))
+
 while True:
+    ready, _, _ = select.select([cs], [], [], WAIT_TIME)
+    if not ready:
+        break
     data, (host, port) = cs.recvfrom(1024)
-    resp = struct.unpack(DISCOVERY_RESPONSE_FORMAT, data)
-    print "WSA4000" if resp[3] == 0 else "WSA5000",
-    print resp[2].split('\0',1)[0], "at", host
+
+    model, serial, firmware = parse_discovery_response(data)
+
+    print model, serial, firmware, 'at', host

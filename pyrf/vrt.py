@@ -9,6 +9,10 @@ VRTDATA = 1
 VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
+VRT_IFDATA_I14Q14 = 0x90000003
+VRT_IFDATA_I14 = 0x90000005
+VRT_IFDATA_I24 = 0x90000006
+VRT_IFDATA_PSD8 = 0x90000007
 
 CTX_REFERENCEPOINT = (1 << 30)
 CTX_RFFREQ = (1 << 27)
@@ -52,7 +56,8 @@ def vrt_packet_reader(raw_read):
         payload_size = (size - 5 - 1) * 4
         payload = yield raw_read(payload_size)
         trailer = yield raw_read(4)
-        yield DataPacket(count, size, stream_id, tsi, tsf, payload)
+        trailer = struct.unpack(">I", trailer)[0]
+        yield DataPacket(count, size, stream_id, tsi, tsf, payload, trailer)
 
     else:
         raise InvalidDataReceived("unknown packet type: %s" % packet_type)
@@ -72,15 +77,16 @@ class ContextPacket(object):
         self.ptype = packet_type
         self.count = count
         self.size = size
-        (self.streamId, self.tsi, self.tsf,indicatorsField,) = struct.unpack(">IIQI", tmpstr[0:20])
+        (self.stream_id, self.tsi, self.tsf,indicatorsField,
+            ) = struct.unpack(">IIQI", tmpstr[0:20])
         self.fields = {}
 
         # now read all the indicators
-        if self.streamId == VRTRECEIVER:
+        if self.stream_id == VRTRECEIVER:
             self._parseReceiverContext(indicatorsField, tmpstr[20:])
-        elif self.streamId == VRTDIGITIZER:
+        elif self.stream_id == VRTDIGITIZER:
             self._parseDigitizerContext(indicatorsField, tmpstr[20:])
-        elif self.streamId == VRTCUSTOM:
+        elif self.stream_id == VRTCUSTOM:
             self._parseCustomContext(indicatorsField, tmpstr[20:])
 
 
@@ -187,7 +193,7 @@ class ContextPacket(object):
 
     def __str__(self):
         return ("Context #%02d [%d.%012d, 0x%08x " % (
-            self.count, self.tsi, self.tsf, self.streamId)
+            self.count, self.tsi, self.tsf, self.stream_id)
             ) + str(self.fields) + "]"
 
 
@@ -259,6 +265,60 @@ class IQData(object):
         return a
 
 
+class DataArray(object):
+    """
+    Data Packet values as a lazy array read from *binary_data*.
+
+    :param bytes_per_sample: 1 for PSD8 data, 2 for I14 data or
+                             4 for I24 data
+    """
+    def __init__(self, binary_data, bytes_per_sample):
+        self._strdata = binary_data
+        self._bytes_per_sample = bytes_per_sample
+        self._data = None
+
+    def _update_data(self):
+        self._data = array.array({
+            1: 'b',
+            2: 'h',
+            4: 'l' if array.array('l').itemsize == 4 else 'i',
+            }[self._bytes_per_sample])
+        self._data.fromstring(self._strdata)
+        if self._bytes_per_sample > 1 and sys.byteorder == 'little':
+            self._data.byteswap()
+
+    def __len__(self):
+        return len(self._strdata) / self._bytes_per_sample
+
+    def __getitem__(self, n):
+        if not self._data:
+            self._update_data()
+        return self._data[n]
+
+    def __iter__(self):
+        if not self._data:
+            self._update_data()
+        return iter(self._data)
+
+    def __reversed__(self):
+        if not self._data:
+            self._update_data()
+        return reversed(self._data)
+
+    def numpy_array(self):
+        """
+        return a numpy array for this data
+        """
+        import numpy
+        a = numpy.frombuffer(self._strdata, dtype={
+            1: numpy.int8,
+            2: numpy.int16,
+            4: numpy.int32,}[self._bytes_per_sample])
+        if self._bytes_per_sample > 1:
+            a = a.newbyteorder('>')
+        return a
+
+
 class DataPacket(object):
     """
     A Data Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`
@@ -268,16 +328,28 @@ class DataPacket(object):
        a :class:`pyrf.vrt.IQData` object containing the packet data
     """
 
-    def __init__(self, count, size, streamId, tsi, tsf, payload):
+    def __init__(self, count, size, stream_id, tsi, tsf, payload, trailer):
         self.ptype = 1
         self.count = count
         self.size = size
-        self.streamId = streamId
+        self.stream_id = stream_id
         self.tsi = tsi
         self.tsf = tsf
 
         # interpret data
-        self.data = IQData(payload)
+        if self.stream_id == VRT_IFDATA_I14:
+            self.data = DataArray(payload, 2)
+        elif self.stream_id == VRT_IFDATA_PSD8:
+            self.data = DataArray(payload, 1)
+        elif self.stream_id == VRT_IFDATA_I24:
+            self.data = DataArray(payload, 4)
+        else:
+            self.data = IQData(payload)
+
+        self.valid_data = bool((trailer >> 18) & 1)
+        self.reference_lock = bool((trailer >> 17) & 1)
+        self.over_range = bool((trailer >> 13) & 1)
+        self.sample_loss = bool((trailer >> 12) & 1)
 
 
     def is_data_packet(self):

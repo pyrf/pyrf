@@ -15,7 +15,7 @@ dut = WSA()
 dut.connect(sys.argv[1])
 sd = SweepDevice(dut)
 
-fstart, fstop, bins = sd.capture_power_spectrum(0e9, 10e9, 2000,
+fstart, fstop, bins = sd.capture_power_spectrum(0e9, 10e9, 5e6,
     {'gain': 'high', 'antenna': 1})
 
 

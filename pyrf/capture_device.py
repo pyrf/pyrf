@@ -1,7 +1,8 @@
 from pyrf.numpy_util import compute_fft
 from pyrf.config import TriggerSettings
 
-USABLE_BW = 100e6
+import math
+
 
 class CaptureDeviceError(Exception):
     pass
@@ -10,7 +11,6 @@ class CaptureDeviceError(Exception):
 class CaptureDevice(object):
     """
     Virtual device that returns power levels generated from a single data packet
-    (packet returned will have a span of 100MHz)
     :param real_device: device that will will be used for capturing data,
                         typically a :class:`pyrf.thinkrf.WSA` instance.
     :param callback: callback to use for async operation (not used if
@@ -33,31 +33,31 @@ class CaptureDevice(object):
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
 
-    
-    
-    
-    def capture_power_spectrum(self,device_set, bins):
+
+    def capture_power_spectrum(self, device_set, rbw, min_points=128):
         """
         Initiate a capture of power spectral density by
-        applying leveled triggers and return the first data packet that 
+        applying leveled triggers and return the first data packet that
         satisfy the trigger.
 
         :param fstart: starting frequency in Hz
         :type fstart: float
         :param fstop: ending frequency in Hz
         :type fstop: float
-        :param bins: FFT bins requested (number produced likely more)
-        :type bins: int
+        :param rbw: requested RBW in Hz (output RBW may be smaller than
+                    requested)
+        :type rbw: float
         :param triggers: a class containing trigger information
         :type class:`TriggerSettings`
         :param device_settings: antenna, gain and other device settings
         :type dict:
-        """      
+        """
+
+        prop = self.real_device.properties
 
         # setup the WSA device
-        self.bin_size = bins
-        self.fstart = device_set['freq'] - USABLE_BW/2
-        self.fstop =  device_set['freq'] + USABLE_BW/2
+        self.fstart = device_set['freq'] - prop.USABLE_BW / 2
+        self.fstop =  device_set['freq'] + prop.USABLE_BW / 2
         self.real_device.apply_device_settings(device_set)
         
         self.real_device.abort()
@@ -65,39 +65,35 @@ class CaptureDevice(object):
         self.real_device.request_read_perm()
         self._vrt_context = {}
 
+        points = prop.FULL_BW / rbw
+        points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
+
         if self.async_callback:
 
-            
             self.connector.vrt_callback = self.read_data
-            self.real_device.capture(bins, 1)
+            self.real_device.capture(points, 1)
 
             return
 
-        self.real_device.capture(bins, 1)
+        self.real_device.capture(points, 1)
         result = None
         while result is None:
             result = self.read_data(self.real_device.read())
         return result
-        
-    def read_data(self, packet):
 
+    def read_data(self, packet):
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
             return
-            
+
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
+        prop = self.real_device.properties
+        attenuated_edge = math.ceil((1.0 -
+            float(prop.USABLE_BW) / prop.FULL_BW) / 2 * len(pow_data))
+        pow_data = pow_data[attenuated_edge:-attenuated_edge]
+        # FIXME: fstart and fstop not properly corrected for bins removed
+
         if self.async_callback:
-            strt_ind = int(0 + 0.1 * (self.bin_size))
-            stp_ind = int(self.bin_size - 0.1 * (self.bin_size))
-            self.async_callback(self.fstart, self.fstop, pow_data[strt_ind:stp_ind])
+            self.async_callback(self.fstart, self.fstop, pow_data)
             return
         return (self.fstart, self.fstop, pow_data)
-        
-        
-        
-            
-        
-        
-
-        
-

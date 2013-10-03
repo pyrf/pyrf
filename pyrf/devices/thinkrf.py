@@ -5,7 +5,19 @@ from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
 
 from pyrf.units import M
 
+import struct
+
+
+DISCOVERY_UDP_PORT = 18331
+_DISCOVERY_QUERY_CODE = 0x93315555
+_DISCOVERY_QUERY_VERSION = 2
+_DISCOVERY_QUERY_FORMAT = '>LL'
+DISCOVERY_QUERY = struct.pack(_DISCOVERY_QUERY_FORMAT,
+    _DISCOVERY_QUERY_CODE, _DISCOVERY_QUERY_VERSION)
+
 class WSA4000Properties(object):
+    model = 'WSA4000'
+
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
@@ -21,8 +33,14 @@ class WSA4000Properties(object):
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
 
+    SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
+        'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
 
 class WSA5000Properties(object):
+    model = 'WSA5000'
+
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
     CAPTURE_FREQ_RANGES = [(0, 50*M, I_ONLY), (100*M, 20000*M, IQ)]
@@ -33,11 +51,14 @@ class WSA5000Properties(object):
     MIN_TUNABLE = 100*M
     MAX_TUNABLE = 20000*M
     MIN_DECIMATION = 2
-    MAX_DECIMATION = 512
+    MAX_DECIMATION = 1024
     DECIMATED_USABLE = 0.875 # XXX: to be confirmed
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
 
+    SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
+        'attenuator', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
 
 class WSA(object):
@@ -128,6 +149,23 @@ class WSA(object):
         yield self.scpiget(":*idn?")
 
     @sync_async
+    def rfe_mode(self, mode=None):
+        """
+        This command sets or queries the WSA's Receiver Front End mode of
+        operation.
+
+        :param mode: 'ZIF', 'DD', 'HDR', 'IQIN', 'SH' or None to query
+        :returns: the current RFE mode
+        """
+        if mode is None:
+            buf = yield self.scpiget(":INPUT:MODE?")
+            mode = buf.strip()
+        else:
+            self.scpiset(":INPUT:MODE %s" % mode)
+
+        yield mode
+
+    @sync_async
     def freq(self, freq=None):
         """
         This command sets or queries the tuned center frequency of the WSA.
@@ -138,7 +176,7 @@ class WSA(object):
         :returns: the frequency in Hz
         """
         if freq is None:
-            buf = yield self.scpiget("FREQ:CENTER?")
+            buf = yield self.scpiget(":FREQ:CENTER?")
             freq = int(buf)
         else:
             self.scpiset(":FREQ:CENTER %d\n" % freq)
@@ -480,15 +518,21 @@ class WSA(object):
         self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
         self.scpiset(":sweep:entry:freq:shift %d" % (entry.fshift))
         self.scpiset(":sweep:entry:decimation %d" % (entry.decimation))
-        self.scpiset(":sweep:entry:antenna %d" % (entry.antenna))
-        self.scpiset(":sweep:entry:gain:rf %s" % (entry.gain))
+        if 'antenna' in self.properties.SWEEP_SETTINGS:
+            self.scpiset(":sweep:entry:antenna %d" % (entry.antenna))
+        if 'gain' in self.properties.SWEEP_SETTINGS:
+            self.scpiset(":sweep:entry:gain:rf %s" % (entry.gain))
+        if 'attenuator' in self.properties.SWEEP_SETTINGS:
+            self.scpiset(":sweep:entry:attenuator %s" % (
+                1 if entry.attenuator else 0))
         self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
         self.scpiset(":sweep:entry:dwell %d,%d" %
             (entry.dwell_s, entry.dwell_us))
         self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
-        self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
+        if entry.trigtype.lower() == 'level':
+            self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
         self.scpiset(":sweep:entry:save")
 
     @sync_async
@@ -504,41 +548,11 @@ class WSA(object):
 
         entrystr = yield self.scpiget(":sweep:entry:read? %d" % index)
 
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fstart = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fstop = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fstep = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.fshift = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.decimation = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.antenna = int(value)
-        (ent.gain, sep, entrystr) = entrystr.partition(',')
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.ifgain = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.spp = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.ppb = int(value)
-        (value, sep, entrystr) = entrystr.partition(',')
-        ent.dwell_s = int(value)
-        (value, sep, trigstr) = entrystr.partition(',')
-        ent.dwell_us = int(value)
-
-        if trigstr == "NONE":
-            ent.trigtype = "NONE"
-        else:
-            (ent.trigtype, trigstr) = trigstr.split(',')
-            if ent.trigtype == "LEVEL":
-                (value, sep, trigstr) = trigstr.partition(',')
-                ent.level_fstart = int(value)
-                (value, sep, trigstr) = trigstr.partition(',')
-                ent.level_fstop = int(value)
-                (value, sep, trigstr) = trigstr.partition(',')
-                ent.level_amplitude = int(value)
+        values = entrystr.split(',')
+        for setting, value in zip(self.properties.SWEEP_SETTINGS, values):
+            if setting not in ('gain', 'trigtype'):
+                value = int(value)
+            setattr(ent, setting, value)
 
         yield ent
 
@@ -615,7 +629,41 @@ class WSA(object):
         :returns: 'RUNNING' or 'STOPPED'
         """
         yield self.scpiget(":TRACE:STREAM:STATUS?")
-    
+
+    @sync_async
+    def attenuator(self, enable=None):
+        """
+        This command enables, disables or queries the WSA's RFE 20
+        dB attenuation.
+
+        :param enable: True or False to set; None to query
+        :returns: the current attenuator state
+        """
+        if enable is None:
+            enable = yield self.scpiget(":INPUT:ATTENUATOR?")
+            enable = bool(int(enable))
+        else:
+            self.scpiset(":INPUT:ATTENUATOR %s" % 1 if enable else 0)
+        yield enable
+
+    @sync_async
+    def errors(self):
+        """
+        Flush and return the list of errors from past commands
+        sent to the WSA. An empty list is returned when no errors
+        are present.
+        """
+        errors = []
+        while True:
+            error = yield self.scpiget(":SYSTEM:ERROR?")
+            num, message = error.strip().split(',', 1)
+            num = int(num)
+            message = message.strip('"')
+            if not num:
+                break
+            errors.append((num, message))
+        yield errors
+
     def apply_device_settings(self, settings):
         """
         This command takes a dict of device settings, and applies them to the 
@@ -623,26 +671,37 @@ class WSA(object):
 
         :param settings: dict containing settings such as gain,antenna,etc
         """
-        
-        for s in settings:
-            if s == 'freq':
-                self.freq(settings[s])
-            if s == 'antenna':
-                self.antenna(settings[s])
-            elif s == 'gain':
-                self.gain(settings[s])
-            elif s == 'ifgain':
-                self.ifgain(settings[s])
-            elif s == 'fshift':
-                self.fshift(settings[s])
-            elif s == 'decimation':
-                self.decimation(settings[s])
-            elif s == 'spp':
-                self.spp(settings[s])
-            elif s == 'ppb':
-                self.ppb(settings[s])
-            elif s == 'trigger':
-                self.trigger(settings[s])
+        device_setting = {
+            'freq': self.freq,
+            'antenna': self.antenna,
+            'gain': self.gain,
+            'ifgain': self.ifgain,
+            'fshift': self.fshift,
+            'decimation': self.decimation,
+            'spp': self.spp,
+            'ppb': self.ppb,
+            'trigger': self.trigger,
+            'attenuator': self.attenuator,
+            }
+
+        for k, v in settings.iteritems():
+            device_setting[k](v)
+
+
+def parse_discovery_response(response):
+    """
+    Return (model, serial, firmware version) based on a discovery
+    response message
+    """
+    RESPONSE_HEADER_FORMAT = '>II'
+    WSA4000_DISCOVERY_VERSION = 1
+    WSA5000_FORMAT = '16s16s20s'
+
+    version = struct.unpack(RESPONSE_HEADER_FORMAT, response[:8])[1]
+    if version == WSA4000_DISCOVERY_VERSION:
+        return ('WSA4000', response[8:].split('\0', 1)[0], None)
+    return tuple(v.rstrip('\0') for v in struct.unpack(WSA5000_FORMAT,
+        response[8:]))
 
 
 # for backwards compatibility

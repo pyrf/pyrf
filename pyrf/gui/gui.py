@@ -125,6 +125,17 @@ class MainPanel(QtGui.QWidget):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         self.dut = dut
+        if dut.properties.model == 'WSA5000':
+            self._antenna_box.hide()
+            self._gain_box.hide()
+            self._trigger.hide()
+            #self._attenuator_box.show()
+        else:
+            self._antenna_box.show()
+            self._gain_box.show()
+            self._trigger.show()
+            #self._attenuator_box.hide()
+
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
@@ -137,7 +148,7 @@ class MainPanel(QtGui.QWidget):
         self.plot_state.dev_set.pop('trigger', None)
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
-                                              self.plot_state.bin_size,
+                                              self.plot_state.rbw,
                                               self.plot_state.dev_set,
                                               continuous = False)
 
@@ -147,7 +158,7 @@ class MainPanel(QtGui.QWidget):
         device_set['freq'] = self.plot_state.center_freq
         device_set['trigger'] = self.plot_state.trig_set
 
-        self.cap_dut.capture_power_spectrum(device_set,self.plot_state.bin_size)
+        self.cap_dut.capture_power_spectrum(device_set,self.plot_state.rbw)
 
 
     def receive_data(self, fstart, fstop, pow_):
@@ -292,6 +303,7 @@ class MainPanel(QtGui.QWidget):
         first_row = QtGui.QHBoxLayout()
         first_row.addWidget(self._antenna_control())
         first_row.addWidget(self._trigger_control())
+        first_row.addWidget(self._attenuator_control())
         
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._gain_control())
@@ -349,6 +361,16 @@ class MainPanel(QtGui.QWidget):
         self._trigger = trigger
         self.control_widgets.append(self._trigger)
         return trigger
+
+    def _attenuator_control(self):
+        attenuator = QtGui.QCheckBox("Attenuator")
+        attenuator.setChecked(True)
+        def new_attenuator():
+            self.plot_state.dev_set['attenuator'] = attenuator.isChecked()
+        attenuator.clicked.connect(new_attenuator)
+        self._attenuator_box = attenuator
+        self.control_widgets.append(attenuator)
+        return attenuator
     
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")

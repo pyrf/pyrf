@@ -5,14 +5,32 @@ Examples
 These examples may be found in the "examples" directory included
 with the PyRF source code.
 
-show_i_q.py
------------
 
-This example connects to a device specified on the command line,
+discovery.py / twisted_discovery.py
+-----------------------------------
+
+* `discovery.py <https://github.com/pyrf/pyrf/blob/master/examples/discovery.py>`_
+* `twisted_discovery.py <https://github.com/pyrf/pyrf/blob/master/examples/twisted_discovery.py>`_
+
+These examples detect WSA devices on the same network
+
+Example output:
+
+.. code-block:: none
+
+   WSA4000 00:50:c2:ea:29:14 None at 10.126.110.111
+   WSA4000 00:50:c2:ea:29:26 None at 10.126.110.113
+
+
+show_i_q.py / twisted_show_i_q.py
+---------------------------------
+
+These examples connect to a device specified on the command line,
 tunes it to a center frequency of 2.450 MHz
 then reads and displays one capture of 1024 i, q values.
 
-.. literalinclude:: ../examples/show_i_q.py
+* `show_i_q.py <https://github.com/pyrf/pyrf/blob/master/examples/show_i_q.py>`_
+* `twisted_show_i_q.py <https://github.com/pyrf/pyrf/blob/master/examples/twisted_show_i_q.py>`_
 
 Example output (truncated):
 
@@ -37,36 +55,31 @@ Example output (truncated):
    4,-12
 
 
-plot_fft.py
------------
+matplotlib_plot_sweep.py
+------------------------
+
+This example connects to a device specified on the command line,
+and plots a complete sweep of the spectrum using NumPy_ and matplotlib_.
+
+* `matplotlib_plot_sweep.py <https://github.com/pyrf/pyrf/blob/master/examples/matplotlib_plot_sweep.py>`_
+
+.. _NumPy: http://numpy.scipy.org/
+.. _matplotlib: http://matplotlib.org/
+
+
+matplotlib_trigger_plot_fft.py
+------------------------------
 
 This example connects to a device specified on the command line,
 tunes it to a center frequency of 2.450 MHz
 and sets a trigger for a signal with an amplitude of -70 dBm or
 greater between 2.400 MHz and 2.480 MHz.
 
-When the trigger is satisfied the data is captured and rendered
-as a spectrum display using NumPy_ and matplotlib_.
-
-.. _NumPy: http://numpy.scipy.org/
-.. _matplotlib: http://matplotlib.org/
-
-.. literalinclude:: ../examples/plot_fft.py
+* `matplotlib_trigger_plot_fft.py <https://github.com/pyrf/pyrf/blob/master/examples/matplotlib_trigger_plot_fft.py>`_
 
 .. figure:: plot_fft.png
-   :alt: plot_fft screen shot
+   :alt: matplotlib_trigger_plot_fft screen shot
 
-   Example output of ``plot_fft.py``
-
-
-.. _twisted-show-i-q:
-
-twisted_show_i_q.py
--------------------
-
-This is a Twisted version of the show_i_q.py example above.
-
-.. literalinclude:: ../examples/twisted_show_i_q.py
-
+   Example output of ``matplotlib_trigger_plot_fft.py``
 
 

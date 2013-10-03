@@ -1,6 +1,7 @@
 import math
 
-from pyrf.vrt import I_ONLY
+from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
+    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 def compute_fft(dut, data_pkt, context):
     """
@@ -23,19 +24,27 @@ def compute_fft(dut, data_pkt, context):
     reference_level = context['reflevel']
     prop = dut.properties
 
-    iq_data = data_pkt.data.numpy_array()
-    # i, q values here are 14-bit signed
-    i_data = numpy.array(iq_data[:,0], dtype=float)
-    q_data = numpy.array(iq_data[:,1], dtype=float)
+    data = data_pkt.data.numpy_array()
+    if data_pkt.stream_id == VRT_IFDATA_I14Q14:
+        i_data = numpy.array(data[:,0], dtype=float)
+        q_data = numpy.array(data[:,1], dtype=float)
 
-    freq = context['rffreq']
-    for low, high, valid_data in prop.CAPTURE_FREQ_RANGES:
-        if low <= freq <= high:
-            break
+        # special handling of WSA4k "only I data is valid here" range
+        freq = context['rffreq']
+        for low, high, valid_data in prop.CAPTURE_FREQ_RANGES:
+            if low <= freq <= high:
+                break
 
-    if valid_data == I_ONLY:
+        if valid_data == I_ONLY:
+            power_spectrum = _compute_fft_i_only(i_data)
+        power_spectrum = _compute_fft(i_data, q_data)
+
+    if data_pkt.stream_id in (VRT_IFDATA_I14, VRT_IFDATA_I24):
+        i_data = numpy.array(data, dtype=float)
         power_spectrum = _compute_fft_i_only(i_data)
-    power_spectrum = _compute_fft(i_data, q_data)
+
+    if data_pkt.stream_id == VRT_IFDATA_PSD8:
+        power_spectrum = numpy.array(data, dypye=float)
 
     noiselevel_offset = (
         reference_level - prop.NOISEFLOOR_CALIBRATION - prop.ADC_DYNAMIC_RANGE)
@@ -64,11 +73,9 @@ def _compute_fft_i_only(i_data):
 
     windowed_i = i_data * numpy.hanning(len(i_data))
 
-    power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_i))
+    power_spectrum = numpy.fft.rfft(windowed_i)
     power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(power_spectrum))
-
-    median_index = len(fft_result) // 2
-    return fft_result[median_index+1:]
+    return power_spectrum
 
 def _calibrate_i_q(i_data, q_data):
     samples = len(i_data)

@@ -16,6 +16,10 @@ pyrf.devices
 
    .. automethod:: antenna(number=None)
 
+   .. automethod:: apply_device_settings(settings)
+
+   .. automethod:: attenuator(enable=None)
+
    .. automethod:: capture(spp, ppb)
 
    .. automethod:: connect(host)
@@ -25,6 +29,8 @@ pyrf.devices
    .. automethod:: disconnect()
 
    .. automethod:: eof()
+
+   .. automethod:: errors()
 
    .. automethod:: flush()
 
@@ -82,6 +88,7 @@ pyrf.devices
 
    .. automethod:: trigger(settings=None)
 
+.. autofunction:: parse_discovery_response
 
 pyrf.sweep_device
 -----------------
