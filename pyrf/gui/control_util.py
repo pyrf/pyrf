@@ -88,7 +88,7 @@ def _trace_tab_change(layout):
     change the selected trace
     """
     trace = layout._plot.traces[layout._trace_tab.currentIndex()]
-    layout.plot_state.trace_sel = trace.name
+
     if trace.write:
         layout._trace_attr['write'].click()
     elif trace.max_hold:
@@ -108,10 +108,11 @@ def _max_hold(layout):
     """
     disable/enable max hold on a trace
     """
-    layout._plot.traces[layout._trace_tab.currentIndex()].write = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = True
-    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace.write = False
+    trace.max_hold = True
+    trace.min_hold = False
+    trace.blank = False
     layout._trace_attr['store'].setEnabled(True)
     util.update_marker_traces(layout._marker_trace, layout._plot.traces)    
     
@@ -119,10 +120,11 @@ def _min_hold(layout):
     """
     disable/enable min hold on a trace
     """
-    layout._plot.traces[layout._trace_tab.currentIndex()].write = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = True
-    layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace.write = False
+    trace.max_hold = False
+    trace.min_hold = True
+    trace.blank = False
     layout._trace_attr['store'].setEnabled(True)   
     util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
     
@@ -130,10 +132,11 @@ def _trace_write(layout):
     """
     disable/enable running FFT mode the selected trace
     """        
-    layout._plot.traces[layout._trace_tab.currentIndex()].write = True
-    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].blank = False
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace.write = True
+    trace.max_hold = False
+    trace.min_hold = False
+    trace.blank = False
     layout._trace_attr['store'].setEnabled(True)
     
     if layout._marker_trace is not None:
@@ -147,16 +150,21 @@ def _blank_trace(layout):
         layout._trace_attr['store'].click()
     
     layout._trace_attr['store'].setEnabled(False)
-    layout._plot.traces[layout._trace_tab.currentIndex()].write = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].max_hold = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].min_hold = False
-    layout._plot.traces[layout._trace_tab.currentIndex()].blank = True
-    layout._plot.traces[layout._trace_tab.currentIndex()].curve.clear()
-    layout._plot.traces[layout._trace_tab.currentIndex()].data = None
-    if layout._plot.traces[layout._marker_trace.currentIndex()] == layout._plot.traces[layout._trace_tab.currentIndex()]:
-       layout._marker_check.click() 
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace.write = False
+    trace.max_hold = False
+    trace.min_hold = False
+    trace.blank = True
+    trace.curve.clear()
+    trace.data = None
+
+    
+    for marker in layout._plot.markers:
+        if marker.enabled and marker.trace_index ==  layout._trace_tab.currentIndex():
+            marker.disable(layout._plot)
+            layout._marker_check.click() 
     util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
-       
+    
 def _store_trace(layout):
     """
     store the current trace's data
@@ -170,8 +178,12 @@ def _marker_control(layout):
     """
     disable/enable marker
     """
+
     if layout._marker_check.checkState() is QtCore.Qt.CheckState.Checked:
+        
         layout._marker_trace.setEnabled(True)
+        if layout._marker_trace.currentIndex() < 0:
+            layout._marker_trace.setCurrentIndex(0)
         layout._plot.markers[layout._marker_tab.currentIndex()].enable(layout._plot)
     else:
         layout._marker_trace.setEnabled(False)  
@@ -183,10 +195,13 @@ def _marker_trace_control(layout):
     """
     change the trace that is currently associated with the marker
     """
+
     if layout._marker_trace is not None:
         marker = layout._plot.markers[layout._marker_tab.currentIndex()]
-        marker.trace_index = layout._marker_trace.currentIndex()
-    
+        if not layout._marker_trace.currentText() == '':
+            marker.trace_index = int(layout._marker_trace.currentText()) - 1
+
+
 def _marker_tab_change(layout):
     """
     change the current selected marker
@@ -208,15 +223,12 @@ def _find_peak(layout):
     """
     move the selected marker to the maximum point of the spectrum
     """
-    if not layout.plot_state.marker and not layout.plot_state.delta:
-        _marker_control(layout)
-    trace = layout._plot.traces[layout._marker_trace.currentIndex()]
-
-    peak = util.find_max_index(trace.data) 
-    print peak
-
-    layout.update_marker()
-    layout.plot_state.marker_ind = peak
+    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+    
+    if marker.enabled:
+        trace = layout._plot.traces[marker.trace_index]
+        peak_index = util.find_max_index(trace.data) 
+        marker.data_index = peak_index
 
 
 def _trigger_control(layout):

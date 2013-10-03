@@ -302,6 +302,7 @@ class MainPanel(QtGui.QWidget):
 
         dev_group.setLayout(dev_layout)         
         return dev_group
+    
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
         antenna.setToolTip("Choose Antenna") 
@@ -677,10 +678,10 @@ class MainPanel(QtGui.QWidget):
                                                                                    trace.data[marker.data_index])
                         marker_label.setText(marker_text)
 
-
+                else:
+                    marker_label.setText('')
 
     def update_diff(self):
-
 
         num_markers = 0
         traces = []
