@@ -129,12 +129,12 @@ class MainPanel(QtGui.QWidget):
             self._antenna_box.hide()
             self._gain_box.hide()
             self._trigger.hide()
-            #self._attenuator_box.show()
+            self._attenuator_box.show()
         else:
             self._antenna_box.show()
             self._gain_box.show()
             self._trigger.show()
-            #self._attenuator_box.hide()
+            self._attenuator_box.hide()
 
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
@@ -254,18 +254,20 @@ class MainPanel(QtGui.QWidget):
         
         # second row contains the tab attributes
         second_row = QtGui.QHBoxLayout()
-        max_hold, min_hold, write, store, blank = self._trace_checkboxes()
+        max_hold, min_hold, write, store, blank, ref_label, ref  = self._trace_items()
         second_row.addWidget(max_hold)
         second_row.addWidget(min_hold)
         second_row.addWidget(write)
         second_row.addWidget(blank)
         second_row.addWidget(store)
+        second_row.addWidget(ref_label)
+        second_row.addWidget(ref)
         trace_controls_layout.addLayout(first_row)
         trace_controls_layout.addLayout(second_row) 
         trace_group.setLayout(trace_controls_layout)
         return trace_group
         
-    def _trace_checkboxes(self):
+    def _trace_items(self):
     
         trace_attr = {}
         store = QtGui.QCheckBox('Store')
@@ -289,11 +291,16 @@ class MainPanel(QtGui.QWidget):
         blank.clicked.connect(lambda: cu._blank_trace(self))
         trace_attr['blank'] = blank
         
+        ref_label = QtGui.QLabel('Reference Offset')
+        ref_control = QtGui.QLineEdit('0')
+        ref_control.returnPressed.connect(lambda: cu._ref_trace(self))
+        trace_attr['ref_lab'] = ref_label
+        trace_attr['ref'] = ref_control
+        
         self._trace_attr = trace_attr
         self._trace_attr['write'].click()
-        return max_hold, min_hold, write, store, blank
+        return max_hold, min_hold, write, store, blank, ref_label, ref_control
 
-        
     def _device_controls(self):
         dev_group = QtGui.QGroupBox("Device Control")
         self.dev_group = dev_group

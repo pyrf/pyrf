@@ -104,6 +104,8 @@ def _trace_tab_change(layout):
         state =  QtCore.Qt.CheckState.Unchecked
     layout._trace_attr['store'].setCheckState(state) 
     
+    layout._trace_attr['ref'].setText(str(trace.ref))
+    
 def _max_hold(layout):
     """
     disable/enable max hold on a trace
@@ -174,6 +176,19 @@ def _store_trace(layout):
     else:
         layout._plot.traces[layout._trace_tab.currentIndex()].store = False
         
+def _ref_trace(layout):
+    """
+    adjust the reference level
+    """
+
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    try:
+        ref = int(layout._trace_attr['ref'].text()) 
+    except ValueError:
+        return
+    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace.ref = ref
+
 def _marker_control(layout):
     """
     disable/enable marker
