@@ -14,38 +14,36 @@ class trace(object):
         self.blank = blank
         self.write = write
         self.store = False
+        self.ref = 0
         self.data = None
         self.freq_range = None
         self.color = trace_color
         self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
         
-    def update_curve(self,xdata, ydata):
-        
+    def update_curve(self,xdata, raw_ydata):
+  
         if self.store or self.blank:
             return
-            
+        
+        self.freq_range = xdata     
+        ydata = np.array(raw_ydata) + self.ref
+
         if self.max_hold:
             if (self.data == None or len(self.data) != len(ydata)):
-                self.data = ydata
-            self.freq_range = xdata
+                self.data = ydata 
             self.data = np.maximum(self.data,ydata)
-            self.curve.setData(x = xdata, 
-                                y = self.data, 
-                                pen = self.color)
+
         elif self.min_hold:
             if (self.data == None or len(self.data) != len(ydata)):
                 self.data = ydata
-            self.freq_range = xdata
             self.data = np.minimum(self.data,ydata)
-            self.curve.setData(x = xdata, 
-                                y = self.data, 
-                                pen = self.color)
+
         elif self.write:
             self.data = ydata
-            self.freq_range = xdata
-            self.curve.setData(x = xdata, 
-                                y = ydata, 
-                                pen = self.color)
+        
+        self.curve.setData(x = xdata, 
+                            y = ydata,
+                            pen = self.color)
 
 class marker(object):
     """
