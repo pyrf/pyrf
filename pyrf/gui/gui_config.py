@@ -8,7 +8,7 @@ INIT_CENTER_FREQ = 2450 * M
 INIT_BANDWIDTH = 500 * M
 INIT_RBW = 244141
 
-class plot_state(object):
+class PlotState(object):
     """
     Class to hold all the GUI's plot states
     """

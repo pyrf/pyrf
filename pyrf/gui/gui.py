@@ -20,7 +20,7 @@ from util import hotkey_util, update_marker_traces
 from pyrf.gui import colors
 from pyrf.gui import labels
 import control_util as cu
-from plot_widget import plot
+from plot_widget import Plot
 import gui_config
 from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
@@ -98,7 +98,7 @@ class MainPanel(QtGui.QWidget):
         self.setMinimumHeight(screen.height() * 0.6)
         self.plot_state = None
         # plot window
-        self._plot = plot(self)
+        self._plot = Plot(self)
         self._marker_trace = None
         self._vrt_context = {}
         self.initUI()
@@ -130,7 +130,7 @@ class MainPanel(QtGui.QWidget):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         self.dut = dut
-        self.plot_state = gui_config.plot_state(dut.properties)
+        self.plot_state = gui_config.PlotState(dut.properties)
         if dut.properties.model == 'WSA5000':
             self._antenna_box.hide()
             self._gain_box.hide()

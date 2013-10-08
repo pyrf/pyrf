@@ -6,7 +6,7 @@ from pyrf.gui import labels
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
-class trace(object):
+class Trace(object):
     """
     Class to represent a trace in the plot
     """
@@ -51,7 +51,7 @@ class trace(object):
                                 y = ydata, 
                                 pen = self.color)
 
-class marker(object):
+class Marker(object):
     """
     Class to represent a marker on the plot
     """
@@ -102,7 +102,7 @@ class marker(object):
                                     symbol = '+', 
                                     size = 20, pen = color, 
                                     brush = color)
-class plot(object):
+class Plot(object):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
@@ -141,7 +141,7 @@ class plot(object):
             else:
                 blank_state = True
                 write_state = False
-            self.traces.append(trace(self,
+            self.traces.append(Trace(self,
                                     trace_name,
                                     trace_color, 
                                     blank = blank_state,
@@ -152,7 +152,7 @@ class plot(object):
         
         self.markers = []
         for marker_name in labels.MARKERS:
-            self.markers.append(marker(self, marker_name))
+            self.markers.append(Marker(self, marker_name))
             
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])
