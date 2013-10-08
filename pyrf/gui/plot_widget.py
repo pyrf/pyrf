@@ -2,6 +2,9 @@ import pyqtgraph as pg
 import numpy as np
 import constants
 
+PLOT_YMIN = -160
+PLOT_YMAX = 20
+
 class trace(object):
     """
     Class to represent a trace in the plot
@@ -111,7 +114,7 @@ class plot(object):
         self.window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
-        self.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
+        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         self.window.setLabel('left', text = 'Power', units = 'dBm')
         
         # initialize fft curve
@@ -161,7 +164,7 @@ class plot(object):
         
     def center_view(self,f,bw):
         self.window.setXRange(f - (bw/2),f + (bw / 2))
-        self.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
+        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         
     def grid(self,state):
         self.window.showGrid(state,state)
