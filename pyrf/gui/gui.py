@@ -92,7 +92,7 @@ class MainPanel(QtGui.QWidget):
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(screen.width() * 0.7)
         self.setMinimumHeight(screen.height() * 0.6)
-        self.plot_state = gui_config.plot_state()
+        self.plot_state = None
         # plot window
         self._plot = plot(self)
         self._marker_trace = None
@@ -126,6 +126,7 @@ class MainPanel(QtGui.QWidget):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         self.dut = dut
+        self.plot_state = gui_config.plot_state(dut.properties)
         if dut.properties.model == 'WSA5000':
             self._antenna_box.hide()
             self._gain_box.hide()
@@ -536,7 +537,8 @@ class MainPanel(QtGui.QWidget):
         return rbw
 
     def update_freq(self, delta = None):
-            
+        prop = self.dut.properties
+
         if delta == None:
             delta = 0                
         if self.plot_state.freq_sel == 'CENT':
@@ -544,7 +546,7 @@ class MainPanel(QtGui.QWidget):
                 f = (float(self._freq_edit.text()) + delta) * M
             except ValueError:
                 return
-            if f > constants.MAX_FREQ or f < constants.MIN_FREQ:
+            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
                 return
             self.plot_state.update_freq_set(fcenter = f)
 
@@ -553,7 +555,7 @@ class MainPanel(QtGui.QWidget):
                 f = (float(self._fstart_edit.text()) + delta) * M
             except ValueError:
                 return
-            if f > (constants.MAX_FREQ) or f < (constants.MIN_FREQ) or f > self.plot_state.fstop:
+            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
                 return
             self.plot_state.update_freq_set(fstart = f)
             
@@ -562,7 +564,7 @@ class MainPanel(QtGui.QWidget):
                 f = (float(self._fstop_edit.text()) + delta) * M
             except ValueError:
                 return
-            if f > constants.MAX_FREQ or f < constants.MIN_FREQ or f < self.plot_state.fstart:
+            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
                 return
             self.plot_state.update_freq_set(fstop = f)
         

@@ -14,6 +14,7 @@ class plot_state(object):
     """
 
     def __init__(self,
+            device_properties,
             center_freq=INIT_CENTER_FREQ,
             bandwidth=INIT_BANDWIDTH,
             rbw=INIT_RBW,
@@ -41,8 +42,10 @@ class plot_state(object):
         self.fstop = self.center_freq + self.bandwidth / 2
         self.rbw = rbw
         self.enable_plot = True
-        self.freq_sel = 'CENT'              
-        
+        self.freq_sel = 'CENT'
+
+        self.device_properties = device_properties
+
     def enable_marker(self, layout):
         self.marker = True
         self.marker_sel = True
@@ -125,14 +128,15 @@ class plot_state(object):
                           fcenter = None, 
                           rbw = None, 
                           bw = None):
+        prop = self.device_properties
         
         if fcenter != None:
             self.fstart = fcenter - (self.bandwidth / 2)
-            if self.fstart < constants.MIN_FREQ:
-                self.fstart = constants.MIN_FREQ
+            if self.fstart < prop.MIN_TUNABLE:
+                self.fstart = prop.MIN_TUNABLE
             self.fstop = fcenter + (self.bandwidth / 2)
-            if self.fstop > constants.MAX_FREQ:    
-                self.fstop = constants.MAX_FREQ
+            if self.fstop > prop.MAX_TUNABLE:
+                self.fstop = prop.MAX_TUNABLE
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
@@ -140,8 +144,8 @@ class plot_state(object):
                 self.bin_size = 1
         
         elif fstart != None:
-            if fstart >= self.fstop:
-                fstart = self.fstop - constants.MIN_BW
+            if fstart >= self.fstop - prop.TUNING_RESOLUTION:
+                fstart = self.fstop - prop.TUNING_RESOLUTION
             self.fstart = fstart
             self.bandwidth = self.fstop - fstart
             self.center_freq = fstart + (self.bandwidth / 2)
@@ -150,8 +154,8 @@ class plot_state(object):
                 self.bin_size = 1
                 
         elif fstop != None:
-            if fstop <= self.fstart:
-                fstop = self.fstart + constants.MIN_BW
+            if fstop <= self.fstart + prop.TUNING_RESOLUTION:
+                fstop = self.fstart + prop.TUNING_RESOLUTION
             self.fstop = fstop
             self.bandwidth = fstop - self.fstart
             self.center_freq = fstop - (self.bandwidth / 2)
@@ -166,14 +170,14 @@ class plot_state(object):
                 self.bin_size = 1
         
         elif bw != None:
-            if bw < constants.MIN_BW:
-                bw = constants.MIN_BW
+            if bw < prop.TUNING_RESOLUTION:
+                bw = prop.TUNING_RESOLUTION
             self.fstart = (self.center_freq - (bw / 2))
             self.fstop = (self.center_freq + (bw / 2))
-            if self.fstart < constants.MIN_FREQ:
-                self.fstart = constants.MIN_FREQ
-            if self.fstop > constants.MAX_FREQ:    
-                self.fstop = constants.MAX_FREQ
+            if self.fstart < prop.MIN_TUNABLE:
+                self.fstart = prop.MIN_TUNABLE
+            if self.fstop > prop.MAX_TUNABLE:
+                self.fstop = prop.MAX_TUNABLE
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
