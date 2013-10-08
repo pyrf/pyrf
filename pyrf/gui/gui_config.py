@@ -8,6 +8,9 @@ INIT_CENTER_FREQ = 2450 * M
 INIT_BANDWIDTH = 500 * M
 INIT_RBW = 244141
 
+PLOT_YMIN = -160
+PLOT_YMAX = 20
+
 class PlotState(object):
     """
     Class to hold all the GUI's plot states
@@ -43,7 +46,10 @@ class PlotState(object):
         self.rbw = rbw
         self.enable_plot = True
         self.freq_sel = 'CENT'
-
+        
+        self.ref_level = PLOT_YMAX
+        self.min_level = PLOT_YMIN 
+        
         self.device_properties = device_properties
 
     def enable_marker(self, layout):

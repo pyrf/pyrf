@@ -4,6 +4,7 @@ import pyqtgraph as pg
 from pyrf.config import TriggerSettings
 from pyrf.util import read_data_and_context
 
+AXIS_OFFSET = 7
 def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
@@ -231,6 +232,31 @@ def _find_peak(layout):
         peak_index = util.find_max_index(trace.data) 
         marker.data_index = peak_index
 
+def _change_ref_level(layout):
+    """
+    change the ref level (maximum of the y-axis) of the fft plot
+    """
+    try:
+        ref = float(layout._ref_level.text())
+    except ValueError:
+        layout.ref_level.setText(str(layout.plot_state.ref_level))
+        return
+    layout.plot_state.ref_level = ref
+    layout._plot.window.setYRange(layout.plot_state.ref_level - AXIS_OFFSET, 
+                                        layout.plot_state.min_level + AXIS_OFFSET)
+    
+def _change_min_level(layout):
+    """
+    change the min level of the fft plot
+    """
+    try:
+        min = float(layout._min_level.text())
+    except ValueError:
+        layout.min_level.setText(str(layout.plot_state.min_level))
+        return
+    layout.plot_state.min_level = min
+    layout._plot.window.setYRange(layout.plot_state.ref_level - AXIS_OFFSET, 
+                                    layout.plot_state.min_level + AXIS_OFFSET)
 
 def _trigger_control(layout):
     """

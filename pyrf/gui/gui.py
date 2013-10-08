@@ -31,6 +31,8 @@ from pyrf.units import M
 
 
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
+PLOT_YMIN = -160
+PLOT_YMAX = 20
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -623,9 +625,18 @@ class MainPanel(QtGui.QWidget):
         third_row.addWidget(self._peak_control())
         third_row.addWidget(self._center_control())
         
+        fourth_row = QtGui.QHBoxLayout()
+        ref_level, ref_label, min_level, min_label = self._ref_controls()
+        
+        fourth_row.addWidget(ref_label)
+        fourth_row.addWidget(ref_level)
+        fourth_row.addWidget(min_label)
+        fourth_row.addWidget(min_level)
+        
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
         plot_controls_layout.addLayout(third_row)
+        plot_controls_layout.addLayout(fourth_row)
         
         plot_group.setLayout(plot_controls_layout)
         
@@ -661,6 +672,20 @@ class MainPanel(QtGui.QWidget):
         self._center_bt = center
         self.control_widgets.append(self._center_bt)
         return center
+    
+    def _ref_controls(self):
+        ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
+        ref_level.returnPressed.connect(lambda: cu._change_ref_level(self))
+        self._ref_level = ref_level
+        self.control_widgets.append(self._ref_level)
+        ref_label = QtGui.QLabel('Reference Level: ')
+        
+        min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
+        min_level.returnPressed.connect(lambda: cu._change_min_level(self))
+        min_label = QtGui.QLabel('Minimum Level: ')
+        self._min_level = min_level
+        self.control_widgets.append(self._min_level)
+        return ref_level, ref_label, min_level, min_label
         
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
