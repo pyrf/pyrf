@@ -2,14 +2,22 @@ import constants
 import util
 import numpy as np
 from pyrf.config import TriggerSettings
+from pyrf.units import M
 
+INIT_CENTER_FREQ = 2450 * M
+INIT_BANDWIDTH = 500 * M
+INIT_RBW = 244.141
     
 class plot_state(object):
     """
     Class to hold all the GUI's plot states
     """
 
-    def __init__(self):
+    def __init__(self,
+            center_freq=INIT_CENTER_FREQ,
+            bandwidth=INIT_BANDWIDTH,
+            rbw=INIT_RBW,
+            ):
         
         self.grid = False
 
@@ -27,12 +35,11 @@ class plot_state(object):
         self.peak = False
         
         self.freq_range = None        
-        self.center_freq = constants.INIT_CENTER_FREQ
-        self.bandwidth = constants.INIT_BANDWIDTH
+        self.center_freq = center_freq
+        self.bandwidth = bandwidth
         self.fstart = self.center_freq - self.bandwidth / 2
         self.fstop = self.center_freq + self.bandwidth / 2
-        self.bin_size = constants.INIT_BIN_SIZE
-        self.rbw = self.bandwidth / self.bin_size
+        self.rbw = rbw
         self.enable_plot = True
         self.freq_sel = 'CENT'              
         
