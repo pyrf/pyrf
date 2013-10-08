@@ -220,12 +220,15 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(self._device_controls(), y, x, 2, 5)
         y += 2
         grid.addWidget(self._freq_controls(), y, x, 4, 5)
+        y += 5
+        grid.addWidget(self._const_controls(), y, x, 4, 5)
         
         self.update_freq()
         self.setLayout(grid)
         
     def _trace_controls(self):
         trace_group = QtGui.QGroupBox("Traces")
+  
         self._trace_group = trace_group
         
         trace_controls_layout = QtGui.QVBoxLayout()
@@ -254,14 +257,12 @@ class MainPanel(QtGui.QWidget):
         
         # second row contains the tab attributes
         second_row = QtGui.QHBoxLayout()
-        max_hold, min_hold, write, store, blank, ref_label, ref  = self._trace_items()
+        max_hold, min_hold, write, store, blank  = self._trace_items()
         second_row.addWidget(max_hold)
         second_row.addWidget(min_hold)
         second_row.addWidget(write)
         second_row.addWidget(blank)
         second_row.addWidget(store)
-        second_row.addWidget(ref_label)
-        second_row.addWidget(ref)
         trace_controls_layout.addLayout(first_row)
         trace_controls_layout.addLayout(second_row) 
         trace_group.setLayout(trace_controls_layout)
@@ -290,19 +291,14 @@ class MainPanel(QtGui.QWidget):
         blank = QtGui.QRadioButton('Blank')
         blank.clicked.connect(lambda: cu._blank_trace(self))
         trace_attr['blank'] = blank
-        
-        ref_label = QtGui.QLabel('Reference Offset')
-        ref_control = QtGui.QLineEdit('0')
-        ref_control.returnPressed.connect(lambda: cu._ref_trace(self))
-        trace_attr['ref_lab'] = ref_label
-        trace_attr['ref'] = ref_control
-        
+                
         self._trace_attr = trace_attr
         self._trace_attr['write'].click()
-        return max_hold, min_hold, write, store, blank, ref_label, ref_control
+        return max_hold, min_hold, write, store, blank
 
     def _device_controls(self):
         dev_group = QtGui.QGroupBox("Device Control")
+        dev_group.setMaximumWidth(300)
         self.dev_group = dev_group
         
         dev_layout = QtGui.QVBoxLayout()
@@ -381,6 +377,7 @@ class MainPanel(QtGui.QWidget):
     
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")
+        freq_group.setMaximumWidth(300)
         self._freq_group = freq_group
         
         freq_layout = QtGui.QVBoxLayout()
@@ -591,6 +588,7 @@ class MainPanel(QtGui.QWidget):
     def _plot_controls(self):
 
         plot_group = QtGui.QGroupBox("Plot Control")
+        plot_group.setMaximumWidth(300)
         self._plot_group = plot_group
         
         plot_controls_layout = QtGui.QVBoxLayout()
@@ -667,7 +665,18 @@ class MainPanel(QtGui.QWidget):
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
+    
+    def _const_controls(self):
+        const_group =  QtGui.QGroupBox("Constellation Plot")
+        self._const_group = const_group
         
+        const_layout = QtGui.QVBoxLayout()
+        first_row = QtGui.QHBoxLayout()
+        first_row.addWidget(self._plot.const_window)
+        const_layout.addLayout(first_row)
+        const_group.setLayout(const_layout)
+        return const_group
+    
     def update_plot(self):
        
         self.plot_state.update_freq_range(self.plot_state.fstart,
@@ -735,6 +744,7 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
+            
         
         for key in self._trace_attr:
             self._trace_attr[key].setEnabled(True)

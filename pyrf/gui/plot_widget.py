@@ -14,19 +14,17 @@ class trace(object):
         self.blank = blank
         self.write = write
         self.store = False
-        self.ref = 0
         self.data = None
         self.freq_range = None
         self.color = trace_color
         self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
         
-    def update_curve(self,xdata, raw_ydata):
+    def update_curve(self,xdata, ydata):
   
         if self.store or self.blank:
             return
         
         self.freq_range = xdata     
-        ydata = np.array(raw_ydata) + self.ref
 
         if self.max_hold:
             if (self.data == None or len(self.data) != len(ydata)):
@@ -42,7 +40,7 @@ class trace(object):
             self.data = ydata
         
         self.curve.setData(x = xdata, 
-                            y = ydata,
+                            y = self.data,
                             pen = self.color)
 
 class marker(object):
@@ -103,6 +101,7 @@ class plot(object):
     
     def __init__(self, layout):
     
+        # initialize main fft window
         self.window = pg.PlotWidget(name='pyrf_plot')
         self.view_box = self.window.plotItem.getViewBox()
         # initialize the x-axis of the plot
@@ -123,9 +122,14 @@ class plot(object):
         self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
         self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
         self.grid(True)
-        self.traces = []
+        
+        # constellation window
+        self.const_window = pg.PlotWidget(name='const_plot')
+        self.const_plot = pg.ScatterPlotItem()
+        self.const_window.addItem(self.const_plot)
         
         # add traces
+        self.traces = []
         first_trace = constants.TRACES[0]
         count = 0
         for trace_name, trace_color in zip(constants.TRACES, constants.TRACE_COLORS):
