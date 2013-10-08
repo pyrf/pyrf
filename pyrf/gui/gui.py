@@ -26,6 +26,7 @@ from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings
 from pyrf.capture_device import CaptureDevice
+from pyrf.units import M
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -427,7 +428,7 @@ class MainPanel(QtGui.QWidget):
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq_edit = QtGui.QLineEdit(str(self.plot_state.center_freq/constants.MHZ))
+        freq_edit = QtGui.QLineEdit(str(self.plot_state.center_freq / float(M)))
         self._freq_edit = freq_edit
         self.control_widgets.append(self._cfreq)
         self.control_widgets.append(self._freq_edit)
@@ -477,7 +478,7 @@ class MainPanel(QtGui.QWidget):
         bw.setToolTip("[3]\nChange the bandwidth of the current plot")
         self._bw = bw
         bw.clicked.connect(lambda: cu._select_bw(self))
-        bw_edit = QtGui.QLineEdit(str(self.plot_state.bandwidth/constants.MHZ))
+        bw_edit = QtGui.QLineEdit(str(self.plot_state.bandwidth / float(M)))
         def freq_change():
             cu._select_bw(self)
             self.update_freq()
@@ -493,7 +494,7 @@ class MainPanel(QtGui.QWidget):
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.fstart/constants.MHZ))
+        freq = QtGui.QLineEdit(str(self.plot_state.fstart / float(M)))
         def freq_change():
             cu._select_fstart(self)
             self.update_freq()
@@ -510,7 +511,7 @@ class MainPanel(QtGui.QWidget):
         fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.fstop/constants.MHZ))
+        freq = QtGui.QLineEdit(str(self.plot_state.fstop / float(M)))
         def freq_change():
             cu._select_fstop(self)   
             self.update_freq()
@@ -540,7 +541,7 @@ class MainPanel(QtGui.QWidget):
             delta = 0                
         if self.plot_state.freq_sel == 'CENT':
             try:
-                f = (float(self._freq_edit.text()) + delta) * constants.MHZ
+                f = (float(self._freq_edit.text()) + delta) * M
             except ValueError:
                 return
             if f > constants.MAX_FREQ or f < constants.MIN_FREQ:
@@ -549,7 +550,7 @@ class MainPanel(QtGui.QWidget):
 
         elif self.plot_state.freq_sel == 'FSTART':
             try:
-                f = (float(self._fstart_edit.text()) + delta) * constants.MHZ 
+                f = (float(self._fstart_edit.text()) + delta) * M
             except ValueError:
                 return
             if f > (constants.MAX_FREQ) or f < (constants.MIN_FREQ) or f > self.plot_state.fstop:
@@ -558,7 +559,7 @@ class MainPanel(QtGui.QWidget):
             
         elif self.plot_state.freq_sel == 'FSTOP': 
             try:
-                f = (float(self._fstop_edit.text()) + delta) * constants.MHZ 
+                f = (float(self._fstop_edit.text()) + delta) * M
             except ValueError:
                 return
             if f > constants.MAX_FREQ or f < constants.MIN_FREQ or f < self.plot_state.fstart:
@@ -567,7 +568,7 @@ class MainPanel(QtGui.QWidget):
         
         elif self.plot_state.freq_sel == 'BW':
             try:
-                f = (float(self._bw_edit.text()) + delta) * constants.MHZ
+                f = (float(self._bw_edit.text()) + delta) * M
             except ValueError:
                 return
             if f < 0:
