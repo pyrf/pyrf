@@ -24,7 +24,7 @@ import gui_config
 from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
-from pyrf.config import TriggerSettings
+from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
 
@@ -681,7 +681,7 @@ class MainPanel(QtGui.QWidget):
 
     def update_trig(self):
             freq_region = self._plot.freqtrig_lines.getRegion()
-            self.plot_state.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE, 
+            self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
                                                     min(freq_region), 
                                                     max(freq_region),
                                                     self._plot.amptrig_line.value())

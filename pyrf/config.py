@@ -1,3 +1,5 @@
+TRIGGER_TYPE_LEVEL = 'LEVEL'
+TRIGGER_TYPE_NONE = 'NONE'
 
 class TriggerSettingsError(Exception):
     pass
@@ -13,7 +15,7 @@ class TriggerSettings(object):
     """
 
     def __init__(self,
-            trigtype="NONE",
+            trigtype=TRIGGER_TYPE_NONE,
             fstart=None,
             fstop=None,
             amplitude=None):

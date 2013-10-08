@@ -106,7 +106,7 @@ class plot_state(object):
         self.trig = True
         util.change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
 
-        self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
                                                 self.center_freq + 10e6, 
                                                 self.center_freq - 10e6,-100)
         
