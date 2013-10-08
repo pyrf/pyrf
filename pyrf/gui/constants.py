@@ -1,6 +1,3 @@
-# WSA Constants
-RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
-
 # Colors
 NORMAL_COLOR = 'NONE'
 ORANGE =  'rgb(255,84,0)'

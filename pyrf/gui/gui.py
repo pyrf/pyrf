@@ -28,6 +28,9 @@ from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
 
+
+RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
+
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -526,7 +529,7 @@ class MainPanel(QtGui.QWidget):
     def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
         rbw.setToolTip("Change the RBW of the FFT plot")
-        self._points_values = constants.RBW_VALUES
+        self._points_values = RBW_VALUES
         self._rbw_box = rbw
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
         def new_rbw():
