@@ -21,7 +21,7 @@ from pyrf.gui import colors
 from pyrf.gui import labels
 import control_util as cu
 from plot_widget import Plot
-import gui_config
+from pyrf.gui import gui_config
 from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
@@ -433,7 +433,7 @@ class MainPanel(QtGui.QWidget):
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq_edit = QtGui.QLineEdit(str(self.plot_state.center_freq / float(M)))
+        freq_edit = QtGui.QLineEdit(str(gui_config.INIT_CENTER_FREQ / float(M)))
         self._freq_edit = freq_edit
         self.control_widgets.append(self._cfreq)
         self.control_widgets.append(self._freq_edit)
@@ -483,7 +483,7 @@ class MainPanel(QtGui.QWidget):
         bw.setToolTip("[3]\nChange the bandwidth of the current plot")
         self._bw = bw
         bw.clicked.connect(lambda: cu._select_bw(self))
-        bw_edit = QtGui.QLineEdit(str(self.plot_state.bandwidth / float(M)))
+        bw_edit = QtGui.QLineEdit(str(gui_config.INIT_BANDWIDTH / float(M)))
         def freq_change():
             cu._select_bw(self)
             self.update_freq()
@@ -499,7 +499,8 @@ class MainPanel(QtGui.QWidget):
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.fstart / float(M)))
+        f = gui_config.INIT_CENTER_FREQ - (gui_config.INIT_BANDWIDTH / 2)
+        freq = QtGui.QLineEdit(str(f / float(M)))
         def freq_change():
             cu._select_fstart(self)
             self.update_freq()
@@ -516,7 +517,8 @@ class MainPanel(QtGui.QWidget):
         fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.fstop / float(M)))
+        f = gui_config.INIT_CENTER_FREQ - (gui_config.INIT_BANDWIDTH / 2)
+        freq = QtGui.QLineEdit(str(f / float(M)))
         def freq_change():
             cu._select_fstop(self)   
             self.update_freq()
@@ -540,7 +542,9 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._rbw_box)
         return rbw
 
-    def update_freq(self, delta = None):
+    def update_freq(self, delta=None):
+        if not self.dut:
+            return
         prop = self.dut.properties
 
         if delta == None:

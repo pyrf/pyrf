@@ -1,7 +1,7 @@
 import util
 import numpy as np
 from pyrf.gui import colors
-from pyrf.config import TriggerSettings
+from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.units import M
 
 INIT_CENTER_FREQ = 2450 * M
