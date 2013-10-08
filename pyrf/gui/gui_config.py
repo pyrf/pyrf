@@ -6,8 +6,8 @@ from pyrf.units import M
 
 INIT_CENTER_FREQ = 2450 * M
 INIT_BANDWIDTH = 500 * M
-INIT_RBW = 244.141
-    
+INIT_RBW = 244141
+
 class plot_state(object):
     """
     Class to hold all the GUI's plot states
