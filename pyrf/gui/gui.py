@@ -17,7 +17,8 @@ import time
 from contextlib import contextmanager
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
-import constants
+from pyrf.gui import constants
+from pyrf.gui import labels
 import control_util as cu
 from plot_widget import plot
 import gui_config
@@ -241,7 +242,7 @@ class MainPanel(QtGui.QWidget):
         # add tabs for each trace
         trace_tab = QtGui.QTabBar()
         count = 0
-        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
+        for (trace,(r,g,b)) in zip(labels.TRACES, constants.TRACE_COLORS):
             trace_tab.addTab(trace)
             color = QtGui.QColor()
             color.setRgb(r,g,b)
@@ -596,7 +597,7 @@ class MainPanel(QtGui.QWidget):
         
         first_row = QtGui.QHBoxLayout()
         marker_tab = QtGui.QTabBar()
-        for marker in constants.MARKERS:
+        for marker in labels.MARKERS:
             marker_tab.addTab(marker)
         marker_tab.currentChanged.connect(lambda: cu._marker_tab_change(self))
         first_row.addWidget(marker_tab)
@@ -721,7 +722,7 @@ class MainPanel(QtGui.QWidget):
                 traces.append(self._plot.traces[marker.trace_index])
                 data_indices.append(marker.data_index)
                 
-        if num_markers == len(constants.MARKERS):
+        if num_markers == len(labels.MARKERS):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))

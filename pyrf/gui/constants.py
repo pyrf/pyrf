@@ -18,8 +18,6 @@ YELLOW_NUM = (221,213.51)
 WHITE = 'rgb(255,255,255)'
 BLACK = 'rgb(0,0,0)'
 
-TRACES = ['1' , '2', '3']
 TRACE_COLORS = [TEAL_NUM, ORANGE_NUM, GREEN_NUM]
 PRESSED_BUTTON = 'groove'
 
-MARKERS = ['Marker 1', 'Marker 2']

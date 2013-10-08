@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 import numpy as np
-import constants
+from pyrf.gui import constants
+from pyrf.gui import labels
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -131,9 +132,9 @@ class plot(object):
         self.traces = []
         
         # add traces
-        first_trace = constants.TRACES[0]
+        first_trace = labels.TRACES[0]
         count = 0
-        for trace_name, trace_color in zip(constants.TRACES, constants.TRACE_COLORS):
+        for trace_name, trace_color in zip(labels.TRACES, constants.TRACE_COLORS):
             if count == 0:
                 blank_state = False
                 write_state = True
@@ -150,7 +151,7 @@ class plot(object):
         self.window.addItem(self.traces[0].curve)
         
         self.markers = []
-        for marker_name in constants.MARKERS:
+        for marker_name in labels.MARKERS:
             self.markers.append(marker(self, marker_name))
             
     def add_trigger(self,fstart, fstop):
