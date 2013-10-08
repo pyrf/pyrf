@@ -3,7 +3,6 @@ import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
 import gui_config as gui_state
-import constants
 from pyrf.util import read_data_and_context
 
 def _center_plot_view(layout):
