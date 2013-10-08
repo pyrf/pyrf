@@ -1,15 +1,24 @@
-import constants
 import util
 import numpy as np
-from pyrf.config import TriggerSettings
+from pyrf.gui import colors
+from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
+from pyrf.units import M
 
-    
-class plot_state(object):
+INIT_CENTER_FREQ = 2450 * M
+INIT_BANDWIDTH = 500 * M
+INIT_RBW = 244141
+
+class PlotState(object):
     """
     Class to hold all the GUI's plot states
     """
 
-    def __init__(self):
+    def __init__(self,
+            device_properties,
+            center_freq=INIT_CENTER_FREQ,
+            bandwidth=INIT_BANDWIDTH,
+            rbw=INIT_RBW,
+            ):
         
         self.grid = False
 
@@ -27,25 +36,26 @@ class plot_state(object):
         self.peak = False
         
         self.freq_range = None        
-        self.center_freq = constants.INIT_CENTER_FREQ
-        self.bandwidth = constants.INIT_BANDWIDTH
+        self.center_freq = center_freq
+        self.bandwidth = bandwidth
         self.fstart = self.center_freq - self.bandwidth / 2
         self.fstop = self.center_freq + self.bandwidth / 2
-        self.bin_size = constants.INIT_BIN_SIZE
-        self.rbw = self.bandwidth / self.bin_size
+        self.rbw = rbw
         self.enable_plot = True
-        self.freq_sel = 'CENT'              
-        
+        self.freq_sel = 'CENT'
+
+        self.device_properties = device_properties
+
     def enable_marker(self, layout):
         self.marker = True
         self.marker_sel = True
-        util.change_item_color(layout._marker,  constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._marker,  colors.ORANGE, colors.WHITE)
         layout._plot.add_marker()
         layout._marker.setDown(True)
         layout.update_marker()
         if layout.plot_state.delta_sel:
             self.delta_sel = False
-            util.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
+            util.change_item_color(layout._delta,  colors.ORANGE, colors.WHITE)
             layout._delta.setDown(False)
             
 
@@ -53,7 +63,7 @@ class plot_state(object):
         
         self.marker = False
         self.marker_sel = False
-        util.change_item_color(layout._marker, constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._marker, colors.NORMAL_COLOR, colors.BLACK)
         layout._marker.setDown(False)
         layout._plot.remove_marker()
         layout._marker_lab.setText('')
@@ -64,19 +74,19 @@ class plot_state(object):
     def enable_delta(self, layout):
         self.delta = True
         self.delta_sel = True
-        util.change_item_color(layout._delta, constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._delta, colors.ORANGE, colors.WHITE)
         layout._plot.add_delta()
         layout._delta.setDown(True)
         layout.update_delta()
         if self.marker:
             self.marker_sel = False             
-            util.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
+            util.change_item_color(layout._marker, colors.ORANGE, colors.WHITE)
             layout._marker.setDown(False)
             
     def disable_delta(self, layout):
         self.delta = False
         self.delta_sel = False
-        util.change_item_color(layout._delta, constants.NORMAL_COLOR ,constants.BLACK)
+        util.change_item_color(layout._delta, colors.NORMAL_COLOR, colors.BLACK)
         layout._delta.setDown(False)
         layout._plot.remove_delta()
         layout._delta_lab.setText('')
@@ -87,16 +97,16 @@ class plot_state(object):
     
     def disable_trig(self, layout):
         self.trig = False
-        util.change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._trigger, colors.NORMAL_COLOR, colors.BLACK)
         layout._plot.remove_trigger()
         self.trig_set = None
         util.enable_freq_cont(layout)
         
     def enable_trig(self, layout):
         self.trig = True
-        util.change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
+        util.change_item_color(layout._trigger, colors.ORANGE, colors.WHITE)
 
-        self.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE,
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
                                                 self.center_freq + 10e6, 
                                                 self.center_freq - 10e6,-100)
         
@@ -118,14 +128,15 @@ class plot_state(object):
                           fcenter = None, 
                           rbw = None, 
                           bw = None):
+        prop = self.device_properties
         
         if fcenter != None:
             self.fstart = fcenter - (self.bandwidth / 2)
-            if self.fstart < constants.MIN_FREQ:
-                self.fstart = constants.MIN_FREQ
+            if self.fstart < prop.MIN_TUNABLE:
+                self.fstart = prop.MIN_TUNABLE
             self.fstop = fcenter + (self.bandwidth / 2)
-            if self.fstop > constants.MAX_FREQ:    
-                self.fstop = constants.MAX_FREQ
+            if self.fstop > prop.MAX_TUNABLE:
+                self.fstop = prop.MAX_TUNABLE
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)
@@ -133,8 +144,8 @@ class plot_state(object):
                 self.bin_size = 1
         
         elif fstart != None:
-            if fstart >= self.fstop:
-                fstart = self.fstop - constants.MIN_BW
+            if fstart >= self.fstop - prop.TUNING_RESOLUTION:
+                fstart = self.fstop - prop.TUNING_RESOLUTION
             self.fstart = fstart
             self.bandwidth = self.fstop - fstart
             self.center_freq = fstart + (self.bandwidth / 2)
@@ -143,8 +154,8 @@ class plot_state(object):
                 self.bin_size = 1
                 
         elif fstop != None:
-            if fstop <= self.fstart:
-                fstop = self.fstart + constants.MIN_BW
+            if fstop <= self.fstart + prop.TUNING_RESOLUTION:
+                fstop = self.fstart + prop.TUNING_RESOLUTION
             self.fstop = fstop
             self.bandwidth = fstop - self.fstart
             self.center_freq = fstop - (self.bandwidth / 2)
@@ -159,14 +170,14 @@ class plot_state(object):
                 self.bin_size = 1
         
         elif bw != None:
-            if bw < constants.MIN_BW:
-                bw = constants.MIN_BW
+            if bw < prop.TUNING_RESOLUTION:
+                bw = prop.TUNING_RESOLUTION
             self.fstart = (self.center_freq - (bw / 2))
             self.fstop = (self.center_freq + (bw / 2))
-            if self.fstart < constants.MIN_FREQ:
-                self.fstart = constants.MIN_FREQ
-            if self.fstop > constants.MAX_FREQ:    
-                self.fstop = constants.MAX_FREQ
+            if self.fstart < prop.MIN_TUNABLE:
+                self.fstart = prop.MIN_TUNABLE
+            if self.fstop > prop.MAX_TUNABLE:
+                self.fstop = prop.MAX_TUNABLE
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = int((self.bandwidth) / self.rbw)

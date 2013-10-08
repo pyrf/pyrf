@@ -1,8 +1,12 @@
 import pyqtgraph as pg
 import numpy as np
-import constants
+from pyrf.gui import colors
+from pyrf.gui import labels
 
-class trace(object):
+PLOT_YMIN = -160
+PLOT_YMAX = 20
+
+class Trace(object):
     """
     Class to represent a trace in the plot
     """
@@ -18,7 +22,7 @@ class trace(object):
         self.data = None
         self.freq_range = None
         self.color = trace_color
-        self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
+        self.curve = plot_area.window.plot(pen = colors.TEAL_NUM)
         
     def update_curve(self,xdata, raw_ydata):
   
@@ -45,7 +49,7 @@ class trace(object):
                             y = ydata,
                             pen = self.color)
 
-class marker(object):
+class Marker(object):
     """
     Class to represent a marker on the plot
     """
@@ -96,7 +100,7 @@ class marker(object):
                                     symbol = '+', 
                                     size = 20, pen = color, 
                                     brush = color)
-class plot(object):
+class Plot(object):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
@@ -109,11 +113,11 @@ class plot(object):
         self.window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
-        self.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
+        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         self.window.setLabel('left', text = 'Power', units = 'dBm')
         
         # initialize fft curve
-        self.fft_curve = self.window.plot(pen = constants.TEAL_NUM)
+        self.fft_curve = self.window.plot(pen = colors.TEAL_NUM)
          
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
@@ -126,16 +130,16 @@ class plot(object):
         self.traces = []
         
         # add traces
-        first_trace = constants.TRACES[0]
+        first_trace = labels.TRACES[0]
         count = 0
-        for trace_name, trace_color in zip(constants.TRACES, constants.TRACE_COLORS):
+        for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
             if count == 0:
                 blank_state = False
                 write_state = True
             else:
                 blank_state = True
                 write_state = False
-            self.traces.append(trace(self,
+            self.traces.append(Trace(self,
                                     trace_name,
                                     trace_color, 
                                     blank = blank_state,
@@ -145,8 +149,8 @@ class plot(object):
         self.window.addItem(self.traces[0].curve)
         
         self.markers = []
-        for marker_name in constants.MARKERS:
-            self.markers.append(marker(self, marker_name))
+        for marker_name in labels.MARKERS:
+            self.markers.append(Marker(self, marker_name))
             
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])
@@ -159,7 +163,7 @@ class plot(object):
         
     def center_view(self,f,bw):
         self.window.setXRange(f - (bw/2),f + (bw / 2))
-        self.window.setYRange(constants.PLOT_YMIN, constants.PLOT_YMAX)
+        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         
     def grid(self,state):
         self.window.showGrid(state,state)

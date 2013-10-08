@@ -17,15 +17,20 @@ import time
 from contextlib import contextmanager
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
-import constants
+from pyrf.gui import colors
+from pyrf.gui import labels
 import control_util as cu
-from plot_widget import plot
-import gui_config
+from plot_widget import Plot
+from pyrf.gui import gui_config
 from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
-from pyrf.config import TriggerSettings
+from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.capture_device import CaptureDevice
+from pyrf.units import M
+
+
+RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -91,9 +96,9 @@ class MainPanel(QtGui.QWidget):
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(screen.width() * 0.7)
         self.setMinimumHeight(screen.height() * 0.6)
-        self.plot_state = gui_config.plot_state()
+        self.plot_state = None
         # plot window
-        self._plot = plot(self)
+        self._plot = Plot(self)
         self._marker_trace = None
         self._vrt_context = {}
         self.initUI()
@@ -125,6 +130,7 @@ class MainPanel(QtGui.QWidget):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         self.dut = dut
+        self.plot_state = gui_config.PlotState(dut.properties)
         if dut.properties.model == 'WSA5000':
             self._antenna_box.hide()
             self._gain_box.hide()
@@ -236,7 +242,7 @@ class MainPanel(QtGui.QWidget):
         # add tabs for each trace
         trace_tab = QtGui.QTabBar()
         count = 0
-        for (trace,(r,g,b)) in zip(constants.TRACES, constants.TRACE_COLORS):
+        for (trace,(r,g,b)) in zip(labels.TRACES, colors.TRACE_COLORS):
             trace_tab.addTab(trace)
             color = QtGui.QColor()
             color.setRgb(r,g,b)
@@ -434,7 +440,7 @@ class MainPanel(QtGui.QWidget):
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq_edit = QtGui.QLineEdit(str(self.plot_state.center_freq/constants.MHZ))
+        freq_edit = QtGui.QLineEdit(str(gui_config.INIT_CENTER_FREQ / float(M)))
         self._freq_edit = freq_edit
         self.control_widgets.append(self._cfreq)
         self.control_widgets.append(self._freq_edit)
@@ -484,7 +490,7 @@ class MainPanel(QtGui.QWidget):
         bw.setToolTip("[3]\nChange the bandwidth of the current plot")
         self._bw = bw
         bw.clicked.connect(lambda: cu._select_bw(self))
-        bw_edit = QtGui.QLineEdit(str(self.plot_state.bandwidth/constants.MHZ))
+        bw_edit = QtGui.QLineEdit(str(gui_config.INIT_BANDWIDTH / float(M)))
         def freq_change():
             cu._select_bw(self)
             self.update_freq()
@@ -500,7 +506,8 @@ class MainPanel(QtGui.QWidget):
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.fstart/constants.MHZ))
+        f = gui_config.INIT_CENTER_FREQ - (gui_config.INIT_BANDWIDTH / 2)
+        freq = QtGui.QLineEdit(str(f / float(M)))
         def freq_change():
             cu._select_fstart(self)
             self.update_freq()
@@ -517,7 +524,8 @@ class MainPanel(QtGui.QWidget):
         fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
-        freq = QtGui.QLineEdit(str(self.plot_state.fstop/constants.MHZ))
+        f = gui_config.INIT_CENTER_FREQ - (gui_config.INIT_BANDWIDTH / 2)
+        freq = QtGui.QLineEdit(str(f / float(M)))
         def freq_change():
             cu._select_fstop(self)   
             self.update_freq()
@@ -531,7 +539,7 @@ class MainPanel(QtGui.QWidget):
     def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
         rbw.setToolTip("Change the RBW of the FFT plot")
-        self._points_values = constants.RBW_VALUES
+        self._points_values = RBW_VALUES
         self._rbw_box = rbw
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
         def new_rbw():
@@ -541,40 +549,43 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._rbw_box)
         return rbw
 
-    def update_freq(self, delta = None):
-            
+    def update_freq(self, delta=None):
+        if not self.dut:
+            return
+        prop = self.dut.properties
+
         if delta == None:
             delta = 0                
         if self.plot_state.freq_sel == 'CENT':
             try:
-                f = (float(self._freq_edit.text()) + delta) * constants.MHZ
+                f = (float(self._freq_edit.text()) + delta) * M
             except ValueError:
                 return
-            if f > constants.MAX_FREQ or f < constants.MIN_FREQ:
+            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
                 return
             self.plot_state.update_freq_set(fcenter = f)
 
         elif self.plot_state.freq_sel == 'FSTART':
             try:
-                f = (float(self._fstart_edit.text()) + delta) * constants.MHZ 
+                f = (float(self._fstart_edit.text()) + delta) * M
             except ValueError:
                 return
-            if f > (constants.MAX_FREQ) or f < (constants.MIN_FREQ) or f > self.plot_state.fstop:
+            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
                 return
             self.plot_state.update_freq_set(fstart = f)
             
         elif self.plot_state.freq_sel == 'FSTOP': 
             try:
-                f = (float(self._fstop_edit.text()) + delta) * constants.MHZ 
+                f = (float(self._fstop_edit.text()) + delta) * M
             except ValueError:
                 return
-            if f > constants.MAX_FREQ or f < constants.MIN_FREQ or f < self.plot_state.fstart:
+            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
                 return
             self.plot_state.update_freq_set(fstop = f)
         
         elif self.plot_state.freq_sel == 'BW':
             try:
-                f = (float(self._bw_edit.text()) + delta) * constants.MHZ
+                f = (float(self._bw_edit.text()) + delta) * M
             except ValueError:
                 return
             if f < 0:
@@ -597,7 +608,7 @@ class MainPanel(QtGui.QWidget):
         
         first_row = QtGui.QHBoxLayout()
         marker_tab = QtGui.QTabBar()
-        for marker in constants.MARKERS:
+        for marker in labels.MARKERS:
             marker_tab.addTab(marker)
         marker_tab.currentChanged.connect(lambda: cu._marker_tab_change(self))
         first_row.addWidget(marker_tab)
@@ -655,15 +666,15 @@ class MainPanel(QtGui.QWidget):
         
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s;' % constants.TEAL)
+        marker_label.setStyleSheet('color: %s;' % colors.TEAL)
         marker_label.setMinimumHeight(25)
         
         delta_label = QtGui.QLabel('')
-        delta_label.setStyleSheet('color: %s;' % constants.TEAL)
+        delta_label.setStyleSheet('color: %s;' % colors.TEAL)
         delta_label.setMinimumHeight(25)
         
         diff_label = QtGui.QLabel('')
-        diff_label.setStyleSheet('color: %s;' % constants.WHITE)
+        diff_label.setStyleSheet('color: %s;' % colors.WHITE)
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
@@ -685,7 +696,7 @@ class MainPanel(QtGui.QWidget):
 
     def update_trig(self):
             freq_region = self._plot.freqtrig_lines.getRegion()
-            self.plot_state.trig_set = TriggerSettings(constants.LEVELED_TRIGGER_TYPE, 
+            self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
                                                     min(freq_region), 
                                                     max(freq_region),
                                                     self._plot.amptrig_line.value())
@@ -722,7 +733,7 @@ class MainPanel(QtGui.QWidget):
                 traces.append(self._plot.traces[marker.trace_index])
                 data_indices.append(marker.data_index)
                 
-        if num_markers == len(constants.MARKERS):
+        if num_markers == len(labels.MARKERS):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
