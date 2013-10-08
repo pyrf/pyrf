@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 import numpy as np
-from pyrf.gui import constants
+from pyrf.gui import colors
 from pyrf.gui import labels
 
 PLOT_YMIN = -160
@@ -21,7 +21,7 @@ class trace(object):
         self.data = None
         self.freq_range = None
         self.color = trace_color
-        self.curve = plot_area.window.plot(pen = constants.TEAL_NUM)
+        self.curve = plot_area.window.plot(pen = colors.TEAL_NUM)
         
     def update_curve(self,xdata, ydata):
         
@@ -119,7 +119,7 @@ class plot(object):
         self.window.setLabel('left', text = 'Power', units = 'dBm')
         
         # initialize fft curve
-        self.fft_curve = self.window.plot(pen = constants.TEAL_NUM)
+        self.fft_curve = self.window.plot(pen = colors.TEAL_NUM)
          
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
@@ -134,7 +134,7 @@ class plot(object):
         # add traces
         first_trace = labels.TRACES[0]
         count = 0
-        for trace_name, trace_color in zip(labels.TRACES, constants.TRACE_COLORS):
+        for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
             if count == 0:
                 blank_state = False
                 write_state = True

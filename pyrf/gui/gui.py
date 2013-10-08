@@ -17,7 +17,7 @@ import time
 from contextlib import contextmanager
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
-from pyrf.gui import constants
+from pyrf.gui import colors
 from pyrf.gui import labels
 import control_util as cu
 from plot_widget import plot
@@ -242,7 +242,7 @@ class MainPanel(QtGui.QWidget):
         # add tabs for each trace
         trace_tab = QtGui.QTabBar()
         count = 0
-        for (trace,(r,g,b)) in zip(labels.TRACES, constants.TRACE_COLORS):
+        for (trace,(r,g,b)) in zip(labels.TRACES, colors.TRACE_COLORS):
             trace_tab.addTab(trace)
             color = QtGui.QColor()
             color.setRgb(r,g,b)
@@ -655,15 +655,15 @@ class MainPanel(QtGui.QWidget):
         
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s;' % constants.TEAL)
+        marker_label.setStyleSheet('color: %s;' % colors.TEAL)
         marker_label.setMinimumHeight(25)
         
         delta_label = QtGui.QLabel('')
-        delta_label.setStyleSheet('color: %s;' % constants.TEAL)
+        delta_label.setStyleSheet('color: %s;' % colors.TEAL)
         delta_label.setMinimumHeight(25)
         
         diff_label = QtGui.QLabel('')
-        diff_label.setStyleSheet('color: %s;' % constants.WHITE)
+        diff_label.setStyleSheet('color: %s;' % colors.WHITE)
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label

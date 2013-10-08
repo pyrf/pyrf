@@ -1,7 +1,8 @@
 import numpy as np
 from PySide import QtGui, QtCore
 import  control_util 
-import constants
+from pyrf.gui import colors
+
 def frequency_text(hz):
     """
     return hz as readable text in Hz, kHz, MHz or GHz
@@ -56,7 +57,8 @@ def select_fstart(layout):
     """
     changes the color of the fstart button to orange and all others to default    
     """
-    layout._fstart.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._fstart.setStyleSheet(
+        'background-color: %s; color: white;' % colors.ORANGE)
     layout._cfreq.setStyleSheet("")
     layout._fstop.setStyleSheet("")
     layout._bw.setStyleSheet("")
@@ -65,7 +67,8 @@ def select_center(layout):
     """
     changes the color of the fcenter button to orange and all others to default    
     """
-    layout._cfreq.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._cfreq.setStyleSheet(
+        'background-color: %s; color: white;' % colors.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._fstop.setStyleSheet("")
     layout._bw.setStyleSheet("")
@@ -74,7 +77,8 @@ def select_bw(layout):
     """
     changes the color of the span button to orange and all others to default    
     """
-    layout._bw.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._bw.setStyleSheet(
+        'background-color: %s; color: white;' % colors.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._cfreq.setStyleSheet("")
     layout._fstop.setStyleSheet("")
@@ -83,7 +87,8 @@ def select_fstop(layout):
     """
     changes the color of the fstop button to orange and all others to default    
     """
-    layout._fstop.setStyleSheet('background-color: %s; color: white;' % constants.ORANGE)
+    layout._fstop.setStyleSheet(
+        'background-color: %s; color: white;' % colors.ORANGE)
     layout._fstart.setStyleSheet("")
     layout._cfreq.setStyleSheet("")
     layout._bw.setStyleSheet("")
@@ -120,7 +125,7 @@ def update_marker_traces(combo_box, traces):
         index = 0
     combo_box.clear()
     count = 0
-    for (trace,(r,g,b)) in zip(traces, constants.TRACE_COLORS):
+    for (trace,(r,g,b)) in zip(traces, colors.TRACE_COLORS):
         if not trace.blank:
             combo_box.addItem(trace.name)
             color = QtGui.QColor()

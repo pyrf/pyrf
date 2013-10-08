@@ -1,6 +1,6 @@
-import constants
 import util
 import numpy as np
+from pyrf.gui import colors
 from pyrf.config import TriggerSettings
 from pyrf.units import M
 
@@ -49,13 +49,13 @@ class plot_state(object):
     def enable_marker(self, layout):
         self.marker = True
         self.marker_sel = True
-        util.change_item_color(layout._marker,  constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._marker,  colors.ORANGE, colors.WHITE)
         layout._plot.add_marker()
         layout._marker.setDown(True)
         layout.update_marker()
         if layout.plot_state.delta_sel:
             self.delta_sel = False
-            util.change_item_color(layout._delta,  constants.ORANGE, constants.WHITE)
+            util.change_item_color(layout._delta,  colors.ORANGE, colors.WHITE)
             layout._delta.setDown(False)
             
 
@@ -63,7 +63,7 @@ class plot_state(object):
         
         self.marker = False
         self.marker_sel = False
-        util.change_item_color(layout._marker, constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._marker, colors.NORMAL_COLOR, colors.BLACK)
         layout._marker.setDown(False)
         layout._plot.remove_marker()
         layout._marker_lab.setText('')
@@ -74,19 +74,19 @@ class plot_state(object):
     def enable_delta(self, layout):
         self.delta = True
         self.delta_sel = True
-        util.change_item_color(layout._delta, constants.ORANGE, constants.WHITE)
+        util.change_item_color(layout._delta, colors.ORANGE, colors.WHITE)
         layout._plot.add_delta()
         layout._delta.setDown(True)
         layout.update_delta()
         if self.marker:
             self.marker_sel = False             
-            util.change_item_color(layout._marker, constants.ORANGE, constants.WHITE)
+            util.change_item_color(layout._marker, colors.ORANGE, colors.WHITE)
             layout._marker.setDown(False)
             
     def disable_delta(self, layout):
         self.delta = False
         self.delta_sel = False
-        util.change_item_color(layout._delta, constants.NORMAL_COLOR ,constants.BLACK)
+        util.change_item_color(layout._delta, colors.NORMAL_COLOR, colors.BLACK)
         layout._delta.setDown(False)
         layout._plot.remove_delta()
         layout._delta_lab.setText('')
@@ -97,14 +97,14 @@ class plot_state(object):
     
     def disable_trig(self, layout):
         self.trig = False
-        util.change_item_color(layout._trigger, constants.NORMAL_COLOR, constants.BLACK)
+        util.change_item_color(layout._trigger, colors.NORMAL_COLOR, colors.BLACK)
         layout._plot.remove_trigger()
         self.trig_set = None
         util.enable_freq_cont(layout)
         
     def enable_trig(self, layout):
         self.trig = True
-        util.change_item_color(layout._trigger, constants.ORANGE,constants.WHITE)
+        util.change_item_color(layout._trigger, colors.ORANGE, colors.WHITE)
 
         self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
                                                 self.center_freq + 10e6, 
