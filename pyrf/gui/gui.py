@@ -585,42 +585,37 @@ class MainPanel(QtGui.QWidget):
         prop = self.dut.properties
 
         if delta == None:
-            delta = 0                
-        if self.plot_state.freq_sel == 'CENT':
-            try:
+            delta = 0    
+        try:
+            if self.plot_state.freq_sel == 'CENT':
                 f = (float(self._freq_edit.text()) + delta) * M
-            except ValueError:
-                return
-            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
-                return
-            self.plot_state.update_freq_set(fcenter = f)
-
-        elif self.plot_state.freq_sel == 'FSTART':
-            try:
-                f = (float(self._fstart_edit.text()) + delta) * M
-            except ValueError:
-                return
-            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
-                return
-            self.plot_state.update_freq_set(fstart = f)
+                if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
+                    return
+                self.plot_state.update_freq_set(fcenter = f)
             
-        elif self.plot_state.freq_sel == 'FSTOP': 
-            try:
+            elif self.plot_state.freq_sel == 'FSTART':
+                f = (float(self._fstart_edit.text()) + delta) * M
+                if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
+                    return
+                self.plot_state.update_freq_set(fstart = f)
+            
+            elif self.plot_state.freq_sel == 'FSTOP': 
                 f = (float(self._fstop_edit.text()) + delta) * M
-            except ValueError:
-                return
-            if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
-                return
-            self.plot_state.update_freq_set(fstop = f)
-        
-        elif self.plot_state.freq_sel == 'BW':
-            try:
+                if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
+                    return
+                self.plot_state.update_freq_set(fstop = f)
+            
+            elif self.plot_state.freq_sel == 'BW':
                 f = (float(self._bw_edit.text()) + delta) * M
-            except ValueError:
-                return
-            if f < 0:
-                return
-            self.plot_state.update_freq_set(bw = f)
+                if f < 0:
+                    return
+                self.plot_state.update_freq_set(bw = f)
+        except ValueError:
+            return
+        if self.plot_state.trig:
+            freq_region = self._plot.freqtrig_lines.getRegion()
+            if (freq_region[0] < self.plot_state.fstart and freq_region[1] < self.plot_state.fstart) or (freq_region[0] > self.plot_state.fstop and freq_region[1] > self.plot_state.fstop):
+                self._plot.freqtrig_lines.setRegion([self.plot_state.fstart,self.plot_state. fstop]) 
     
     def update_freq_edit(self):
         self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
@@ -777,13 +772,13 @@ class MainPanel(QtGui.QWidget):
                                                 brush = 'y')
                                                 
     def update_trig(self):
-            freq_region = self._plot.freqtrig_lines.getRegion()
-            self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
-                                                    min(freq_region), 
-                                                    max(freq_region),
-                                                    self._plot.amptrig_line.value())
             if self.plot_state.trig_set:
-                self.dut.trigger(self.plot_state.trig_set)
+                freq_region = self._plot.freqtrig_lines.getRegion()
+                self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
+                                                        min(freq_region), 
+                                                        max(freq_region),
+                                                        self._plot.amptrig_line.value())
+
     
     def update_marker(self):        
             
