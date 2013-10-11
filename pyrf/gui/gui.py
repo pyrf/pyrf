@@ -554,7 +554,7 @@ class MainPanel(QtGui.QWidget):
         fstop.setToolTip("[4]Tune the stop frequency") 
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
-        f = gui_config.INIT_CENTER_FREQ - (gui_config.INIT_BANDWIDTH / 2)
+        f = gui_config.INIT_CENTER_FREQ + (gui_config.INIT_BANDWIDTH / 2)
         freq = QtGui.QLineEdit(str(f / float(M)))
         def freq_change():
             cu._select_fstop(self)   
@@ -601,6 +601,7 @@ class MainPanel(QtGui.QWidget):
             
             elif self.plot_state.freq_sel == 'FSTOP': 
                 f = (float(self._fstop_edit.text()) + delta) * M
+                print f
                 if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
                     return
                 self.plot_state.update_freq_set(fstop = f)
@@ -752,6 +753,7 @@ class MainPanel(QtGui.QWidget):
         self.update_diff()
 
     def update_trace(self):
+        print self.plot_state.bandwidth
         for trace in self._plot.traces:
             trace.update_curve(self.plot_state.freq_range, self.pow_data)
 
@@ -779,7 +781,7 @@ class MainPanel(QtGui.QWidget):
                                                         max(freq_region),
                                                         self._plot.amptrig_line.value())
 
-    
+                self.dut.trigger(self.plot_state.trig_set)
     def update_marker(self):        
             
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):

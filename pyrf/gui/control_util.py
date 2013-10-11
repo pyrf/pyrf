@@ -265,15 +265,18 @@ def _iq_plot_control(layout):
     if layout._iq_plot_checkbox.checkState() is QtCore.Qt.CheckState.Checked:
         layout._plot.const_window.show()
         layout._plot.iq_window.show()
+        layout._plot.grid(False)
+        layout._plot.grid(True)
         layout._plot_layout.setRowMinimumHeight(1, 300)
         layout.plot_state.enable_block_mode(layout)
     else:
-       if not layout.plot_state.trig:
-        layout.plot_state.disable_block_mode(layout)
-       layout._plot_layout.setRowMinimumHeight(1, 0)
-       layout._plot.const_window.hide()
-       layout._plot.iq_window.hide()
-
+        if not layout.plot_state.trig:
+            layout.plot_state.disable_block_mode(layout)
+        layout._plot_layout.setRowMinimumHeight(1, 0)
+        layout._plot.const_window.hide()
+        layout._plot.iq_window.hide()
+        layout._plot.grid(False)
+        layout._plot.grid(True)
 
 
 def _trigger_control(layout):
@@ -282,15 +285,17 @@ def _trigger_control(layout):
     """
 
     if layout._trigger.checkState() is QtCore.Qt.CheckState.Checked:
-        layout.plot_state.enable_block_mode(layout,  trig = True)
+        layout.plot_state.enable_triggers(layout)
+        layout.plot_state.enable_block_mode(layout)
         _select_center_freq(layout)
+        layout.update_trig()
   
     else:
         if layout._iq_plot_checkbox.checkState() is QtCore.Qt.CheckState.Checked:
             layout.plot_state.disable_triggers(layout)
         else:
             layout.plot_state.disable_block_mode(layout)
-        
+        layout.update_trig()
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
                 '3': _select_bw,

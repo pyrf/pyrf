@@ -107,19 +107,11 @@ class PlotState(object):
         self.trig_set = None
         util.enable_freq_cont(layout)
         
-    def enable_block_mode(self, layout, trig = False):
+    def enable_block_mode(self, layout):
         self.block_mode = True
         util.change_item_color(layout._trigger, colors.ORANGE, colors.WHITE)
-        if trig == True:
-            self.trig = True
-            self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
-                                                    self.center_freq + 10e6, 
-                                                    self.center_freq - 10e6,-100)
-            layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
-        else:
-            self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
-                                                    self.center_freq + 10e6, 
-                                                    self.center_freq - 10e6,-100) 
+
+
         layout.plot_state.freq_sel = 'BW'
         layout._bw_edit.setText('100.0')
         layout.update_freq()
@@ -127,12 +119,21 @@ class PlotState(object):
         util.disable_freq_cont(layout)
 
     def disable_triggers(self, layout): 
-        self.trig = False
+        layout._plot.amptrig_line.setValue(-100)
         layout._plot.remove_trigger()
+
         self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
                                         self.center_freq + 10e6, 
                                         self.center_freq - 10e6,-100) 
-                                        
+        layout.update_trig()
+        self.trig = False
+    def enable_triggers(self, layout):
+        self.trig = True
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
+                                        self.center_freq + 10e6, 
+                                        self.center_freq - 10e6,-100)
+        layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)                                 
+    
     def update_freq_range(self, start, stop, size):
         self.freq_range = np.linspace(start, stop, size)
         

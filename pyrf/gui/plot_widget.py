@@ -131,6 +131,7 @@ class Plot(object):
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
         self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
+        
         self.grid(True)
         
         # IQ constellation window
