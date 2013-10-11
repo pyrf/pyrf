@@ -1,4 +1,4 @@
-from PySide import QtCore
+from PySide import QtGui, QtCore
 import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
@@ -257,18 +257,39 @@ def _change_min_level(layout):
     layout.plot_state.min_level = min
     layout._plot.window.setYRange(layout.plot_state.ref_level - AXIS_OFFSET, 
                                     layout.plot_state.min_level + AXIS_OFFSET)
+def _iq_plot_control(layout):
+    """
+    enable/disable the iq constallation and time domain plots
+    """
+    
+    if layout._iq_plot_checkbox.checkState() is QtCore.Qt.CheckState.Checked:
+        layout._plot.const_window.show()
+        layout._plot.iq_window.show()
+        layout._plot_layout.setRowMinimumHeight(1, 300)
+        layout.plot_state.enable_block_mode(layout)
+    else:
+       if not layout.plot_state.trig:
+        layout.plot_state.disable_block_mode(layout)
+       layout._plot_layout.setRowMinimumHeight(1, 0)
+       layout._plot.const_window.hide()
+       layout._plot.iq_window.hide()
+
+
 
 def _trigger_control(layout):
     """
-    disable/enable triggers in the layout plot
+    enable/disable triggers in the layout plot
     """
 
-    if layout.plot_state.trig:
-        layout.plot_state.disable_trig(layout)
-           
-    else:
-        layout.plot_state.enable_trig(layout)
+    if layout._trigger.checkState() is QtCore.Qt.CheckState.Checked:
+        layout.plot_state.enable_block_mode(layout,  trig = True)
         _select_center_freq(layout)
+  
+    else:
+        if layout._iq_plot_checkbox.checkState() is QtCore.Qt.CheckState.Checked:
+            layout.plot_state.disable_triggers(layout)
+        else:
+            layout.plot_state.disable_block_mode(layout)
         
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
@@ -281,7 +302,6 @@ hotkey_dict = {'1': _select_fstart,
                 'C': _center_plot_view,
                 'M': _marker_control,
                 'P': _find_peak,
-                'T': _trigger_control
                 } 
                 
 arrow_dict = {'32': 'SPACE', 

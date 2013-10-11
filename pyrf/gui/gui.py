@@ -14,6 +14,7 @@ import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import time
+import math
 from contextlib import contextmanager
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
@@ -28,12 +29,14 @@ from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
-
+from pyrf.numpy_util import compute_fft
 
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
+ZIF_BITS = 2**13
+CONST_POINTS = 512
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -133,7 +136,8 @@ class MainPanel(QtGui.QWidget):
         yield dut.connect(name)
         self.dut = dut
         self.plot_state = gui_config.PlotState(dut.properties)
-        if dut.properties.model == 'WSA5000':
+        self.dut_prop = self.dut.properties
+        if self.dut_prop.model == 'WSA5000':
             self._antenna_box.hide()
             self._gain_box.hide()
             self._trigger.hide()
@@ -143,7 +147,7 @@ class MainPanel(QtGui.QWidget):
             self._gain_box.show()
             self._trigger.show()
             self._attenuator_box.hide()
-
+        self.label = QtGui.QLabel('HELLO')
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
@@ -166,17 +170,27 @@ class MainPanel(QtGui.QWidget):
         device_set['freq'] = self.plot_state.center_freq
         device_set['trigger'] = self.plot_state.trig_set
 
-        self.cap_dut.capture_power_spectrum(device_set,self.plot_state.rbw)
+        self.cap_dut.capture_time_domain(device_set,self.plot_state.rbw)
 
 
-    def receive_data(self, fstart, fstop, pow_):
+    def receive_data(self, fstart, fstop, data):
         if not self.plot_state.enable_plot:
             return
         if self.plot_state.trig_set:
             self.read_trigg()
+            if not len(data) > 5:
+                pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'])
+
+                attenuated_edge = math.ceil((1.0 -
+                float(self.dut_prop.USABLE_BW) / self.dut_prop.FULL_BW) / 2 * len(pow_))
+                self.pow_data = pow_[attenuated_edge:-attenuated_edge]
+                self.iq_data = data['data_pkt']
         else:
             self.read_sweep()
-        self.pow_data = pow_
+            if len(data) > 2:
+                self.pow_data = data
+            self.iq_data = None
+        
         self.update_plot()
 
 
@@ -205,10 +219,11 @@ class MainPanel(QtGui.QWidget):
         for x in range(8):
             grid.setColumnMinimumWidth(x, 300)
         grid.setRowMinimumHeight(14, 800)
-
+        
         # add plot widget
         plot_width = 8
-        grid.addWidget(self._plot.window,0,0,15,plot_width)
+        
+        grid.addLayout(self._plot_layout(),0,0,15,plot_width)
         
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
@@ -228,12 +243,28 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(self._device_controls(), y, x, 2, 5)
         y += 2
         grid.addWidget(self._freq_controls(), y, x, 4, 5)
-        y += 5
-        grid.addWidget(self._const_controls(), y, x, 4, 5)
-        
+
+        self._grid = grid
         self.update_freq()
+
+
         self.setLayout(grid)
-        
+        # self._second_row.removeWidget(self._plot.const_window)
+        # self._plot_layout.removeWidget(self._plot.const_window)
+    def _plot_layout(self):
+        plot_layout =  QtGui.QGridLayout()
+        plot_layout.setSpacing(10)
+        plot_layout.addWidget(self._plot.window,0,0,1,5)
+
+        plot_layout.addWidget(self._plot.const_window,1,0)
+        plot_layout.addWidget(self._plot.iq_window,1,2)
+        self._plot.const_window.hide()
+        self._plot.iq_window.hide()
+
+
+        self._plot_layout = plot_layout
+        return self._plot_layout
+
     def _trace_controls(self):
         trace_group = QtGui.QGroupBox("Traces")
   
@@ -633,11 +664,16 @@ class MainPanel(QtGui.QWidget):
         fourth_row.addWidget(min_label)
         fourth_row.addWidget(min_level)
         
+        fifth_row = QtGui.QHBoxLayout()
+        iq_checkbox =  self._iq_plot_controls() 
+        fifth_row.addWidget(iq_checkbox)
+
+        
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
         plot_controls_layout.addLayout(third_row)
         plot_controls_layout.addLayout(fourth_row)
-        
+        plot_controls_layout.addLayout(fifth_row)
         plot_group.setLayout(plot_controls_layout)
         
         return plot_group
@@ -686,6 +722,14 @@ class MainPanel(QtGui.QWidget):
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label
+    
+    def _iq_plot_controls(self):
+        iq_plot_checkbox = QtGui.QCheckBox('IQ Plot')
+        iq_plot_checkbox.clicked.connect(lambda: cu._iq_plot_control(self))
+        self._iq_plot_checkbox = iq_plot_checkbox
+        self.control_widgets.append(self._iq_plot_checkbox)
+        
+        return iq_plot_checkbox
         
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
@@ -701,33 +745,37 @@ class MainPanel(QtGui.QWidget):
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
-    
-    def _const_controls(self):
-        const_group =  QtGui.QGroupBox("Constellation Plot")
-        self._const_group = const_group
-        
-        const_layout = QtGui.QVBoxLayout()
-        first_row = QtGui.QHBoxLayout()
-        first_row.addWidget(self._plot.const_window)
-        const_layout.addLayout(first_row)
-        const_group.setLayout(const_layout)
-        return const_group
-    
+       
     def update_plot(self):
        
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop , 
                                               len(self.pow_data))
         self.update_trace()
+        self.update_iq()
         self.update_marker()
-
         self.update_diff()
-        
+
     def update_trace(self):
         for trace in self._plot.traces:
             trace.update_curve(self.plot_state.freq_range, self.pow_data)
 
 
+    def update_iq(self):
+        if self.plot_state.block_mode:
+                if self.iq_data:
+                    data = self.iq_data.data.numpy_array()
+                    i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
+                    q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+                    self._plot.i_curve.setData(i_data)
+                    self._plot.q_curve.setData(q_data)
+                    self._plot.const_plot.clear()
+                    self._plot.const_plot.addPoints(x = i_data[0:CONST_POINTS], 
+                                               y = q_data[0:CONST_POINTS], 
+                                                symbol = 'o', 
+                                                size = 1, pen = 'y', 
+                                                brush = 'y')
+                                                
     def update_trig(self):
             freq_region = self._plot.freqtrig_lines.getRegion()
             self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,

@@ -6,6 +6,12 @@ from pyrf.gui import labels
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
+IQ_PLOT_YMIN = -1
+IQ_PLOT_YMAX = 1
+
+IQ_PLOT_XMIN = -1
+IQ_PLOT_XMAX = 1
+
 class Trace(object):
     """
     Class to represent a trace in the plot
@@ -127,10 +133,19 @@ class Plot(object):
         self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
         self.grid(True)
         
-        # constellation window
+        # IQ constellation window
         self.const_window = pg.PlotWidget(name='const_plot')
-        self.const_plot = pg.ScatterPlotItem()
+        self.const_plot = pg.ScatterPlotItem(pen = 'y')
         self.const_window.addItem(self.const_plot)
+        self.const_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
+        self.const_window.setXRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)  
+
+        # IQ time domain  window
+        self.iq_window = pg.PlotWidget(name='const_plot')
+        self.iq_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
+        self.i_curve = self.iq_window.plot(pen = 'r')
+        self.q_curve = self.iq_window.plot(pen = 'g')
+
         
         # add traces
         self.traces = []

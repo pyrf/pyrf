@@ -19,7 +19,6 @@ class CaptureDevice(object):
     """    
     def __init__(self, real_device, async_callback=None):
         
-        self.return_fft = False
         self.real_device = real_device
         self.connector = self.real_device.connector
         if hasattr(self.connector, 'vrt_callback'):
@@ -34,53 +33,6 @@ class CaptureDevice(object):
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
 
-
-    def capture_power_spectrum(self, device_set, rbw, min_points=128):
-        """
-        Initiate a capture of power spectral density by
-        applying leveled triggers and return the first data packet that
-        satisfy the trigger.
-
-        :param fstart: starting frequency in Hz
-        :type fstart: float
-        :param fstop: ending frequency in Hz
-        :type fstop: float
-        :param rbw: requested RBW in Hz (output RBW may be smaller than
-                    requested)
-        :type rbw: float
-        :param triggers: a class containing trigger information
-        :type class:`TriggerSettings`
-        :param device_settings: antenna, gain and other device settings
-        :type dict:
-        """
-
-        prop = self.real_device.properties
-        self.return_fft = True
-        # setup the WSA device
-        self.fstart = device_set['freq'] - prop.USABLE_BW / 2
-        self.fstop =  device_set['freq'] + prop.USABLE_BW / 2
-        self.real_device.apply_device_settings(device_set)
-        
-        self.real_device.abort()
-        self.real_device.flush()
-        self.real_device.request_read_perm()
-        self._vrt_context = {}
-
-        points = prop.FULL_BW / rbw
-        points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
-
-        if self.async_callback:
-
-            self.connector.vrt_callback = self.read_data
-            self.real_device.capture(points, 1)
-
-            return
-
-        self.real_device.capture(points, 1)
-        result = None
-        while result is None:
-            result = self.read_data(self.real_device.read())
-        return result
     
     def capture_time_domain(self, device_set, rbw, min_points=128):
         """
@@ -99,7 +51,6 @@ class CaptureDevice(object):
         :type dict:
         """
         prop = self.real_device.properties
-        self.return_fft = False
         
         # setup the WSA device
         self.fstart = device_set['freq'] - prop.USABLE_BW / 2
@@ -131,15 +82,10 @@ class CaptureDevice(object):
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
             return
-        if self.return_fft:
-            pow_data = compute_fft(self.real_device, packet, self._vrt_context)
-            prop = self.real_device.properties
-            attenuated_edge = math.ceil((1.0 -
-                float(prop.USABLE_BW) / prop.FULL_BW) / 2 * len(pow_data))
-            pow_data = pow_data[attenuated_edge:-attenuated_edge]
-            data = pow_data
-        else:
-            data = packet
+        data= {
+            'context_pkt' : self._vrt_context,
+            'data_pkt' : packet}
+
         # FIXME: fstart and fstop not properly corrected for bins removed
 
         if self.async_callback:

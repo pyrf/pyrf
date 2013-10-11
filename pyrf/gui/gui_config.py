@@ -1,7 +1,7 @@
 import util
 import numpy as np
 from pyrf.gui import colors
-from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
+from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER_TYPE_NONE
 from pyrf.units import M
 
 INIT_CENTER_FREQ = 2450 * M
@@ -35,7 +35,7 @@ class PlotState(object):
         
         self.trig = False
         self.trig_set = None
-
+        self.block_mode = False
         self.peak = False
         
         self.freq_range = None        
@@ -101,28 +101,38 @@ class PlotState(object):
         if self.marker:
             self.enable_marker(layout)
     
-    def disable_trig(self, layout):
-        self.trig = False
-        util.change_item_color(layout._trigger, colors.NORMAL_COLOR, colors.BLACK)
-        layout._plot.remove_trigger()
+    def disable_block_mode(self, layout):
+        self.disable_triggers(layout)
+        self.block_mode = False
         self.trig_set = None
         util.enable_freq_cont(layout)
         
-    def enable_trig(self, layout):
-        self.trig = True
+    def enable_block_mode(self, layout, trig = False):
+        self.block_mode = True
         util.change_item_color(layout._trigger, colors.ORANGE, colors.WHITE)
-
-        self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
-                                                self.center_freq + 10e6, 
-                                                self.center_freq - 10e6,-100)
-        
+        if trig == True:
+            self.trig = True
+            self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
+                                                    self.center_freq + 10e6, 
+                                                    self.center_freq - 10e6,-100)
+            layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
+        else:
+            self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
+                                                    self.center_freq + 10e6, 
+                                                    self.center_freq - 10e6,-100) 
         layout.plot_state.freq_sel = 'BW'
         layout._bw_edit.setText('100.0')
         layout.update_freq()
         layout.update_freq_edit()
         util.disable_freq_cont(layout)
-        layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
-        
+
+    def disable_triggers(self, layout): 
+        self.trig = False
+        layout._plot.remove_trigger()
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
+                                        self.center_freq + 10e6, 
+                                        self.center_freq - 10e6,-100) 
+                                        
     def update_freq_range(self, start, stop, size):
         self.freq_range = np.linspace(start, stop, size)
         
