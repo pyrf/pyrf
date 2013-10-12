@@ -176,7 +176,7 @@ class MainPanel(QtGui.QWidget):
     def receive_data(self, fstart, fstop, data):
         if not self.plot_state.enable_plot:
             return
-        if self.plot_state.trig_set:
+        if self.plot_state.block_mode:
             self.read_trigg()
             if not len(data) > 5:
                 pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'])
@@ -753,7 +753,7 @@ class MainPanel(QtGui.QWidget):
         self.update_diff()
 
     def update_trace(self):
-        print self.plot_state.bandwidth
+
         for trace in self._plot.traces:
             trace.update_curve(self.plot_state.freq_range, self.pow_data)
 

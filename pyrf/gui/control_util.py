@@ -157,11 +157,14 @@ def _blank_trace(layout):
     trace.curve.clear()
     trace.data = None
 
-    
+    count = 0
     for marker in layout._plot.markers:
         if marker.enabled and marker.trace_index ==  layout._trace_tab.currentIndex():
             marker.disable(layout._plot)
-            layout._marker_check.click() 
+            if count == layout._marker_tab.currentIndex():
+                layout._marker_check.click()
+                layout._marker_tab.setCurrentIndex(0)
+        count += 1
     util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
     
 def _store_trace(layout):
@@ -205,9 +208,11 @@ def _marker_tab_change(layout):
     """
     change the current selected marker
     """
+    
     for marker in layout._plot.markers:
         marker.selected = False
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+    print marker.trace_index
     if marker.enabled:
         layout._marker_trace.setCurrentIndex(marker.trace_index)
         layout._marker_trace.setEnabled(True)
@@ -215,7 +220,8 @@ def _marker_tab_change(layout):
         layout._marker_check.setCheckState(QtCore.Qt.CheckState.Checked)
     else:
         layout._marker_trace.setEnabled(False)
-
+        
+        layout._marker_trace.setCurrentIndex(marker.trace_index)
         layout._marker_check.setCheckState(QtCore.Qt.CheckState.Unchecked)
     marker.selected = True
 
