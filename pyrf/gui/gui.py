@@ -200,7 +200,8 @@ class MainPanel(QtGui.QWidget):
            
     def mousePressEvent(self, event):
         if self.dut:
-            trace = self._plot.traces[self._marker_trace.currentIndex()]
+            marker = self._plot.markers[self._marker_tab.currentIndex()]
+            trace = self._plot.traces[marker.trace_index]
             if event.button() == QtCore.Qt.MouseButton.LeftButton:
                 click_pos =  event.pos().x() - 68
                 plot_window_width = self._plot.window.width() - 68
@@ -212,7 +213,7 @@ class MainPanel(QtGui.QWidget):
                     click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
                     index = find_nearest_index(click_freq, trace.freq_range)
                     self._plot.markers[self._marker_tab.currentIndex()].data_index = index
-                    # self.update_diff()
+
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
@@ -601,7 +602,7 @@ class MainPanel(QtGui.QWidget):
             
             elif self.plot_state.freq_sel == 'FSTOP': 
                 f = (float(self._fstop_edit.text()) + delta) * M
-                print f
+
                 if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
                     return
                 self.plot_state.update_freq_set(fstop = f)
@@ -789,11 +790,12 @@ class MainPanel(QtGui.QWidget):
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
+
                     if not trace.blank:
                         marker_label.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
                                                                              trace.color[1],
                                                                             trace.color[2]))
-
+                        
                         marker.update_pos(trace.freq_range, trace.data)
                         marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])

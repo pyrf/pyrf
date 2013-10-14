@@ -214,9 +214,15 @@ def _marker_tab_change(layout):
         marker.selected = False
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
     if marker.enabled:
-        layout._marker_trace.setCurrentIndex(marker.trace_index)
+        if marker.trace_index == 2:
+            if layout._marker_trace.count() == 2:
+                index = 1
+            else:
+                index = 2
+            layout._marker_trace.setCurrentIndex(index) 
+        else:
+            layout._marker_trace.setCurrentIndex(marker.trace_index) 
         layout._marker_trace.setEnabled(True)
-
         layout._marker_check.setCheckState(QtCore.Qt.CheckState.Checked)
     else:
         layout._marker_trace.setEnabled(False)
