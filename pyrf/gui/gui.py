@@ -611,6 +611,8 @@ class MainPanel(QtGui.QWidget):
                 if f < 0:
                     return
                 self.plot_state.update_freq_set(bw = f)
+            for trace in self._plot.traces:
+                trace.data = self.pow_data
         except ValueError:
             return
         if self.plot_state.trig:

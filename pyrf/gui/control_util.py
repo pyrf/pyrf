@@ -180,13 +180,14 @@ def _marker_control(layout):
     """
     disable/enable marker
     """
-
+    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
     if layout._marker_check.checkState() is QtCore.Qt.CheckState.Checked:
         
         layout._marker_trace.setEnabled(True)
         if layout._marker_trace.currentIndex() < 0:
             layout._marker_trace.setCurrentIndex(0)
-        layout._plot.markers[layout._marker_tab.currentIndex()].enable(layout._plot)
+        marker.trace_index = int(layout._marker_trace.currentText()) - 1
+        marker.enable(layout._plot)
     else:
         layout._marker_trace.setEnabled(False)  
         layout._plot.markers[layout._marker_tab.currentIndex()].disable(layout._plot)
@@ -212,7 +213,6 @@ def _marker_tab_change(layout):
     for marker in layout._plot.markers:
         marker.selected = False
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
-    print marker.trace_index
     if marker.enabled:
         layout._marker_trace.setCurrentIndex(marker.trace_index)
         layout._marker_trace.setEnabled(True)
