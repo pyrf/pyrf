@@ -16,21 +16,24 @@ import numpy as np
 import time
 import math
 from contextlib import contextmanager
-from util import find_max_index, find_nearest_index
-from util import hotkey_util, update_marker_traces
+
 from pyrf.gui import colors
 from pyrf.gui import labels
-import control_util as cu
-from plot_widget import Plot
 from pyrf.gui import gui_config
-from pyrf.devices.thinkrf import WSA
+
 from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
 from pyrf.numpy_util import compute_fft
+from pyrf.devices.thinkrf import WSA
 
+from util import find_max_index, find_nearest_index
+from util import hotkey_util, update_marker_traces
+import control_util as cu
+from plot_widget import Plot
+from device_widget import DeviceControlsWidget
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -139,16 +142,16 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = self.dut.properties
         if self.dut_prop.model == 'WSA5000':
-            self._antenna_box.hide()
-            self._gain_box.hide()
-            self._trigger.hide()
-            self._attenuator_box.show()
+            self._dev_group._antenna_box.hide()
+            self._dev_group._gain_box.hide()
+            self._dev_group._trigger.hide()
+            self._dev_group._attenuator_box.show()
         else:
-            self._antenna_box.show()
-            self._gain_box.show()
-            self._trigger.show()
-            self._attenuator_box.hide()
-        self.label = QtGui.QLabel('HELLO')
+            self._dev_group._antenna_box.show()
+            self._dev_group._gain_box.show()
+            self._dev_group._trigger.show()
+            self._dev_group._attenuator_box.hide()
+        self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
@@ -175,8 +178,7 @@ class MainPanel(QtGui.QWidget):
 
 
     def receive_data(self, fstart, fstop, data):
-        if not self.plot_state.enable_plot:
-            return
+
         if self.plot_state.block_mode:
             self.read_trigg()
             if not len(data) > 5:
@@ -338,65 +340,32 @@ class MainPanel(QtGui.QWidget):
         return max_hold, min_hold, write, store, blank
 
     def _device_controls(self):
-        dev_group = QtGui.QGroupBox("Device Control")
-        dev_group.setMaximumWidth(300)
-        self.dev_group = dev_group
-        
-        dev_layout = QtGui.QVBoxLayout()
-        
-        first_row = QtGui.QHBoxLayout()
-        first_row.addWidget(self._antenna_control())
-        first_row.addWidget(self._trigger_control())
-        first_row.addWidget(self._attenuator_control())
-        
-        second_row = QtGui.QHBoxLayout()
-        second_row.addWidget(self._gain_control())
-        second_row.addWidget(self._ifgain_control())
-        
-        dev_layout.addLayout(first_row)
-        dev_layout.addLayout(second_row)
 
-        dev_group.setLayout(dev_layout)         
-        return dev_group
-    
-    def _antenna_control(self):
-        antenna = QtGui.QComboBox(self)
-        antenna.setToolTip("Choose Antenna") 
-        antenna.addItem("Antenna 1")
-        antenna.addItem("Antenna 2")
-        self._antenna_box = antenna
-        self.control_widgets.append(self._antenna_box)
+        self._dev_group = DeviceControlsWidget()
+        self.control_widgets.append(self._dev_group)   
+        return self._dev_group
+        
+    def _connect_device_controls(self):
+        
         def new_antenna():
-            self.plot_state.dev_set['antenna'] = (int(antenna.currentText().split()[-1]))
+            self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
         
-        antenna.currentIndexChanged.connect(new_antenna)
-        return antenna
-
-    def _gain_control(self):
-        gain = QtGui.QComboBox(self)
-        gain.setToolTip("Choose RF Gain setting") 
-        gain_values = ['VLow', 'Low', 'Med', 'High']
-        for g in gain_values:
-            gain.addItem("RF Gain: %s" % g)
-        self._gain_values = [g.lower() for g in gain_values]
-        self._gain_box = gain
-        self.control_widgets.append(self._gain_box)
         def new_gain():
-            self.plot_state.dev_set['gain'] = gain.currentText().split()[-1].lower().encode('ascii')
-        gain.currentIndexChanged.connect(new_gain)
-        return gain
-
-    def _ifgain_control(self):
-        ifgain = QtGui.QSpinBox(self)
-        ifgain.setToolTip("Choose IF Gain setting")
-        ifgain.setRange(-10, 25)
-        ifgain.setSuffix(" dB")
-        self._ifgain_box = ifgain
-        self.control_widgets.append(self._ifgain_box)
+            self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
+        
         def new_ifgain():
-            self.plot_state.dev_set['ifgain'] = ifgain.value()
-        ifgain.valueChanged.connect(new_ifgain)
-        return ifgain
+            self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box .value()
+        
+        def new_attenuator():
+            self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
+        
+        self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
+        self._dev_group._gain_box.currentIndexChanged.connect(new_gain) 
+        self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
+        self._dev_group._attenuator_box.clicked.connect(new_attenuator)
+        self._dev_group._trigger.clicked.connect(lambda: cu._trigger_control(self))
+
+
     
     def _trigger_control(self):
         trigger = QtGui.QCheckBox("Trigger")
@@ -724,7 +693,7 @@ class MainPanel(QtGui.QWidget):
         return ref_level, ref_label, min_level, min_label
     
     def _iq_plot_controls(self):
-        iq_plot_checkbox = QtGui.QCheckBox('IQ Plot')
+        iq_plot_checkbox = QtGui.QCheckBox('Time Domain Plot')
         iq_plot_checkbox.clicked.connect(lambda: cu._iq_plot_control(self))
         self._iq_plot_checkbox = iq_plot_checkbox
         self.control_widgets.append(self._iq_plot_checkbox)

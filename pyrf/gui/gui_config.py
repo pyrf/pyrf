@@ -109,7 +109,6 @@ class PlotState(object):
         
     def enable_block_mode(self, layout):
         self.block_mode = True
-        util.change_item_color(layout._trigger, colors.ORANGE, colors.WHITE)
         layout.plot_state.freq_sel = 'BW'
         layout._bw_edit.setText('100.0')
         layout.update_freq()

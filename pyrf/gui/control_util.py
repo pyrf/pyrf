@@ -296,7 +296,7 @@ def _trigger_control(layout):
     enable/disable triggers in the layout plot
     """
 
-    if layout._trigger.checkState() is QtCore.Qt.CheckState.Checked:
+    if layout._dev_group._trigger.checkState() is QtCore.Qt.CheckState.Checked:
         layout.plot_state.enable_triggers(layout)
         layout.plot_state.enable_block_mode(layout)
         _select_center_freq(layout)
