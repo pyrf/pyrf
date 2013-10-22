@@ -574,7 +574,7 @@ class WSA(object):
         """
         Remove all entries from the sweep list.
         """
-        self.scpiset(":sweep:entry:del all")
+        self.scpiset(":sweep:entry:delete all")
 
 
     def sweep_start(self, start_id = None):
