@@ -53,9 +53,11 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         # FIXME: convert_to_dbm?
         power_spectrum = numpy.array(data, dypye=float)
 
-    noiselevel_offset = (
-        reference_level - prop.NOISEFLOOR_CALIBRATION - prop.ADC_DYNAMIC_RANGE)
-    return power_spectrum + noiselevel_offset
+    if convert_to_dbm:
+        noiselevel_offset = (
+            reference_level - prop.NOISEFLOOR_CALIBRATION - prop.ADC_DYNAMIC_RANGE)
+        return power_spectrum + noiselevel_offset
+    return power_spectrum
 
 
 def _compute_fft(i_data, q_data, correct_phase,
