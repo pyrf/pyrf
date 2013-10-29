@@ -3,7 +3,8 @@ import math
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
-def compute_fft(dut, data_pkt, context):
+def compute_fft(dut, data_pkt, context, correct_phase=True,
+        hide_differential_dc_offset=True, convert_to_dbm=True):
     """
     Return an array of dBm values by computing the FFT of
     the passed data and reference level.
@@ -13,6 +14,10 @@ def compute_fft(dut, data_pkt, context):
     :param data_pkt: packet containing samples
     :type data_pkt: pyrf.vrt.DataPacket
     :param context: dict containing context values
+    :param correct_phase: apply phase correction for captures with IQ data
+    :param hide_differential_dc_offset: mask the differential DC offset
+                                        present in captures with IQ data
+    :param convert_to_dbm: convert the output values to dBm
 
     This function uses only *dut.ADC_DYNAMIC_RANGE*,
     *data_pkt.data* and *context['reflevel']*.
@@ -36,14 +41,16 @@ def compute_fft(dut, data_pkt, context):
                 break
 
         if valid_data == I_ONLY:
-            power_spectrum = _compute_fft_i_only(i_data)
-        power_spectrum = _compute_fft(i_data, q_data)
+            power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
+        power_spectrum = _compute_fft(i_data, q_data, correct_phase,
+            hide_differential_dc_offset, convert_to_dbm)
 
     if data_pkt.stream_id in (VRT_IFDATA_I14, VRT_IFDATA_I24):
         i_data = numpy.array(data, dtype=float)
-        power_spectrum = _compute_fft_i_only(i_data)
+        power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
 
     if data_pkt.stream_id == VRT_IFDATA_PSD8:
+        # FIXME: convert_to_dbm?
         power_spectrum = numpy.array(data, dypye=float)
 
     noiselevel_offset = (
@@ -51,30 +58,38 @@ def compute_fft(dut, data_pkt, context):
     return power_spectrum + noiselevel_offset
 
 
-def _compute_fft(i_data, q_data):
+def _compute_fft(i_data, q_data, correct_phase,
+        hide_differential_dc_offset, convert_to_dbm):
     import numpy
 
     i_removed_dc_offset = i_data - numpy.mean(i_data)
     q_removed_dc_offset = q_data - numpy.mean(q_data)
-    calibrated_q = _calibrate_i_q(i_removed_dc_offset, q_removed_dc_offset)
+    if correct_phase:
+        calibrated_q = _calibrate_i_q(i_removed_dc_offset, q_removed_dc_offset)
+    else:
+        calibrated_q = q_removed_dc_offset
     iq = i_removed_dc_offset + 1j * calibrated_q
     windowed_iq = iq * numpy.hanning(len(i_data))
 
     power_spectrum = numpy.fft.fftshift(numpy.fft.fft(windowed_iq))
-    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(power_spectrum))
+    if convert_to_dbm:
+        power_spectrum = 20 * numpy.log10(
+            numpy.abs(power_spectrum)/len(power_spectrum))
 
-    median_index = len(power_spectrum) // 2
-    power_spectrum[median_index] = (power_spectrum[median_index - 1]
-        + power_spectrum[median_index + 1]) / 2
+    if hide_differential_dc_offset:
+        median_index = len(power_spectrum) // 2
+        power_spectrum[median_index] = (power_spectrum[median_index - 1]
+            + power_spectrum[median_index + 1]) / 2
     return power_spectrum
 
-def _compute_fft_i_only(i_data):
+def _compute_fft_i_only(i_data, convert_to_dbm):
     import numpy
 
     windowed_i = i_data * numpy.hanning(len(i_data))
 
     power_spectrum = numpy.fft.rfft(windowed_i)
-    power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(power_spectrum))
+    if convert_to_dbm:
+        power_spectrum = 20 * numpy.log10(numpy.abs(power_spectrum)/len(power_spectrum))
     return power_spectrum
 
 def _calibrate_i_q(i_data, q_data):
