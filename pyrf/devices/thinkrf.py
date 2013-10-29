@@ -643,7 +643,7 @@ class WSA(object):
             enable = yield self.scpiget(":INPUT:ATTENUATOR?")
             enable = bool(int(enable))
         else:
-            self.scpiset(":INPUT:ATTENUATOR %s" % 1 if enable else 0)
+            self.scpiset(":INPUT:ATTENUATOR %s" % (1 if enable else 0))
         yield enable
 
     @sync_async
