@@ -35,7 +35,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         dev_layout.addLayout(second_row)
 
         self.setLayout(dev_layout)         
-
+        self.layout = dev_layout
     
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
