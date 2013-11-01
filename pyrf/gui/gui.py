@@ -48,22 +48,20 @@ class MainWindow(QtGui.QMainWindow):
     """
     The main window and menus
     """
-    def __init__(self, name=None):
+    def __init__(self, output_file=None):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = screen.width() * 0.7
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
-        self.initUI()
-
-
+        self.initUI(output_file)
         self.show()
-    
-    def initUI(self):
+
+    def initUI(self, output_file):
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
-        self.mainPanel = MainPanel()
+        self.mainPanel = MainPanel(output_file)
         openAction = QtGui.QAction('&Open Device', self)
         openAction.triggered.connect( self.mainPanel.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
@@ -94,9 +92,10 @@ class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
-    def __init__(self):
+    def __init__(self, output_file):
         self.dut = None
         self.control_widgets = []
+        self._output_file = output_file
         super(MainPanel, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(screen.width() * 0.7)
@@ -134,6 +133,8 @@ class MainPanel(QtGui.QWidget):
     def open_device(self, name):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
+        if self._output_file:
+            dut.set_capture_output(self._output_file)
         self.dut = dut
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = self.dut.properties

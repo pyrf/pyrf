@@ -89,6 +89,14 @@ class WSA(object):
         if not connector:
             connector = PlainSocketConnector()
         self.connector = connector
+        self._output_file = None
+
+    def set_capture_output(self, output_file=None):
+        """
+        Dump a recording of all the received packets to output_file
+        """
+        self.connector.set_recording_output(output_file)
+        self._output_file = output_file
 
     @sync_async
     def connect(self, host):
@@ -494,7 +502,7 @@ class WSA(object):
         """
         Read a single VRT packet from the WSA.
         """
-        return vrt_packet_reader(self.connector.raw_read)
+        return vrt_packet_reader(self.connector.raw_read, self._output_file)
 
     def raw_read(self, num):
         """

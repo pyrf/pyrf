@@ -39,7 +39,7 @@ class TwistedConnector(object):
         self._reactor = reactor
         self.vrt_callback = vrt_callback
 
-    def connect(self, host):
+    def connect(self, host, output_file=None):
         point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
         d = point.connect(SCPIClientFactory())
 
@@ -54,6 +54,9 @@ class TwistedConnector(object):
             self._vrt = vrt
 
         return d
+
+    def set_recording_output(self, output_file=None):
+        self._vrt.set_recording_output(output_file)
 
     def disconnect(self):
         pass # FIXME
@@ -96,6 +99,7 @@ class VRTClient(Protocol):
     """
     _buf = None
     eof = False
+    _output_file = None
 
     def __init__(self, receive_callback):
         self._receive_callback = receive_callback
@@ -107,9 +111,13 @@ class VRTClient(Protocol):
         self._resetReader()
         self._processData()
 
+    def set_recording_output(self, output_file=None):
+        self._output_file = output_file
+
     def _resetReader(self):
-        self._packet_reader = vrt_packet_reader(self._setBytesRequired)
-        next(self._packet_reader) 
+        self._packet_reader = vrt_packet_reader(self._setBytesRequired,
+            self._output_file)
+        next(self._packet_reader)
 
     def _setBytesRequired(self, x):
         self._bytes_required = x
