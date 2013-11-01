@@ -42,6 +42,8 @@ def vrt_packet_reader(raw_read, output_file=None):
     tmpstr = yield raw_read(4)
     if output_file:
         output_file.write(tmpstr)
+    if not tmpstr:
+        return
     (word,) = struct.unpack(">I", tmpstr)
     packet_type = (word >> 28) & 0x0f
     count = (word >> 16) & 0x0f
