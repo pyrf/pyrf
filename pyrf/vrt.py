@@ -32,7 +32,7 @@ class InvalidDataReceived(Exception):
     pass
 
 
-def vrt_packet_reader(raw_read, output_file=None):
+def vrt_packet_reader(raw_read):
     """
     Read a VRT packet, parse it and return an object with its data.
 
@@ -40,8 +40,6 @@ def vrt_packet_reader(raw_read, output_file=None):
     raw_read function and accepts the value sent as its data.
     """
     tmpstr = yield raw_read(4)
-    if output_file:
-        output_file.write(tmpstr)
     if not tmpstr:
         return
     (word,) = struct.unpack(">I", tmpstr)
@@ -52,8 +50,6 @@ def vrt_packet_reader(raw_read, output_file=None):
     if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
         packet_size = (size - 1) * 4
         context_data = yield raw_read(packet_size)
-        if output_file:
-            output_file.write(context_data)
         yield ContextPacket(packet_type, count, size, context_data)
 
     elif packet_type == VRTDATA:
@@ -62,8 +58,6 @@ def vrt_packet_reader(raw_read, output_file=None):
         payload_size = (size - 5 - 1) * 4
         payload = yield raw_read(payload_size)
         trailer = yield raw_read(4)
-        if output_file:
-            output_file.write(data_header + payload + trailer)
         trailer = struct.unpack(">I", trailer)[0]
         yield DataPacket(count, size, stream_id, tsi, tsf, payload, trailer)
 

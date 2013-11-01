@@ -115,8 +115,7 @@ class VRTClient(Protocol):
         self._output_file = output_file
 
     def _resetReader(self):
-        self._packet_reader = vrt_packet_reader(self._setBytesRequired,
-            self._output_file)
+        self._packet_reader = vrt_packet_reader(self._setBytesRequired)
         next(self._packet_reader)
 
     def _setBytesRequired(self, x):
@@ -131,6 +130,8 @@ class VRTClient(Protocol):
             data = self._bufConsume(self._bytes_required)
             if not data:
                 break
+            if self._output_file:
+                self._output_file.write(data)
             response = self._packet_reader.send(data)
             if response:
                 self._receive_callback(response)

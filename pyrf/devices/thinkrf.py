@@ -502,7 +502,7 @@ class WSA(object):
         """
         Read a single VRT packet from the WSA.
         """
-        return vrt_packet_reader(self.connector.raw_read, self._output_file)
+        return vrt_packet_reader(self.connector.raw_read)
 
     def raw_read(self, num):
         """
