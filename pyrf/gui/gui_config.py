@@ -51,55 +51,6 @@ class PlotState(object):
         self.min_level = PLOT_YMIN 
         
         self.device_properties = device_properties
-
-    def enable_marker(self, layout):
-        self.marker = True
-        self.marker_sel = True
-        util.change_item_color(layout._marker,  colors.ORANGE, colors.WHITE)
-        layout._plot.add_marker()
-        layout._marker.setDown(True)
-        layout.update_marker()
-        if layout.plot_state.delta_sel:
-            self.delta_sel = False
-            util.change_item_color(layout._delta,  colors.ORANGE, colors.WHITE)
-            layout._delta.setDown(False)
-            
-
-    def disable_marker(self, layout):
-        
-        self.marker = False
-        self.marker_sel = False
-        util.change_item_color(layout._marker, colors.NORMAL_COLOR, colors.BLACK)
-        layout._marker.setDown(False)
-        layout._plot.remove_marker()
-        layout._marker_lab.setText('')
-        layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth)
-        if self.delta:
-            self.enable_delta(layout)
-
-    def enable_delta(self, layout):
-        self.delta = True
-        self.delta_sel = True
-        util.change_item_color(layout._delta, colors.ORANGE, colors.WHITE)
-        layout._plot.add_delta()
-        layout._delta.setDown(True)
-        layout.update_delta()
-        if self.marker:
-            self.marker_sel = False             
-            util.change_item_color(layout._marker, colors.ORANGE, colors.WHITE)
-            layout._marker.setDown(False)
-            
-    def disable_delta(self, layout):
-        self.delta = False
-        self.delta_sel = False
-        util.change_item_color(layout._delta, colors.NORMAL_COLOR, colors.BLACK)
-        layout._delta.setDown(False)
-        layout._plot.remove_delta()
-        layout._delta_lab.setText('')
-        layout._diff_lab.setText('')
-        layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth)
-        if self.marker:
-            self.enable_marker(layout)
     
     def disable_block_mode(self, layout):
         self.disable_triggers(layout)
