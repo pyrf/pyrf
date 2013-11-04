@@ -9,7 +9,8 @@ def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
     """
-    layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth)
+    layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth,
+                            layout.plot_state.min_level, layout.plot_state.ref_level)
     
 def _select_center_freq(layout):
     """
@@ -254,8 +255,8 @@ def _change_ref_level(layout):
         layout.ref_level.setText(str(layout.plot_state.ref_level))
         return
     layout.plot_state.ref_level = ref
-    layout._plot.window.setYRange(layout.plot_state.ref_level - AXIS_OFFSET, 
-                                        layout.plot_state.min_level + AXIS_OFFSET)
+    
+    _center_plot_view(layout)
     
 def _change_min_level(layout):
     """
@@ -267,8 +268,7 @@ def _change_min_level(layout):
         layout.min_level.setText(str(layout.plot_state.min_level))
         return
     layout.plot_state.min_level = min
-    layout._plot.window.setYRange(layout.plot_state.ref_level - AXIS_OFFSET, 
-                                    layout.plot_state.min_level + AXIS_OFFSET)
+    _center_plot_view(layout)
 def _iq_plot_control(layout):
     """
     enable/disable the iq constallation and time domain plots
