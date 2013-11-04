@@ -22,14 +22,16 @@ class PlotState(object):
             bandwidth=INIT_BANDWIDTH,
             rbw=INIT_RBW,
             ):
-        
+
         self.grid = False
 
         self.dev_set = {
             'gain' : 'vlow',
             'antenna' : 1,
             'ifgain' : 0,
-            'attenuator': 1} 
+            'attenuator': 1,
+            'fshift': 0,
+            }
         self.mhold = False
         self.mhold_fft = None
         

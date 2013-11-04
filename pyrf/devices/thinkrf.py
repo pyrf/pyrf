@@ -714,3 +714,4 @@ def parse_discovery_response(response):
 
 # for backwards compatibility
 WSA4000 = WSA
+
