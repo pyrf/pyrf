@@ -144,8 +144,15 @@ class MainPanel(QtGui.QWidget):
         if self.dut_prop.model == 'WSA5000':
             self._dev_group._antenna_box.hide()
             self._dev_group._gain_box.hide()
+            self._dev_group._ifgain_box.hide()
             self._dev_group._trigger.hide()
             self._dev_group._attenuator_box.show()
+            self._bw.hide()
+            self._bw_edit.hide()
+            self._fstart.hide()
+            self._fstart_edit.hide()
+            self._fstop.hide()
+            self._fstop_edit.hide()
         else:
             self._dev_group._antenna_box.show()
             self._dev_group._gain_box.show()
@@ -155,9 +162,11 @@ class MainPanel(QtGui.QWidget):
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
-        cu._select_fstart(self)
-        self.read_sweep()
-
+        cu._select_center_freq(self)
+        self._iq_plot_checkbox.click()
+        self._iq_plot_checkbox.setEnabled(False)
+        self.read_trigg()
+        
     def read_sweep(self):
         #TODO: find cleaner way to do this
         self.plot_state.dev_set.pop('freq', None)
@@ -172,7 +181,7 @@ class MainPanel(QtGui.QWidget):
         device_set = self.plot_state.dev_set
         #TODO: find cleaner way to do this
         device_set['freq'] = self.plot_state.center_freq
-        device_set['trigger'] = self.plot_state.trig_set
+        # device_set['trigger'] = self.plot_state.trig_set
 
         self.cap_dut.capture_time_domain(device_set,self.plot_state.rbw)
 
@@ -396,7 +405,6 @@ class MainPanel(QtGui.QWidget):
         fstart_bt, fstart_txt = self._fstart_controls()
         fstart_hbox.addWidget(fstart_bt)
         fstart_hbox.addWidget(fstart_txt)
-        fstart_hbox.addWidget(QtGui.QLabel('MHz'))
         
         cfreq_hbox = QtGui.QHBoxLayout()
         cfreq_bt, cfreq_txt = self._center_freq()
@@ -408,13 +416,13 @@ class MainPanel(QtGui.QWidget):
         bw_bt, bw_txt = self._bw_controls()
         bw_hbox.addWidget(bw_bt)
         bw_hbox.addWidget(bw_txt)
-        bw_hbox.addWidget(QtGui.QLabel('MHz'))
+
         
         fstop_hbox = QtGui.QHBoxLayout()
         fstop_bt, fstop_txt = self._fstop_controls()
         fstop_hbox.addWidget(fstop_bt)
         fstop_hbox.addWidget(fstop_txt)
-        fstop_hbox.addWidget(QtGui.QLabel('MHz'))
+
         
         freq_inc_hbox = QtGui.QHBoxLayout()
         freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
@@ -563,7 +571,7 @@ class MainPanel(QtGui.QWidget):
                 if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
                     return
                 self.plot_state.update_freq_set(fcenter = f)
-            
+                self.dut.freq(f)
             elif self.plot_state.freq_sel == 'FSTART':
                 f = (float(self._fstart_edit.text()) + delta) * M
                 if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
@@ -694,6 +702,7 @@ class MainPanel(QtGui.QWidget):
     
     def _iq_plot_controls(self):
         iq_plot_checkbox = QtGui.QCheckBox('Time Domain Plot')
+        
         iq_plot_checkbox.clicked.connect(lambda: cu._iq_plot_control(self))
         self._iq_plot_checkbox = iq_plot_checkbox
         self.control_widgets.append(self._iq_plot_checkbox)

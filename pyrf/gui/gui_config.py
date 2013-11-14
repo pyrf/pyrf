@@ -26,23 +26,17 @@ class PlotState(object):
         self.grid = False
 
         self.dev_set = {
-            'gain' : 'vlow',
-            'antenna' : 1,
-            'ifgain' : 0,
-            'attenuator': 1,
-            'fshift': 0,
-            }
+            'attenuator': 1}
         self.mhold = False
         self.mhold_fft = None
         
         self.trig = False
-        self.trig_set = None
-        self.block_mode = False
+        self.block_mode = True
         self.peak = False
-        
+ 
         self.freq_range = None        
         self.center_freq = center_freq
-        self.bandwidth = bandwidth
+        self.bandwidth = 100
         self.fstart = self.center_freq - self.bandwidth / 2
         self.fstop = self.center_freq + self.bandwidth / 2
         self.rbw = rbw
@@ -51,7 +45,9 @@ class PlotState(object):
         
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN 
-        
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
+                                        self.center_freq + 10e6, 
+                                        self.center_freq - 10e6,-100)
         self.device_properties = device_properties
     
     def disable_block_mode(self, layout):

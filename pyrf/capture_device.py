@@ -55,10 +55,11 @@ class CaptureDevice(object):
         # setup the WSA device
         self.fstart = device_set['freq'] - prop.USABLE_BW / 2
         self.fstop =  device_set['freq'] + prop.USABLE_BW / 2
+        device_set.pop('freq', None)
         self.real_device.apply_device_settings(device_set)
         
-        self.real_device.abort()
-        self.real_device.flush()
+        # self.real_device.abort()
+        # self.real_device.flush()
         self.real_device.request_read_perm()
         self._vrt_context = {}
 
