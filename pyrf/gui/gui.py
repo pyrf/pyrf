@@ -143,6 +143,7 @@ class MainPanel(QtGui.QWidget):
         if self.dut_prop.model == 'WSA5000':
             self._dev_group._antenna_box.hide()
             self._dev_group._gain_box.hide()
+            self._dev_group._ifgain_box.hide()
             self._dev_group._trigger.hide()
             self._dev_group._attenuator_box.show()
         else:
