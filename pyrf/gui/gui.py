@@ -159,9 +159,6 @@ class MainPanel(QtGui.QWidget):
         self.read_sweep()
 
     def read_sweep(self):
-        #TODO: find cleaner way to do this
-        self.plot_state.dev_set.pop('freq', None)
-        self.plot_state.dev_set.pop('trigger', None)
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.rbw,

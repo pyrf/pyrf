@@ -51,15 +51,17 @@ class PlotState(object):
 
         self.trig = False
         self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
-                                        center_freq + 10e6,
-                                        center_freq - 10e6,-100)
+                                        self.center_freq + 10e6,
+                                        self.center_freq - 10e6,-100)
 
         self.device_properties = device_properties
     
     def disable_block_mode(self, layout):
         self.disable_triggers(layout)
         self.block_mode = False
-        self.trig_set = None
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
+                                        self.center_freq + 10e6,
+                                        self.center_freq - 10e6,-100)
         util.enable_freq_cont(layout)
         
     def enable_block_mode(self, layout):
