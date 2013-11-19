@@ -18,7 +18,6 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         super(DeviceControlsWidget, self).__init__()       
         
         self.setTitle(name)
-        self.setMaximumWidth(300)       
         
         dev_layout = QtGui.QVBoxLayout(self)
         

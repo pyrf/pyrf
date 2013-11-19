@@ -383,7 +383,6 @@ class MainPanel(QtGui.QWidget):
     
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")
-        freq_group.setMaximumWidth(300)
         self._freq_group = freq_group
         
         freq_layout = QtGui.QVBoxLayout()
@@ -597,7 +596,6 @@ class MainPanel(QtGui.QWidget):
     def _plot_controls(self):
 
         plot_group = QtGui.QGroupBox("Plot Control")
-        plot_group.setMaximumWidth(300)
         self._plot_group = plot_group
         
         plot_controls_layout = QtGui.QVBoxLayout()
