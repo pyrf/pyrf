@@ -236,13 +236,12 @@ class MainPanel(QtGui.QWidget):
         y = 0
         x = plot_width
 
-        grid.addWidget(self._trace_controls(), y, x, 2, 5)
-        y += 2
-        grid.addWidget(self._plot_controls(), y, x, 4, 5)
-        y += 5
-        grid.addWidget(self._device_controls(), y, x, 2, 5)
-        y += 2
-        grid.addWidget(self._freq_controls(), y, x, 4, 5)
+        controls_layout = QtGui.QVBoxLayout()
+        controls_layout.addWidget(self._trace_controls())
+        controls_layout.addWidget(self._plot_controls())
+        controls_layout.addWidget(self._device_controls())
+        controls_layout.addWidget(self._freq_controls())
+        grid.addLayout(controls_layout, y, x, 13, 5)
 
         self._grid = grid
         self.update_freq()
