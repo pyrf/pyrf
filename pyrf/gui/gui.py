@@ -13,7 +13,6 @@ and placed to left of the controls.
 import sys
 from PySide import QtGui, QtCore
 import numpy as np
-import time
 import math
 from contextlib import contextmanager
 
@@ -220,12 +219,11 @@ class MainPanel(QtGui.QWidget):
         grid.setSpacing(10)
         for x in range(8):
             grid.setColumnMinimumWidth(x, 300)
-        grid.setRowMinimumHeight(14, 800)
-        
+
         # add plot widget
         plot_width = 8
         
-        grid.addLayout(self._plot_layout(),0,0,15,plot_width)
+        grid.addLayout(self._plot_layout(),0,0,13,plot_width)
         
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
