@@ -30,13 +30,10 @@ class PlotState(object):
             'antenna' : 1,
             'ifgain' : 0,
             'attenuator': 1,
-            'fshift': 0,
             }
         self.mhold = False
         self.mhold_fft = None
         
-        self.trig = False
-        self.trig_set = None
         self.block_mode = False
         self.peak = False
         
@@ -51,7 +48,12 @@ class PlotState(object):
         
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN 
-        
+
+        self.trig = False
+        self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
+                                        center_freq + 10e6,
+                                        center_freq - 10e6,-100)
+
         self.device_properties = device_properties
     
     def disable_block_mode(self, layout):
