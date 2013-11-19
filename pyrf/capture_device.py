@@ -60,6 +60,7 @@ class CaptureDevice(object):
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.request_read_perm()
+        self.real_device.fshift(0)
         self._vrt_context = {}
 
         points = prop.FULL_BW / rbw
