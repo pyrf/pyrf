@@ -170,11 +170,12 @@ class MainPanel(QtGui.QWidget):
 
     def read_trigg(self):
         device_set = self.plot_state.dev_set
-        #TODO: find cleaner way to do this
-        device_set['freq'] = self.plot_state.center_freq
-        device_set['trigger'] = self.plot_state.trig_set
 
-        self.cap_dut.capture_time_domain(device_set,self.plot_state.rbw)
+        self.cap_dut.capture_time_domain(dict(device_set,
+            fshift=0,
+            freq=self.plot_state.center_freq,
+            trigger=self.plot_state.trig_set,
+            ), self.plot_state.rbw)
 
 
     def receive_data(self, fstart, fstop, data):
