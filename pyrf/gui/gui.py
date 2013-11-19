@@ -241,6 +241,7 @@ class MainPanel(QtGui.QWidget):
         controls_layout.addWidget(self._plot_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._freq_controls())
+        controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 13, 5)
 
         self._grid = grid
