@@ -407,7 +407,7 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
         return (fstart, fstart, [])
 
     points = prop.FULL_BW / rbw
-    points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
+    points = int(max(min_points, 2 ** math.ceil(math.log(points, 2))))
 
     decimation = 1
     ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))

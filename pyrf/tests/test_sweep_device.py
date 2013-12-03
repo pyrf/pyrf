@@ -74,11 +74,11 @@ class TestPlanSweep(unittest.TestCase):
             [(133*M, 32*M, 0, 1, 256, 62, 64, 192)])
 
     def test_decimated_within_sweep_single_exact(self):
-        self._plan42(100*M, 101*M, 1*M / 4096,
+        self._plan42(100*M, 101*M, 1*M / 4096.0,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 4096)])
 
     def test_decimated_within_sweep_double_exact(self):
-        self._plan42(100*M, 102*M, 2*M / 8192,
+        self._plan42(100*M, 102*M, 2*M / 8192.0,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 8192)])
 
     def test_xxx_truncate_to_left_sweep(self):
