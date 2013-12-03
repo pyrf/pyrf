@@ -51,7 +51,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
 
     if data_pkt.stream_id == VRT_IFDATA_PSD8:
         # FIXME: convert_to_dbm?
-        power_spectrum = numpy.array(data, dypye=float)
+        power_spectrum = numpy.array(data, dtype=float)
 
     if convert_to_dbm:
         noiselevel_offset = (
