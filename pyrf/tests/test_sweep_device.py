@@ -8,14 +8,16 @@ class WSA42(object):
     """
     An imaginary device for testing plan sweep
     """
-    FULL_BW = 128*M
-    USABLE_BW = 66*M
-    MIN_TUNABLE = 96*M
-    MAX_TUNABLE = 2044*M
-    MIN_DECIMATION = 4
-    MAX_DECIMATION = 256
-    DECIMATED_USABLE = 0.5
-    DC_OFFSET_BW = 2*M
+
+    class properties(object):
+        FULL_BW = 128*M
+        USABLE_BW = 66*M
+        MIN_TUNABLE = 96*M
+        MAX_TUNABLE = 2044*M
+        MIN_DECIMATION = 4
+        MAX_DECIMATION = 256
+        DECIMATED_USABLE = 0.5
+        DC_OFFSET_BW = 2*M
 
 class TestPlanSweep(unittest.TestCase):
     def _plan42(self, start, stop, count, expected, min_points=128,
