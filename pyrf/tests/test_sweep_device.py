@@ -18,6 +18,7 @@ class WSA42(object):
         MAX_DECIMATION = 256
         DECIMATED_USABLE = 0.5
         DC_OFFSET_BW = 2*M
+        TUNING_RESOLUTION = 100000
 
 class TestPlanSweep(unittest.TestCase):
     def _plan42(self, start, stop, rbw, expected, min_points=128,
@@ -38,52 +39,52 @@ class TestPlanSweep(unittest.TestCase):
 
     def test_simple_within_sweep_single_exact(self):
         self._plan42(100*M, 132*M, 32*M / 64,
-            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 64)])
 
     def test_simple_within_sweep_single_just_inside(self):
         self._plan42(100*M, 131.9*M, 31.9*M / 64,
-            [(133*M, 32*M, 0, 1, 512, 124, 128, 128)])
+            [(133*M, 32*M, 0, 1, 512, 124, 128, 0, 128)])
 
     def test_simple_within_sweep_single_just_outside(self):
         self._plan42(100*M, 132.1*M, 32.1*M / 64,
-            [(133*M, 32*M, 0, 1, 256, 62, 64, 64)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 64)])
 
     def test_simple_within_sweep_double_exact(self):
         self._plan42(100*M, 164*M, 64*M / 128,
-            [(133*M, 32*M, 0, 1, 256, 62, 64, 128)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 128)])
 
     def test_simple_within_sweep_double_points_up(self):
         self._plan42(100*M, 164*M, 64*M / 129,
-            [(133*M, 32*M, 0, 1, 512, 124, 128, 256)])
+            [(133*M, 32*M, 0, 1, 512, 124, 128, 0, 256)])
 
     def test_simple_within_sweep_double_points_half(self):
         self._plan42(100*M, 164*M, 64*M / 64,
-            [(133*M, 32*M, 0, 1, 128, 31, 32, 64)])
+            [(133*M, 32*M, 0, 1, 128, 31, 32, 0, 64)])
 
     def test_simple_within_sweep_double_points_min(self):
         self._plan42(100*M, 164*M, 64*M / 32,
-            [(133*M, 32*M, 0, 1, 128, 31, 32, 64)])
+            [(133*M, 32*M, 0, 1, 128, 31, 32, 0, 64)])
 
     def test_simple_within_sweep_fshift_triple(self):
         self._plan42(100*M, 164*M, 64*M / 32,
-            [(133*M, 30*M, 1*M, 1, 64, 16, 15, 32)],
+            [(133*M, 30*M, 1*M, 1, 64, 16, 15, 0, 32)],
             min_points=64)
 
     def test_simple_within_sweep_triple_exact(self):
         self._plan42(100*M, 196*M, 96*M / 192,
-            [(133*M, 32*M, 0, 1, 256, 62, 64, 192)])
+            [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 192)])
 
     def test_decimated_within_sweep_single_exact(self):
         self._plan42(100*M, 101*M, 1*M / 4096.0,
-            [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 4096)])
+            [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 0, 4096)])
 
     def test_decimated_within_sweep_double_exact(self):
         self._plan42(100*M, 102*M, 2*M / 8192.0,
-            [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 8192)])
+            [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 0, 8192)])
 
     def test_xxx_truncate_to_left_sweep(self):
         self._plan42(0, 2048*M, 2048*M / 200,
-            [(96*M, 32*M, 0, 1, 128, 31, 32, 1952)],
+            [(96*M, 32*M, 0, 1, 128, 31, 32, 0, 1952)],
             fstart=63*M, fstop=2043*M)
 
     def test_empty_range(self):
