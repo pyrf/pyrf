@@ -13,6 +13,7 @@ class SweepStep(namedtuple('SweepStep', '''
         points
         bins_skip
         bins_run
+        bins_pass
         bins_keep
         ''')):
     """
@@ -25,6 +26,7 @@ class SweepStep(namedtuple('SweepStep', '''
     :param points: samples to capture
     :param bins_skip: number of FFT bins to skip from left
     :param bins_run: number of usable FFT bins each step
+    :param bins_pass: number of bins from first step to discard from left
     :param bins_keep: total number of bins to keep from all steps
     """
     __slots__ = []
@@ -52,7 +54,8 @@ class SweepStep(namedtuple('SweepStep', '''
 
     @property
     def steps(self):
-        return math.ceil(float(self.bins_keep) / self.bins_run)
+        return math.ceil(float(
+            self.bins_keep + self.bins_pass) / self.bins_run)
 
 
 
@@ -281,6 +284,8 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     device.properties.DC_OFFSET_BW
       the range of frequencies around center that may be affected by
       a DC offset and should not be used
+    device.properties.TUNING_RESOLUTION
+      the smallest tuning increment for fcenter and fstep
 
     :returns: (actual fstart, actual fstop, list of SweepStep instances)
 
@@ -292,7 +297,9 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     3. bins[bins_skip:bins_skip + bins_run] are selected
     4. take logarithm of output bins and appended to the result
     5. for sweeps repeat from 2 until the sweep is complete
-    6. bins_keep is the total number of selected bins to keep; for
+    6. bins_pass is the number of selected bins to skip from the first
+       capture only
+    7. bins_keep is the total number of selected bins to keep; for
        single captures bins_run == bins_keep
     """
     prop = device.properties
@@ -314,55 +321,83 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
     min_decimation = max(2, prop.MIN_DECIMATION)
     max_decimation = 2 ** math.floor(math.log(prop.MAX_DECIMATION, 2))
-    if max_points < points and min_decimation <= ideal_decimation:
+    if points > max_points and ideal_decimation >= min_decimation:
+        # decimate because number of points required for rbw is too large
         decimation = min(max_decimation, ideal_decimation)
         points /= decimation
         decimated_bw = prop.FULL_BW / decimation
         decimation_edge_bins = math.ceil(points * prop.DECIMATED_USABLE / 2.0)
         decimation_edge = decimation_edge_bins * decimated_bw / points
 
-    bin_size = prop.FULL_BW / decimation / float(points)
+    bin_size = float(prop.FULL_BW) / decimation / points
 
-    # there are three regions that need to be handled differently
-    # region 0: direct digitization / "VLOW band"
-    if fstart < prop.MIN_TUNABLE - usable2:
-        raise NotImplemented # yet
+    # left-hand sweep area
+    if decimation == 1:
+        left_edge = prop.FULL_BW / 2.0 - usable2
+        left_bin = math.ceil(left_edge / bin_size)
+        fshift = 0 # always preferred
+        wasted_left = left_bin * bin_size - left_edge
+        usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
 
-    # region 1: left-hand sweep area
-    if prop.MIN_TUNABLE - usable2 <= fstart:
-        if decimation == 1:
-            left_edge = prop.FULL_BW / 2.0 - usable2
-            left_bin = math.ceil(left_edge / bin_size)
-            fshift = left_bin * bin_size - left_edge
-            usable_bins = (usable2 - dc_offset2 - fshift) // bin_size
-        else:
-            left_bin = decimation_edge_bins
-            fshift = usable2 + decimation_edge - (decimated_bw / 2.0)
-            usable_bins = min(points - (decimation_edge_bins * 2),
-                (usable2 - dc_offset2) // bin_size)
+    else:
+        left_bin = decimation_edge_bins
+        fshift = usable2 + decimation_edge - (decimated_bw / 2.0)
+        wasted_left = 0 # FIXME
+        usable_bins = min(points - (decimation_edge_bins * 2),
+            (usable2 - dc_offset2) // bin_size)
 
-        usable_bw = usable_bins * bin_size
+    # step_size is limited by tuning resolution. usable_bw is limited by
+    # bin_size. They won't be exactly equal, but try our best
+    step_size = max(1, (usable_bins * bin_size // prop.TUNING_RESOLUTION)
+        ) * prop.TUNING_RESOLUTION
+    # reduce usable_bins to match tuning resolution increment
+    usable_bins = int(max(1, min(usable_bins, round(step_size / bin_size))))
+    usable_bw = usable_bins * bin_size
 
-        fcenter = fstart + usable2
-        # FIXME: fstop not being updated here
-        max_steps = math.floor((prop.MAX_TUNABLE - fstart) / usable_bw)
-        bins_keep = min(round((fstop - fstart) / bin_size),
-            max_steps * usable_bins)
-        sweep_steps = math.ceil(bins_keep / usable_bins)
-        out.append(SweepStep(
-            fcenter=fcenter,
-            fstep=usable_bw,
-            fshift=fshift,
-            decimation=decimation,
-            points=int(points),
-            bins_skip=int(left_bin),
-            bins_run=int(min(usable_bins, bins_keep)),
-            bins_keep=int(bins_keep),
-            ))
+    # start at the next tuning resolution increment left of ideal start
+    fcenter = math.floor((fstart + usable2 - wasted_left)
+        / prop.TUNING_RESOLUTION) * prop.TUNING_RESOLUTION
+    bins_pass = int(round((fstart - (fcenter - usable2 + wasted_left))
+        / bin_size))
+    # we now have our actual fstart
+    fstart = fcenter - bin_size * (points / 2 + bins_skip + bins_pass)
 
-    # region 2: right-hand edge
-    if prop.MAX_TUNABLE - dc_offset2 < fstop:
-        raise NotImplemented # yet
+    # calculate steps and bins
+    step_limit = (prop.MAX_TUNABLE - fcenter) // step_size
+    right_edge = usable2 - usable_bw
+    right0 = fcenter - right_edge
+    steps = 1 + math.ceil((float(fstop) - right0) / step_size)
+    if steps <= step_limit:
+        right_bins = round(usable_bins * (float(fstop) - right0) %
+            step_size) / step_size)
+        bins_keep = usable_bins * (steps - 1) - bins_pass + right_bins
+        if not right_bins:
+            steps -= 1
+    else:
+        steps = step_limit
+        bins_keep = usable_bins * steps - bins_pass
+
+    # we now have our actual fstop
+    fstop = ((bins_keep + bins_pass - 1) // usable_bins) * step_size + (
+        (bins_keep + bins_pass - 1) % usable_bins + 1) * bin_size + fstart
+
+    assert fcenter % prop.TUNING_RESOLUTION == 0, fcenter
+    assert step_size > 0 and step_size % prop.TUNING_RESOLUTION == 0, step_size
+    assert decimation > 0 and int(decimation) == decimation, decimation
+    assert points > 0 and int(points) == points, points
+    assert left_bin > 0 and int(left_bin) == left_bin, left_bin
+    assert usable_bins > 0 and int(usable_bins) == usable_bins, usable_bins
+    out.append(SweepStep(
+        fcenter=fcenter,
+        fstep=step_size,
+        fshift=fshift,
+        decimation=int(decimation),
+        points=int(points),
+        bins_skip=int(left_bin),
+        bins_run=int(usable_bins),
+        bins_pass=int(bins_pass),
+        bins_keep=int(bins_keep),
+        ))
 
     return (fstart, fstop, out)
 
