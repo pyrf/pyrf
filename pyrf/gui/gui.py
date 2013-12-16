@@ -96,6 +96,7 @@ class MainPanel(QtGui.QWidget):
     The spectrum view and controls
     """
     def __init__(self, output_file):
+        self.ref_level = 0
         self.dut = None
         self.control_widgets = []
         self._output_file = output_file
@@ -110,7 +111,7 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-
+        self.ref_level = 0
         self._reactor = self._get_reactor()
 
     def _get_reactor(self):
@@ -191,7 +192,11 @@ class MainPanel(QtGui.QWidget):
         if self.plot_state.block_mode:
             self.read_trigg()
             if not len(data) > 5:
-                pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'])
+                try:
+                    self.ref_level - data['context_pkt']['reflevel']
+                except AttributeError:
+                    pass
+                pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
 
                 attenuated_edge = math.ceil((1.0 -
                 float(self.dut_prop.USABLE_BW) / self.dut_prop.FULL_BW) / 2 * len(pow_))
@@ -591,7 +596,11 @@ class MainPanel(QtGui.QWidget):
                     return
                 self.plot_state.update_freq_set(bw = f)
             for trace in self._plot.traces:
-                trace.data = self.pow_data
+                try:
+                    trace.data = self.pow_data
+                except AttributeError:
+                    break
+					
         except ValueError:
             return
         if self.plot_state.trig:
