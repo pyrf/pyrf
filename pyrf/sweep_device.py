@@ -368,7 +368,7 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     step_limit = (prop.MAX_TUNABLE - fcenter) // step_size
     right_edge = usable2 - usable_bw - wasted_left
     right0 = fcenter - right_edge
-    steps = 1 + math.ceil((float(fstop) - right0) / step_size)
+    steps = 1 + round((float(fstop) - right0) / step_size)
     if steps <= step_limit:
         right_bins = round(usable_bins * ((float(fstop) - right0) %
             step_size / step_size))
