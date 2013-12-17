@@ -108,7 +108,7 @@ class TestPlanSweep(unittest.TestCase):
         [x(4096 bins)xx]
         ^100M           ^101M
         """
-        self._plan42(100*M, 101*M, 244,
+        self._plan42(100*M, 101*M, 245,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 0, 4096)])
 
     def test_decimated_double_exact(self):
@@ -116,7 +116,7 @@ class TestPlanSweep(unittest.TestCase):
         [x(4096 bins)xx][x(4096 bins)xx]
         ^100M           ^101M           ^102M
         """
-        self._plan42(100*M, 102*M, 244,
+        self._plan42(100*M, 102*M, 245,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 0, 8192)])
 
     def test_truncate_to_left_sweep(self):
