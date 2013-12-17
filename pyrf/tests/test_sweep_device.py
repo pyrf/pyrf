@@ -37,7 +37,7 @@ class TestPlanSweep(unittest.TestCase):
         self.assertEquals(rfstart, fstart)
         self.assertEquals(rfstop, fstop)
 
-    def test_simple_within_sweep_single_exact(self):
+    def test_simple_single_exact(self):
         """
         [xxxxxx(64 bins)xxxxxxxxxxxxxxx]
         ^100M     ^110M     ^120M     ^130M
@@ -45,7 +45,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 132*M, 32*M / 64,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 64)])
 
-    def test_simple_within_sweep_single_just_inside(self):
+    def test_simple_single_just_inside(self):
         """
         [xxxxx(128 bins)xxxxxxxxxxxxxxx] <- 131.9M
         ^100M     ^110M     ^120M     ^130M
@@ -54,7 +54,7 @@ class TestPlanSweep(unittest.TestCase):
             [(133*M, 32*M, 0, 1, 512, 124, 128, 0, 128)],
             fstop=132*M)
 
-    def test_simple_within_sweep_single_just_outside(self):
+    def test_simple_single_just_outside(self):
         """
         [xxxxx(64 bins)xxxxxxxxxxxxxxxx] <- 130.1M
         ^100M     ^110M     ^120M     ^130M
@@ -63,7 +63,7 @@ class TestPlanSweep(unittest.TestCase):
             [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 64)],
             fstop=132*M)
 
-    def test_simple_within_sweep_double_exact(self):
+    def test_simple_double_exact(self):
         """
         [xxxxxxx(64 bins)xxxxxxxxxxxxxx][xxxxxxx(64 bins)xxxxxxxxxxxxxx]
         ^100M     ^110M     ^120M     ^130M     ^140M     ^150M     ^160M
@@ -71,7 +71,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 164*M, 64*M / 128,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 128)])
 
-    def test_simple_within_sweep_double_points_up(self):
+    def test_simple_double_points_up(self):
         """
         [xxxxxxx(128 bins)xxxxxxxxxxxxx][xxxxxxx(128 bins)xxxxxxxxxxxxx]
         ^100M     ^110M     ^120M     ^130M     ^140M     ^150M     ^160M
@@ -79,7 +79,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 164*M, 64*M / 129,
             [(133*M, 32*M, 0, 1, 512, 124, 128, 0, 256)])
 
-    def test_simple_within_sweep_double_points_half(self):
+    def test_simple_double_points_half(self):
         """
         [xxxxxxx(32 bins)xxxxxxxxxxxxxx][xxxxxxxx(32 bins)xxxxxxxxxxxxx]
         ^100M     ^110M     ^120M     ^130M     ^140M     ^150M     ^160M
@@ -87,7 +87,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 164*M, 64*M / 64,
             [(133*M, 32*M, 0, 1, 128, 31, 32, 0, 64)])
 
-    def test_simple_within_sweep_double_points_min(self):
+    def test_simple_double_points_min(self):
         """
         [xxxxxxx(32 bins)xxxxxxxxxxxxxx][xxxxxxxx(32 bins)xxxxxxxxxxxxx]
         ^100M     ^110M     ^120M     ^130M     ^140M     ^150M     ^160M
@@ -95,7 +95,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 164*M, 64*M / 32,
             [(133*M, 32*M, 0, 1, 128, 31, 32, 0, 64)])
 
-    def test_simple_within_sweep_triple_exact(self):
+    def test_simple_triple_exact(self):
         """
         [x(64 bins)xxxx][x(64 bins)xxxx][x(64 bins)xxxx]
         ^100M     ^120M     ^140M     ^160M     ^180M
@@ -103,7 +103,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 196*M, 96*M / 192,
             [(133*M, 32*M, 0, 1, 256, 62, 64, 0, 192)])
 
-    def test_decimated_within_sweep_single_exact(self):
+    def test_decimated_single_exact(self):
         """
         [x(4096 bins)xx]
         ^100M           ^101M
@@ -111,7 +111,7 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 101*M, 1*M / 4096.0,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 0, 4096)])
 
-    def test_decimated_within_sweep_double_exact(self):
+    def test_decimated_double_exact(self):
         """
         [x(4096 bins)xx][x(4096 bins)xx]
         ^100M           ^101M           ^102M
@@ -119,14 +119,14 @@ class TestPlanSweep(unittest.TestCase):
         self._plan42(100*M, 102*M, 2*M / 8192.0,
             [(133*M, 1*M, 32.5*M, 64, 8192, 2048, 4096, 0, 8192)])
 
-    def test_xxx_truncate_to_left_sweep(self):
+    def test_truncate_to_left_sweep(self):
         """
         [x(32 bins)xxxx] ... [x(32 bins)xxxx]
-        ^63M                                 ^2043
+        ^63M                                 ^1983M
         """
         self._plan42(0, 2048*M, 2048*M / 200,
-            [(96*M, 32*M, 0, 1, 128, 31, 32, 0, 1952)],
-            fstart=63*M, fstop=2043*M)
+            [(96*M, 32*M, 0, 1, 128, 31, 32, 0, 1920)],
+            fstart=63*M, fstop=1983*M)
 
     def test_empty_range(self):
         self._plan42(2400*M, 2400*M, 500, [])
