@@ -38,8 +38,8 @@ class WSA4000Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
 
-class WSA5000Properties(object):
-    model = 'WSA5000'
+class WSA5000_220Properties(object):
+    model = 'WSA5000-220'
 
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
@@ -59,6 +59,12 @@ class WSA5000Properties(object):
     SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
         'attenuator', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
+
+class WSA5000_208Properties(WSA5000_220Properties):
+    model = 'WSA5000-208'
+
+    MAX_TUNABLE = 8000*M
 
 
 class WSA(object):
@@ -109,8 +115,10 @@ class WSA(object):
         device_id = (yield self.scpiget(":*idn?"))
         if device_id.startswith('ThinkRF,WSA4000'):
             self.properties = WSA4000Properties
+        elif device_id.startswith('ThinkRF,WSA5000-208'):
+            self.properties = WSA5000_208Properties
         else:
-            self.properties = WSA5000Properties
+            self.properties = WSA5000_220Properties
 
     def disconnect(self):
         """
