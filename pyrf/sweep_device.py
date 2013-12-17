@@ -211,8 +211,10 @@ class SweepDevice(object):
         # collect and compute bins
         collect_start_time = time.time()
         ss = self.plan[self._ss_index]
-        take = min(ss.bins_run, ss.bins_keep - self._ss_received)
-        self.bins.extend(pow_data[ss.bins_skip:ss.bins_skip + take])
+        pass_now = 0 if self._ss_received else ss.bins_pass
+        take = min(ss.bins_run - pass_now, ss.bins_keep - self._ss_received)
+        start = ss.bins_skip + pass_now
+        self.bins.extend(pow_data[start:start + take])
         self._ss_received += take
         collect_stop_time = time.time()
 
@@ -368,8 +370,8 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     right0 = fcenter - right_edge
     steps = 1 + math.ceil((float(fstop) - right0) / step_size)
     if steps <= step_limit:
-        right_bins = round(usable_bins * (float(fstop) - right0) %
-            step_size / step_size)
+        right_bins = round(usable_bins * ((float(fstop) - right0) %
+            step_size / step_size))
         if not right_bins:
             right_bins = usable_bins
         bins_keep = usable_bins * (steps - 1) - bins_pass + right_bins
