@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
 from pyrf.devices.thinkrf import WSA4000Properties, WSA5000Properties
 
-
+WSA5000_RFE_MODES = ['ZIF', 'SH', 'HDR']
 
 class DeviceControlsWidget(QtGui.QGroupBox):
 
@@ -24,6 +24,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         
         first_row = QtGui.QHBoxLayout()
         first_row.addWidget(self._attenuator_control())
+        first_row.addWidget(self._rfe_mode_control())
         first_row.addWidget(self._antenna_control())
         first_row.addWidget(self._trigger_control())
         
@@ -73,5 +74,14 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         attenuator = QtGui.QCheckBox("Attenuator")
         attenuator.setChecked(True)
         self._attenuator_box = attenuator
-
         return attenuator
+        
+    def _rfe_mode_control(self):
+        rfe_mode = QtGui.QComboBox()
+        rfe_mode.setToolTip("Change the Input mode of the WSA")
+        self._rfe_mode = rfe_mode
+        for mode in WSA5000_RFE_MODES:
+            
+            rfe_mode.addItem(mode)
+        return rfe_mode
+        

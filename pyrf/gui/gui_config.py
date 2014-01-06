@@ -26,7 +26,8 @@ class PlotState(object):
         self.grid = False
 
         self.dev_set = {
-            'attenuator': 1}
+            'attenuator': 1,
+            'rfe_mode': 'ZIF'}
         self.mhold = False
         self.mhold_fft = None
         

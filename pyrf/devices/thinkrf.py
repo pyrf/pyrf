@@ -167,8 +167,9 @@ class WSA(object):
         """
         if mode is None:
             buf = yield self.scpiget(":INPUT:MODE?")
-            mode = buf.strip()
+            mode = buf
         else:
+
             self.scpiset(":INPUT:MODE %s" % mode)
 
         yield mode
@@ -690,6 +691,7 @@ class WSA(object):
             'ppb': self.ppb,
             'trigger': self.trigger,
             'attenuator': self.attenuator,
+            'rfe_mode': self.rfe_mode,
             }
 
         for k, v in settings.iteritems():

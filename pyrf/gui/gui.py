@@ -28,7 +28,9 @@ from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
 from pyrf.numpy_util import compute_fft
 from pyrf.devices.thinkrf import WSA
-
+from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
+    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
+    
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
 import control_util as cu
@@ -148,6 +150,7 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._ifgain_box.hide()
             self._dev_group._trigger.hide()
             self._dev_group._attenuator_box.show()
+            self._dev_group._rfe_mode.show()
             self._bw.hide()
             self._bw_edit.hide()
             self._fstart.hide()
@@ -368,17 +371,19 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
         
         def new_ifgain():
-            self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box .value()
+            self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box.value()
         
         def new_attenuator():
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
-        
+        def new_input_mode():
+            self.plot_state.dev_set['rfe_mode'] =  str(self._dev_group._rfe_mode.itemText(self._dev_group._rfe_mode.currentIndex()))
+
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
         self._dev_group._trigger.clicked.connect(lambda: cu._trigger_control(self))
-
+        self._dev_group._rfe_mode.currentIndexChanged.connect(new_input_mode)
 
     
     def _trigger_control(self):
@@ -750,19 +755,22 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
+       
         if self.plot_state.block_mode:
                 if self.iq_data:
-                    data = self.iq_data.data.numpy_array()
-                    i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-                    q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
-                    self._plot.i_curve.setData(i_data)
-                    self._plot.q_curve.setData(q_data)
-                    self._plot.const_plot.clear()
-                    self._plot.const_plot.addPoints(x = i_data[0:CONST_POINTS], 
-                                               y = q_data[0:CONST_POINTS], 
-                                                symbol = 'o', 
-                                                size = 1, pen = 'y', 
-                                                brush = 'y')
+                    if self.iq_data.stream_id == VRT_IFDATA_I14Q14:
+
+                        data = self.iq_data.data.numpy_array()
+                        i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
+                        q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+                        self._plot.i_curve.setData(i_data)
+                        self._plot.q_curve.setData(q_data)
+                        self._plot.const_plot.clear()
+                        self._plot.const_plot.addPoints(x = i_data[0:CONST_POINTS], 
+                                                   y = q_data[0:CONST_POINTS], 
+                                                    symbol = 'o', 
+                                                    size = 1, pen = 'y', 
+                                                    brush = 'y')
                                                 
     def update_trig(self):
             if self.plot_state.trig_set:
