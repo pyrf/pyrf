@@ -25,7 +25,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     :returns: numpy array of dBm values as floats
     """
     import numpy # import here so docstrings are visible even without numpy
-    if ref is None:
+    if 'reflevel' in context:
         reference_level = context['reflevel']
     else:
         reference_level = ref
