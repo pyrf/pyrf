@@ -167,7 +167,6 @@ class MainPanel(QtGui.QWidget):
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
-        self._iq_plot_checkbox.setEnabled(False)
         self.read_trigg()
         
     def read_sweep(self):
@@ -189,7 +188,11 @@ class MainPanel(QtGui.QWidget):
 
 
     def receive_capture(self, fstart, fstop, data):
+        if not self.plot_state.block_mode:
+            self.read_sweep()
+            return
         self.read_trigg()
+
         if 'reflevel' in data['context_pkt']:
             self.ref_level = data['context_pkt']['reflevel']
 
@@ -202,7 +205,11 @@ class MainPanel(QtGui.QWidget):
         self.update_plot()
 
     def receive_sweep(self, fstart, fstop, data):
+        if self.plot_state.block_mode:
+            self.read_trigg()
+            return
         self.read_sweep()
+
         if len(data) > 2:
             self.pow_data = data
         self.iq_data = None
