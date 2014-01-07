@@ -4,7 +4,7 @@ from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 def compute_fft(dut, data_pkt, context, correct_phase=True,
-        hide_differential_dc_offset=True, convert_to_dbm=True):
+        hide_differential_dc_offset=True, convert_to_dbm=True, ref = None):
     """
     Return an array of dBm values by computing the FFT of
     the passed data and reference level.
@@ -25,8 +25,11 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     :returns: numpy array of dBm values as floats
     """
     import numpy as np # import here so docstrings are visible even without numpy
-
-    reference_level = context['reflevel']
+    import numpy # import here so docstrings are visible even without numpy
+    if 'reflevel' in context:
+        reference_level = context['reflevel']
+    else:
+        reference_level = ref
     prop = dut.properties
 
     data = data_pkt.data.numpy_array()
@@ -43,7 +46,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         if valid_data == I_ONLY:
             power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
         power_spectrum = _compute_fft(i_data, q_data, correct_phase,
-            hide_differential_dc_offset, convert_to_dbm)
+                                        hide_differential_dc_offset, convert_to_dbm)
 
     if data_pkt.stream_id in (VRT_IFDATA_I14, VRT_IFDATA_I24):
         i_data = np.array(data, dtype=float)

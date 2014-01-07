@@ -27,7 +27,9 @@ from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
 from pyrf.numpy_util import compute_fft
 from pyrf.devices.thinkrf import WSA
-
+from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
+    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
+    
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
 import control_util as cu
@@ -95,6 +97,7 @@ class MainPanel(QtGui.QWidget):
     The spectrum view and controls
     """
     def __init__(self, output_file):
+        self.ref_level = 0
         self.dut = None
         self.control_widgets = []
         self._output_file = output_file
@@ -109,7 +112,7 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-
+        self.ref_level = 0
         self._reactor = self._get_reactor()
 
     def _get_reactor(self):
@@ -146,6 +149,13 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._ifgain_box.hide()
             self._dev_group._trigger.hide()
             self._dev_group._attenuator_box.show()
+            self._dev_group._rfe_mode.show()
+            self._bw.hide()
+            self._bw_edit.hide()
+            self._fstart.hide()
+            self._fstart_edit.hide()
+            self._fstop.hide()
+            self._fstop_edit.hide()
         else:
             self._dev_group._antenna_box.show()
             self._dev_group._gain_box.show()
@@ -155,9 +165,11 @@ class MainPanel(QtGui.QWidget):
         self.sweep_dut = SweepDevice(dut, self.receive_data)
         self.cap_dut = CaptureDevice(dut, self.receive_data)
         self.enable_controls()
-        cu._select_fstart(self)
-        self.read_sweep()
-
+        cu._select_center_freq(self)
+        self._iq_plot_checkbox.click()
+        self._iq_plot_checkbox.setEnabled(False)
+        self.read_trigg()
+        
     def read_sweep(self):
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
@@ -181,7 +193,11 @@ class MainPanel(QtGui.QWidget):
         if self.plot_state.block_mode:
             self.read_trigg()
             if not len(data) > 5:
-                pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'])
+                try:
+                    self.ref_level - data['context_pkt']['reflevel']
+                except AttributeError:
+                    pass
+                pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
 
                 attenuated_edge = math.ceil((1.0 -
                 float(self.dut_prop.USABLE_BW) / self.dut_prop.FULL_BW) / 2 * len(pow_))
@@ -352,17 +368,19 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
         
         def new_ifgain():
-            self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box .value()
+            self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box.value()
         
         def new_attenuator():
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
-        
+        def new_input_mode():
+            self.plot_state.dev_set['rfe_mode'] =  str(self._dev_group._rfe_mode.itemText(self._dev_group._rfe_mode.currentIndex()))
+
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
         self._dev_group._trigger.clicked.connect(lambda: cu._trigger_control(self))
-
+        self._dev_group._rfe_mode.currentIndexChanged.connect(new_input_mode)
 
     
     def _trigger_control(self):
@@ -393,7 +411,6 @@ class MainPanel(QtGui.QWidget):
         fstart_bt, fstart_txt = self._fstart_controls()
         fstart_hbox.addWidget(fstart_bt)
         fstart_hbox.addWidget(fstart_txt)
-        fstart_hbox.addWidget(QtGui.QLabel('MHz'))
         
         cfreq_hbox = QtGui.QHBoxLayout()
         cfreq_bt, cfreq_txt = self._center_freq()
@@ -405,13 +422,13 @@ class MainPanel(QtGui.QWidget):
         bw_bt, bw_txt = self._bw_controls()
         bw_hbox.addWidget(bw_bt)
         bw_hbox.addWidget(bw_txt)
-        bw_hbox.addWidget(QtGui.QLabel('MHz'))
+
         
         fstop_hbox = QtGui.QHBoxLayout()
         fstop_bt, fstop_txt = self._fstop_controls()
         fstop_hbox.addWidget(fstop_bt)
         fstop_hbox.addWidget(fstop_txt)
-        fstop_hbox.addWidget(QtGui.QLabel('MHz'))
+
         
         freq_inc_hbox = QtGui.QHBoxLayout()
         freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
@@ -560,7 +577,7 @@ class MainPanel(QtGui.QWidget):
                 if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
                     return
                 self.plot_state.update_freq_set(fcenter = f)
-            
+                self.dut.freq(f)
             elif self.plot_state.freq_sel == 'FSTART':
                 f = (float(self._fstart_edit.text()) + delta) * M
                 if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
@@ -580,7 +597,11 @@ class MainPanel(QtGui.QWidget):
                     return
                 self.plot_state.update_freq_set(bw = f)
             for trace in self._plot.traces:
-                trace.data = self.pow_data
+                try:
+                    trace.data = self.pow_data
+                except AttributeError:
+                    break
+					
         except ValueError:
             return
         if self.plot_state.trig:
@@ -690,6 +711,7 @@ class MainPanel(QtGui.QWidget):
     
     def _iq_plot_controls(self):
         iq_plot_checkbox = QtGui.QCheckBox('Time Domain Plot')
+        
         iq_plot_checkbox.clicked.connect(lambda: cu._iq_plot_control(self))
         self._iq_plot_checkbox = iq_plot_checkbox
         self.control_widgets.append(self._iq_plot_checkbox)
@@ -728,19 +750,22 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
+       
         if self.plot_state.block_mode:
                 if self.iq_data:
-                    data = self.iq_data.data.numpy_array()
-                    i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-                    q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
-                    self._plot.i_curve.setData(i_data)
-                    self._plot.q_curve.setData(q_data)
-                    self._plot.const_plot.clear()
-                    self._plot.const_plot.addPoints(x = i_data[0:CONST_POINTS], 
-                                               y = q_data[0:CONST_POINTS], 
-                                                symbol = 'o', 
-                                                size = 1, pen = 'y', 
-                                                brush = 'y')
+                    if self.iq_data.stream_id == VRT_IFDATA_I14Q14:
+
+                        data = self.iq_data.data.numpy_array()
+                        i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
+                        q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+                        self._plot.i_curve.setData(i_data)
+                        self._plot.q_curve.setData(q_data)
+                        self._plot.const_plot.clear()
+                        self._plot.const_plot.addPoints(x = i_data[0:CONST_POINTS], 
+                                                   y = q_data[0:CONST_POINTS], 
+                                                    symbol = 'o', 
+                                                    size = 1, pen = 'y', 
+                                                    brush = 'y')
                                                 
     def update_trig(self):
             if self.plot_state.trig_set:
