@@ -162,8 +162,8 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._trigger.show()
             self._dev_group._attenuator_box.hide()
         self._connect_device_controls()
-        self.sweep_dut = SweepDevice(dut, self.receive_data)
-        self.cap_dut = CaptureDevice(dut, self.receive_data)
+        self.sweep_dut = SweepDevice(dut, self.receive_sweep)
+        self.cap_dut = CaptureDevice(dut, self.receive_capture)
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
@@ -188,24 +188,24 @@ class MainPanel(QtGui.QWidget):
             ), self.plot_state.rbw)
 
 
-    def receive_data(self, fstart, fstop, data):
+    def receive_capture(self, fstart, fstop, data):
+        self.read_trigg()
+        if not len(data) > 5:
+            try:
+                self.ref_level - data['context_pkt']['reflevel']
+            except AttributeError:
+                pass
+            self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
 
-        if self.plot_state.block_mode:
-            self.read_trigg()
-            if not len(data) > 5:
-                try:
-                    self.ref_level - data['context_pkt']['reflevel']
-                except AttributeError:
-                    pass
-                self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+            self.iq_data = data['data_pkt']
+        self.update_plot()
 
-                self.iq_data = data['data_pkt']
-        else:
-            self.read_sweep()
-            if len(data) > 2:
-                self.pow_data = data
-            self.iq_data = None
-        
+    def receive_sweep(self, fstart, fstop, data):
+        self.read_sweep()
+        if len(data) > 2:
+            self.pow_data = data
+        self.iq_data = None
+
         self.update_plot()
 
 
