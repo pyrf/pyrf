@@ -190,14 +190,15 @@ class MainPanel(QtGui.QWidget):
 
     def receive_capture(self, fstart, fstop, data):
         self.read_trigg()
-        if not len(data) > 5:
-            try:
-                self.ref_level - data['context_pkt']['reflevel']
-            except AttributeError:
-                pass
-            self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+        if 'reflevel' in data['context_pkt']:
+            self.ref_level = data['context_pkt']['reflevel']
 
-            self.iq_data = data['data_pkt']
+        self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+
+        if data['data_pkt'].stream_id == VRT_IFDATA_I14Q14:
+            self.iq_data = data['data_pkt'].data.numpy_array()
+        else:
+            self.iq_data = None
         self.update_plot()
 
     def receive_sweep(self, fstart, fstop, data):
@@ -747,23 +748,21 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
-       
-        if self.plot_state.block_mode:
-                if self.iq_data:
-                    if self.iq_data.stream_id == VRT_IFDATA_I14Q14:
+        if self.iq_data is None:
+            return
+        data = self.iq_data
+        i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
+        q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+        self._plot.i_curve.setData(i_data)
+        self._plot.q_curve.setData(q_data)
+        self._plot.const_plot.clear()
+        self._plot.const_plot.addPoints(
+            x = i_data[0:CONST_POINTS],
+            y = q_data[0:CONST_POINTS],
+            symbol = 'o',
+            size = 1, pen = 'y',
+            brush = 'y')
 
-                        data = self.iq_data.data.numpy_array()
-                        i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-                        q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
-                        self._plot.i_curve.setData(i_data)
-                        self._plot.q_curve.setData(q_data)
-                        self._plot.const_plot.clear()
-                        self._plot.const_plot.addPoints(x = i_data[0:CONST_POINTS], 
-                                                   y = q_data[0:CONST_POINTS], 
-                                                    symbol = 'o', 
-                                                    size = 1, pen = 'y', 
-                                                    brush = 'y')
-                                                
     def update_trig(self):
             if self.plot_state.trig_set:
                 freq_region = self._plot.freqtrig_lines.getRegion()
