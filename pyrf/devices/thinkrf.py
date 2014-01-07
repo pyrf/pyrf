@@ -32,7 +32,7 @@ class WSA4000Properties(object):
     MIN_DECIMATION = {'ZIF': 4}
     MAX_DECIMATION = {'ZIF': 1023}
     DECIMATED_USABLE = 0.5
-    PASS_BAND_CENTER = {'ZIF': 0}
+    PASS_BAND_CENTER = {'ZIF': 0.5}
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {'ZIF': True}
@@ -59,7 +59,7 @@ class WSA5000_220Properties(object):
     MIN_DECIMATION = {'ZIF': 4, 'HDR': None, 'SH': 4}
     MAX_DECIMATION = {'ZIF': 1024, 'HDR': None, 'SH': 4}
     DECIMATED_USABLE = 0.80
-    PASS_BAND_CENTER = {'ZIF': 0, 'HDR': 0.6, 'SH': 0.6}
+    PASS_BAND_CENTER = {'ZIF': 0.5, 'HDR': 0.6, 'SH': 0.6}
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {'ZIF': True, 'HDR': False, 'SH': True}
