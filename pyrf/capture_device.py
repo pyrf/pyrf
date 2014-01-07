@@ -33,8 +33,7 @@ class CaptureDevice(object):
         self.async_callback = async_callback
 
     
-    def capture_time_domain(self, device_set, rbw, decimation=1,
-            fshift=0, device_settings=None):
+    def capture_time_domain(self, device_set, rbw, min_points=128):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
@@ -53,8 +52,10 @@ class CaptureDevice(object):
         prop = self.real_device.properties
 
         # setup the WSA device
-        self.fstart = device_set['freq'] - prop.USABLE_BW / 2
-        self.fstop =  device_set['freq'] + prop.USABLE_BW / 2
+        rfe_mode = device_set['rfe_mode']
+        usable_bw = prop.USABLE_BW[rfe_mode]
+        self.fstart = device_set['freq'] - usable_bw / 2
+        self.fstop =  device_set['freq'] + usable_bw / 2
         device_set.pop('freq', None)
         self.real_device.apply_device_settings(device_set)
 
@@ -63,7 +64,7 @@ class CaptureDevice(object):
         self.real_device.request_read_perm()
         self._vrt_context = {}
 
-        points = prop.FULL_BW[mode] / rbw
+        points = prop.FULL_BW[rfe_mode] / rbw
         points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
 
         if self.async_callback:
