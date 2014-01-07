@@ -53,7 +53,7 @@ class WSA5000_220Properties(object):
     RFE_MODES = ('ZIF', 'HDR', 'SH')
 
     FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000}
-    USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000}
+    USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000000}
     MIN_TUNABLE = {'ZIF': 45*M}
     MAX_TUNABLE = {'ZIF': 20000*M}
     MIN_DECIMATION = {'ZIF': 4, 'HDR': None, 'SH': 4}
