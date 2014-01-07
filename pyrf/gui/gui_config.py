@@ -96,84 +96,44 @@ class PlotState(object):
                           rbw = None, 
                           bw = None):
         prop = self.device_properties
-        
-        if fcenter != None:
-            self.fstart = fcenter - (self.bandwidth / 2)
-            if self.fstart < prop.MIN_TUNABLE:
-                self.fstart = prop.MIN_TUNABLE
-            self.fstop = fcenter + (self.bandwidth / 2)
-            if self.fstop > prop.MAX_TUNABLE:
-                self.fstop = prop.MAX_TUNABLE
+
+        rfe_mode = 'ZIF'
+        min_tunable = prop.MIN_TUNABLE[rfe_mode]
+        max_tunable = prop.MAX_TUNABLE[rfe_mode]
+        if fcenter is not None:
+            self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
+            self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
-            self.bin_size = int((self.bandwidth) / self.rbw)
-            if self.bin_size < 1:
-                self.bin_size = 1
-        
-        elif fstart != None:
-            if fstart >= self.fstop - prop.TUNING_RESOLUTION:
-                fstart = self.fstop - prop.TUNING_RESOLUTION
+            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+
+        elif fstart is not None:
+            fstart = min(fstart, self.fstop - prop.TUNING_RESOLUTION)
             self.fstart = fstart
             self.bandwidth = self.fstop - fstart
             self.center_freq = fstart + (self.bandwidth / 2)
-            self.bin_size = int((self.bandwidth) / self.rbw)
-            if self.bin_size < 1:
-                self.bin_size = 1
-                
-        elif fstop != None:
-            if fstop <= self.fstart + prop.TUNING_RESOLUTION:
-                fstop = self.fstart + prop.TUNING_RESOLUTION
+            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+
+        elif fstop is not None:
+            fstop = max(fstop, self.fstart + prop.TUNING_RESOLUTION)
             self.fstop = fstop
             self.bandwidth = fstop - self.fstart
             self.center_freq = fstop - (self.bandwidth / 2)
-            self.bin_size = int((self.bandwidth) / self.rbw)
-            if self.bin_size < 1:
-                self.bin_size = 1
-                
-        elif rbw != None:
+            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+
+        elif rbw is not None:
             self.rbw = rbw * 1e3
-            self.bin_size = int((self.bandwidth) / self.rbw)
-            if self.bin_size < 1:
-                self.bin_size = 1
-        
+            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+
         elif bw != None:
-            if bw < prop.TUNING_RESOLUTION:
-                bw = prop.TUNING_RESOLUTION
-            self.fstart = (self.center_freq - (bw / 2))
-            self.fstop = (self.center_freq + (bw / 2))
-            if self.fstart < prop.MIN_TUNABLE:
-                self.fstart = prop.MIN_TUNABLE
-            if self.fstop > prop.MAX_TUNABLE:
-                self.fstop = prop.MAX_TUNABLE
+            bw = max(bw, prop.TUNING_RESOLUTION)
+            self.fstart = max(min_tunable, (self.center_freq - (bw / 2)))
+            self.fstop = min(max_tunable, (self.center_freq + (bw / 2)))
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
-            self.bin_size = int((self.bandwidth) / self.rbw)
-            if self.bin_size < 1:
-                self.bin_size = 1
-                
+            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
