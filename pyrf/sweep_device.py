@@ -101,7 +101,9 @@ class SweepDevice(object):
     connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
-            fstart, fstop, rbw, mode, device_settings=None,
+            fstart, fstop, rbw,
+            device_settings=None,
+            mode='ZIF/2',
             continuous=False,
             min_points=128, max_points=8192):
         """
@@ -115,10 +117,10 @@ class SweepDevice(object):
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
-        :param mode: sweep mode, 'ZIF/2' is the only mode currently supported
-        :type mode: string
         :param device_settings: antenna, gain and other device settings
         :type dict:
+        :param mode: sweep mode, 'ZIF/2' is the only mode currently supported
+        :type mode: string
         :param continuous: async continue after first sweep
         :type continuous: bool
         :param min_points: smallest number of points per capture from real_device

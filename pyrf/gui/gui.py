@@ -175,7 +175,6 @@ class MainPanel(QtGui.QWidget):
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.rbw,
-                                              'ZIF/2',
                                               device_set,
                                               continuous = False)
 
