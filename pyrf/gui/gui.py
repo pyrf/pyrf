@@ -197,11 +197,8 @@ class MainPanel(QtGui.QWidget):
                     self.ref_level - data['context_pkt']['reflevel']
                 except AttributeError:
                     pass
-                pow_ = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+                self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
 
-                attenuated_edge = math.ceil((1.0 -
-                float(self.dut_prop.USABLE_BW) / self.dut_prop.FULL_BW) / 2 * len(pow_))
-                self.pow_data = pow_[attenuated_edge:-attenuated_edge]
                 self.iq_data = data['data_pkt']
         else:
             self.read_sweep()
