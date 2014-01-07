@@ -167,7 +167,7 @@ class WSA(object):
         """
         if mode is None:
             buf = yield self.scpiget(":INPUT:MODE?")
-            mode = buf
+            mode = buf.strip()
         else:
 
             self.scpiset(":INPUT:MODE %s" % mode)
