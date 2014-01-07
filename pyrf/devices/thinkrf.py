@@ -48,7 +48,7 @@ class WSA5000Properties(object):
 
     FULL_BW = 125*M
     USABLE_BW = 100*M
-    MIN_TUNABLE = 45*M
+    MIN_TUNABLE = 90*M
     MAX_TUNABLE = 20000*M
     MIN_DECIMATION = 4
     MAX_DECIMATION = 1024
