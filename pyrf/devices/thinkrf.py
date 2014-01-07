@@ -23,15 +23,19 @@ class WSA4000Properties(object):
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
 
-    FULL_BW = 125*M
-    USABLE_BW = 90*M
-    MIN_TUNABLE = 90*M
-    MAX_TUNABLE = 10000*M
-    MIN_DECIMATION = 4
-    MAX_DECIMATION = 1023
+    RFE_MODES = ('ZIF',)
+
+    FULL_BW = {'ZIF': 125*M}
+    USABLE_BW = {'ZIF': 90*M}
+    MIN_TUNABLE = {'ZIF': 90*M}
+    MAX_TUNABLE = {'ZIF': 10000*M}
+    MIN_DECIMATION = {'ZIF': 4}
+    MAX_DECIMATION = {'ZIF': 1023}
     DECIMATED_USABLE = 0.5
+    PASS_BAND_CENTER = {'ZIF': 0}
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
+    FSHIFT_AVAILABLE = {'ZIF': True}
 
     SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
@@ -46,15 +50,19 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(0, 50*M, I_ONLY), (100*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
 
-    FULL_BW = 125*M
-    USABLE_BW = 100*M
-    MIN_TUNABLE = 45*M
-    MAX_TUNABLE = 20000*M
-    MIN_DECIMATION = 4
-    MAX_DECIMATION = 1024
+    RFE_MODES = ('ZIF', 'HDR', 'SH')
+
+    FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000}
+    USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000}
+    MIN_TUNABLE = {'ZIF': 45*M}
+    MAX_TUNABLE = {'ZIF': 20000*M}
+    MIN_DECIMATION = {'ZIF': 4, 'HDR': None, 'SH': 4}
+    MAX_DECIMATION = {'ZIF': 1024, 'HDR': None, 'SH': 4}
     DECIMATED_USABLE = 0.80
+    PASS_BAND_CENTER = {'ZIF': 0, 'HDR': 0.6, 'SH': 0.6}
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
+    FSHIFT_AVAILABLE = {'ZIF': True, 'HDR': False, 'SH': True}
 
     SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
         'attenuator', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
@@ -64,7 +72,7 @@ class WSA5000_220Properties(object):
 class WSA5000_208Properties(WSA5000_220Properties):
     model = 'WSA5000-208'
 
-    MAX_TUNABLE = 8000*M
+    MAX_TUNABLE = {'ZIF': 8000*M}
 
 
 class WSA(object):

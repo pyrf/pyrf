@@ -101,7 +101,7 @@ class SweepDevice(object):
     connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
-            fstart, fstop, rbw, device_settings=None,
+            fstart, fstop, rbw, mode, device_settings=None,
             continuous=False,
             min_points=128, max_points=8192):
         """
@@ -115,6 +115,8 @@ class SweepDevice(object):
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
+        :param mode: sweep mode, 'ZIF/2' is the only mode currently supported
+        :type mode: string
         :param device_settings: antenna, gain and other device settings
         :type dict:
         :param continuous: async continue after first sweep
@@ -136,7 +138,7 @@ class SweepDevice(object):
         self.real_device.request_read_perm()
 
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
-            fstart, fstop, rbw, min_points, max_points)
+            fstart, fstop, rbw, mode, min_points, max_points)
 
         return self._perform_full_sweep()
 
@@ -249,7 +251,7 @@ class SweepDevice(object):
 
 
 
-def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
+def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192):
     """
     :param device: a device class or instance such as
                    :class:`pyrf.devices.thinkrf.WSA`
@@ -259,6 +261,8 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     :type fstop: float
     :param rbw: requested RBW in Hz (output RBW may be smaller than requested)
     :type rbw: float
+    :param mode: sweep mode, 'ZIF/2' is the only mode currently supported
+    :type mode: string
     :param min_points: smallest number of points per capture
     :type min_points: int
     :param max_points: largest number of points per capture (due to
@@ -304,38 +308,41 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     7. bins_keep is the total number of selected bins to keep; for
        single captures bins_run == bins_keep
     """
+    assert mode == 'ZIF/2'
+    rfe_mode = 'ZIF'
     prop = device.properties
     out = []
-    usable2 = prop.USABLE_BW / 2.0
+    usable2 = prop.USABLE_BW[rfe_mode] / 2.0
     dc_offset2 = prop.DC_OFFSET_BW / 2.0
+    full_bw = prop.FULL_BW[rfe_mode]
 
     # FIXME: truncate to left-hand sweep area for now
-    fstart = max(prop.MIN_TUNABLE - usable2, fstart)
-    fstop = min(prop.MAX_TUNABLE - dc_offset2, fstop)
+    fstart = max(prop.MIN_TUNABLE[rfe_mode] - usable2, fstart)
+    fstop = min(prop.MAX_TUNABLE[rfe_mode] - dc_offset2, fstop)
 
     if fstop <= fstart:
         return (fstart, fstart, [])
 
-    points = prop.FULL_BW / rbw
+    points = full_bw / rbw
     points = int(max(min_points, 2 ** math.ceil(math.log(points, 2))))
 
     decimation = 1
     ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
-    min_decimation = max(2, prop.MIN_DECIMATION)
-    max_decimation = 2 ** math.floor(math.log(prop.MAX_DECIMATION, 2))
+    min_decimation = max(2, prop.MIN_DECIMATION[rfe_mode])
+    max_decimation = 2 ** math.floor(math.log(prop.MAX_DECIMATION[rfe_mode], 2))
     if points > max_points and ideal_decimation >= min_decimation:
         # decimate because number of points required for rbw is too large
         decimation = min(max_decimation, ideal_decimation)
         points /= decimation
-        decimated_bw = prop.FULL_BW / decimation
+        decimated_bw = full_bw / decimation
         decimation_edge_bins = math.ceil(points * prop.DECIMATED_USABLE / 2.0)
         decimation_edge = decimation_edge_bins * decimated_bw / points
 
-    bin_size = float(prop.FULL_BW) / decimation / points
+    bin_size = float(full_bw) / decimation / points
 
     # left-hand sweep area
     if decimation == 1:
-        left_edge = prop.FULL_BW / 2.0 - usable2
+        left_edge = full_bw / 2.0 - usable2
         left_bin = math.ceil(left_edge / bin_size)
         fshift = 0 # always preferred
         wasted_left = left_bin * bin_size - left_edge
@@ -365,7 +372,7 @@ def plan_sweep(device, fstart, fstop, rbw, min_points=128, max_points=8192):
     fstart = fcenter - bin_size * (points / 2 - left_bin - bins_pass) - fshift
 
     # calculate steps and bins
-    step_limit = (prop.MAX_TUNABLE - fcenter) // step_size
+    step_limit = (prop.MAX_TUNABLE[rfe_mode] - fcenter) // step_size
     right_edge = usable2 - usable_bw - wasted_left
     right0 = fcenter - right_edge
     steps = 1 + round((float(fstop) - right0) / step_size)

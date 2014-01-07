@@ -10,12 +10,14 @@ class WSA42(object):
     """
 
     class properties(object):
-        FULL_BW = 128*M
-        USABLE_BW = 66*M
-        MIN_TUNABLE = 96*M
-        MAX_TUNABLE = 2044*M
-        MIN_DECIMATION = 4
-        MAX_DECIMATION = 256
+        RFE_MODES = ('ZIF',)
+
+        FULL_BW = {'ZIF':128*M}
+        USABLE_BW = {'ZIF':66*M}
+        MIN_TUNABLE = {'ZIF':96*M}
+        MAX_TUNABLE = {'ZIF':2044*M}
+        MIN_DECIMATION = {'ZIF':4}
+        MAX_DECIMATION = {'ZIF':256}
         DECIMATED_USABLE = 0.5
         DC_OFFSET_BW = 2*M
         TUNING_RESOLUTION = 100000
@@ -28,7 +30,7 @@ class TestPlanSweep(unittest.TestCase):
         it matches the expected plan
         """
         rfstart, rfstop, result = plan_sweep(WSA42, start, stop, rbw,
-            min_points=min_points)
+            mode='ZIF/2', min_points=min_points)
         self.assertEquals(result, [SweepStep(*s) for s in expected])
         if fstart is None:
             fstart = start

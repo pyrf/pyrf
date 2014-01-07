@@ -33,11 +33,12 @@ class CaptureDevice(object):
         self.async_callback = async_callback
 
     
-    def capture_time_domain(self, device_set, rbw, min_points=128):
+    def capture_time_domain(self, rfe_mode, fcenter, rbw, decimation=1,
+            fshift=0, device_settings=None):
         """
-        Initiate a capture of raw time domain (IQ) data
+        Initiate a capture of raw time domain IQ or I-only data
 
-        :param fstart: starting frequency in Hz
+        :param fcenter: frequency in Hz
         :type fstart: float
         :param fstop: ending frequency in Hz
         :type fstop: float
@@ -61,7 +62,7 @@ class CaptureDevice(object):
         self.real_device.request_read_perm()
         self._vrt_context = {}
 
-        points = prop.FULL_BW / rbw
+        points = prop.FULL_BW[mode] / rbw
         points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
 
         if self.async_callback:
