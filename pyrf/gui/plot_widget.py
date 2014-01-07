@@ -28,18 +28,25 @@ class Trace(object):
         self.data = None
         self.freq_range = None
         self.color = trace_color
-        self.curve = plot_area.window.plot(pen = colors.TEAL_NUM)
-        
-    def update_curve(self,xdata, ydata):
-  
+        self.curves = []
+        self.plot_area = plot_area
+
+    def clear(self):
+        for c in self.curves:
+            self.plot_area.window.removeItem(c)
+        self.curves = []
+
+    def update_curve(self, xdata, ydata, usable_bins):
+        print usable_bins, len(xdata)
+
         if self.store or self.blank:
             return
-        
-        self.freq_range = xdata     
+
+        self.freq_range = xdata
 
         if self.max_hold:
             if (self.data == None or len(self.data) != len(ydata)):
-                self.data = ydata 
+                self.data = ydata
             self.data = np.maximum(self.data,ydata)
 
         elif self.min_hold:
@@ -49,10 +56,25 @@ class Trace(object):
 
         elif self.write:
             self.data = ydata
-        
-        self.curve.setData(x = xdata, 
-                            y = self.data,
-                            pen = self.color)
+
+        self.clear()
+        # plot usable and unusable curves
+        i = 0
+        for start_bin, run_length in usable_bins:
+            if start_bin > i:
+                c = self.plot_area.window.plot(pen=0.2)
+                c.setData(x=xdata[i:start_bin+1], y=ydata[i:start_bin+1])
+                self.curves.append(c)
+                i = start_bin
+            if run_length:
+                c = self.plot_area.window.plot(pen=self.color)
+                c.setData(x=xdata[i:i+run_length+1], y=ydata[i:i+run_length+1], pen=self.color)
+                self.curves.append(c)
+                i = i + run_length
+        if i < len(xdata):
+            c = self.plot_area.window.plot(pen=0.2)
+            c.setData(x=xdata[i:], y=ydata[i:])
+            self.curves.append(c)
 
 class Marker(object):
     """
@@ -168,8 +190,6 @@ class Plot(object):
                                     write = write_state))
             count += 1
 
-        self.window.addItem(self.traces[0].curve)
-        
         self.markers = []
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))

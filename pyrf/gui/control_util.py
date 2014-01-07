@@ -155,7 +155,7 @@ def _blank_trace(layout):
     trace.max_hold = False
     trace.min_hold = False
     trace.blank = True
-    trace.curve.clear()
+    trace.clear()
     trace.data = None
 
     count = 0
