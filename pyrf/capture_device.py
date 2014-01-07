@@ -53,10 +53,10 @@ class CaptureDevice(object):
 
         # setup the WSA device
         rfe_mode = device_set['rfe_mode']
-        usable_bw = prop.USABLE_BW[rfe_mode]
-        self.fstart = device_set['freq'] - usable_bw / 2
-        self.fstop =  device_set['freq'] + usable_bw / 2
-        device_set.pop('freq', None)
+        full_bw = prop.USABLE_BW[rfe_mode]
+        freq = device_set.pop('freq')
+        self.fstart = freq - full_bw * prop.PASS_BAND_CENTER[rfe_mode]
+        self.fstop = freq + full_bw * (1 - prop.PASS_BAND_CENTER[rfe_mode])
         self.real_device.apply_device_settings(device_set)
 
         self.real_device.abort()
@@ -68,7 +68,6 @@ class CaptureDevice(object):
         points = 2 ** math.ceil(math.log(points, 2))
 
         if self.async_callback:
-
             self.connector.vrt_callback = self.read_data
             self.real_device.capture(points, 1)
 
@@ -79,7 +78,7 @@ class CaptureDevice(object):
         while result is None:
             result = self.read_data(self.real_device.read())
         return result
-        
+
     def read_data(self, packet):
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
