@@ -64,8 +64,8 @@ class CaptureDevice(object):
         self.real_device.request_read_perm()
         self._vrt_context = {}
 
-        points = prop.FULL_BW[rfe_mode] / rbw
-        points = max(min_points, 2 ** math.ceil(math.log(points, 2)))
+        points = max(min_points, prop.FULL_BW[rfe_mode] / rbw)
+        points = 2 ** math.ceil(math.log(points, 2))
 
         if self.async_callback:
 
