@@ -168,13 +168,15 @@ class MainPanel(QtGui.QWidget):
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
         self.read_trigg()
-        
+
     def read_sweep(self):
+        device_set = dict(self.plot_state.dev_set)
+        device_set.pop('rfe_mode')
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.rbw,
                                               'ZIF/2',
-                                              self.plot_state.dev_set,
+                                              device_set,
                                               continuous = False)
 
     def read_trigg(self):
