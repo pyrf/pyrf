@@ -53,10 +53,12 @@ class CaptureDevice(object):
 
         # setup the WSA device
         rfe_mode = device_set['rfe_mode']
-        full_bw = prop.USABLE_BW[rfe_mode]
+        full_bw = prop.FULL_BW[rfe_mode]
+        usable_bw = prop.USABLE_BW[rfe_mode]
+        pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
         freq = device_set.pop('freq')
-        self.fstart = freq - full_bw * prop.PASS_BAND_CENTER[rfe_mode]
-        self.fstop = freq + full_bw * (1 - prop.PASS_BAND_CENTER[rfe_mode])
+        self.fstart = freq - full_bw * pass_band_center
+        self.fstop = freq + full_bw * (1 - pass_band_center)
         self.real_device.apply_device_settings(device_set)
 
         self.real_device.abort()
@@ -64,8 +66,12 @@ class CaptureDevice(object):
         self.real_device.request_read_perm()
         self._vrt_context = {}
 
-        points = max(min_points, prop.FULL_BW[rfe_mode] / rbw)
+        points = max(min_points, full_bw / rbw)
         points = 2 ** math.ceil(math.log(points, 2))
+
+        self.usable_bins = [(
+            int((pass_band_center - float(usable_bw) / full_bw / 2) * points),
+            int(points * float(usable_bw) / full_bw))]
 
         if self.async_callback:
             self.connector.vrt_callback = self.read_data
