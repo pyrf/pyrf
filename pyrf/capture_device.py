@@ -33,7 +33,7 @@ class CaptureDevice(object):
         self.async_callback = async_callback
 
     
-    def capture_time_domain(self, rfe_mode, fcenter, rbw, decimation=1,
+    def capture_time_domain(self, device_set, rbw, decimation=1,
             fshift=0, device_settings=None):
         """
         Initiate a capture of raw time domain IQ or I-only data
