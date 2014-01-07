@@ -143,7 +143,7 @@ class MainPanel(QtGui.QWidget):
         self.dut = dut
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = self.dut.properties
-        if self.dut_prop.model == 'WSA5000':
+        if self.dut_prop.model.startswith('WSA5000'):
             self._dev_group._antenna_box.hide()
             self._dev_group._gain_box.hide()
             self._dev_group._ifgain_box.hide()
