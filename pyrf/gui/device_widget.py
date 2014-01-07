@@ -1,5 +1,4 @@
-from PySide import QtGui, QtCore
-from pyrf.devices.thinkrf import WSA4000Properties, WSA5000Properties
+from PySide import QtGui
 
 WSA5000_RFE_MODES = ['ZIF', 'SH', 'HDR']
 
