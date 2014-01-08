@@ -54,7 +54,7 @@ class WSA5000_220Properties(object):
 
     FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000}
     USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000000}
-    MIN_TUNABLE = {'ZIF': 45*M}
+    MIN_TUNABLE = {'ZIF': 90*M}
     MAX_TUNABLE = {'ZIF': 20000*M}
     MIN_DECIMATION = {'ZIF': 4, 'HDR': None, 'SH': 4}
     MAX_DECIMATION = {'ZIF': 1024, 'HDR': None, 'SH': 4}
