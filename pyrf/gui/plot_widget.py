@@ -28,6 +28,7 @@ class Trace(object):
         self.data = None
         self.freq_range = None
         self.color = trace_color
+        self.edge_color = trace_color + (40,)
         self.curves = []
         self.plot_area = plot_area
 
@@ -37,7 +38,6 @@ class Trace(object):
         self.curves = []
 
     def update_curve(self, xdata, ydata, usable_bins):
-        print usable_bins, len(xdata)
 
         if self.store or self.blank:
             return
@@ -63,7 +63,7 @@ class Trace(object):
         for start_bin, run_length in usable_bins:
             if start_bin > i:
                 c = self.plot_area.window.plot(pen=0.2)
-                c.setData(x=xdata[i:start_bin+1], y=self.data[i:start_bin+1])
+                c.setData(x=xdata[i:start_bin+1], y=self.data[i:start_bin+1], pen = self.edge_color)
                 self.curves.append(c)
                 i = start_bin
             if run_length:
@@ -73,7 +73,7 @@ class Trace(object):
                 i = i + run_length
         if i < len(xdata):
             c = self.plot_area.window.plot(pen=0.2)
-            c.setData(x=xdata[i:], y=self.data[i:])
+            c.setData(x=xdata[i:], y=self.data[i:], pen = self.edge_color)
             self.curves.append(c)
 
 class Marker(object):

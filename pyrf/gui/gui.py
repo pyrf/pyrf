@@ -36,6 +36,9 @@ import control_util as cu
 from plot_widget import Plot
 from device_widget import DeviceControlsWidget
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
+
+HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
+
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -161,13 +164,14 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._gain_box.show()
             self._dev_group._trigger.show()
             self._dev_group._attenuator_box.hide()
+            self._dev_group._rfe_mode.hide()
         self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
         self.cap_dut = CaptureDevice(dut, self.receive_capture)
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
-        self.read_trigg()
+        self.read_block()
 
     def read_sweep(self):
         device_set = dict(self.plot_state.dev_set)
@@ -178,7 +182,7 @@ class MainPanel(QtGui.QWidget):
                                               device_set,
                                               continuous = False)
 
-    def read_trigg(self):
+    def read_block(self):
         device_set = self.plot_state.dev_set
 
         self.cap_dut.capture_time_domain(dict(device_set,
@@ -194,15 +198,15 @@ class MainPanel(QtGui.QWidget):
         if not self.plot_state.block_mode:
             self.read_sweep()
             return
-        self.read_trigg()
+        self.read_block()
 
         if 'reflevel' in data['context_pkt']:
             self.ref_level = data['context_pkt']['reflevel']
 
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-
         if data['data_pkt'].stream_id == VRT_IFDATA_I14Q14:
             self.iq_data = data['data_pkt'].data.numpy_array()
+
         else:
             self.iq_data = None
 
@@ -210,7 +214,7 @@ class MainPanel(QtGui.QWidget):
 
     def receive_sweep(self, fstart, fstop, data):
         if self.plot_state.block_mode:
-            self.read_trigg()
+            self.read_block()
             return
         self.read_sweep()
 
@@ -384,7 +388,10 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
         def new_input_mode():
             self.plot_state.dev_set['rfe_mode'] =  str(self._dev_group._rfe_mode.itemText(self._dev_group._rfe_mode.currentIndex()))
-
+            cu._update_rbw_values(self)
+            self.plot_state.bandwidth =self.dut_prop.FULL_BW[self.plot_state.dev_set['rfe_mode']]
+            self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
+            cu._center_plot_view(self)
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
@@ -565,10 +572,17 @@ class MainPanel(QtGui.QWidget):
         rbw = QtGui.QComboBox(self)
         rbw.setToolTip("Change the RBW of the FFT plot")
         self._points_values = RBW_VALUES
+        self._hdr_points_values = HDR_RBW_VALUES
         self._rbw_box = rbw
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
+        
         def new_rbw():
-            self.plot_state.update_freq_set(rbw = self._points_values[rbw.currentIndex()])
+        
+            if not self.plot_state.dev_set['rfe_mode'] == 'HDR':    
+                self.plot_state.update_freq_set(rbw = 1e3 * self._points_values[rbw.currentIndex()])
+            else:
+                self.plot_state.update_freq_set(rbw = self._hdr_points_values[rbw.currentIndex()])
+
         rbw.setCurrentIndex(0)
         rbw.currentIndexChanged.connect(new_rbw)
         self.control_widgets.append(self._rbw_box)
@@ -578,26 +592,29 @@ class MainPanel(QtGui.QWidget):
         if not self.dut:
             return
         prop = self.dut.properties
-
+        rfe_mode = 'ZIF'
+        min_tunable = prop.MIN_TUNABLE[rfe_mode]
+        max_tunable = prop.MAX_TUNABLE[rfe_mode]
         if delta == None:
             delta = 0    
         try:
             if self.plot_state.freq_sel == 'CENT':
+                
                 f = (float(self._freq_edit.text()) + delta) * M
-                if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE:
+                if f > max_tunable or f < min_tunable:
                     return
                 self.plot_state.update_freq_set(fcenter = f)
                 self.dut.freq(f)
             elif self.plot_state.freq_sel == 'FSTART':
                 f = (float(self._fstart_edit.text()) + delta) * M
-                if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f > self.plot_state.fstop:
+                if f > max_tunable or f <min_tunable or f > self.plot_state.fstop:
                     return
                 self.plot_state.update_freq_set(fstart = f)
             
             elif self.plot_state.freq_sel == 'FSTOP': 
                 f = (float(self._fstop_edit.text()) + delta) * M
 
-                if f > prop.MAX_TUNABLE or f < prop.MIN_TUNABLE or f < self.plot_state.fstart:
+                if f > max_tunable or f < min_tunable or f < self.plot_state.fstart:
                     return
                 self.plot_state.update_freq_set(fstop = f)
             
@@ -746,7 +763,7 @@ class MainPanel(QtGui.QWidget):
     def update_plot(self):
        
         self.plot_state.update_freq_range(self.plot_state.fstart,
-                                              self.plot_state.fstop , 
+                                              self.plot_state.fstop, 
                                               len(self.pow_data))
         self.update_trace()
         self.update_iq()

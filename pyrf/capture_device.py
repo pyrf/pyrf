@@ -65,7 +65,6 @@ class CaptureDevice(object):
         self.real_device.flush()
         self.real_device.request_read_perm()
         self._vrt_context = {}
-
         points = max(min_points, full_bw / rbw)
         points = 2 ** math.ceil(math.log(points, 2))
 

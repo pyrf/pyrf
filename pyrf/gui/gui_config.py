@@ -37,7 +37,7 @@ class PlotState(object):
  
         self.freq_range = None        
         self.center_freq = center_freq
-        self.bandwidth = 100
+        self.bandwidth = device_properties.FULL_BW[self.dev_set['rfe_mode']]
         self.fstart = self.center_freq - self.bandwidth / 2
         self.fstop = self.center_freq + self.bandwidth / 2
         self.rbw = rbw
@@ -122,7 +122,8 @@ class PlotState(object):
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
 
         elif rbw is not None:
-            self.rbw = rbw * 1e3
+
+            self.rbw = rbw
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
 
         elif bw != None:

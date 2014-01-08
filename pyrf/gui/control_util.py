@@ -308,6 +308,22 @@ def _trigger_control(layout):
         else:
             layout.plot_state.disable_block_mode(layout)
         layout.update_trig()
+        
+def _update_rbw_values(layout):
+    """
+    update the RBW values depending on the current mode of operation
+    """
+
+    for index in range(layout._rbw_box.count()):
+        layout._rbw_box.removeItem(0)
+        
+    if not layout.plot_state.dev_set['rfe_mode'] == 'HDR':
+        layout._rbw_box.addItems([str(p) + ' KHz' for p in layout._points_values])
+    
+    else:
+        layout._rbw_box.addItems([str(p) + ' Hz' for p in layout._hdr_points_values])
+            
+  
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
                 '3': _select_bw,
