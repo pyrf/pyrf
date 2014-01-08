@@ -10,11 +10,7 @@ dut.connect(sys.argv[1])
 # setup test conditions
 dut.reset()
 dut.request_read_perm()
-dut.ifgain(0)
 dut.freq(2450e6)
-dut.gain('low')
-dut.fshift(0)
-dut.decimation(0)
 
 # capture 1 packet
 dut.capture(1024, 1)

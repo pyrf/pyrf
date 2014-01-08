@@ -13,10 +13,11 @@ import numpy as np
 # connect to wsa
 dut = WSA()
 dut.connect(sys.argv[1])
+dut.request_read_perm()
 sd = SweepDevice(dut)
 
-fstart, fstop, bins = sd.capture_power_spectrum(0e9, 10e9, 5e6,
-    {'gain': 'high', 'antenna': 1})
+fstart, fstop, bins = sd.capture_power_spectrum(2450e6, 3450e6, 5e6,
+    {'attenuator':1})
 
 
 # setup my graph
