@@ -199,7 +199,6 @@ class MainPanel(QtGui.QWidget):
             self.read_sweep()
             return
         self.read_block()
-
         if 'reflevel' in data['context_pkt']:
             self.ref_level = data['context_pkt']['reflevel']
 
@@ -374,10 +373,14 @@ class MainPanel(QtGui.QWidget):
         return self._dev_group
         
     def _connect_device_controls(self):
-        
+
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
         
+        # def new_dec():
+            # import re
+            # self.plot_state.dev_set['decimation'] = int(re.sub("\D", "", self._dev_group._dec_box.currentText()))
+            
         def new_gain():
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
         
@@ -392,8 +395,10 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.bandwidth =self.dut_prop.FULL_BW[self.plot_state.dev_set['rfe_mode']]
             self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
             cu._center_plot_view(self)
+       
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
-        self._dev_group._gain_box.currentIndexChanged.connect(new_gain) 
+        self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
+        # self._dev_group._dec_box.currentIndexChanged.connect(new_dec) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
         self._dev_group._trigger.clicked.connect(lambda: cu._trigger_control(self))

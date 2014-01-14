@@ -27,6 +27,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         first_row.addWidget(self._trigger_control())
         
         second_row = QtGui.QHBoxLayout()
+        second_row.addWidget(self._decimation_control())
         second_row.addWidget(self._gain_control())
         second_row.addWidget(self._ifgain_control())
         
@@ -43,7 +44,16 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         antenna.addItem("Antenna 2")
         self._antenna_box = antenna
         return antenna
-
+    
+    def _decimation_control(self):
+        dec = QtGui.QComboBox(self)
+        dec.setToolTip("Choose Decimation Rate") 
+        dec_values = ['1', '4', '8', '16', '32', '64', '128', '256', '512', '1024']
+        for d in dec_values:
+            dec.addItem("Decimation Rate: %s" % d)
+        self._dec_values = dec_values
+        self._dec_box = dec
+        return dec
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
         gain.setToolTip("Choose RF Gain setting") 
