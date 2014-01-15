@@ -36,7 +36,6 @@ class WSA4000Properties(object):
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {'ZIF': True}
-
     SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -63,7 +62,7 @@ class WSA5000_220Properties(object):
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {'ZIF': True, 'HDR': False, 'SH': True}
-
+    MAX_FSHIFT = {'ZIF': 62.5*M}
     SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
         'attenuator', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']

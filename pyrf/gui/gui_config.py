@@ -28,6 +28,7 @@ class PlotState(object):
         self.dev_set = {
             'attenuator': 1,
             'decimation': 1,
+            'fshift': 0,
             'rfe_mode': 'ZIF'}
         self.mhold = False
         self.mhold_fft = None

@@ -1,6 +1,6 @@
 from PySide import QtGui
 
-WSA5000_RFE_MODES = ['ZIF', 'SH', 'HDR']
+WSA5000_RFE_MODES = ['ZIF', 'HDR']
 
 class DeviceControlsWidget(QtGui.QGroupBox):
 
@@ -28,6 +28,12 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._decimation_control())
+        
+        fshift_lable, fshift_edit, fshift_unit = self._freq_shift_control()
+        second_row.addWidget(fshift_lable)
+        second_row.addWidget(fshift_edit)
+        second_row.addWidget(fshift_unit)
+        
         second_row.addWidget(self._gain_control())
         second_row.addWidget(self._ifgain_control())
         
@@ -54,6 +60,20 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         self._dec_values = dec_values
         self._dec_box = dec
         return dec
+        
+    def _freq_shift_control(self):
+        fshift_label = QtGui.QLabel("Frequency Shift")
+        self._fshift_label = fshift_label
+        
+        fshift_unit = QtGui.QLabel("MHz")
+        self._fshift_unit = fshift_unit
+        
+        fshift = QtGui.QLineEdit("0")
+        fshift.setToolTip("Frequency Shift") 
+        self._freq_shift_edit = fshift
+        
+        return fshift_label, fshift, fshift_unit
+        
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
         gain.setToolTip("Choose RF Gain setting") 

@@ -186,7 +186,6 @@ class MainPanel(QtGui.QWidget):
         device_set = self.plot_state.dev_set
 
         self.cap_dut.capture_time_domain(dict(device_set,
-            fshift=0,
             freq=self.plot_state.center_freq,
             trigger=self.plot_state.trig_set,
             ), self.plot_state.rbw)
@@ -377,10 +376,22 @@ class MainPanel(QtGui.QWidget):
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
         
-        # def new_dec():
-            # import re
-            # self.plot_state.dev_set['decimation'] = int(re.sub("\D", "", self._dev_group._dec_box.currentText()))
-            
+        def new_dec():
+            import re
+            self.plot_state.dev_set['decimation'] = int(re.sub("\D", "", self._dev_group._dec_box.currentText()))
+
+        def new_freq_shift():
+            rfe_mode = 'ZIF'
+            prop = self.dut.properties
+            max_fshift = prop.MAX_FSHIFT[rfe_mode]
+            try:
+                if int(self._dev_group._freq_shift_edit.text()) * M < max_fshift:
+                    self.plot_state.dev_set['fshift'] = int(self._dev_group._freq_shift_edit.text()) * M
+                else:
+                    self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+            except ValueError:
+                self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+                return
         def new_gain():
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
         
@@ -398,7 +409,8 @@ class MainPanel(QtGui.QWidget):
        
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
-        # self._dev_group._dec_box.currentIndexChanged.connect(new_dec) 
+        self._dev_group._dec_box.currentIndexChanged.connect(new_dec)
+        self._dev_group._freq_shift_edit.returnPressed.connect(new_freq_shift) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
         self._dev_group._trigger.clicked.connect(lambda: cu._trigger_control(self))
