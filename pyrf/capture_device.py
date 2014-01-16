@@ -16,7 +16,7 @@ class CaptureDevice(object):
                      real_device is using a :class:`PlainSocketConnector`)
 
     """    
-    def __init__(self, real_device, async_callback=None):
+    def __init__(self, real_device, async_callback=None, device_set):
         
         self.real_device = real_device
         self.connector = self.real_device.connector
@@ -33,33 +33,45 @@ class CaptureDevice(object):
         self.async_callback = async_callback
 
     
-    def capture_time_domain(self, device_set, rbw, min_points=128):
+    def configure_device(self, device_set):
+        """
+        Configure the device settings
+        :param device_settings: attenuator, decimation frequency shift 
+                                and other device settings
+        :type dict:
+        """
+        self.real_device.apply_device_settings(device_set)
+        self._device_set = device_set
+        
+    def capture_time_domain(self, rbw, device_set = None, min_points=128):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
-        :param fcenter: frequency in Hz
-        :type fstart: float
-        :param fstop: ending frequency in Hz
-        :type fstop: float
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
-        :param triggers: a class containing trigger information
-        :type class:`TriggerSettings`
-        :param device_settings: antenna, gain and other device settings
+        :param device_settings: attenuator, decimation frequency shift 
+                                and other device settings
         :type dict:
+        :param min_points: smallest number of points per capture from real_device
+        :type min_points: int
         """
         prop = self.real_device.properties
-
-        # setup the WSA device
-        rfe_mode = device_set['rfe_mode']
+        
+        if device_set is not None:
+            self.configure_device(device_set)
+        rfe_mode = self._device_set['rfe_mode']
         full_bw = prop.FULL_BW[rfe_mode]
         usable_bw = prop.USABLE_BW[rfe_mode]
         pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
-        freq = device_set.pop('freq')
+        
+        freq = self._device_set.pop('freq')
         self.fstart = freq - full_bw * pass_band_center
         self.fstop = freq + full_bw * (1 - pass_band_center)
-        self.real_device.apply_device_settings(device_set)
+        
+
+
+
 
         self.real_device.abort()
         self.real_device.flush()
