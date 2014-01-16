@@ -65,8 +65,10 @@ class PlotState(object):
         
     def enable_block_mode(self, layout):
         self.block_mode = True
+        layout._bw_edit.setText('125.0')
+        self.update_freq_set(bw = 125e6)
         layout._cfreq.click()
-        layout._bw_edit.setText('100.0')
+        
         layout.update_freq()
         layout.update_freq_edit()
         util.disable_freq_cont(layout)

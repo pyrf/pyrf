@@ -35,7 +35,7 @@ from util import hotkey_util, update_marker_traces
 import control_util as cu
 from plot_widget import Plot
 from device_widget import DeviceControlsWidget
-RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.629, 3.815]
+RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
 
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
 
@@ -153,12 +153,7 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._trigger.hide()
             self._dev_group._attenuator_box.show()
             self._dev_group._rfe_mode.show()
-            self._bw.hide()
-            self._bw_edit.hide()
-            self._fstart.hide()
-            self._fstart_edit.hide()
-            self._fstop.hide()
-            self._fstop_edit.hide()
+
         else:
             self._dev_group._antenna_box.show()
             self._dev_group._gain_box.show()
@@ -178,6 +173,9 @@ class MainPanel(QtGui.QWidget):
     def read_sweep(self):
         device_set = dict(self.plot_state.dev_set)
         device_set.pop('rfe_mode')
+        device_set.pop('freq')
+        device_set.pop('decimation')
+        device_set.pop('fshift')
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.rbw,
@@ -199,7 +197,6 @@ class MainPanel(QtGui.QWidget):
             self.ref_level = data['context_pkt']['reflevel']
 
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-
         self.raw_data = data['data_pkt']
 
 

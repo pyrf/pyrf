@@ -5,7 +5,7 @@ from pyrf.config import TriggerSettings
 from pyrf.util import read_data_and_context
 
 AXIS_OFFSET = 7
-IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 432000, 'SH': -120}
+IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -120}
 IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': 160}
 def _center_plot_view(layout):
     """
@@ -273,6 +273,7 @@ def _change_min_level(layout):
         return
     layout.plot_state.min_level = min
     _center_plot_view(layout)
+
 def _iq_plot_control(layout):
     """
     enable/disable the iq constallation and time domain plots
@@ -285,6 +286,7 @@ def _iq_plot_control(layout):
         layout._plot.grid(True)
         layout._plot_layout.setRowMinimumHeight(1, 300)
         layout.plot_state.enable_block_mode(layout)
+        # layout._dev_group._rfe_mode.setCurrentIndex(0)
     else:
         if not layout.plot_state.trig:
             layout.plot_state.disable_block_mode(layout)
