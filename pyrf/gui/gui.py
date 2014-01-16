@@ -172,6 +172,7 @@ class MainPanel(QtGui.QWidget):
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
+        self._rbw_box.setCurrentIndex(4)
         self.read_block()
 
     def read_sweep(self):
@@ -408,6 +409,7 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
             cu._center_plot_view(self)
             self.cap_dut.configure_device(self.plot_state.dev_set)
+            self._rbw_box.setCurrentIndex(4)           
             cu._center_plot_view(self)
             
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
@@ -800,7 +802,7 @@ class MainPanel(QtGui.QWidget):
 
     def update_iq(self):
 
-        if self.plot_state.dev_set['rfe_mode'] == 'ZIF':    
+        if self.raw_data.stream_id == VRT_IFDATA_I14Q14:    
             data = self.raw_data.data.numpy_array()
             i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
             q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
