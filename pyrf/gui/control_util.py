@@ -5,13 +5,17 @@ from pyrf.config import TriggerSettings
 from pyrf.util import read_data_and_context
 
 AXIS_OFFSET = 7
+IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 432000, 'SH': -120}
+IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': 160}
 def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed
     """
     layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth,
                             layout.plot_state.min_level, layout.plot_state.ref_level)
-    
+    layout._plot.iq_window.setYRange(IQ_PLOT_YMIN[layout.plot_state.dev_set['rfe_mode']],
+                                    IQ_PLOT_YMAX[layout.plot_state.dev_set['rfe_mode']])
+
 def _select_center_freq(layout):
     """
     select the center freq for arrow control

@@ -198,11 +198,10 @@ class MainPanel(QtGui.QWidget):
             self.ref_level = data['context_pkt']['reflevel']
 
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-        if data['data_pkt'].stream_id == VRT_IFDATA_I14Q14:
-            self.iq_data = data['data_pkt'].data.numpy_array()
 
-        else:
-            self.iq_data = None
+        self.raw_data = data['data_pkt']
+
+
 
         self.update_plot()
 
@@ -389,6 +388,7 @@ class MainPanel(QtGui.QWidget):
                 self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
                 return
             self.cap_dut.configure_device(self.plot_state.dev_set)
+        
         def new_gain():
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
             self.cap_dut.configure_device(self.plot_state.dev_set)
@@ -400,6 +400,7 @@ class MainPanel(QtGui.QWidget):
         def new_attenuator():
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
             self.cap_dut.configure_device(self.plot_state.dev_set)
+        
         def new_input_mode():
             self.plot_state.dev_set['rfe_mode'] =  str(self._dev_group._rfe_mode.itemText(self._dev_group._rfe_mode.currentIndex()))
             cu._update_rbw_values(self)
@@ -407,6 +408,8 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
             cu._center_plot_view(self)
             self.cap_dut.configure_device(self.plot_state.dev_set)
+            cu._center_plot_view(self)
+            
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
         self._dev_group._dec_box.currentIndexChanged.connect(new_dec)
@@ -609,7 +612,7 @@ class MainPanel(QtGui.QWidget):
         if not self.dut:
             return
         prop = self.dut.properties
-        rfe_mode = 'ZIF'
+        rfe_mode = self.plot_state.dev_set['rfe_mode']
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
         if delta == None:
@@ -796,21 +799,30 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
-        if self.iq_data is None:
-            return
-        data = self.iq_data
-        i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-        q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
-        self._plot.i_curve.setData(i_data)
-        self._plot.q_curve.setData(q_data)
-        self._plot.const_plot.clear()
-        self._plot.const_plot.addPoints(
-            x = i_data[0:CONST_POINTS],
-            y = q_data[0:CONST_POINTS],
-            symbol = 'o',
-            size = 1, pen = 'y',
-            brush = 'y')
 
+        if self.plot_state.dev_set['rfe_mode'] == 'ZIF':    
+            data = self.raw_data.data.numpy_array()
+            i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
+            q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+            self._plot.i_curve.setData(i_data)
+            self._plot.q_curve.setData(q_data)
+            self._plot.const_plot.clear()
+            self._plot.const_plot.addPoints(
+                x = i_data[0:CONST_POINTS],
+                y = q_data[0:CONST_POINTS],
+                symbol = 'o',
+                size = 1, pen = 'y',
+                brush = 'y')
+        
+        else:
+            data = self.raw_data.data.numpy_array()
+            i_data = np.array(data, dtype=float)
+            self._plot.i_curve.setData(i_data)
+            
+            self._plot.q_curve.clear()
+            self._plot.const_plot.clear()
+            
+    
     def update_trig(self):
             if self.plot_state.trig_set:
                 freq_region = self._plot.freqtrig_lines.getRegion()

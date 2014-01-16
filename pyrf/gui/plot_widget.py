@@ -166,9 +166,10 @@ class Plot(object):
 
         # IQ time domain  window
         self.iq_window = pg.PlotWidget(name='const_plot')
+        self.iq_window.enableAutoRange('x', True)
         self.iq_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
-        self.i_curve = self.iq_window.plot(pen = 'r')
-        self.q_curve = self.iq_window.plot(pen = 'g')
+        self.i_curve = self.iq_window.plot(pen = 'g')
+        self.q_curve = self.iq_window.plot(pen = 'r')
 
         
         # add traces
