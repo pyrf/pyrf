@@ -168,6 +168,9 @@ class MainPanel(QtGui.QWidget):
         self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
         self.cap_dut = CaptureDevice(dut, self.receive_capture)
+        self.cap_dut.configure_device(dict(self.plot_state.dev_set,
+                                            freq=self.plot_state.center_freq
+                                            ))
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
@@ -185,10 +188,7 @@ class MainPanel(QtGui.QWidget):
     def read_block(self):
         device_set = self.plot_state.dev_set
 
-        self.cap_dut.capture_time_domain(dict(device_set,
-            freq=self.plot_state.center_freq,
-            trigger=self.plot_state.trig_set,
-            ), self.plot_state.rbw)
+        self.cap_dut.capture_time_domain(self.plot_state.rbw)
 
 
     def receive_capture(self, fstart, fstop, data):
@@ -279,8 +279,7 @@ class MainPanel(QtGui.QWidget):
 
 
         self.setLayout(grid)
-        # self._second_row.removeWidget(self._plot.const_window)
-        # self._plot_layout.removeWidget(self._plot.const_window)
+
     def _plot_layout(self):
         plot_layout =  QtGui.QGridLayout()
         plot_layout.setSpacing(10)
