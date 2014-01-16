@@ -167,10 +167,8 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._rfe_mode.hide()
         self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
-        self.cap_dut = CaptureDevice(dut, self.receive_capture)
-        self.cap_dut.configure_device(dict(self.plot_state.dev_set,
-                                            freq=self.plot_state.center_freq
-                                            ))
+        self.cap_dut = CaptureDevice(dut, device_set = self.plot_state.dev_set,                                                            
+                                     async_callback = self.receive_capture)
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
@@ -186,8 +184,6 @@ class MainPanel(QtGui.QWidget):
                                               continuous = False)
 
     def read_block(self):
-        device_set = self.plot_state.dev_set
-
         self.cap_dut.capture_time_domain(self.plot_state.rbw)
 
 
@@ -374,11 +370,12 @@ class MainPanel(QtGui.QWidget):
 
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
-        
+            self.cap_dut.configure_device(self.plot_state.dev_set)
         def new_dec():
             import re
             self.plot_state.dev_set['decimation'] = int(re.sub("\D", "", self._dev_group._dec_box.currentText()))
-
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+        
         def new_freq_shift():
             rfe_mode = 'ZIF'
             prop = self.dut.properties
@@ -391,21 +388,25 @@ class MainPanel(QtGui.QWidget):
             except ValueError:
                 self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
                 return
+            self.cap_dut.configure_device(self.plot_state.dev_set)
         def new_gain():
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
+            self.cap_dut.configure_device(self.plot_state.dev_set)
         
         def new_ifgain():
             self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box.value()
+            self.cap_dut.configure_device(self.plot_state.dev_set)
         
         def new_attenuator():
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
+            self.cap_dut.configure_device(self.plot_state.dev_set)
         def new_input_mode():
             self.plot_state.dev_set['rfe_mode'] =  str(self._dev_group._rfe_mode.itemText(self._dev_group._rfe_mode.currentIndex()))
             cu._update_rbw_values(self)
             self.plot_state.bandwidth =self.dut_prop.FULL_BW[self.plot_state.dev_set['rfe_mode']]
             self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
             cu._center_plot_view(self)
-       
+            self.cap_dut.configure_device(self.plot_state.dev_set)
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
         self._dev_group._dec_box.currentIndexChanged.connect(new_dec)
@@ -620,7 +621,7 @@ class MainPanel(QtGui.QWidget):
                 if f > max_tunable or f < min_tunable:
                     return
                 self.plot_state.update_freq_set(fcenter = f)
-                self.dut.freq(f)
+                self.cap_dut.configure_device(self.plot_state.dev_set)
             elif self.plot_state.freq_sel == 'FSTART':
                 f = (float(self._fstart_edit.text()) + delta) * M
                 if f > max_tunable or f <min_tunable or f > self.plot_state.fstop:

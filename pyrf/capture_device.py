@@ -16,7 +16,7 @@ class CaptureDevice(object):
                      real_device is using a :class:`PlainSocketConnector`)
 
     """    
-    def __init__(self, real_device, async_callback=None, device_set):
+    def __init__(self, real_device, device_set = None, async_callback=None):
         
         self.real_device = real_device
         self.connector = self.real_device.connector
@@ -31,7 +31,9 @@ class CaptureDevice(object):
                 raise CaptureDeviceError(
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
-
+        
+        if device_set is not None:
+            self.configure_device(device_set)
     
     def configure_device(self, device_set):
         """
@@ -65,7 +67,7 @@ class CaptureDevice(object):
         usable_bw = prop.USABLE_BW[rfe_mode]
         pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
         
-        freq = self._device_set.pop('freq')
+        freq = self._device_set['freq']
         self.fstart = freq - full_bw * pass_band_center
         self.fstop = freq + full_bw * (1 - pass_band_center)
         

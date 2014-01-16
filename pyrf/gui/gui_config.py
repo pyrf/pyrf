@@ -27,6 +27,7 @@ class PlotState(object):
 
         self.dev_set = {
             'attenuator': 1,
+            'freq':INIT_CENTER_FREQ,
             'decimation': 1,
             'fshift': 0,
             'rfe_mode': 'ZIF'}
@@ -102,13 +103,15 @@ class PlotState(object):
         rfe_mode = 'ZIF'
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
+        
         if fcenter is not None:
             self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
             self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-
+            self.dev_set['freq'] =  fcenter
+            
         elif fstart is not None:
             fstart = min(fstart, self.fstop - prop.TUNING_RESOLUTION)
             self.fstart = fstart

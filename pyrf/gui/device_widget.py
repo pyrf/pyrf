@@ -1,6 +1,6 @@
 from PySide import QtGui
 
-WSA5000_RFE_MODES = ['ZIF', 'HDR']
+WSA5000_RFE_MODES = ['ZIF', 'SH', 'HDR']
 
 class DeviceControlsWidget(QtGui.QGroupBox):
 
