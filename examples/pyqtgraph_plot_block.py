@@ -15,23 +15,24 @@ CENTER_FREQ = 2450 * 1e6
 SAMPLE_SIZE = 1024
 ATTENUATOR = 1
 BANDWIDTH = (125 *1e6)
+DECIMATION = 1
 
-# declare the GUI
+# create GUI instance
 app = QtGui.QApplication([])
 win = pg.GraphicsWindow(title="ThinkRF FFT Plot Example")
 win.resize(1000,600)
 win.setWindowTitle("PYRF FFT Plot Example")
 
-# connect to WSA5000 device
+# connect to WSA device
 dut = WSA()
 dut.connect(sys.argv[1])
 
-# initialize WSA5000 constants
+# initialize WSA configurations
 dut.reset()
 dut.request_read_perm()
 dut.freq(CENTER_FREQ)
-dut.decimation(1)
-dut.attenuator(1)
+dut.decimation(DECIMATION)
+dut.attenuator(ATTENUATOR)
 
 # initialize plot
 fft_plot = win.addPlot(title="Power Vs. Frequency")

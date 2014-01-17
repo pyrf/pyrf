@@ -17,7 +17,7 @@ dut.request_read_perm()
 sd = SweepDevice(dut)
 
 fstart, fstop, bins = sd.capture_power_spectrum(2450e6, 3450e6, 5e6,
-    {'attenuator':1})
+    {'attenuator':0})
 
 
 # setup my graph

@@ -17,10 +17,7 @@ def show_i_q():
     # setup test conditions
     yield dut.reset()
     yield dut.request_read_perm()
-    yield dut.ifgain(0)
     yield dut.freq(2450e6)
-    yield dut.gain('low')
-    yield dut.fshift(0)
     yield dut.decimation(0)
 
     dut.connector.vrt_callback = receive_vrt

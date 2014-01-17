@@ -5,8 +5,8 @@ from pyrf.config import TriggerSettings
 from pyrf.util import read_data_and_context
 
 AXIS_OFFSET = 7
-IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -120}
-IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': 160}
+IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -1}
+IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': 1}
 def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed

@@ -378,8 +378,8 @@ class MainPanel(QtGui.QWidget):
             prop = self.dut.properties
             max_fshift = prop.MAX_FSHIFT[rfe_mode]
             try:
-                if int(self._dev_group._freq_shift_edit.text()) * M < max_fshift:
-                    self.plot_state.dev_set['fshift'] = int(self._dev_group._freq_shift_edit.text()) * M
+                if float(self._dev_group._freq_shift_edit.text()) * M < max_fshift:
+                    self.plot_state.dev_set['fshift'] = float(self._dev_group._freq_shift_edit.text()) * M
                 else:
                     self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
             except ValueError:
@@ -816,6 +816,8 @@ class MainPanel(QtGui.QWidget):
         else:
             data = self.raw_data.data.numpy_array()
             i_data = np.array(data, dtype=float)
+            if self.raw_data.stream_id == VRT_IFDATA_I14:
+                i_data = i_data /ZIF_BITS
             self._plot.i_curve.setData(i_data)
             
             self._plot.q_curve.clear()
