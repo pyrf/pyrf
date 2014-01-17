@@ -286,7 +286,7 @@ def _iq_plot_control(layout):
         layout._plot.grid(True)
         layout._plot_layout.setRowMinimumHeight(1, 300)
         layout.plot_state.enable_block_mode(layout)
-        # layout._dev_group._rfe_mode.setCurrentIndex(0)
+        layout._dev_group._rfe_mode.setCurrentIndex(0)
     else:
         if not layout.plot_state.trig:
             layout.plot_state.disable_block_mode(layout)
@@ -295,7 +295,7 @@ def _iq_plot_control(layout):
         layout._plot.iq_window.hide()
         layout._plot.grid(False)
         layout._plot.grid(True)
-
+        layout._dev_group._rfe_mode.setCurrentIndex(0)
 
 def _trigger_control(layout):
     """

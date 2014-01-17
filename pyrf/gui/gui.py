@@ -408,6 +408,12 @@ class MainPanel(QtGui.QWidget):
             self.cap_dut.configure_device(self.plot_state.dev_set)
             self._rbw_box.setCurrentIndex(4)           
             cu._center_plot_view(self)
+            if self.plot_state.dev_set['rfe_mode'] == 'HDR':
+                self._dev_group._dec_box.setEnabled(False)
+                self._dev_group._freq_shift_edit.setEnabled(False)
+            else:
+                self._dev_group._dec_box.setEnabled(True)
+                self._dev_group._freq_shift_edit.setEnabled(True)    
             
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain)

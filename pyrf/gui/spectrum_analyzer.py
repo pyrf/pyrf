@@ -24,6 +24,8 @@ def main():
     # late import because installReactor is being used
     from twisted.internet import reactor
     reactor.run()
+    # del sys.modules['twisted.internet.reactor'] 
+
 
 
 
