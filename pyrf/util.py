@@ -1,5 +1,5 @@
 
-def read_data_and_context(dut, points=1024):
+def read_data_and_context(dut, points= None):
     """
     Wait for and capture a data packet and collect preceeding context packets.
 
@@ -9,7 +9,8 @@ def read_data_and_context(dut, points=1024):
     all the context packets received.
     """
     # capture 1 packet
-    dut.capture(points, 1)
+    if points is not None:
+        dut.capture(points, 1)
 
     context_values = {}
     # read until I get 1 data packet
