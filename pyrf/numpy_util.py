@@ -26,6 +26,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     """
     import numpy as np # import here so docstrings are visible even without numpy
     import numpy # import here so docstrings are visible even without numpy
+
     if 'reflevel' in context:
         reference_level = context['reflevel']
     else:

@@ -167,7 +167,7 @@ class MainPanel(QtGui.QWidget):
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()
-        self._rbw_box.setCurrentIndex(4)
+        self._rbw_box.setCurrentIndex(3)
         self.read_block()
 
     def read_sweep(self):
@@ -406,7 +406,11 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
             cu._center_plot_view(self)
             self.cap_dut.configure_device(self.plot_state.dev_set)
-            self._rbw_box.setCurrentIndex(4)           
+            
+            if self.plot_state.dev_set['rfe_mode'] == 'SH':
+                self._rbw_box.setCurrentIndex(4)           
+            else:
+                self._rbw_box.setCurrentIndex(3)   
             cu._center_plot_view(self)
             if self.plot_state.dev_set['rfe_mode'] == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
@@ -421,7 +425,6 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._freq_shift_edit.returnPressed.connect(new_freq_shift) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
-        self._dev_group._trigger.clicked.connect(lambda: cu._trigger_control(self))
         self._dev_group._rfe_mode.currentIndexChanged.connect(new_input_mode)
 
     
