@@ -162,8 +162,8 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._rfe_mode.hide()
         self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
-        self.cap_dut = CaptureDevice(dut, device_set = self.plot_state.dev_set,                                                            
-                                     async_callback = self.receive_capture)
+        self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
+            device_settings=self.plot_state.dev_set)
         self.enable_controls()
         cu._select_center_freq(self)
         self._iq_plot_checkbox.click()

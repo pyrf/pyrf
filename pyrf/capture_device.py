@@ -12,12 +12,14 @@ class CaptureDevice(object):
     Virtual device that returns power levels generated from a single data packet
     :param real_device: device that will will be used for capturing data,
                         typically a :class:`pyrf.thinkrf.WSA` instance.
-    :param callback: callback to use for async operation (not used if
-                     real_device is using a :class:`PlainSocketConnector`)
+    :param async_callback: callback to use for async operation (not used if
+                           real_device is using a :class:`PlainSocketConnector`)
+    :param device_settings: initial device settings to use, passed to
+                            :meth:`pyrf.capture_dvice.CaptureDevice.configure_device`
+                            if given
+    """
+    def __init__(self, real_device, async_callback=None, device_settings=None):
 
-    """    
-    def __init__(self, real_device, device_set = None, async_callback=None):
-        
         self.real_device = real_device
         self.connector = self.real_device.connector
         if hasattr(self.connector, 'vrt_callback'):
@@ -31,20 +33,20 @@ class CaptureDevice(object):
                 raise CaptureDeviceError(
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
-        
-        if device_set is not None:
-            self.configure_device(device_set)
-    
-    def configure_device(self, device_set):
+
+        if device_settings is not None:
+            self.configure_device(device_settings)
+
+    def configure_device(self, device_settings):
         """
         Configure the device settings
         :param device_settings: attenuator, decimation frequency shift 
                                 and other device settings
         :type dict:
         """
-        self.real_device.apply_device_settings(device_set)
-        self._device_set = device_set
-        
+        self.real_device.apply_device_settings(device_settings)
+        self._device_set = device_settings
+
     def capture_time_domain(self, rbw, device_set = None, min_points=128):
         """
         Initiate a capture of raw time domain IQ or I-only data
