@@ -369,8 +369,8 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
             self.cap_dut.configure_device(self.plot_state.dev_set)
         def new_dec():
-            import re
-            self.plot_state.dev_set['decimation'] = int(re.sub("\D", "", self._dev_group._dec_box.currentText()))
+            self.plot_state.dev_set['decimation'] = int(
+                self._dev_group._dec_box.currentText().split(' ')[-1])
             self.cap_dut.configure_device(self.plot_state.dev_set)
         
         def new_freq_shift():
