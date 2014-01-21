@@ -107,8 +107,14 @@ class PlotState(object):
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
         
         if fcenter is not None:
-            self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
-            self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
+            if self.block_mode:
+                self.fstart = fcenter - (self.bandwidth / 2)
+                self.fstop =  fcenter + (self.bandwidth / 2)
+            else:
+            
+                self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
+                self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
+            
             self.bandwidth = self.fstop - self.fstart
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
