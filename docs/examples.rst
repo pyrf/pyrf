@@ -67,19 +67,12 @@ and plots a complete sweep of the spectrum using NumPy_ and matplotlib_.
 .. _matplotlib: http://matplotlib.org/
 
 
-matplotlib_trigger_plot_fft.py
-------------------------------
+pyqtgraph_plot_block.py
+-----------------------
 
 This example connects to a device specified on the command line,
-tunes it to a center frequency of 2.450 MHz
-and sets a trigger for a signal with an amplitude of -70 dBm or
-greater between 2.400 MHz and 2.480 MHz.
+tunes it to a center frequency of 2.450 MHz then continually captures
+and displays an FFT in a GUI window.
 
-* `matplotlib_trigger_plot_fft.py <https://github.com/pyrf/pyrf/blob/master/examples/matplotlib_trigger_plot_fft.py>`_
-
-.. figure:: plot_fft.png
-   :alt: matplotlib_trigger_plot_fft screen shot
-
-   Example output of ``matplotlib_trigger_plot_fft.py``
-
+* `pyqtgraph_plot_block.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_block.py>`_
 
