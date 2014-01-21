@@ -368,6 +368,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     # start at the next tuning resolution increment left of ideal start
     fcenter = math.floor((fstart + usable2 - wasted_left)
         / prop.TUNING_RESOLUTION) * prop.TUNING_RESOLUTION
+    fcenter = max(fcenter, prop.MIN_TUNABLE[rfe_mode])
     bins_pass = int(round((fstart - (fcenter - usable2 + wasted_left))
         / bin_size))
     # we now have our actual fstart
