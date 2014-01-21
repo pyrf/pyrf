@@ -70,7 +70,7 @@ Use packaged requirements::
    apt-get install python-pyside python-twisted python-numpy \
    	python-zope.interface python-pip python-scipy
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
-   pip install -e https://github.com/pyrf/pyqtgraph.git#egg=pyqtgraph
+   pip install -e git://github.com/pyrf/pyqtgraph.git#egg=pyqtgraph
 
 Or install GUI requirements from source::
 
