@@ -16,7 +16,7 @@ dut.connect(sys.argv[1])
 dut.request_read_perm()
 sd = SweepDevice(dut)
 
-fstart, fstop, bins = sd.capture_power_spectrum(2450e6, 3450e6, 5e6,
+fstart, fstop, bins = sd.capture_power_spectrum(0e6, 20000e6, 5e6,
     {'attenuator':0})
 
 
