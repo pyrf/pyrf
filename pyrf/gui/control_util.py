@@ -2,7 +2,6 @@ from PySide import QtGui, QtCore
 import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
-from pyrf.util import read_data_and_context
 
 AXIS_OFFSET = 7
 IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -1}

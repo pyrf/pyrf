@@ -1,7 +1,8 @@
 
-def read_data_and_context(dut, points= None):
+def read_data_and_context(dut, points=1024):
     """
-    Wait for and capture a data packet and collect preceeding context packets.
+    Initiate capture of one data packet, wait for and return data packet
+    and collect preceeding context packets.
 
     :returns: (data_pkt, context_values)
 
@@ -9,9 +10,14 @@ def read_data_and_context(dut, points= None):
     all the context packets received.
     """
     # capture 1 packet
-    if points is not None:
-        dut.capture(points, 1)
+    dut.capture(points, 1)
 
+    return collect_data_and_context(dut)
+
+def collect_data_and_context(dut):
+    """
+    Wait for and return data packet and collect preceeding context packets.
+    """
     context_values = {}
     # read until I get 1 data packet
     while not dut.eof():
