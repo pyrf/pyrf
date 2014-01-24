@@ -142,6 +142,17 @@ class SweepDevice(object):
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, rbw, mode, min_points, max_points)
 
+        self.sweep_segments = []
+        for ss in self.plan:
+            k = ss.bins_keep
+            seg = min(k, ss.bins_run - ss.bins_pass)
+            while True:
+                self.sweep_segments.append(seg)
+                k -= seg
+                if k <= 0:
+                    break
+                seg = min(ss.bins_run, k)
+
         return self._perform_full_sweep()
 
     def _perform_full_sweep(self):

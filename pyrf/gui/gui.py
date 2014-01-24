@@ -189,6 +189,7 @@ class MainPanel(QtGui.QWidget):
     def receive_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
         self.usable_bins = list(self.cap_dut.usable_bins)
+        self.sweep_segments = None
         if not self.plot_state.block_mode:
             self.read_sweep()
             return
@@ -204,6 +205,8 @@ class MainPanel(QtGui.QWidget):
         self.update_plot()
 
     def receive_sweep(self, fstart, fstop, data):
+        self.sweep_segments = list(self.sweep_dut.sweep_segments)
+        self.usable_bins = None
         if self.plot_state.block_mode:
             self.read_block()
             return
@@ -212,7 +215,6 @@ class MainPanel(QtGui.QWidget):
         if len(data) > 2:
             self.pow_data = data
         self.iq_data = None
-        self.usable_bins = [(0, len(data))]
 
         self.update_plot()
 
@@ -803,7 +805,8 @@ class MainPanel(QtGui.QWidget):
             trace.update_curve(
                 self.plot_state.freq_range,
                 self.pow_data,
-                self.usable_bins)
+                self.usable_bins,
+                self.sweep_segments)
 
 
     def update_iq(self):
