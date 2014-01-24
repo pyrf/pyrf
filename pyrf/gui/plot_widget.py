@@ -29,7 +29,10 @@ class Trace(object):
         self.freq_range = None
         self.color = trace_color
         self.edge_color = trace_color + (40,)
-        self.alternate_color = trace_color + (80,)
+        self.alternate_color = (
+            max(0, trace_color[0] - 60),
+            max(0, trace_color[1] - 60),
+            min(255, trace_color[2] + 60),)
         self.curves = []
         self.plot_area = plot_area
 
