@@ -110,6 +110,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         self._mode = mode
         for m in WSA5000_RFE_MODES:
             mode.addItem(m)
+        mode.addItem('Sweep ZIF')
         mode.addItem('Sweep ZIF/2')
         return mode
 

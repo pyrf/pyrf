@@ -180,7 +180,7 @@ class MainPanel(QtGui.QWidget):
                                               self.plot_state.fstop,
                                               self.plot_state.rbw,
                                               device_set,
-                                              continuous = False)
+                                              mode=self._sweep_mode)
 
     def read_block(self):
         self.cap_dut.capture_time_domain(self.plot_state.rbw)
@@ -409,6 +409,7 @@ class MainPanel(QtGui.QWidget):
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 self.plot_state.disable_block_mode(self)
+                self._sweep_mode = m.split()[-1]
                 return
 
             self._plot.const_window.show()

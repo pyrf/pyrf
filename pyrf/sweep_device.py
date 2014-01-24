@@ -119,7 +119,7 @@ class SweepDevice(object):
         :type rbw: float
         :param device_settings: antenna, gain and other device settings
         :type dict:
-        :param mode: sweep mode, 'ZIF/2' is the only mode currently supported
+        :param mode: sweep mode, 'ZIF/2' or 'ZIF'
         :type mode: string
         :param continuous: async continue after first sweep
         :type continuous: bool
@@ -274,7 +274,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     :type fstop: float
     :param rbw: requested RBW in Hz (output RBW may be smaller than requested)
     :type rbw: float
-    :param mode: sweep mode, 'ZIF/2' is the only mode currently supported
+    :param mode: sweep mode, 'ZIF/2' or 'ZIF'
     :type mode: string
     :param min_points: smallest number of points per capture
     :type min_points: int
@@ -321,7 +321,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     7. bins_keep is the total number of selected bins to keep; for
        single captures bins_run == bins_keep
     """
-    assert mode == 'ZIF/2'
+    assert mode in ('ZIF/2', 'ZIF')
     rfe_mode = 'ZIF'
     prop = device.properties
     out = []
@@ -329,9 +329,9 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     dc_offset2 = prop.DC_OFFSET_BW / 2.0
     full_bw = prop.FULL_BW[rfe_mode]
 
-    # FIXME: truncate to left-hand sweep area for now
     fstart = max(prop.MIN_TUNABLE[rfe_mode] - usable2, fstart)
-    fstop = min(prop.MAX_TUNABLE[rfe_mode] - dc_offset2, fstop)
+    fstop = min(prop.MAX_TUNABLE[rfe_mode] + (
+        usable2 if mode == 'ZIF' else -dc_offset2), fstop)
 
     if fstop <= fstart:
         return (fstart, fstart, [])
@@ -359,14 +359,21 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
         left_bin = math.ceil(left_edge / bin_size)
         fshift = 0 # always preferred
         wasted_left = left_bin * bin_size - left_edge
-        usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
+        if mode == 'ZIF':
+            usable_bins = (usable2 - wasted_left) // bin_size * 2
+        else:  # 'ZIF/2'
+            usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
 
     else:
         left_bin = decimation_edge_bins
         fshift = usable2 + decimation_edge - (decimated_bw / 2.0)
         wasted_left = 0 # FIXME
-        usable_bins = min(points - (decimation_edge_bins * 2),
-            (usable2 - dc_offset2) // bin_size)
+        if mode == 'ZIF':
+            usable_bins = min(points - (decimation_edge_bins * 2),
+                usable2 // bin_size * 2)
+        else:  # 'ZIF/2'
+            usable_bins = min(points - (decimation_edge_bins * 2),
+                (usable2 - dc_offset2) // bin_size)
 
     # step_size is limited by tuning resolution. usable_bw is limited by
     # bin_size. They won't be exactly equal, but try our best
