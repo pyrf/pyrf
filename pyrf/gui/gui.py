@@ -409,6 +409,8 @@ class MainPanel(QtGui.QWidget):
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 self.plot_state.disable_block_mode(self)
+                self._dev_group._dec_box.setEnabled(False)
+                self._dev_group._freq_shift_edit.setEnabled(False)
                 self._sweep_mode = m.split()[-1]
                 return
 
@@ -424,18 +426,15 @@ class MainPanel(QtGui.QWidget):
             cu._center_plot_view(self)
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
-            if self.plot_state.dev_set['rfe_mode'] == 'SH':
-                self._rbw_box.setCurrentIndex(4)           
-            else:
-                self._rbw_box.setCurrentIndex(3)   
+            self._rbw_box.setCurrentIndex(4 if m == 'SH' else 3)
             cu._center_plot_view(self)
-            if self.plot_state.dev_set['rfe_mode'] == 'HDR':
+            if m == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
             else:
                 self._dev_group._dec_box.setEnabled(True)
-                self._dev_group._freq_shift_edit.setEnabled(True)    
-            
+                self._dev_group._freq_shift_edit.setEnabled(True)
+
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
         self._dev_group._dec_box.currentIndexChanged.connect(new_dec)
