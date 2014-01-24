@@ -350,6 +350,7 @@ class DataPacket(object):
 
         self.valid_data = bool((trailer >> 18) & 1)
         self.reference_lock = bool((trailer >> 17) & 1)
+        self.spec_inv = bool((trailer >> 14) & 1)
         self.over_range = bool((trailer >> 13) & 1)
         self.sample_loss = bool((trailer >> 12) & 1)
 

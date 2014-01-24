@@ -19,9 +19,6 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
                                         present in captures with IQ data
     :param convert_to_dbm: convert the output values to dBm
 
-    This function uses only *dut.ADC_DYNAMIC_RANGE*,
-    *data_pkt.data* and *context['reflevel']*.
-
     :returns: numpy array of dBm values as floats
     """
     import numpy as np # import here so docstrings are visible even without numpy
@@ -54,8 +51,11 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
 
     if data_pkt.stream_id == VRT_IFDATA_PSD8:
-        # FIXME: convert_to_dbm?
+        # TODO: handle convert_to_dbm option
         power_spectrum = np.array(data, dtype=float)
+
+    if data_pkt.spec_inv:  # handle inverted spectrum
+        power_spectrum = np.flipup(power_spectrum)
 
     if convert_to_dbm:
         noiselevel_offset = (
