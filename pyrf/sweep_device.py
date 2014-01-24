@@ -394,9 +394,12 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
 
     # calculate steps and bins
     step_limit = (prop.MAX_TUNABLE[rfe_mode] - fcenter) // step_size
-    right_edge = usable2 - usable_bw - wasted_left
-    right0 = fcenter - right_edge
-    steps = 1 + round((float(fstop) - right0) / step_size)
+    if mode == 'ZIF':
+        right0 = fcenter + usable2 - wasted_left
+    else:  # 'ZIF/2'
+        right_edge = usable2 - usable_bw - wasted_left
+        right0 = fcenter - right_edge
+    steps = 1 + math.ceil((float(fstop) - right0) / step_size)
     if steps <= step_limit:
         right_bins = round(usable_bins * ((float(fstop) - right0) %
             step_size / step_size))
