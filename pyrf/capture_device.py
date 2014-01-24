@@ -81,10 +81,17 @@ class CaptureDevice(object):
         points = round(max(min_points, full_bw / rbw))
         points = 2 ** math.ceil(math.log(points, 2))
 
-        self.usable_bins = [(
-            int((pass_band_center - float(usable_bw) / full_bw / 2) * points),
-            int(points * float(usable_bw) / full_bw))]
-        if rfe_mode != 'ZIF' and not self._device_set.get('fshift', 0):
+        fshift = self._device_set.get('fshift', 0)
+        pass_band_center += fshift / full_bw
+        start0 = int((pass_band_center - float(usable_bw) / full_bw / 2)
+            * points)
+        run0 = int(points * float(usable_bw) / full_bw)
+        if start0 < 0:
+            run0 += start0
+            start0 = 0
+        self.usable_bins = [(start0, run0)]
+        if rfe_mode in ('SH', 'HDR') and not fshift:
+            # we're getting only 1/2 the bins
             self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
 
         if self.async_callback:
