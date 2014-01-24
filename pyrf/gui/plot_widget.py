@@ -84,8 +84,8 @@ class Trace(object):
             odd = True
             i = 0
             for run in sweep_segments:
-                c = self.plot_area.window.plot(x=xdata[i:i + run + 1],
-                    y=self.data[i:i + run + 1],
+                c = self.plot_area.window.plot(x=xdata[i:i + run],
+                    y=self.data[i:i + run],
                     pen=self.color if odd else self.alternate_color)
                 self.curves.append(c)
                 i = i + run
