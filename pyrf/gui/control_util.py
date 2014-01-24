@@ -273,27 +273,6 @@ def _change_min_level(layout):
     layout.plot_state.min_level = min
     _center_plot_view(layout)
 
-def _iq_plot_control(layout):
-    """
-    enable/disable the iq constallation and time domain plots
-    """
-    
-    if layout._iq_plot_checkbox.checkState() is QtCore.Qt.CheckState.Checked:
-        layout._plot.const_window.show()
-        layout._plot.iq_window.show()
-        layout._plot.grid(False)
-        layout._plot.grid(True)
-        layout.plot_state.enable_block_mode(layout)
-        layout._dev_group._rfe_mode.setCurrentIndex(0)
-    else:
-        if not layout.plot_state.trig:
-            layout.plot_state.disable_block_mode(layout)
-        layout._plot.const_window.hide()
-        layout._plot.iq_window.hide()
-        layout._plot.grid(False)
-        layout._plot.grid(True)
-        layout._dev_group._rfe_mode.setCurrentIndex(0)
-
 def _trigger_control(layout):
     """
     enable/disable triggers in the layout plot

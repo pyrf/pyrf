@@ -152,22 +152,22 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._ifgain_box.hide()
             self._dev_group._trigger.hide()
             self._dev_group._attenuator_box.show()
-            self._dev_group._rfe_mode.show()
 
         else:
             self._dev_group._antenna_box.show()
             self._dev_group._gain_box.show()
             self._dev_group._trigger.show()
             self._dev_group._attenuator_box.hide()
-            self._dev_group._rfe_mode.hide()
         self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
         self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
             device_settings=self.plot_state.dev_set)
         self.enable_controls()
         cu._select_center_freq(self)
-        self._iq_plot_checkbox.click()
         self._rbw_box.setCurrentIndex(3)
+        self._plot.const_window.show()
+        self._plot.iq_window.show()
+        self.plot_state.enable_block_mode(self)
         self.read_block()
 
     def read_sweep(self):
@@ -404,13 +404,25 @@ class MainPanel(QtGui.QWidget):
             self.cap_dut.configure_device(self.plot_state.dev_set)
         
         def new_input_mode():
-            self.plot_state.dev_set['rfe_mode'] =  str(self._dev_group._rfe_mode.itemText(self._dev_group._rfe_mode.currentIndex()))
+            m = self._dev_group._mode.currentText()
+            if m.startswith('Sweep '):
+                self._plot.const_window.hide()
+                self._plot.iq_window.hide()
+                self.plot_state.disable_block_mode(self)
+                return
+
+            self._plot.const_window.show()
+            self._plot.iq_window.show()
+            self.plot_state.enable_block_mode(self)
+
+            self.plot_state.dev_set['rfe_mode'] = str(m)
             cu._update_rbw_values(self)
-            self.plot_state.bandwidth =self.dut_prop.FULL_BW[self.plot_state.dev_set['rfe_mode']]
-            self.plot_state.update_freq_set(fcenter = (float(self._freq_edit.text())) * M)
+            self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]
+            self.plot_state.update_freq_set(
+                fcenter=float(self._freq_edit.text()) * M)
             cu._center_plot_view(self)
             self.cap_dut.configure_device(self.plot_state.dev_set)
-            
+
             if self.plot_state.dev_set['rfe_mode'] == 'SH':
                 self._rbw_box.setCurrentIndex(4)           
             else:
@@ -429,7 +441,7 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._freq_shift_edit.returnPressed.connect(new_freq_shift) 
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
-        self._dev_group._rfe_mode.currentIndexChanged.connect(new_input_mode)
+        self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
 
     
     def _trigger_control(self):
@@ -708,17 +720,11 @@ class MainPanel(QtGui.QWidget):
         fourth_row.addWidget(ref_level)
         fourth_row.addWidget(min_label)
         fourth_row.addWidget(min_level)
-        
-        fifth_row = QtGui.QHBoxLayout()
-        iq_checkbox =  self._iq_plot_controls() 
-        fifth_row.addWidget(iq_checkbox)
 
-        
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
         plot_controls_layout.addLayout(third_row)
         plot_controls_layout.addLayout(fourth_row)
-        plot_controls_layout.addLayout(fifth_row)
         plot_group.setLayout(plot_controls_layout)
         
         return plot_group
@@ -767,16 +773,7 @@ class MainPanel(QtGui.QWidget):
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label
-    
-    def _iq_plot_controls(self):
-        iq_plot_checkbox = QtGui.QCheckBox('Time Domain Plot')
-        
-        iq_plot_checkbox.clicked.connect(lambda: cu._iq_plot_control(self))
-        self._iq_plot_checkbox = iq_plot_checkbox
-        self.control_widgets.append(self._iq_plot_checkbox)
-        
-        return iq_plot_checkbox
-        
+
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s;' % colors.TEAL)

@@ -21,8 +21,8 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         dev_layout = QtGui.QVBoxLayout(self)
         
         first_row = QtGui.QHBoxLayout()
+        first_row.addWidget(self._mode_control())
         first_row.addWidget(self._attenuator_control())
-        first_row.addWidget(self._rfe_mode_control())
         first_row.addWidget(self._antenna_control())
         first_row.addWidget(self._trigger_control())
         
@@ -103,14 +103,14 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         attenuator.setChecked(True)
         self._attenuator_box = attenuator
         return attenuator
-        
-    def _rfe_mode_control(self):
-        rfe_mode = QtGui.QComboBox()
-        rfe_mode.setToolTip("Change the Input mode of the WSA")
-        self._rfe_mode = rfe_mode
-        for mode in WSA5000_RFE_MODES:
-            
-            rfe_mode.addItem(mode)
-        return rfe_mode
-        
+
+    def _mode_control(self):
+        mode = QtGui.QComboBox()
+        mode.setToolTip("Change the Input mode of the WSA")
+        self._mode = mode
+        for m in WSA5000_RFE_MODES:
+            mode.addItem(m)
+        mode.addItem('Sweep ZIF/2')
+        return mode
+
 
