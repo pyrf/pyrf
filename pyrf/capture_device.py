@@ -81,14 +81,11 @@ class CaptureDevice(object):
         points = round(max(min_points, full_bw / rbw))
         points = 2 ** math.ceil(math.log(points, 2))
 
-        if rfe_mode == 'ZIF':
-            self.usable_bins = [(
-                int((pass_band_center - float(usable_bw) / full_bw / 2) * points),
-                int(points * float(usable_bw) / full_bw))]
-        else:
-            self.usable_bins = [(
-                int((pass_band_center - float(usable_bw) / full_bw / 2) * points / 2),
-                int(points / 2 * float(usable_bw) / full_bw))]
+        self.usable_bins = [(
+            int((pass_band_center - float(usable_bw) / full_bw / 2) * points),
+            int(points * float(usable_bw) / full_bw))]
+        if rfe_mode != 'ZIF' and not self._device_set.get('fshift', 0):
+            self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
 
         if self.async_callback:
             self.connector.vrt_callback = self.read_data
