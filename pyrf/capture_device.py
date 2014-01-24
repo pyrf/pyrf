@@ -90,7 +90,7 @@ class CaptureDevice(object):
             run0 += start0
             start0 = 0
         self.usable_bins = [(start0, run0)]
-        if rfe_mode in ('SH', 'HDR') and not fshift:
+        if rfe_mode in ('SH', 'HDR'):
             # we're getting only 1/2 the bins
             self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
 
