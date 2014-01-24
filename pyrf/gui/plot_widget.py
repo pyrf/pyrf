@@ -64,25 +64,25 @@ class Trace(object):
             i = 0
             for start_bin, run_length in usable_bins:
                 if start_bin > i:
-                    c = self.plot_area.window.plot(pen=0.2)
-                    c.setData(x=xdata[i:start_bin+1], y=self.data[i:start_bin+1], pen = self.edge_color)
+                    c = self.plot_area.window.plot(x=xdata[i:start_bin+1],
+                        y=self.data[i:start_bin+1], pen=self.edge_color)
                     self.curves.append(c)
                     i = start_bin
                 if run_length:
-                    c = self.plot_area.window.plot(pen=self.color)
-                    c.setData(x=xdata[i:i+run_length+1], y=self.data[i:i+run_length+1], pen=self.color)
+                    c = self.plot_area.window.plot(x=xdata[i:i+run_length+1],
+                        y=self.data[i:i+run_length+1], pen=self.color)
                     self.curves.append(c)
                     i = i + run_length
             if i < len(xdata):
-                c = self.plot_area.window.plot(pen=0.2)
-                c.setData(x=xdata[i:], y=self.data[i:], pen = self.edge_color)
+                c = self.plot_area.window.plot(x=xdata[i:], y=self.data[i:],
+                    pen=self.edge_color)
                 self.curves.append(c)
         else:
             odd = True
             i = 0
             for run in sweep_segments:
-                c = self.plot_area.window.plot(pen=self.color)
-                c.setData(x=xdata[i:i + run + 1], y=self.data[i:i + run + 1],
+                c = self.plot_area.window.plot(x=xdata[i:i + run + 1],
+                    y=self.data[i:i + run + 1],
                     pen=self.color if odd else self.alternate_color)
                 self.curves.append(c)
                 i = i + run
