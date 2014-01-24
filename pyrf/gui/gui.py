@@ -248,7 +248,7 @@ class MainPanel(QtGui.QWidget):
         # add plot widget
         plot_width = 8
         
-        grid.addLayout(self._plot_layout(),0,0,13,plot_width)
+        grid.addWidget(self._plot_layout(),0,0,13,plot_width)
         
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
@@ -276,17 +276,19 @@ class MainPanel(QtGui.QWidget):
         self.setLayout(grid)
 
     def _plot_layout(self):
-        plot_layout =  QtGui.QGridLayout()
-        plot_layout.setSpacing(10)
-        plot_layout.addWidget(self._plot.window,0,0,1,5)
+        vsplit = QtGui.QSplitter()
+        vsplit.setOrientation(QtCore.Qt.Vertical)
+        vsplit.addWidget(self._plot.window)
 
-        plot_layout.addWidget(self._plot.const_window,1,0)
-        plot_layout.addWidget(self._plot.iq_window,1,2)
+        hsplit = QtGui.QSplitter()
+        hsplit.addWidget(self._plot.const_window)
+        hsplit.addWidget(self._plot.iq_window)
+        self._plot.const_window.heightForWidth(1)
         self._plot.const_window.hide()
         self._plot.iq_window.hide()
+        vsplit.addWidget(hsplit)
 
-
-        self._plot_layout = plot_layout
+        self._plot_layout = vsplit
         return self._plot_layout
 
     def _trace_controls(self):
