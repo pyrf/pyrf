@@ -71,7 +71,7 @@ class WSA5000_220Properties(object):
 class WSA5000_208Properties(WSA5000_220Properties):
     model = 'WSA5000-208'
 
-    MAX_TUNABLE = {'ZIF': 8000*M}
+    MAX_TUNABLE = {'ZIF': 8000*M, 'HDR': 8000*M, 'SH': 8000*M}
 
 
 class WSA(object):
