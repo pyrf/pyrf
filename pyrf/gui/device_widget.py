@@ -14,29 +14,28 @@ class DeviceControlsWidget(QtGui.QGroupBox):
 
 """
     def __init__(self, name = "Device Control"):
-        super(DeviceControlsWidget, self).__init__()       
-        
+        super(DeviceControlsWidget, self).__init__()
+
         self.setTitle(name)
-        
+
         dev_layout = QtGui.QVBoxLayout(self)
-        
+
         first_row = QtGui.QHBoxLayout()
         first_row.addWidget(self._mode_control())
         first_row.addWidget(self._attenuator_control())
         first_row.addWidget(self._antenna_control())
-        first_row.addWidget(self._trigger_control())
-        
+
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._decimation_control())
-        
+
         fshift_lable, fshift_edit, fshift_unit = self._freq_shift_control()
         second_row.addWidget(fshift_lable)
         second_row.addWidget(fshift_edit)
         second_row.addWidget(fshift_unit)
-        
+
         second_row.addWidget(self._gain_control())
         second_row.addWidget(self._ifgain_control())
-        
+
         dev_layout.addLayout(first_row)
         dev_layout.addLayout(second_row)
 
@@ -51,13 +50,11 @@ class DeviceControlsWidget(QtGui.QGroupBox):
             self._antenna_box.hide()
             self._gain_box.hide()
             self._ifgain_box.hide()
-            self._trigger.hide()
             self._attenuator_box.show()
 
         else:
             self._antenna_box.show()
             self._gain_box.show()
-            self._trigger.show()
             self._attenuator_box.hide()
 
     def _antenna_control(self):
@@ -108,12 +105,6 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         ifgain.setSuffix(" dB")
         self._ifgain_box = ifgain
         return ifgain
-    
-    def _trigger_control(self):
-        trigger = QtGui.QCheckBox("Trigger")
-        trigger.setToolTip("[T]\nTurn the Triggers on/off") 
-        self._trigger = trigger
-        return trigger
 
     def _attenuator_control(self):
         attenuator = QtGui.QCheckBox("Attenuator")
