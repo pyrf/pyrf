@@ -55,7 +55,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         power_spectrum = np.array(data, dtype=float)
 
     if data_pkt.spec_inv:  # handle inverted spectrum
-        power_spectrum = np.flipup(power_spectrum)
+        power_spectrum = np.flipud(power_spectrum)
 
     if convert_to_dbm:
         noiselevel_offset = (
