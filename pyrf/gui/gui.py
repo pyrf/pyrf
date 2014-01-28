@@ -146,10 +146,10 @@ class MainPanel(QtGui.QWidget):
         self.dut = dut
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = self.dut.properties
-        self._dev_group.configure(self.dut.properties)
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
         self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
             device_settings=self.plot_state.dev_set)
+        self._dev_group.configure(self.dut.properties)
         self.enable_controls()
         cu._select_center_freq(self)
         self._rbw_box.setCurrentIndex(3)
