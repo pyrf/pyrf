@@ -1,7 +1,5 @@
 from PySide import QtGui
 
-WSA5000_RFE_MODES = ['ZIF', 'SH', 'HDR']
-
 class DeviceControlsWidget(QtGui.QGroupBox):
 
     """
@@ -51,11 +49,17 @@ class DeviceControlsWidget(QtGui.QGroupBox):
             self._gain_box.hide()
             self._ifgain_box.hide()
             self._attenuator_box.show()
-
         else:
             self._antenna_box.show()
             self._gain_box.show()
             self._attenuator_box.hide()
+
+        while self._mode.count():
+            self._mode.removeItem(0)
+        for m in dut_prop.RFE_MODES:
+            self._mode.addItem(m)
+        self._mode.addItem('Sweep ZIF')
+        self._mode.addItem('Sweep ZIF/2')
 
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
@@ -116,10 +120,6 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         mode = QtGui.QComboBox()
         mode.setToolTip("Change the Input mode of the WSA")
         self._mode = mode
-        for m in WSA5000_RFE_MODES:
-            mode.addItem(m)
-        mode.addItem('Sweep ZIF')
-        mode.addItem('Sweep ZIF/2')
         return mode
 
 
