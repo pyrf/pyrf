@@ -1,4 +1,3 @@
-
 """
 The main application window and GUI controls
 
@@ -15,6 +14,7 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 from contextlib import contextmanager
+from pkg_resources import parse_version
 
 from pyrf.gui import colors
 from pyrf.gui import labels
@@ -141,6 +141,14 @@ class MainPanel(QtGui.QWidget):
     def open_device(self, name):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
+        if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
+                dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
+            too_old = QtGui.QMessageBox()
+            too_old.setText('Your device firmware version is {0}'
+                ' but this application is expecting at least version'
+                ' {1}. Some features may not work properly'.format(
+                dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
+            too_old.exec_()
         if self._output_file:
             dut.set_capture_output(self._output_file)
         self.dut = dut

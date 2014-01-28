@@ -43,6 +43,7 @@ class WSA4000Properties(object):
 
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
+    MINIMUM_FW_VERSION = '3.2.0-rc1'
 
     ADC_DYNAMIC_RANGE = 72.5
     NOISEFLOOR_CALIBRATION = -10
@@ -126,6 +127,8 @@ class WSA(object):
             self.properties = WSA5000_208Properties
         else:
             self.properties = WSA5000_220Properties
+
+        self.fw_version = device_id.split(',')[-1]
 
     def disconnect(self):
         """
