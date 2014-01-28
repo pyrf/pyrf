@@ -146,18 +146,7 @@ class MainPanel(QtGui.QWidget):
         self.dut = dut
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = self.dut.properties
-        if self.dut_prop.model.startswith('WSA5000'):
-            self._dev_group._antenna_box.hide()
-            self._dev_group._gain_box.hide()
-            self._dev_group._ifgain_box.hide()
-            self._dev_group._trigger.hide()
-            self._dev_group._attenuator_box.show()
-
-        else:
-            self._dev_group._antenna_box.show()
-            self._dev_group._gain_box.show()
-            self._dev_group._trigger.show()
-            self._dev_group._attenuator_box.hide()
+        self._dev_group.configure(self.dut.properties)
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
         self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
             device_settings=self.plot_state.dev_set)

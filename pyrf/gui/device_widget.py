@@ -40,9 +40,26 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         dev_layout.addLayout(first_row)
         dev_layout.addLayout(second_row)
 
-        self.setLayout(dev_layout)         
+        self.setLayout(dev_layout)
         self.layout = dev_layout
-    
+
+    def configure(self, dut_prop):
+        """
+        :param dut_prop: device properties object
+        """
+        if dut_prop.model.startswith('WSA5000'):
+            self._antenna_box.hide()
+            self._gain_box.hide()
+            self._ifgain_box.hide()
+            self._trigger.hide()
+            self._attenuator_box.show()
+
+        else:
+            self._antenna_box.show()
+            self._gain_box.show()
+            self._trigger.show()
+            self._attenuator_box.hide()
+
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
         antenna.setToolTip("Choose Antenna") 
