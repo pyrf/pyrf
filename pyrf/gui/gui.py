@@ -158,7 +158,6 @@ class MainPanel(QtGui.QWidget):
             self._dev_group._gain_box.show()
             self._dev_group._trigger.show()
             self._dev_group._attenuator_box.hide()
-        self._connect_device_controls()
         self.sweep_dut = SweepDevice(dut, self.receive_sweep)
         self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
             device_settings=self.plot_state.dev_set)
@@ -362,11 +361,11 @@ class MainPanel(QtGui.QWidget):
         return max_hold, min_hold, write, store, blank
 
     def _device_controls(self):
-
         self._dev_group = DeviceControlsWidget()
-        self.control_widgets.append(self._dev_group)   
+        self._connect_device_controls()
+        self.control_widgets.append(self._dev_group)
         return self._dev_group
-        
+
     def _connect_device_controls(self):
 
         def new_antenna():
