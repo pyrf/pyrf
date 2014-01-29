@@ -19,7 +19,7 @@ class CaptureDevice(object):
                             if given
     """
     def __init__(self, real_device, async_callback=None, device_settings=None):
-
+        
         self.real_device = real_device
         self.connector = self.real_device.connector
         if hasattr(self.connector, 'vrt_callback'):
@@ -33,7 +33,8 @@ class CaptureDevice(object):
                 raise CaptureDeviceError(
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
-
+        self.configure_device_flag = False
+        self._device_set = {}
         if device_settings is not None:
             self.configure_device(device_settings)
 
@@ -44,8 +45,9 @@ class CaptureDevice(object):
                                 and other device settings
         :type dict:
         """
-        self.real_device.apply_device_settings(device_settings)
-        self._device_set = device_settings
+        self.configure_device_flag = True
+        for param in device_settings:
+            self._device_set[param] = device_settings[param]
 
     def capture_time_domain(self, rbw, device_set = None, min_points=128):
         """
@@ -62,8 +64,10 @@ class CaptureDevice(object):
         """
         prop = self.real_device.properties
         
-        if device_set is not None:
-            self.configure_device(device_set)
+        if device_set is not None or self.configure_device_flag:
+            self.real_device.apply_device_settings(self._device_set)
+            self.configure_device_flag = False
+        
         rfe_mode = self._device_set['rfe_mode']
         full_bw = prop.FULL_BW[rfe_mode]
         usable_bw = prop.USABLE_BW[rfe_mode]
