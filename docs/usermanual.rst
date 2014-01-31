@@ -124,7 +124,6 @@ included with the source code.
 
 This API may be used in a blocking mode (the default) or in an asynchronous
 mode with using the `Twisted <http://twistedmatrix.com/>`_ python library.
-Asynchronous modes using other libraries may be added in the future.
 
 In blocking mode all methods that read from the device will wait
 to receive a response before returning.
@@ -140,14 +139,6 @@ returned from the API.
 To use the asynchronous when a WSA instance is created
 you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
 instance as the connector parameter, as in :ref:`twisted-show-i-q`
-
-
-Processing Tools
-----------------
-
-Additional PyRF tools are under active development, but will soon support
-processing blocks, multiprocess use and distributed processing as
-described in :ref:`planned-development`.
 
 
 .. _demo-gui:

@@ -13,7 +13,6 @@ Contents:
    usermanual
    reference
    examples
-   plans
 
 
 Hardware Support
