@@ -31,7 +31,7 @@ class SweepStep(namedtuple('SweepStep', '''
     """
     __slots__ = []
 
-    def to_sweep_entry(self, device, **kwargs):
+    def to_sweep_entry(self, device, rfe_mode, **kwargs):
         """
         Create a SweepEntry for device matching this SweepStep,
 
@@ -41,16 +41,17 @@ class SweepStep(namedtuple('SweepStep', '''
         if self.points > 32*1024:
             raise SweepDeviceError('large captures not yet supported')
 
-        return SweepEntry(
+        s = SweepEntry(
             fstart=self.fcenter,
             fstop=min(self.fcenter + (self.steps + 0.5) * self.fstep,
-                device.properties.MAX_TUNABLE),
+                device.properties.MAX_TUNABLE[rfe_mode]),
             fstep=self.fstep,
             fshift=self.fshift,
             decimation=self.decimation,
             spp=self.points,
             ppb=1,
             **kwargs)
+        return s
 
     @property
     def steps(self):
@@ -159,6 +160,7 @@ class SweepDevice(object):
         entries = []
         for ss in self.plan:
             entries.append(ss.to_sweep_entry(self.real_device,
+                'ZIF', # TODO: change when we support different rfe_modes
                 **self.device_settings))
 
         if self.async_callback:
