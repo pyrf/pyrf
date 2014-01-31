@@ -10,6 +10,7 @@ class CaptureDeviceError(Exception):
 class CaptureDevice(object):
     """
     Virtual device that returns power levels generated from a single data packet
+
     :param real_device: device that will will be used for capturing data,
                         typically a :class:`pyrf.thinkrf.WSA` instance.
     :param async_callback: callback to use for async operation (not used if
@@ -19,7 +20,7 @@ class CaptureDevice(object):
                             if given
     """
     def __init__(self, real_device, async_callback=None, device_settings=None):
-        
+
         self.real_device = real_device
         self.connector = self.real_device.connector
         if hasattr(self.connector, 'vrt_callback'):
@@ -41,7 +42,8 @@ class CaptureDevice(object):
     def configure_device(self, device_settings):
         """
         Configure the device settings on the next capture
-        :param device_settings: attenuator, decimation frequency shift 
+
+        :param device_settings: attenuator, decimation frequency shift
                                 and other device settings
         :type dict:
         """

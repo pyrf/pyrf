@@ -21,7 +21,7 @@ Add ``Python27`` and ``Python27\Scripts`` directories to your PATH environment
 variable.  e.g. if using the default install path, add::
 
   ;C:\Python27;C:\Python27\Scripts
-:
+
 Open a Command Prompt window and run the following to download the requirements::
 
   easy_install -U pywin32
@@ -123,7 +123,7 @@ There are simple examples that use this API under the "examples" directory
 included with the source code.
 
 This API may be used in a blocking mode (the default) or in an asynchronous
-mode with using the `Twisted <http://twistedmatrix.com/>`_ python library.
+mode with using the `Twisted`_ python library.
 
 In blocking mode all methods that read from the device will wait
 to receive a response before returning.

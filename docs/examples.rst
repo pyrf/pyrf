@@ -22,6 +22,8 @@ Example output:
    WSA4000 00:50:c2:ea:29:26 None at 10.126.110.113
 
 
+.. _twisted-show-i-q:
+
 show_i_q.py / twisted_show_i_q.py
 ---------------------------------
 

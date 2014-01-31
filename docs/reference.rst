@@ -98,7 +98,7 @@ pyrf.sweep_device
    :undoc-members:
 
 pyrf.capture_device
------------------
+-------------------
 
 .. automodule:: pyrf.capture_device
    :members:
