@@ -33,46 +33,49 @@ class CaptureDevice(object):
                 raise CaptureDeviceError(
                     "async_callback not applicable for sync operation")
         self.async_callback = async_callback
-        self.configure_device_flag = False
+        self._configure_device_flag = False
         self._device_set = {}
         if device_settings is not None:
             self.configure_device(device_settings)
 
     def configure_device(self, device_settings):
         """
-        Configure the device settings
+        Configure the device settings on the next capture
         :param device_settings: attenuator, decimation frequency shift 
                                 and other device settings
         :type dict:
         """
-        self.configure_device_flag = True
+        self._configure_device_flag = True
         for param in device_settings:
             self._device_set[param] = device_settings[param]
 
-    def capture_time_domain(self, rbw, device_set = None, min_points=128):
+    def capture_time_domain(self, rbw, device_settings=None, min_points=128):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
-        :param device_settings: attenuator, decimation frequency shift 
+        :param device_settings: attenuator, decimation frequency shift
                                 and other device settings
         :type dict:
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         """
         prop = self.real_device.properties
-        
-        if device_set is not None or self.configure_device_flag:
+
+        if device_settings:
+            self.configure_device(device_settings)
+
+        if self._configure_device_flag:
             self.real_device.apply_device_settings(self._device_set)
-            self.configure_device_flag = False
-        
+            self._configure_device_flag = False
+
         rfe_mode = self._device_set['rfe_mode']
         full_bw = prop.FULL_BW[rfe_mode]
         usable_bw = prop.USABLE_BW[rfe_mode]
         pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
-        
+
         freq = self._device_set['freq']
         self.fstart = freq - full_bw * pass_band_center
         self.fstop = freq + full_bw * (1 - pass_band_center)
