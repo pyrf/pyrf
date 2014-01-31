@@ -72,10 +72,10 @@ class Trace(object):
                     self.curves.append(c)
                     i = start_bin
                 if run_length:
-                    c = self.plot_area.window.plot(x=xdata[i:i+run_length+1],
-                        y=self.data[i:i+run_length+1], pen=self.color)
+                    c = self.plot_area.window.plot(x=xdata[i:i+run_length],
+                        y=self.data[i:i+run_length], pen=self.color)
                     self.curves.append(c)
-                    i = i + run_length
+                    i = i + run_length - 1
             if i < len(xdata):
                 c = self.plot_area.window.plot(x=xdata[i:], y=self.data[i:],
                     pen=self.edge_color)
