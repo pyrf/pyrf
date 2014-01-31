@@ -1,7 +1,10 @@
 import sys
 from PySide import QtGui
 from pyrf.gui.gui import MainWindow
-del sys.modules['twisted.internet.reactor']
+
+# pyinstaller + qt4reactor workaround:
+sys.modules.pop('twisted.internet.reactor', None)
+
 import qt4reactor
 import logging
 
