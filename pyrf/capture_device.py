@@ -110,6 +110,9 @@ class CaptureDevice(object):
         if rfe_mode in ('SH', 'HDR'):
             # we're getting only 1/2 the bins
             self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
+        # XXX usable bins for SH/HDR aren't correct yet, so remove them
+        if rfe_mode != 'ZIF':
+            self.usable_bins = [(0, points)]
 
         if self.async_callback:
             self.connector.vrt_callback = self.read_data
