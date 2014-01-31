@@ -59,7 +59,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         for m in dut_prop.RFE_MODES:
             self._mode.addItem(m)
         self._mode.addItem('Sweep ZIF')
-        self._mode.addItem('Sweep ZIF/2')
+        self._mode.addItem('Sweep ZIF left band')
 
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)

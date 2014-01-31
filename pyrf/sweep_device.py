@@ -104,7 +104,7 @@ class SweepDevice(object):
     def capture_power_spectrum(self,
             fstart, fstop, rbw,
             device_settings=None,
-            mode='ZIF/2',
+            mode='ZIF',
             continuous=False,
             min_points=128, max_points=8192):
         """
@@ -120,7 +120,7 @@ class SweepDevice(object):
         :type rbw: float
         :param device_settings: antenna, gain and other device settings
         :type dict:
-        :param mode: sweep mode, 'ZIF/2' or 'ZIF'
+        :param mode: sweep mode, 'ZIF left band' or 'ZIF'
         :type mode: string
         :param continuous: async continue after first sweep
         :type continuous: bool
@@ -276,7 +276,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     :type fstop: float
     :param rbw: requested RBW in Hz (output RBW may be smaller than requested)
     :type rbw: float
-    :param mode: sweep mode, 'ZIF/2' or 'ZIF'
+    :param mode: sweep mode, 'ZIF left band' or 'ZIF'
     :type mode: string
     :param min_points: smallest number of points per capture
     :type min_points: int
@@ -323,7 +323,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     7. bins_keep is the total number of selected bins to keep; for
        single captures bins_run == bins_keep
     """
-    assert mode in ('ZIF/2', 'ZIF')
+    assert mode in ('ZIF left band', 'ZIF')
     rfe_mode = 'ZIF'
     prop = device.properties
     out = []
@@ -363,7 +363,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
         wasted_left = left_bin * bin_size - left_edge
         if mode == 'ZIF':
             usable_bins = (usable2 - wasted_left) // bin_size * 2
-        else:  # 'ZIF/2'
+        else:  # 'ZIF left band'
             usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
 
     else:
@@ -373,7 +373,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
         if mode == 'ZIF':
             usable_bins = min(points - (decimation_edge_bins * 2),
                 usable2 // bin_size * 2)
-        else:  # 'ZIF/2'
+        else:  # 'ZIF left band'
             usable_bins = min(points - (decimation_edge_bins * 2),
                 (usable2 - dc_offset2) // bin_size)
 
@@ -398,7 +398,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     step_limit = (prop.MAX_TUNABLE[rfe_mode] - fcenter) // step_size
     if mode == 'ZIF':
         right0 = fcenter + usable2 - wasted_left
-    else:  # 'ZIF/2'
+    else:  # 'ZIF left band'
         right_edge = usable2 - usable_bw - wasted_left
         right0 = fcenter - right_edge
     steps = 1 + math.ceil((float(fstop) - right0) / step_size)

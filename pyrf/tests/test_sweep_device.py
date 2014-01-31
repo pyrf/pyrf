@@ -30,7 +30,7 @@ class TestPlanSweep(unittest.TestCase):
         it matches the expected plan
         """
         rfstart, rfstop, result = plan_sweep(WSA42, start, stop, rbw,
-            mode='ZIF/2', min_points=min_points)
+            mode='ZIF left band', min_points=min_points)
         self.assertEquals(result, [SweepStep(*s) for s in expected])
         if fstart is None:
             fstart = start

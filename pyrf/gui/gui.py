@@ -409,7 +409,7 @@ class MainPanel(QtGui.QWidget):
                 self.plot_state.disable_block_mode(self)
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
-                self._sweep_mode = m.split()[-1]
+                self._sweep_mode = m.split(' ',1)[1]
                 return
 
             self._plot.const_window.show()
