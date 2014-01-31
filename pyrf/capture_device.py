@@ -92,11 +92,21 @@ class CaptureDevice(object):
         pass_band_center += fshift / full_bw
         start0 = int((pass_band_center - float(usable_bw) / full_bw / 2)
             * points)
-        run0 = int(points * float(usable_bw) / full_bw)
-        if start0 < 0:
-            run0 += start0
-            start0 = 0
-        self.usable_bins = [(start0, run0)]
+        if rfe_mode != 'ZIF':
+            run0 = int(points * float(usable_bw) / full_bw)
+            self.usable_bins = [(start0, run0)]
+        else:
+            dc_offset_bw = prop.DC_OFFSET_BW
+            run0 = int(points * (float(usable_bw) - dc_offset_bw)/2 / full_bw)
+            start1 = int(math.ceil((pass_band_center + float(dc_offset_bw)
+                /2 / full_bw) * points))
+            run1 = run0
+            self.usable_bins = [(start0, run0), (start1, run1)]
+        for i, (start, run) in enumerate(self.usable_bins):
+            if start < 0:
+                run += start
+                start = 0
+                self.usable_bins[i] = (start, run)
         if rfe_mode in ('SH', 'HDR'):
             # we're getting only 1/2 the bins
             self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
