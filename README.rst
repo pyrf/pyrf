@@ -13,9 +13,9 @@ This library currently supports development for the
 Links
 -----
 
-* `Official github page <https://github.com/pyrf/pyrf>`_
-* `Documentation for this API <http://www.pyrf.org>`_
-* `WSA4000/WSA5000 Documentation <http://www.thinkrf.com/resources>`_
+* `PyRF github page <https://github.com/pyrf/pyrf>`_
+* `PyRF Documentation <http://www.pyrf.org>`_
+* `WSA4000/WSA5000 Documentation <http://www.thinkrf.com/documentation/>`_
 
 Spectrum Analyzer GUI
 ---------------------
