@@ -1,7 +1,7 @@
 import sys
 from PySide import QtGui
 from pyrf.gui.gui import MainWindow
-
+del sys.modules['twisted.internet.reactor']
 import qt4reactor
 import logging
 
