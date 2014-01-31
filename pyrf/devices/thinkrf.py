@@ -50,7 +50,7 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(0, 50*M, I_ONLY), (100*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
 
-    RFE_MODES = ('ZIF', 'HDR', 'SH')
+    RFE_MODES = ('ZIF', 'SH', 'HDR')
 
     FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000}
     USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000000}
