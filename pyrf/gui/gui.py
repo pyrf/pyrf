@@ -401,6 +401,8 @@ class MainPanel(QtGui.QWidget):
         
         def new_input_mode():
             m = self._dev_group._mode.currentText()
+            if not m:
+                return
             if m.startswith('Sweep '):
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
