@@ -4,7 +4,7 @@ from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 def compute_fft(dut, data_pkt, context, correct_phase=True,
-        hide_differential_dc_offset=True, convert_to_dbm=True, ref = None):
+        hide_differential_dc_offset=False, convert_to_dbm=True, ref = None):
     """
     Return an array of dBm values by computing the FFT of
     the passed data and reference level.
