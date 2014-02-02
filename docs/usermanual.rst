@@ -8,9 +8,8 @@ Installation
 ------------
 
 
-Windows Installation
+Windows Dependencies
 ~~~~~~~~~~~~~~~~~~~~
-
 
 Download and install, in the order as listed, the latest version of:
 
@@ -22,27 +21,7 @@ variable.  e.g. if using the default install path, add::
 
   ;C:\Python27;C:\Python27\Scripts
 
-Open a Command Prompt window and run the following to download the requirements::
-
-  easy_install -U pywin32
-  easy_install -U numpy
-  easy_install -U pyside
-  easy_install -U zope.interface
-  easy_install -U twisted
-  easy_install -U qt4reactor
-  easy_install -U pyqtgraph
-  easy_install -U scipy
-
-With ``pyrf``, first time running, use::
-
-  easy_install pyrf
-
-Next update usage, use::
-
-  easy_install -U pyrf
-
-If ``easy_install`` failed for any of the libraries above, download the latest
-version for ``32-bit Python 2.7`` directly from:
+Next install:
 
 * `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
   (e.g. "pywin32-218.win32-py2.7.exe")
@@ -61,8 +40,10 @@ version for ``32-bit Python 2.7`` directly from:
 
     python setup.py install
 
+Continue from :ref:`pyrf-installation` below.
 
-Debian/Ubuntu Installation
+
+Debian/Ubuntu Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use packaged requirements::
@@ -81,9 +62,12 @@ Or install GUI requirements from source::
    export LAPACK=/usr/lib/lapack/liblapack.so
    pip install -r gui-requirements.txt
 
+Continue from :ref:`pyrf-installation` below.
 
-Source Installation
-~~~~~~~~~~~~~~~~~~~
+.. _pyrf-installation:
+
+PyRF Installation
+~~~~~~~~~~~~~~~~~
 
 Download the development version::
 
