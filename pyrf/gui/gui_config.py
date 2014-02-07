@@ -91,27 +91,33 @@ class PlotState(object):
 
 
     def update_freq_set(self,
-                          fstart = None, 
-                          fstop = None, 
-                          fcenter = None, 
-                          rbw = None, 
-                          bw = None):
+                          fstart=None, 
+                          fstop=None, 
+                          fcenter=None, 
+                          rbw=None, 
+                          bw=None):
         prop = self.device_properties
 
-        rfe_mode = 'ZIF'
+        rfe_mode = self.dev_set['rfe_mode']
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
         
+        if self.block_mode:
+            decimation = self.dev_set['decimation']
+        else:
+            decimation = 1
         if fcenter is not None:
+            
             if self.block_mode:
-                self.fstart = fcenter - (self.bandwidth / 2)
-                self.fstop =  fcenter + (self.bandwidth / 2)
+                self.bandwidth = prop.FULL_BW[rfe_mode] 
+                self.fstart = fcenter - ((self.bandwidth / 2)) / decimation
+                self.fstop =  fcenter + (self.bandwidth / 2) / decimation
             else:
             
                 self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
                 self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
             
-            self.bandwidth = self.fstop - self.fstart
+            self.bandwidth = (self.fstop - self.fstart) 
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
             self.dev_set['freq'] =  fcenter
@@ -119,14 +125,14 @@ class PlotState(object):
         elif fstart is not None:
             fstart = min(fstart, self.fstop - prop.TUNING_RESOLUTION)
             self.fstart = fstart
-            self.bandwidth = self.fstop - fstart
+            self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
 
         elif fstop is not None:
             fstop = max(fstop, self.fstart + prop.TUNING_RESOLUTION)
             self.fstop = fstop
-            self.bandwidth = fstop - self.fstart
+            self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = fstop - (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
 
@@ -139,7 +145,7 @@ class PlotState(object):
             bw = max(bw, prop.TUNING_RESOLUTION)
             self.fstart = max(min_tunable, (self.center_freq - (bw / 2)))
             self.fstop = min(max_tunable, (self.center_freq + (bw / 2)))
-            self.bandwidth = self.fstop - self.fstart
+            self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
 

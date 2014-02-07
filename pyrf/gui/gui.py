@@ -368,11 +368,12 @@ class MainPanel(QtGui.QWidget):
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
             self.cap_dut.configure_device(self.plot_state.dev_set)
+        
         def new_dec():
             self.plot_state.dev_set['decimation'] = int(
                 self._dev_group._dec_box.currentText().split(' ')[-1])
             self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+            self.update_freq()
         def new_freq_shift():
             rfe_mode = 'ZIF'
             prop = self.dut.properties
@@ -641,7 +642,6 @@ class MainPanel(QtGui.QWidget):
             delta = 0    
         try:
             if self.plot_state.freq_sel == 'CENT':
-                
                 f = (float(self._freq_edit.text()) + delta) * M
                 if f > max_tunable or f < min_tunable:
                     return
