@@ -3,6 +3,8 @@
 import sys
 from pyrf.devices.thinkrf import WSA
 from pyrf.config import SweepEntry
+from pyrf.numpy_util import compute_fft
+from pyrf.util import collect_data_and_context
 import time
 
 SAMPLES = 2**20
@@ -40,10 +42,10 @@ for spp in [min(2**i, 2**16-16) for i in range(9, 17)]:
             break
     start = time.time()
     for i in xrange(captures):
-        while True:
-            pkt = dut.read()
-            if pkt.is_data_packet():
-                break
+        data, context = collect_data_and_context(dut)
+        if '-f' in sys.argv:
+            pow_data = compute_fft(dut,data, context)
+
     stop = time.time()
     dut.sweep_stop()
     dut.flush()
