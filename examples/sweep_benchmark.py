@@ -13,12 +13,15 @@ M = 1000000
 # connect to wsa
 dut = WSA()
 dut.connect(sys.argv[1])
-
+if len(sys.argv) > 1:
+    ppb = int(sys.argv[2])
+else:
+    ppb = 1
 # setup test conditions
 dut.reset()
 dut.request_read_perm()
 
-for spp in [min(2**i, 2**16-16) for i in range(9, 17)]:
+for spp in [min(2**i, 2**16-16) for i in range(6, 17)]:
     dut.abort()
     dut.flush()
     dut.sweep_clear()
@@ -29,7 +32,7 @@ for spp in [min(2**i, 2**16-16) for i in range(9, 17)]:
         fshift=0,
         decimation=1,
         spp=spp,
-        ppb=1,
+        ppb=ppb,
         )
     dut.sweep_add(s)
     captures = max(SAMPLES/spp, 1)
@@ -49,9 +52,10 @@ for spp in [min(2**i, 2**16-16) for i in range(9, 17)]:
     stop = time.time()
     dut.sweep_stop()
     dut.flush()
-    print 'spp %5d: %6.1f GHz/second (%4d packets, %4.1fs,  %10.1f samples/s)' % (
+    print 'blksize: %8d spp: %8d %6.1f GHz/second (%6d blocks, %4.1fs,  %10.1f samples/s)' % (
+        spp * ppb,
         spp,
         100 * M * captures / (stop - start) / 1e9,
         captures,
         (stop - start),
-        spp * captures / (stop - start))
+        spp * ppb * captures / (stop - start))
