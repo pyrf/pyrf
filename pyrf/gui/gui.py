@@ -174,6 +174,7 @@ class MainPanel(QtGui.QWidget):
         device_set.pop('freq')
         device_set.pop('decimation')
         device_set.pop('fshift')
+        device_set.pop('iq_output_path')
         self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
                                               self.plot_state.fstop,
                                               self.plot_state.rbw,
@@ -188,19 +189,22 @@ class MainPanel(QtGui.QWidget):
         # store usable bins before next call to capture_time_domain
         self.usable_bins = list(self.cap_dut.usable_bins)
         self.sweep_segments = None
-        if not self.plot_state.block_mode:
-            self.read_sweep()
-            return
-        self.read_block()
-        if 'reflevel' in data['context_pkt']:
-            self.ref_level = data['context_pkt']['reflevel']
 
-        self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-        self.raw_data = data['data_pkt']
+        # only read data if WSA digitizer is used
+        if self.plot_state.dev_set['iq_output_path'] == 'DIGITIZER':
+            if not self.plot_state.block_mode:
+                self.read_sweep()
+                return
+            self.read_block()
+            if 'reflevel' in data['context_pkt']:
+                self.ref_level = data['context_pkt']['reflevel']
+
+            self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+            self.raw_data = data['data_pkt']
 
 
 
-        self.update_plot()
+            self.update_plot()
 
     def receive_sweep(self, fstart, fstop, data):
         self.sweep_segments = list(self.sweep_dut.sweep_segments)
@@ -370,12 +374,13 @@ class MainPanel(QtGui.QWidget):
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
             self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+
         def new_dec():
             self.plot_state.dev_set['decimation'] = int(
                 self._dev_group._dec_box.currentText().split(' ')[-1])
             self.cap_dut.configure_device(self.plot_state.dev_set)
             self.update_freq()
+
         def new_freq_shift():
             rfe_mode = 'ZIF'
             prop = self.dut.properties
@@ -389,22 +394,26 @@ class MainPanel(QtGui.QWidget):
                 self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
                 return
             self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+
         def new_gain():
             self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
             self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+
         def new_ifgain():
             self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box.value()
             self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+
         def new_attenuator():
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_iq_path():
             self.plot_state.dev_set['iq_output_path'] = str(self._dev_group._iq_output_box.currentText().split()[-1])
+            if self._dev_group._mode.currentIndex() > 2:
+                self._dev_group._mode.setCurrentIndex(0)
+
             if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
+                # disable unwanted controls
                 cu._external_digitizer_mode(self)
             else:
                 cu._internal_digitizer_mode(self)
@@ -474,52 +483,58 @@ class MainPanel(QtGui.QWidget):
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")
         self._freq_group = freq_group
-        
+
         freq_layout = QtGui.QVBoxLayout()
-        
+
         fstart_hbox = QtGui.QHBoxLayout()
         fstart_bt, fstart_txt = self._fstart_controls()
         fstart_hbox.addWidget(fstart_bt)
         fstart_hbox.addWidget(fstart_txt)
         fstart_hbox.addWidget(QtGui.QLabel('MHz'))
+        self._fstart_hbox = fstart_hbox
 
         cfreq_hbox = QtGui.QHBoxLayout()
         cfreq_bt, cfreq_txt = self._center_freq()
         cfreq_hbox.addWidget(cfreq_bt)
         cfreq_hbox.addWidget(cfreq_txt)
         cfreq_hbox.addWidget(QtGui.QLabel('MHz'))
+        self._cfreq_hbox = cfreq_hbox
 
         bw_hbox = QtGui.QHBoxLayout()
         bw_bt, bw_txt = self._bw_controls()
         bw_hbox.addWidget(bw_bt)
         bw_hbox.addWidget(bw_txt)
         bw_hbox.addWidget(QtGui.QLabel('MHz'))
+        self._bw_hbox = bw_hbox
 
         fstop_hbox = QtGui.QHBoxLayout()
         fstop_bt, fstop_txt = self._fstop_controls()
         fstop_hbox.addWidget(fstop_bt)
         fstop_hbox.addWidget(fstop_txt)
         fstop_hbox.addWidget(QtGui.QLabel('MHz'))
+        self._fstop_hbox = fstop_hbox
 
         freq_inc_hbox = QtGui.QHBoxLayout()
         freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
         freq_inc_hbox.addWidget(freq_inc_minus)
         freq_inc_hbox.addWidget(freq_inc_steps)
         freq_inc_hbox.addWidget(freq_inc_plus)
+        self._freq_inc_hbox = freq_inc_hbox
 
         rbw_hbox = QtGui.QHBoxLayout()
         rbw = self._rbw_controls()
         rbw_hbox.addWidget(QtGui.QLabel('Resolution Bandwidth:'))
         rbw_hbox.addWidget(rbw)
+        self._rbw_hbox = rbw_hbox
 
-        freq_layout.addLayout(fstart_hbox)
-        freq_layout.addLayout(cfreq_hbox)
-        freq_layout.addLayout(bw_hbox)
-        freq_layout.addLayout(fstop_hbox)
-        freq_layout.addLayout(freq_inc_hbox)
-        freq_layout.addLayout(rbw_hbox)
+        freq_layout.addLayout(self._fstart_hbox)
+        freq_layout.addLayout(self._cfreq_hbox)
+        freq_layout.addLayout(self._bw_hbox)
+        freq_layout.addLayout(self._fstop_hbox)
+        freq_layout.addLayout(self._freq_inc_hbox)
+        freq_layout.addLayout(self._rbw_hbox)
         freq_group.setLayout(freq_layout)
-
+        self._freq_layout = freq_layout
         return freq_group
 
     def _center_freq(self):

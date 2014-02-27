@@ -27,8 +27,8 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._decimation_control())
 
-        fshift_lable, fshift_edit, fshift_unit = self._freq_shift_control()
-        second_row.addWidget(fshift_lable)
+        fshift_label, fshift_edit, fshift_unit = self._freq_shift_control()
+        second_row.addWidget(fshift_label)
         second_row.addWidget(fshift_edit)
         second_row.addWidget(fshift_unit)
 
@@ -78,7 +78,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         iq_output.addItem("IQ Path: CONNECTOR")
         self._iq_output_box = iq_output
         return iq_output
-    
+
     def _decimation_control(self):
         dec = QtGui.QComboBox(self)
         dec.setToolTip("Choose Decimation Rate") 
@@ -88,20 +88,20 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         self._dec_values = dec_values
         self._dec_box = dec
         return dec
-        
+
     def _freq_shift_control(self):
         fshift_label = QtGui.QLabel("Frequency Shift")
         self._fshift_label = fshift_label
-        
+
         fshift_unit = QtGui.QLabel("MHz")
         self._fshift_unit = fshift_unit
-        
+
         fshift = QtGui.QLineEdit("0")
         fshift.setToolTip("Frequency Shift") 
         self._freq_shift_edit = fshift
-        
+
         return fshift_label, fshift, fshift_unit
-        
+
     def _gain_control(self):
         gain = QtGui.QComboBox(self)
         gain.setToolTip("Choose RF Gain setting") 

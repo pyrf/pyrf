@@ -30,7 +30,8 @@ class PlotState(object):
             'freq':INIT_CENTER_FREQ,
             'decimation': 1,
             'fshift': 0,
-            'rfe_mode': 'ZIF'}
+            'rfe_mode': 'ZIF',
+            'iq_output_path': 'DIGITIZER'}
         self.mhold = False
         self.mhold_fft = None
         
