@@ -29,7 +29,7 @@ from pyrf.numpy_util import compute_fft
 from pyrf.devices.thinkrf import WSA
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
-    
+
 from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
 import control_util as cu
@@ -64,11 +64,12 @@ class MainWindow(QtGui.QMainWindow):
         self.initUI(output_file)
         self.show()
 
+
     def initUI(self, output_file):
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
-        self.mainPanel = MainPanel(output_file)
+        self.mainPanel = MainPanel(self,output_file)
         openAction = QtGui.QAction('&Open Device', self)
         openAction.triggered.connect( self.mainPanel.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
@@ -99,7 +100,8 @@ class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
-    def __init__(self, output_file):
+    def __init__(self, main_window,output_file):
+        self._main_window = main_window
         self.ref_level = 0
         self.dut = None
         self.control_widgets = []
@@ -399,7 +401,15 @@ class MainPanel(QtGui.QWidget):
         def new_attenuator():
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
             self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+
+        def new_iq_path():
+            self.plot_state.dev_set['iq_output_path'] = str(self._dev_group._iq_output_box.currentText().split()[-1])
+            if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
+                cu._external_digitizer_mode(self)
+            else:
+                cu._internal_digitizer_mode(self)
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
         def new_input_mode():
             m = self._dev_group._mode.currentText()
             if not m:
@@ -441,7 +451,7 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
         self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
-
+        self._dev_group._iq_output_box.currentIndexChanged.connect(new_iq_path)
     
     def _trigger_control(self):
         trigger = QtGui.QCheckBox("Trigger")

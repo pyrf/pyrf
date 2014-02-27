@@ -44,7 +44,7 @@ class SweepEntry(object):
     :param ppb: packets per block
     :param dwell_s: dwell time seconds
     :param dwell_us: dwell time microseconds
-    :param trigtype: trigger type ('none' or 'level')
+    :param trigtype: trigger type ('none', 'pulse' or 'level')
     :param level_fstart: level trigger starting frequency in Hz
     :param level_fstop: level trigger ending frequency in Hz
     :param level_amplitude: level trigger minimum in dBm

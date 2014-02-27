@@ -22,6 +22,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         first_row.addWidget(self._mode_control())
         first_row.addWidget(self._attenuator_control())
         first_row.addWidget(self._antenna_control())
+        first_row.addWidget(self._iq_output_control())
 
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._decimation_control())
@@ -48,11 +49,12 @@ class DeviceControlsWidget(QtGui.QGroupBox):
             self._antenna_box.hide()
             self._gain_box.hide()
             self._ifgain_box.hide()
-            self._attenuator_box.show()
+
         else:
             self._antenna_box.show()
             self._gain_box.show()
             self._attenuator_box.hide()
+            self._iq_output_box.hide()
 
         while self._mode.count():
             self._mode.removeItem(0)
@@ -68,6 +70,14 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         antenna.addItem("Antenna 2")
         self._antenna_box = antenna
         return antenna
+
+    def _iq_output_control(self):
+        iq_output = QtGui.QComboBox(self)
+        iq_output.setToolTip("Choose IQ Path")
+        iq_output.addItem("IQ Path: DIGITIZER")
+        iq_output.addItem("IQ Path: CONNECTOR")
+        self._iq_output_box = iq_output
+        return iq_output
     
     def _decimation_control(self):
         dec = QtGui.QComboBox(self)

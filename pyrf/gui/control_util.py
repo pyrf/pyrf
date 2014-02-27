@@ -305,7 +305,37 @@ def _update_rbw_values(layout):
     else:
         layout._rbw_box.addItems([str(p) + ' Hz' for p in layout._hdr_points_values])
             
-  
+def _external_digitizer_mode(layout):
+    """
+    Disable all controls/plots that are irrelavant in external digitizer mode
+    """
+    layout._plot_group.hide()
+    layout._trace_group.hide()
+    layout._plot_layout.hide()
+    for x in range(8):
+        layout._grid.setColumnMinimumWidth(x, 0)
+    screen = QtGui.QDesktopWidget().screenGeometry()
+    layout.setMinimumWidth(0)
+    layout.setMinimumHeight(0)
+    layout._main_window.setMinimumWidth(0)
+    layout._main_window.setMinimumHeight(0)
+
+    layout.resize(0,0)
+    layout._main_window.resize(0,0)
+
+def _internal_digitizer_mode(layout):
+    """
+    Enable all controls/plots that are irrelavant in internal digitizer mode
+    """
+    layout._plot_group.show()
+    layout._trace_group.show()
+    layout._plot_layout.show()
+    for x in range(8):
+        layout._grid.setColumnMinimumWidth(x, 300)
+    screen = QtGui.QDesktopWidget().screenGeometry()
+    layout.setMinimumWidth(screen.width() * 0.7)
+    layout.setMinimumHeight(screen.height() * 0.6)
+
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
                 '3': _select_bw,

@@ -193,6 +193,22 @@ class WSA(object):
         yield mode
 
     @sync_async
+    def iq_output_path(self, path=None):
+        """
+        This command sets or queries the WSA's current IQ path
+
+        :param path: 'DIGITIZER', 'CONNECTOR', or None to query
+        :returns: the current IQ path
+        """
+
+        if path is None:
+            buf = yield self.scpiget(":OUTPUT:IQ:MODE?")
+            path = buf.strip()
+        else:
+            self.scpiset(":OUTPUT:IQ:MODE %s" % path)
+        yield path
+
+    @sync_async
     def freq(self, freq=None):
         """
         This command sets or queries the tuned center frequency of the WSA.
@@ -710,6 +726,7 @@ class WSA(object):
             'trigger': self.trigger,
             'attenuator': self.attenuator,
             'rfe_mode': self.rfe_mode,
+            'iq_output_path': self.iq_output_path,
             }
 
         for k, v in settings.iteritems():
