@@ -481,36 +481,37 @@ class MainPanel(QtGui.QWidget):
         fstart_bt, fstart_txt = self._fstart_controls()
         fstart_hbox.addWidget(fstart_bt)
         fstart_hbox.addWidget(fstart_txt)
-        
+        fstart_hbox.addWidget(QtGui.QLabel('MHz'))
+
         cfreq_hbox = QtGui.QHBoxLayout()
         cfreq_bt, cfreq_txt = self._center_freq()
         cfreq_hbox.addWidget(cfreq_bt)
         cfreq_hbox.addWidget(cfreq_txt)
         cfreq_hbox.addWidget(QtGui.QLabel('MHz'))
-        
+
         bw_hbox = QtGui.QHBoxLayout()
         bw_bt, bw_txt = self._bw_controls()
         bw_hbox.addWidget(bw_bt)
         bw_hbox.addWidget(bw_txt)
+        bw_hbox.addWidget(QtGui.QLabel('MHz'))
 
-        
         fstop_hbox = QtGui.QHBoxLayout()
         fstop_bt, fstop_txt = self._fstop_controls()
         fstop_hbox.addWidget(fstop_bt)
         fstop_hbox.addWidget(fstop_txt)
+        fstop_hbox.addWidget(QtGui.QLabel('MHz'))
 
-        
         freq_inc_hbox = QtGui.QHBoxLayout()
         freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
         freq_inc_hbox.addWidget(freq_inc_minus)
         freq_inc_hbox.addWidget(freq_inc_steps)
         freq_inc_hbox.addWidget(freq_inc_plus)
-        
+
         rbw_hbox = QtGui.QHBoxLayout()
         rbw = self._rbw_controls()
         rbw_hbox.addWidget(QtGui.QLabel('Resolution Bandwidth:'))
         rbw_hbox.addWidget(rbw)
-        
+
         freq_layout.addLayout(fstart_hbox)
         freq_layout.addLayout(cfreq_hbox)
         freq_layout.addLayout(bw_hbox)
@@ -518,8 +519,9 @@ class MainPanel(QtGui.QWidget):
         freq_layout.addLayout(freq_inc_hbox)
         freq_layout.addLayout(rbw_hbox)
         freq_group.setLayout(freq_layout)
-        
+
         return freq_group
+
     def _center_freq(self):
         cfreq = QtGui.QPushButton('Center')
         cfreq.setToolTip("[2]\nTune the center frequency") 
@@ -533,10 +535,10 @@ class MainPanel(QtGui.QWidget):
             cu._select_center_freq(self)
             self.update_freq()
             self.update_freq_edit()
-        
+
         freq_edit.returnPressed.connect(lambda: freq_change())
         return cfreq, freq_edit
-    
+
     def _freq_incr(self):
         steps = QtGui.QComboBox(self)
         steps.addItem("Adjust: 1 MHz")
@@ -568,8 +570,7 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._freq_minus)
         self.control_widgets.append(self._fstep_box)
         return  steps, freq_plus, freq_minus
-    
-    
+
     def _bw_controls(self):
         bw = QtGui.QPushButton('Span')
         bw.setToolTip("[3]\nChange the bandwidth of the current plot")
@@ -585,7 +586,7 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._bw_edit)
         self.control_widgets.append(self._bw)
         return bw, bw_edit
-    
+
     def _fstart_controls(self):
         fstart = QtGui.QPushButton('Start')
         fstart.setToolTip("[1]\nTune the start frequency")
@@ -597,13 +598,13 @@ class MainPanel(QtGui.QWidget):
             cu._select_fstart(self)
             self.update_freq()
             self.update_freq_edit()
-            
+
         freq.returnPressed.connect(lambda: freq_change())
         self._fstart_edit = freq
         self.control_widgets.append(self._fstart)
         self.control_widgets.append(self._fstart_edit)
         return fstart, freq
-        
+
     def _fstop_controls(self):
         fstop = QtGui.QPushButton('Stop')
         fstop.setToolTip("[4]Tune the stop frequency") 
@@ -620,7 +621,7 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._fstop)
         self.control_widgets.append(self._fstop_edit)
         return fstop, freq
-           
+
     def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
         rbw.setToolTip("Change the RBW of the FFT plot")
@@ -628,7 +629,7 @@ class MainPanel(QtGui.QWidget):
         self._hdr_points_values = HDR_RBW_VALUES
         self._rbw_box = rbw
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
-        
+
         def new_rbw():
         
             if not self.plot_state.dev_set['rfe_mode'] == 'HDR':    
@@ -680,14 +681,14 @@ class MainPanel(QtGui.QWidget):
                     trace.data = self.pow_data
                 except AttributeError:
                     break
-					
+
         except ValueError:
             return
         if self.plot_state.trig:
             freq_region = self._plot.freqtrig_lines.getRegion()
             if (freq_region[0] < self.plot_state.fstart and freq_region[1] < self.plot_state.fstart) or (freq_region[0] > self.plot_state.fstop and freq_region[1] > self.plot_state.fstop):
                 self._plot.freqtrig_lines.setRegion([self.plot_state.fstart,self.plot_state. fstop]) 
-    
+
     def update_freq_edit(self):
         self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
         self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
