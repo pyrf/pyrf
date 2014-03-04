@@ -401,7 +401,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     else:  # 'ZIF left band'
         right_edge = usable2 - usable_bw - wasted_left
         right0 = fcenter - right_edge
-    steps = 1 + math.ceil((float(fstop) - right0) / step_size)
+    steps = max(1, 1 + math.ceil((float(fstop) - right0) / step_size))
     if steps <= step_limit:
         right_bins = round(usable_bins * ((float(fstop) - right0) %
             step_size / step_size))
