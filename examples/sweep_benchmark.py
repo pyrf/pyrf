@@ -13,7 +13,7 @@ M = 1000000
 # connect to wsa
 dut = WSA()
 dut.connect(sys.argv[1])
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
     ppb = int(sys.argv[2])
 else:
     ppb = 1
@@ -44,7 +44,7 @@ for spp in [min(2**i, 2**16-16) for i in range(9, 17)]:
         if pkt.is_context_packet() and pkt.fields.get('sweepid') == spp:
             break
     start = time.time()
-    for i in xrange(captures):
+    for i in xrange(captures * ppb):
         data, context = collect_data_and_context(dut)
         if '-f' in sys.argv:
             pow_data = compute_fft(dut,data, context)
