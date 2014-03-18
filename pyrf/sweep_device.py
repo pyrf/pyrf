@@ -106,7 +106,7 @@ class SweepDevice(object):
             device_settings=None,
             mode='ZIF',
             continuous=False,
-            min_points=128, max_points=8192):
+            min_points=128):
         """
         Initiate a capture of power spectral density by
         setting up a sweep list and starting a single sweep.
@@ -126,9 +126,6 @@ class SweepDevice(object):
         :type continuous: bool
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
-        :param max_points: largest number of points per capture from real_device
-                           (due to decimation limits points returned may be larger)
-        :type max_points: int
         """
         if continuous and not self.async_callback:
             raise SweepDeviceError(
@@ -141,7 +138,7 @@ class SweepDevice(object):
         self.real_device.request_read_perm()
 
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
-            fstart, fstop, rbw, mode, min_points, max_points)
+            fstart, fstop, rbw, mode, min_points)
         self.rfe_mode = 'SH' if mode == 'SH' else 'ZIF'
 
         self.sweep_segments = []
@@ -277,7 +274,7 @@ class SweepDevice(object):
 
 
 
-def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192):
+def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128):
     """
     :param device: a device class or instance such as
                    :class:`pyrf.devices.thinkrf.WSA`
@@ -291,9 +288,6 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     :type mode: string
     :param min_points: smallest number of points per capture
     :type min_points: int
-    :param max_points: largest number of points per capture (due to
-                       decimation limits points returned may be larger)
-    :type max_points: int
 
     The following device properties are used in planning the sweep:
 
@@ -306,13 +300,6 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
       0(DC) is always assumed to be available for direct digitization
     device.properties.MAX_TUNABLE
       the highest valid center frequency for arbitrart tuning in Hz
-    device.properties.MIN_DECIMATION
-      the lowest valid decimation value above 1, 1(no decimation) is
-      assumed to always be available
-    device.properties.MAX_DECIMATION
-      the highest valid decimation value, only powers of 2 will be used
-    device.properties.DECIMATED_USABLE
-      the fraction decimated output containing usable data, float < 1.0
     device.properties.DC_OFFSET_BW
       the range of frequencies around center that may be affected by
       a DC offset and should not be used
@@ -353,40 +340,16 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
     points = int(max(min_points, 2 ** math.ceil(math.log(points, 2))))
 
     decimation = 1
-    ideal_decimation = 2 ** math.ceil(math.log(float(points) / max_points, 2))
-    min_decimation = max(2, prop.MIN_DECIMATION[rfe_mode])
-    max_decimation = 2 ** math.floor(math.log(prop.MAX_DECIMATION[rfe_mode], 2))
-    if points > max_points and ideal_decimation >= min_decimation:
-        # decimate because number of points required for rbw is too large
-        decimation = min(max_decimation, ideal_decimation)
-        points /= decimation
-        decimated_bw = full_bw / decimation
-        decimation_edge_bins = math.ceil(points * prop.DECIMATED_USABLE / 2.0)
-        decimation_edge = decimation_edge_bins * decimated_bw / points
-
     bin_size = float(full_bw) / decimation / points
 
-    # left-hand sweep area
-    if decimation == 1:
-        left_edge = full_bw / 2.0 - usable2
-        left_bin = math.ceil(left_edge / bin_size)
-        fshift = 0 # always preferred
-        wasted_left = left_bin * bin_size - left_edge
-        if mode == 'ZIF left band':
-            usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
-        else:
-            usable_bins = (usable2 - wasted_left) // bin_size * 2
-
+    left_edge = full_bw / 2.0 - usable2
+    left_bin = math.ceil(left_edge / bin_size)
+    fshift = 0 # always preferred
+    wasted_left = left_bin * bin_size - left_edge
+    if mode == 'ZIF left band':
+        usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
     else:
-        left_bin = decimation_edge_bins
-        fshift = usable2 + decimation_edge - (decimated_bw / 2.0)
-        wasted_left = 0 # FIXME
-        if mode == 'ZIF left band':
-            usable_bins = min(points - (decimation_edge_bins * 2),
-                (usable2 - dc_offset2) // bin_size)
-        else:
-            usable_bins = min(points - (decimation_edge_bins * 2),
-                usable2 // bin_size * 2)
+        usable_bins = (usable2 - wasted_left) // bin_size * 2
 
     # step_size is limited by tuning resolution. usable_bw is limited by
     # bin_size. They won't be exactly equal, but try our best
