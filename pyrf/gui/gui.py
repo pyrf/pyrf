@@ -141,6 +141,8 @@ class MainPanel(QtGui.QWidget):
 
     @inlineCallbacks
     def open_device(self, name):
+        if self.dut:
+            self.dut.disconnect()
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(

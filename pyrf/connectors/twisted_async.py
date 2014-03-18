@@ -59,7 +59,8 @@ class TwistedConnector(object):
         self._vrt.set_recording_output(output_file)
 
     def disconnect(self):
-        pass # FIXME
+        self._vrt.transport.loseConnection()
+        self._scpi.transport.loseConnection()
 
     def scpiset(self, cmd):
         self._scpi.scpiset("%s\n" % cmd)
