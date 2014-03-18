@@ -356,6 +356,7 @@ def _internal_digitizer_mode(layout):
     # add sweep commands
     layout._dev_group._mode.addItem('Sweep ZIF')
     layout._dev_group._mode.addItem('Sweep ZIF left band')
+    layout._dev_group._mode.addItem('Sweep SH')
 
     # show digitizer controls
     layout._dev_group._dec_box.show()
