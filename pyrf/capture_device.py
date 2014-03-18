@@ -112,14 +112,13 @@ class CaptureDevice(object):
         if rfe_mode in ('SH', 'HDR'):
             # we're getting only 1/2 the bins
             self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
-        # XXX usable bins for SH/HDR aren't correct yet, so remove them
-        if rfe_mode != 'ZIF':
+        # XXX usable bins for HDR aren't correct yet, so remove them
+        if rfe_mode == 'HDR':
             self.usable_bins = [(0, points)]
 
         if self.async_callback:
             self.connector.vrt_callback = self.read_data
             self.real_device.capture(points, 1)
-
             return
 
         self.real_device.capture(points, 1)
@@ -136,7 +135,11 @@ class CaptureDevice(object):
             'context_pkt' : self._vrt_context,
             'data_pkt' : packet}
 
-        # FIXME: fstart and fstop not properly corrected for bins removed
+        # XXX here we "know" that bins = samples/2
+        if packet.spec_inv:
+            [(start, run)] = self.usable_bins
+            start = len(packet.data) / 2 - start - run
+            self.usable_bins = [(start, run)]
 
         if self.async_callback:
             self.async_callback(self.fstart, self.fstop, data)
