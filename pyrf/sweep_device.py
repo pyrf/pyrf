@@ -374,10 +374,8 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
         wasted_left = left_bin * bin_size - left_edge
         if mode == 'ZIF left band':
             usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
-        elif mode == 'ZIF':
+        else:
             usable_bins = (usable2 - wasted_left) // bin_size * 2
-        else:  # mode == 'SH'
-            usable_bins = (usable2 - wasted_left) // bin_size
 
     else:
         left_bin = decimation_edge_bins
@@ -386,12 +384,9 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=128, max_points=8192
         if mode == 'ZIF left band':
             usable_bins = min(points - (decimation_edge_bins * 2),
                 (usable2 - dc_offset2) // bin_size)
-        elif mode == 'ZIF':
+        else:
             usable_bins = min(points - (decimation_edge_bins * 2),
                 usable2 // bin_size * 2)
-        else:  # mode == 'SH'
-            usable_bins = min(points - (decimation_edge_bins * 2),
-                usable2 // bin_size)
 
     # step_size is limited by tuning resolution. usable_bw is limited by
     # bin_size. They won't be exactly equal, but try our best
