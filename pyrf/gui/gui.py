@@ -376,7 +376,7 @@ class MainPanel(QtGui.QWidget):
         def new_antenna():
             self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
             self.cap_dut.configure_device(self.plot_state.dev_set)
-
+        
         def new_dec():
             self.plot_state.dev_set['decimation'] = int(
                 self._dev_group._dec_box.currentText().split(' ')[-1])
@@ -441,6 +441,10 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['rfe_mode'] = str(m)
             cu._update_rbw_values(self)
             self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]
+            if self.plot_state.dev_set['rfe_mode'] == 'IQIN':
+                print self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]/M))
+            
             self.plot_state.update_freq_set(
                 fcenter=float(self._freq_edit.text()) * M)
             cu._center_plot_view(self)
@@ -528,7 +532,7 @@ class MainPanel(QtGui.QWidget):
         rbw_hbox.addWidget(QtGui.QLabel('Resolution Bandwidth:'))
         rbw_hbox.addWidget(rbw)
         self._rbw_hbox = rbw_hbox
-
+        
         freq_layout.addLayout(self._fstart_hbox)
         freq_layout.addLayout(self._cfreq_hbox)
         freq_layout.addLayout(self._bw_hbox)

@@ -34,15 +34,16 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     if data_pkt.stream_id == VRT_IFDATA_I14Q14:
         i_data = np.array(data[:,0], dtype=float)
         q_data = np.array(data[:,1], dtype=float)
-
+        
         # special handling of WSA4k "only I data is valid here" range
-        freq = context['rffreq']
-        for low, high, valid_data in prop.CAPTURE_FREQ_RANGES:
-            if low <= freq <= high:
-                break
+        if 'rffreq' in context:
+            freq = context['rffreq']
+            for low, high, valid_data in prop.CAPTURE_FREQ_RANGES:
+                if low <= freq <= high:
+                    break
 
-        if valid_data == I_ONLY:
-            power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
+            if valid_data == I_ONLY:
+                power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
         power_spectrum = _compute_fft(i_data, q_data, correct_phase,
                                         hide_differential_dc_offset, convert_to_dbm)
 
