@@ -13,6 +13,7 @@ import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import math
+
 from contextlib import contextmanager
 from pkg_resources import parse_version
 
@@ -185,28 +186,24 @@ class MainPanel(QtGui.QWidget):
 
     def read_block(self):
         self.cap_dut.capture_time_domain(self.plot_state.rbw)
-
+        
 
     def receive_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
         self.usable_bins = list(self.cap_dut.usable_bins)
         self.sweep_segments = None
 
-        # only read data if WSA digitizer is used
-        if self.plot_state.dev_set['iq_output_path'] == 'DIGITIZER':
-            if not self.plot_state.block_mode:
-                self.read_sweep()
-                return
-            self.read_block()
-            if 'reflevel' in data['context_pkt']:
-                self.ref_level = data['context_pkt']['reflevel']
+        if not self.plot_state.block_mode:
+            self.read_sweep()
+            return
+        self.read_block()
+        if 'reflevel' in data['context_pkt']:
+            self.ref_level = data['context_pkt']['reflevel']
 
-            self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-            self.raw_data = data['data_pkt']
+        self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+        self.raw_data = data['data_pkt']
 
-
-
-            self.update_plot()
+        self.update_plot()
 
     def receive_sweep(self, fstart, fstop, data):
         self.sweep_segments = list(self.sweep_dut.sweep_segments)
@@ -411,14 +408,13 @@ class MainPanel(QtGui.QWidget):
 
         def new_iq_path():
             self.plot_state.dev_set['iq_output_path'] = str(self._dev_group._iq_output_box.currentText().split()[-1])
-            if self._dev_group._mode.currentIndex() > 2:
-                self._dev_group._mode.setCurrentIndex(0)
-
+            
             if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
                 # disable unwanted controls
                 cu._external_digitizer_mode(self)
             else:
                 cu._internal_digitizer_mode(self)
+                self.cap_dut.configure_device(self.plot_state.dev_set)
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_input_mode():
@@ -442,7 +438,6 @@ class MainPanel(QtGui.QWidget):
             cu._update_rbw_values(self)
             self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]
             if self.plot_state.dev_set['rfe_mode'] == 'IQIN':
-                print self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]
                 self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]/M))
             
             self.plot_state.update_freq_set(

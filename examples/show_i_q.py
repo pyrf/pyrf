@@ -8,7 +8,7 @@ dut = WSA()
 dut.connect(sys.argv[1])
 
 # setup test conditions
-dut.reset()
+zdut.reset()
 dut.request_read_perm()
 dut.freq(2450e6)
 

@@ -365,7 +365,8 @@ def _internal_digitizer_mode(layout):
     layout._dev_group._fshift_unit.show()
 
     # restart capture controls
-    layout.read_block()
+    
+    
 
 hotkey_dict = {'1': _select_fstart,
                 '2': _select_center_freq,
