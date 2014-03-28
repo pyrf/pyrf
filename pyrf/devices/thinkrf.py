@@ -50,19 +50,19 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
 
-    RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'IQIN', 'DD')
 
-    FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000, 'IQIN': 625000000, 'DD': 625000000}
-    USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000000, 'IQIN': 50000000, 'DD': 0}
-    MIN_TUNABLE = {'ZIF': 50*M, 'HDR': 50*M, 'SH': 50*M, 'IQIN': 0.1*M, 'DD': 0}
-    MAX_TUNABLE = {'ZIF': 20000*M, 'HDR': 20000*M, 'SH': 20000*M, 'IQIN': 0.1*M, 'DD': 0}
-    MIN_DECIMATION = {'ZIF': 4, 'HDR': None, 'SH': 4, 'IQIN': None, 'DD': None}
-    MAX_DECIMATION = {'ZIF': 1024, 'HDR': None, 'SH': 4, 'IQIN': None, 'DD': None}
+    FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000 , 'SHN': 62500000, 'IQIN': 625000000, 'DD': 625000000}
+    USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000000,'SHN': 10000000, 'IQIN': 50000000, 'DD': 0}
+    MIN_TUNABLE = {'ZIF': 50*M, 'HDR': 50*M, 'SH': 50*M, 'SHN': 50*M,'IQIN': 0.1*M, 'DD': 0}
+    MAX_TUNABLE = {'ZIF': 20000*M, 'HDR': 20000*M, 'SH': 20000*M,'SHN': 20000*M, 'IQIN': 0.1*M, 'DD': 0}
+    MIN_DECIMATION = {'ZIF': 4, 'HDR': None, 'SH': 4, 'SHN': 4,'IQIN': None, 'DD': None}
+    MAX_DECIMATION = {'ZIF': 1024, 'HDR': None, 'SH': 4, 'SHN': 4,'IQIN': None, 'DD': None}
     DECIMATED_USABLE = 0.80
-    PASS_BAND_CENTER = {'ZIF': 0.5, 'HDR': 0.6, 'SH': 0.6, 'IQIN': 0.5, 'DD': 0.5}
+    PASS_BAND_CENTER = {'ZIF': 0.5, 'HDR': 0.6, 'SH': 0.6, 'SHN': 0.6,'IQIN': 0.5, 'DD': 0.5}
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
-    FSHIFT_AVAILABLE = {'ZIF': True, 'HDR': False, 'SH': True, 'IQIN': False, 'DD': False}
+    FSHIFT_AVAILABLE = {'ZIF': True, 'HDR': False, 'SH': True, 'SHN': True,'IQIN': False, 'DD': False}
     MAX_FSHIFT = {'ZIF': 62.5*M}
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
