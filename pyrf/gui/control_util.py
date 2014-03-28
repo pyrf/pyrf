@@ -4,8 +4,8 @@ import pyqtgraph as pg
 from pyrf.config import TriggerSettings
 
 AXIS_OFFSET = 7
-IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -1, 'IQIN': -1, 'DD': -1}
-IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': -1, 'IQIN': 1, 'DD': 1}
+IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
+IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
 def _center_plot_view(layout):
     """
     move the view to the center of the current FFT displayed

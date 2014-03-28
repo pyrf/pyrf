@@ -109,7 +109,7 @@ class CaptureDevice(object):
                 run += start
                 start = 0
                 self.usable_bins[i] = (start, run)
-        if rfe_mode in ('SH', 'HDR'):
+        if rfe_mode in ('SH', 'HDR', 'SHN'):
             # we're getting only 1/2 the bins
             self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
         # XXX usable bins for HDR aren't correct yet, so remove them
