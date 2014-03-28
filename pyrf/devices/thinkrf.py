@@ -70,10 +70,23 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
 
+class WSA5000_220_v2Properties(WSA5000_220Properties):
+    model = 'WSA5000-220 v2'
+    # v2 -> hardware revision without SHN mode
+
+    RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
+
+
 class WSA5000_208Properties(WSA5000_220Properties):
     model = 'WSA5000-208'
+    # 208 -> limited to 8GHz
 
-    MAX_TUNABLE = {'ZIF': 8000*M, 'HDR': 8000*M, 'SH': 8000*M}
+    MAX_TUNABLE = dict((mode, min(8000*M, f))
+        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+
+
+class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
+    model = 'WSA5000-208 v2'
 
 
 class WSA(object):
@@ -124,6 +137,10 @@ class WSA(object):
         device_id = (yield self.scpiget(":*idn?"))
         if device_id.startswith('ThinkRF,WSA4000'):
             self.properties = WSA4000Properties
+        elif device_id.startswith('ThinkRF,WSA5000-220 v2'):
+            self.properties = WSA5000_220_v2Properties
+        elif device_id.startswith('ThinkRF,WSA5000-208 v2'):
+            self.properties = WSA5000_208_v2Properties
         elif device_id.startswith('ThinkRF,WSA5000-208'):
             self.properties = WSA5000_208Properties
         else:
