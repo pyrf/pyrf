@@ -415,6 +415,7 @@ class MainPanel(QtGui.QWidget):
             else:
                 cu._internal_digitizer_mode(self)
                 self.cap_dut.configure_device(self.plot_state.dev_set)
+                self.read_block()
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_input_mode():
