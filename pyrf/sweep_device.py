@@ -50,6 +50,7 @@ class SweepStep(namedtuple('SweepStep', '''
             decimation=self.decimation,
             spp=self.points,
             ppb=1,
+            rfe_mode=rfe_mode,
             **kwargs)
         return s
 

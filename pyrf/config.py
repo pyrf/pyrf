@@ -68,7 +68,8 @@ class SweepEntry(object):
             level_fstart= 50000000,
             level_fstop=10000000000,
             level_amplitude=-100,
-            attenuator=True):
+            attenuator=True,
+            rfe_mode='ZIF'):
         self.fstart = fstart
         self.fstop = fstop
         self.fstep = fstep
@@ -86,6 +87,7 @@ class SweepEntry(object):
         self.level_fstop = level_fstop
         self.level_amplitude = level_amplitude
         self.attenuator = attenuator
+        self.rfe_mode = 'ZIF'
 
 
     def __str__(self):
@@ -104,6 +106,7 @@ class SweepEntry(object):
             + "\ttrigtype: %s\n" % self.trigtype
             + "\tlevel:fstart/fstop/famplitude: %d / %d / %d\n" % (self.level_fstart, self.level_fstop, self.level_amplitude)
             + "\tattenuator: %s\n" % self.attenuator
+            + "\trfe_mode: %s\n" % self.rfe_mode
             + ")")
 
 

@@ -64,8 +64,9 @@ class WSA5000_220Properties(object):
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {'ZIF': True, 'HDR': False, 'SH': True, 'IQIN': False, 'DD': False}
     MAX_FSHIFT = {'ZIF': 62.5*M}
-    SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
-        'attenuator', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
+    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
 
@@ -557,6 +558,8 @@ class WSA(object):
         :type entry: pyrf.config.SweepEntry
         """
         self.scpiset(":sweep:entry:new")
+        if 'rfe_mode' in self.properties.SWEEP_SETTINGS:
+            self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
         self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
         self.scpiset(":sweep:entry:freq:shift %d" % (entry.fshift))
