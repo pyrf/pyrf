@@ -327,8 +327,10 @@ def _external_digitizer_mode(layout):
     layout._main_window.resize(0,0)
 
     # remove sweep capture modes
-    layout._dev_group._mode.removeItem(4)
-    layout._dev_group._mode.removeItem(3)
+    c = layout._dev_group._mode.count()
+    layout._dev_group._mode.removeItem(c - 1)
+    layout._dev_group._mode.removeItem(c - 2)
+    layout._dev_group._mode.removeItem(c - 3)
 
     # remove all digitizer controls
     layout._dev_group._dec_box.hide()
