@@ -761,9 +761,7 @@ def parse_discovery_response(response):
     This function parses the WSA's raw discovery response
 
     :param response: The WSA's raw response to a discovery query
-    :returns: the current attenuator state
-
-    Return (model, serial, firmware version) based on a discovery
+    :returns: Return (model, serial, firmware version) based on a discovery
     response message
     """
     RESPONSE_HEADER_FORMAT = '>II'
@@ -783,9 +781,7 @@ def discover_wsa():
     on the local network
 
     :param response: The WSA's raw response to a discovery query
-    :returns: the current attenuator state
-
-    Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the WSA's
+    :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the WSA's
     available on the local network
     """
     WAIT_TIME = 0.125
