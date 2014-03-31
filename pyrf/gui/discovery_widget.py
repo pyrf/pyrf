@@ -10,10 +10,12 @@ class DiscoveryWidget(QtGui.QWidget):
     :open_device_callback: A function that is called which returns the IP selected
 
     """
-    def __init__(self, open_device_callback, name = "Discovery Tool"):
+    def __init__(self, open_device_callback=None, name="Discovery Tool"):
         super(DiscoveryWidget, self).__init__()
 
         self._open_device_callback = open_device_callback
+
+        self.setMinimumWidth(400)
         self.setWindowTitle('WSA Discovery To0l')
         dev_layout = QtGui.QVBoxLayout(self)
 
@@ -46,7 +48,7 @@ class DiscoveryWidget(QtGui.QWidget):
 
         for wsa in wsas_on_network:
             self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
-        self._list.itemClicked.connect(lambda: list_clicked())
+        self._list.currentItemChanged.connect(lambda: list_clicked())
 
         def list_clicked():
             self._ip.setText(self._list.currentItem().text()[-14:])
