@@ -2,11 +2,13 @@ from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
 from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
-
+from pyrf.windows_util import get_broadcast_addresses
 from pyrf.units import M
 
 import struct
-
+import socket
+import select
+import platform
 
 DISCOVERY_UDP_PORT = 18331
 _DISCOVERY_QUERY_CODE = 0x93315555
@@ -754,7 +756,13 @@ class WSA(object):
 
 
 def parse_discovery_response(response):
+
     """
+    This function parses the WSA's raw discovery response
+
+    :param response: The WSA's raw response to a discovery query
+    :returns: the current attenuator state
+
     Return (model, serial, firmware version) based on a discovery
     response message
     """
@@ -768,6 +776,36 @@ def parse_discovery_response(response):
     return tuple(v.rstrip('\0') for v in struct.unpack(WSA5000_FORMAT,
         response[8:]))
 
+
+def discover_wsa():
+    WAIT_TIME = 0.125
+
+    cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    cs.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    cs.setblocking(0)
+
+    wsa_list = []
+
+    if platform.system() == 'Windows':
+        destinations = get_broadcast_addresses()
+    else:
+        destinations = ['<broadcast>']
+
+    for d in destinations:
+        # send query command to WSA
+        query_struct = DISCOVERY_QUERY
+        cs.sendto(query_struct, (d, DISCOVERY_UDP_PORT))
+
+    while True:
+        ready, _, _ = select.select([cs], [], [], WAIT_TIME)
+        if not ready:
+            break
+        data, (host, port) = cs.recvfrom(1024)
+
+        model, serial, firmware = parse_discovery_response(data)
+
+        wsa_list.append(model + " " + serial + " " + firmware + " " + 'at' + " " + host)
+    return  wsa_list
 
 # for backwards compatibility
 WSA4000 = WSA
