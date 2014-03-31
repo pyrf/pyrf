@@ -88,7 +88,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.open_device_dialog()
 
-
     def open_device_dialog(self):
         self.discovery_widget = DiscoveryWidget(open_device_callback = self.mainPanel.open_device)
         self.discovery_widget.show()
@@ -100,7 +99,6 @@ class MainWindow(QtGui.QMainWindow):
             self.mainPanel.dut.reset()
         event.accept()
         self.mainPanel._reactor.stop()
-
 
 class MainPanel(QtGui.QWidget):
     """

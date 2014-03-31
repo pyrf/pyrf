@@ -60,7 +60,8 @@ class DiscoveryWidget(QtGui.QWidget):
 
         def ok_clicked():
             if not self._ip.text() == "":
-                self._open_device_callback(self._ip.text(), True)
+                if self._open_device_callback is not None:
+                    self._open_device_callback(self._ip.text(), True)
                 self.close()
         return self._ok
 
@@ -69,9 +70,11 @@ class DiscoveryWidget(QtGui.QWidget):
         self._cancel.clicked.connect(lambda: cancel_clicked())
 
         def  cancel_clicked():
-            self._open_device_callback(self._ip.text(), False)
+            if self._open_device_callback is not None:
+                self._open_device_callback(self._ip.text(), False)
             self.close()
         return self._cancel
 
     def closeEvent(self, event):
-        self._open_device_callback(self._ip.text(), False)
+        if self._open_device_callback is not None:
+            self._open_device_callback(self._ip.text(), False)
