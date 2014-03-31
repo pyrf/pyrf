@@ -45,7 +45,7 @@ class DiscoveryWidget(QtGui.QWidget):
         wsas_on_network = discover_wsa()
 
         for wsa in wsas_on_network:
-            self._list.addItem(wsa)
+            self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
         self._list.itemClicked.connect(lambda: list_clicked())
 
         def list_clicked():

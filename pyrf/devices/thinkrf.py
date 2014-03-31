@@ -776,8 +776,18 @@ def parse_discovery_response(response):
     return tuple(v.rstrip('\0') for v in struct.unpack(WSA5000_FORMAT,
         response[8:]))
 
-
 def discover_wsa():
+
+    """
+    This function returns a list that contains all of the WSA's available
+    on the local network
+
+    :param response: The WSA's raw response to a discovery query
+    :returns: the current attenuator state
+
+    Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the WSA's
+    available on the local network
+    """
     WAIT_TIME = 0.125
 
     cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -804,7 +814,10 @@ def discover_wsa():
 
         model, serial, firmware = parse_discovery_response(data)
 
-        wsa_list.append(model + " " + serial + " " + firmware + " " + 'at' + " " + host)
+        wsa_list.append({"MODEL": model,
+                        "SERIAL": serial,
+                        "FIRMWARE": firmware,
+                        "HOST": host})
     return  wsa_list
 
 # for backwards compatibility
