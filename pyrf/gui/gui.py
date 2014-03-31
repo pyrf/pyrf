@@ -13,6 +13,7 @@ import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import math
+import socket
 
 from contextlib import contextmanager
 from pkg_resources import parse_version
@@ -83,7 +84,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
         if name:
-            self.mainPanel.open_device(name)
+            self.mainPanel.open_device(name, True)
         else:
             self.discovery_widget = DiscoveryWidget(self.mainPanel.open_device)
             self.discovery_widget.show()
@@ -135,41 +136,43 @@ class MainPanel(QtGui.QWidget):
         if not ok:
             self._main_window.show()
             return
-        try:
 
-            if self.dut:
-                self.dut.disconnect()
-            self.show()
+        if self.dut:
+            self.dut.disconnect()
+        self._main_window.show()
+        try:
             dut = WSA(connector=TwistedConnector(self._reactor))
             yield dut.connect(name)
-            if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
-                    dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
-                too_old = QtGui.QMessageBox()
-                too_old.setText('Your device firmware version is {0}'
-                    ' but this application is expecting at least version'
-                    ' {1}. Some features may not work properly'.format(
-                    dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
-                too_old.exec_()
-            if self._output_file:
-                dut.set_capture_output(self._output_file)
-            self.dut = dut
-            self.plot_state = gui_config.PlotState(dut.properties)
-            self.dut_prop = self.dut.properties
-            self.sweep_dut = SweepDevice(dut, self.receive_sweep)
-            self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
-                device_settings=self.plot_state.dev_set)
-            self._dev_group.configure(self.dut.properties)
-            self.enable_controls()
-            cu._select_center_freq(self)
-            self._rbw_box.setCurrentIndex(3)
-            self._plot.const_window.show()
-            self._plot.iq_window.show()
-            self.plot_state.enable_block_mode(self)
-            self.read_block()
         except socket.error:
             name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
                 'Connection Failed, please try again\n\n'
                 'Enter a hostname or IP address:')
+
+        if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
+                dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
+            too_old = QtGui.QMessageBox()
+            too_old.setText('Your device firmware version is {0}'
+                ' but this application is expecting at least version'
+                ' {1}. Some features may not work properly'.format(
+                dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
+            too_old.exec_()
+        if self._output_file:
+            dut.set_capture_output(self._output_file)
+
+        self.dut = dut
+        self.plot_state = gui_config.PlotState(dut.properties)
+        self.dut_prop = self.dut.properties
+        self.sweep_dut = SweepDevice(dut, self.receive_sweep)
+        self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
+            device_settings=self.plot_state.dev_set)
+        self._dev_group.configure(self.dut.properties)
+        self.enable_controls()
+        cu._select_center_freq(self)
+        self._rbw_box.setCurrentIndex(3)
+        self._plot.const_window.show()
+        self._plot.iq_window.show()
+        self.plot_state.enable_block_mode(self)
+        self.read_block()
 
     def read_sweep(self):
         device_set = dict(self.plot_state.dev_set)
