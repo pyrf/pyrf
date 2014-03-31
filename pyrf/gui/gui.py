@@ -36,6 +36,8 @@ from util import hotkey_util, update_marker_traces
 import control_util as cu
 from plot_widget import Plot
 from device_widget import DeviceControlsWidget
+from discovery_widget import DiscoveryWidget
+
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
 
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
@@ -63,8 +65,6 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
         self.initUI(output_file)
-        self.show()
-
 
     def initUI(self, output_file):
         name = None
@@ -72,7 +72,7 @@ class MainWindow(QtGui.QMainWindow):
             name = sys.argv[1]
         self.mainPanel = MainPanel(self,output_file)
         openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect( self.mainPanel.open_device_dialog)
+        openAction.triggered.connect( self.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
@@ -82,12 +82,16 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu.addAction(exitAction)
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
-        self.mainPanel.show()
         if name:
             self.mainPanel.open_device(name)
         else:
-            self.mainPanel.open_device_dialog()
-    
+            self.discovery_widget = DiscoveryWidget(self.mainPanel.open_device)
+            self.discovery_widget.show()
+
+    def open_device_dialog(self):
+        self.discovery_widget = DiscoveryWidget(self.mainPanel.open_device)
+        self.discovery_widget.show()
+
     def closeEvent(self, event):
         if self.mainPanel.dut:
             self.mainPanel.dut.abort()
@@ -126,50 +130,46 @@ class MainPanel(QtGui.QWidget):
         from twisted.internet import reactor
         return reactor
 
-    def open_device_dialog(self):
-        name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
-            'Enter a hostname or IP address:')
-        while True:
-            if not ok:
-                return
-            try:
-                self.open_device(name)
-                break
-            except socket.error:
-                name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
-                    'Connection Failed, please try again\n\n'
-                    'Enter a hostname or IP address:')
-
     @inlineCallbacks
-    def open_device(self, name):
-        if self.dut:
-            self.dut.disconnect()
-        dut = WSA(connector=TwistedConnector(self._reactor))
-        yield dut.connect(name)
-        if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
-                dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
-            too_old = QtGui.QMessageBox()
-            too_old.setText('Your device firmware version is {0}'
-                ' but this application is expecting at least version'
-                ' {1}. Some features may not work properly'.format(
-                dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
-            too_old.exec_()
-        if self._output_file:
-            dut.set_capture_output(self._output_file)
-        self.dut = dut
-        self.plot_state = gui_config.PlotState(dut.properties)
-        self.dut_prop = self.dut.properties
-        self.sweep_dut = SweepDevice(dut, self.receive_sweep)
-        self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
-            device_settings=self.plot_state.dev_set)
-        self._dev_group.configure(self.dut.properties)
-        self.enable_controls()
-        cu._select_center_freq(self)
-        self._rbw_box.setCurrentIndex(3)
-        self._plot.const_window.show()
-        self._plot.iq_window.show()
-        self.plot_state.enable_block_mode(self)
-        self.read_block()
+    def open_device(self, name, ok):
+        if not ok:
+            self._main_window.show()
+            return
+        try:
+
+            if self.dut:
+                self.dut.disconnect()
+            self.show()
+            dut = WSA(connector=TwistedConnector(self._reactor))
+            yield dut.connect(name)
+            if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
+                    dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
+                too_old = QtGui.QMessageBox()
+                too_old.setText('Your device firmware version is {0}'
+                    ' but this application is expecting at least version'
+                    ' {1}. Some features may not work properly'.format(
+                    dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
+                too_old.exec_()
+            if self._output_file:
+                dut.set_capture_output(self._output_file)
+            self.dut = dut
+            self.plot_state = gui_config.PlotState(dut.properties)
+            self.dut_prop = self.dut.properties
+            self.sweep_dut = SweepDevice(dut, self.receive_sweep)
+            self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
+                device_settings=self.plot_state.dev_set)
+            self._dev_group.configure(self.dut.properties)
+            self.enable_controls()
+            cu._select_center_freq(self)
+            self._rbw_box.setCurrentIndex(3)
+            self._plot.const_window.show()
+            self._plot.iq_window.show()
+            self.plot_state.enable_block_mode(self)
+            self.read_block()
+        except socket.error:
+            name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
+                'Connection Failed, please try again\n\n'
+                'Enter a hostname or IP address:')
 
     def read_sweep(self):
         device_set = dict(self.plot_state.dev_set)
@@ -186,7 +186,7 @@ class MainPanel(QtGui.QWidget):
 
     def read_block(self):
         self.cap_dut.capture_time_domain(self.plot_state.rbw)
-        
+
 
     def receive_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
@@ -248,9 +248,9 @@ class MainPanel(QtGui.QWidget):
 
         # add plot widget
         plot_width = 8
-        
+
         grid.addWidget(self._plot_layout(),0,0,13,plot_width)
-        
+
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
         self.marker_labels.append(marker_label)
@@ -258,7 +258,7 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(marker_label, 0, 1, 1, 2)
         grid.addWidget(delta_label, 0, 3, 1, 2)
         grid.addWidget(diff_label , 0, 5, 1, 2)
- 
+
         y = 0
         x = plot_width
 
@@ -294,14 +294,14 @@ class MainPanel(QtGui.QWidget):
 
     def _trace_controls(self):
         trace_group = QtGui.QGroupBox("Traces")
-  
+
         self._trace_group = trace_group
-        
+
         trace_controls_layout = QtGui.QVBoxLayout()
-        
+
         # first row will contain the tabs
         first_row = QtGui.QHBoxLayout()
-        
+
         # add tabs for each trace
         trace_tab = QtGui.QTabBar()
         count = 0
@@ -314,13 +314,13 @@ class MainPanel(QtGui.QWidget):
             icon = QtGui.QIcon(pixmap)
             trace_tab.setTabIcon(count,icon)
             count += 1
-        
+
         self._trace_tab = trace_tab
         trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
-            
+
         self.control_widgets.append(self._trace_tab)
         first_row.addWidget(trace_tab)
-        
+
         # second row contains the tab attributes
         second_row = QtGui.QHBoxLayout()
         max_hold, min_hold, write, store, blank  = self._trace_items()
@@ -333,9 +333,9 @@ class MainPanel(QtGui.QWidget):
         trace_controls_layout.addLayout(second_row) 
         trace_group.setLayout(trace_controls_layout)
         return trace_group
-        
+
     def _trace_items(self):
-    
+
         trace_attr = {}
         store = QtGui.QCheckBox('Store')
         store.clicked.connect(lambda: cu._store_trace(self))
@@ -345,19 +345,19 @@ class MainPanel(QtGui.QWidget):
         max_hold = QtGui.QRadioButton('Max Hold')
         max_hold.clicked.connect(lambda: cu._max_hold(self))
         trace_attr['max_hold'] = max_hold
-        
+
         min_hold = QtGui.QRadioButton('Min Hold')
         min_hold.clicked.connect(lambda: cu._min_hold(self))
         trace_attr['min_hold'] = min_hold
-        
+
         write = QtGui.QRadioButton('Write')
         write.clicked.connect(lambda: cu._trace_write(self))
         trace_attr['write'] = write
-         
+
         blank = QtGui.QRadioButton('Blank')
         blank.clicked.connect(lambda: cu._blank_trace(self))
         trace_attr['blank'] = blank
-                
+
         self._trace_attr = trace_attr
         self._trace_attr['write'].click()
         return max_hold, min_hold, write, store, blank
