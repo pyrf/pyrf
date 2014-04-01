@@ -7,6 +7,7 @@ import platform
 
 from pyrf.devices.thinkrf import (DISCOVERY_UDP_PORT, DISCOVERY_QUERY,
     parse_discovery_response)
+from pyrf.windows_util import get_broadcast_addresses
 
 WAIT_TIME = 0.125
 
@@ -16,8 +17,7 @@ class DiscoverWSAs(DatagramProtocol):
         self.transport.socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         if platform.system() == 'Windows':
-            import _windows_networks
-            destinations = _windows_networks.get_broadcast_addresses()
+            destinations = get_broadcast_addresses()
         else:
             destinations = ['<broadcast>']
         for d in destinations:
