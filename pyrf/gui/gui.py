@@ -83,15 +83,36 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
         if name:
-            self.mainPanel.open_device(name, True)
+            self.open_device(name, True)
         else:
             self.open_device_dialog()
 
     def open_device_dialog(self):
         self.discovery_widget = DiscoveryWidget(
-            open_device_callback=self.mainPanel.open_device,
+            open_device_callback=self.open_device,
             name="Open Device")
         self.discovery_widget.show()
+
+    @inlineCallbacks
+    def open_device(self, name, ok):
+        if not ok:
+            self.show()
+            return
+
+        self.show()
+        dut = WSA(connector=TwistedConnector(self._get_reactor()))
+        yield dut.connect(name)
+
+        if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
+                dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
+            too_old = QtGui.QMessageBox()
+            too_old.setText('Your device firmware version is {0}'
+                ' but this application is expecting at least version'
+                ' {1}. Some features may not work properly'.format(
+                dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
+            too_old.exec_()
+        self.controller.set_device(dut)
+
 
     def closeEvent(self, event):
         if self.mainPanel.dut:
@@ -99,7 +120,13 @@ class MainWindow(QtGui.QMainWindow):
             self.mainPanel.dut.flush()
             self.mainPanel.dut.reset()
         event.accept()
-        self.mainPanel._reactor.stop()
+        self._get_reactor().stop()
+
+    def _get_reactor(self):
+        # late import because installReactor is being used
+        from twisted.internet import reactor
+        return reactor
+
 
 class MainPanel(QtGui.QWidget):
     """
@@ -126,7 +153,6 @@ class MainPanel(QtGui.QWidget):
         self.initUI()
         self.disable_controls()
         self.ref_level = 0
-        self._reactor = self._get_reactor()
 
     def device_changed(self, state, dut):
         self.plot_state = state  # FIXME: don't store this
@@ -143,33 +169,6 @@ class MainPanel(QtGui.QWidget):
     def state_changed(self, state):
         self.plot_state = state  # FIXME: don't save this here
         # FIXME: trigger updates of things
-
-    def _get_reactor(self):
-        # late import because installReactor is being used
-        from twisted.internet import reactor
-        return reactor
-
-    @inlineCallbacks
-    def open_device(self, name, ok):
-        if not ok:
-            self._main_window.show()
-            return
-
-        if self.dut:
-            self.dut.disconnect()
-        self._main_window.show()
-        dut = WSA(connector=TwistedConnector(self._reactor))
-        yield dut.connect(name)
-
-        if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
-                dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
-            too_old = QtGui.QMessageBox()
-            too_old.setText('Your device firmware version is {0}'
-                ' but this application is expecting at least version'
-                ' {1}. Some features may not work properly'.format(
-                dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
-            too_old.exec_()
-        self.controller.set_device(dut)
 
     def keyPressEvent(self, event):
         if self.dut:
