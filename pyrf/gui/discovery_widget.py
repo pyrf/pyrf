@@ -45,7 +45,7 @@ class DiscoveryWidget(QtGui.QWidget):
         self._list = QtGui.QListWidget()
         self._refresh_list()
 
-        self._list.currentItemChanged.connect(lambda: list_clicked())
+        self._list.currentItemChanged.connect(list_clicked)
 
         def list_clicked():
             if self._list.currentItem() is not None:
@@ -54,7 +54,7 @@ class DiscoveryWidget(QtGui.QWidget):
 
     def _ok_button(self):
         self._ok = QtGui.QPushButton("Ok")
-        self._ok.clicked.connect(lambda: ok_clicked())
+        self._ok.clicked.connect(ok_clicked)
 
         def ok_clicked():
             if not self._ip.text() == "":
@@ -65,13 +65,13 @@ class DiscoveryWidget(QtGui.QWidget):
 
     def _refresh_button(self):
         self._refresh = QtGui.QPushButton("Refresh")
-        self._refresh.clicked.connect(lambda: self._refresh_list())
+        self._refresh.clicked.connect(self._refresh_list)
 
         return self._refresh
 
     def _cancel_button(self):
         self._cancel = QtGui.QPushButton("Cancel")
-        self._cancel.clicked.connect(lambda: cancel_clicked())
+        self._cancel.clicked.connect(cancel_clicked)
 
         def  cancel_clicked():
             if self._open_device_callback is not None:
@@ -88,4 +88,4 @@ class DiscoveryWidget(QtGui.QWidget):
         wsas_on_network = discover_wsa()
         wsas_on_network.sort(key=operator.itemgetter('SERIAL'))
         for wsa in wsas_on_network:
-            self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
+            self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]]))
