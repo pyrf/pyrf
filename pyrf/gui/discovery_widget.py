@@ -16,7 +16,7 @@ class DiscoveryWidget(QtGui.QWidget):
         self._open_device_callback = open_device_callback
 
         self.setMinimumWidth(400)
-        self.setWindowTitle('WSA Discovery To0l')
+        self.setWindowTitle(name)
         dev_layout = QtGui.QVBoxLayout(self)
 
         first_row = QtGui.QHBoxLayout()
