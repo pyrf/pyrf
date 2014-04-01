@@ -1,4 +1,5 @@
 from PySide import QtGui
+import operator
 from pyrf.devices.thinkrf import discover_wsa
 
 class DiscoveryWidget(QtGui.QWidget):
@@ -43,12 +44,8 @@ class DiscoveryWidget(QtGui.QWidget):
 
     def _wsa_list(self):
         self._list = QtGui.QListWidget()
+        self._refresh_list()
 
-        # add wsa connections to list
-        wsas_on_network = discover_wsa()
-
-        for wsa in wsas_on_network:
-            self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
         self._list.currentItemChanged.connect(lambda: list_clicked())
 
         def list_clicked():
@@ -69,13 +66,8 @@ class DiscoveryWidget(QtGui.QWidget):
 
     def _refresh_button(self):
         self._refresh = QtGui.QPushButton("Refresh")
-        self._refresh.clicked.connect(lambda: refresh_clicked())
+        self._refresh.clicked.connect(lambda: self._refresh_list())
 
-        def refresh_clicked():
-            self._list.clear()
-            wsas_on_network = discover_wsa()
-            for wsa in wsas_on_network:
-                self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
         return self._refresh
 
     def _cancel_button(self):
@@ -91,3 +83,10 @@ class DiscoveryWidget(QtGui.QWidget):
     def closeEvent(self, event):
         if self._open_device_callback is not None:
             self._open_device_callback(self._ip.text(), False)
+
+    def _refresh_list(self):
+        self._list.clear()
+        wsas_on_network = discover_wsa()
+        wsas_on_network.sort(key=operator.itemgetter('SERIAL'))
+        for wsa in wsas_on_network:
+            self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
