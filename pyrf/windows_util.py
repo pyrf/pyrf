@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import subprocess
 def get_broadcast_addresses():
     """
