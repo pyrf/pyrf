@@ -88,7 +88,9 @@ class MainWindow(QtGui.QMainWindow):
             self.open_device_dialog()
 
     def open_device_dialog(self):
-        self.discovery_widget = DiscoveryWidget(open_device_callback = self.mainPanel.open_device)
+        self.discovery_widget = DiscoveryWidget(
+            open_device_callback=self.mainPanel.open_device,
+            name="Open Device")
         self.discovery_widget.show()
 
     def closeEvent(self, event):
