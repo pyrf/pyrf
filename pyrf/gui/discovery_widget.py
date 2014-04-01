@@ -3,7 +3,6 @@ import operator
 from pyrf.devices.thinkrf import discover_wsa
 
 class DiscoveryWidget(QtGui.QWidget):
-
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
     can be used to control the WSA4000/WSA5000
@@ -21,14 +20,14 @@ class DiscoveryWidget(QtGui.QWidget):
         dev_layout = QtGui.QVBoxLayout(self)
 
         first_row = QtGui.QHBoxLayout()
-        first_row.addWidget(QtGui.QLabel("WSA5000 Units Available on Local Network"))
+        first_row.addWidget(QtGui.QLabel("Devices Available on Local Network"))
 
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._wsa_list())
 
         third_row = QtGui.QHBoxLayout()
         self._ip = QtGui.QLineEdit()
-        third_row.addWidget(self._ip)    
+        third_row.addWidget(self._ip)
 
         fourth_row = QtGui.QHBoxLayout()
         fourth_row.addWidget(self._ok_button())
