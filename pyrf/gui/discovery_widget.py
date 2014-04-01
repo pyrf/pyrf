@@ -45,22 +45,23 @@ class DiscoveryWidget(QtGui.QWidget):
         self._list = QtGui.QListWidget()
         self._refresh_list()
 
-        self._list.currentItemChanged.connect(list_clicked)
-
         def list_clicked():
             if self._list.currentItem() is not None:
                 self._ip.setText(self._list.currentItem().text()[-14:])
+        self._list.currentItemChanged.connect(list_clicked)
+
         return self._list
 
     def _ok_button(self):
         self._ok = QtGui.QPushButton("Ok")
-        self._ok.clicked.connect(ok_clicked)
 
         def ok_clicked():
             if not self._ip.text() == "":
                 if self._open_device_callback is not None:
                     self._open_device_callback(self._ip.text(), True)
                 self.close()
+        self._ok.clicked.connect(ok_clicked)
+
         return self._ok
 
     def _refresh_button(self):
@@ -71,12 +72,13 @@ class DiscoveryWidget(QtGui.QWidget):
 
     def _cancel_button(self):
         self._cancel = QtGui.QPushButton("Cancel")
-        self._cancel.clicked.connect(cancel_clicked)
 
-        def  cancel_clicked():
+        def cancel_clicked():
             if self._open_device_callback is not None:
                 self._open_device_callback(self._ip.text(), False)
             self.close()
+        self._cancel.clicked.connect(cancel_clicked)
+
         return self._cancel
 
     def closeEvent(self, event):
