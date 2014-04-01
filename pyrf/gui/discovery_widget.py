@@ -31,6 +31,7 @@ class DiscoveryWidget(QtGui.QWidget):
 
         fourth_row = QtGui.QHBoxLayout()
         fourth_row.addWidget(self._ok_button())
+        fourth_row.addWidget(self._refresh_button())
         fourth_row.addWidget(self._cancel_button())
 
         dev_layout.addLayout(first_row)
@@ -51,7 +52,8 @@ class DiscoveryWidget(QtGui.QWidget):
         self._list.currentItemChanged.connect(lambda: list_clicked())
 
         def list_clicked():
-            self._ip.setText(self._list.currentItem().text()[-14:])
+            if self._list.currentItem() is not None:
+                self._ip.setText(self._list.currentItem().text()[-14:])
         return self._list
 
     def _ok_button(self):
@@ -64,6 +66,17 @@ class DiscoveryWidget(QtGui.QWidget):
                     self._open_device_callback(self._ip.text(), True)
                 self.close()
         return self._ok
+
+    def _refresh_button(self):
+        self._refresh = QtGui.QPushButton("Refresh")
+        self._refresh.clicked.connect(lambda: refresh_clicked())
+
+        def refresh_clicked():
+            self._list.clear()
+            wsas_on_network = discover_wsa()
+            for wsa in wsas_on_network:
+                self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]])) 
+        return self._refresh
 
     def _cancel_button(self):
         self._cancel = QtGui.QPushButton("Cancel")
