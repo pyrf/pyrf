@@ -756,7 +756,6 @@ class WSA(object):
 
 
 def parse_discovery_response(response):
-
     """
     This function parses the WSA's raw discovery response
 
@@ -774,17 +773,15 @@ def parse_discovery_response(response):
     return tuple(v.rstrip('\0') for v in struct.unpack(WSA5000_FORMAT,
         response[8:]))
 
-def discover_wsa():
-
+def discover_wsa(wait_time=0.125):
     """
     This function returns a list that contains all of the WSA's available
     on the local network
 
-    :param response: The WSA's raw response to a discovery query
+    :param wait_time: The total time to wait for responses in seconds
     :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the WSA's
     available on the local network
     """
-    WAIT_TIME = 0.125
 
     cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     cs.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -803,7 +800,7 @@ def discover_wsa():
         cs.sendto(query_struct, (d, DISCOVERY_UDP_PORT))
 
     while True:
-        ready, _, _ = select.select([cs], [], [], WAIT_TIME)
+        ready, _, _ = select.select([cs], [], [], wait_time)
         if not ready:
             break
         data, (host, port) = cs.recvfrom(1024)
