@@ -13,7 +13,6 @@ import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import math
-import socket
 
 from contextlib import contextmanager
 from pkg_resources import parse_version
@@ -138,13 +137,8 @@ class MainPanel(QtGui.QWidget):
         if self.dut:
             self.dut.disconnect()
         self._main_window.show()
-        try:
-            dut = WSA(connector=TwistedConnector(self._reactor))
-            yield dut.connect(name)
-        except socket.error:
-            name, ok = QtGui.QInputDialog.getText(self, 'Open Device',
-                'Connection Failed, please try again\n\n'
-                'Enter a hostname or IP address:')
+        dut = WSA(connector=TwistedConnector(self._reactor))
+        yield dut.connect(name)
 
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
