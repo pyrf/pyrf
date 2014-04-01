@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pyrf.devices.thinkrf import discover_wsa
 
 wsas_on_network = discover_wsa()
