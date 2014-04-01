@@ -20,13 +20,11 @@ from pkg_resources import parse_version
 from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui import gui_config
+from pyrf.gui.controller import SpecAController
 
-from pyrf.sweep_device import SweepDevice
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
-from pyrf.capture_device import CaptureDevice
 from pyrf.units import M
-from pyrf.numpy_util import compute_fft
 from pyrf.devices.thinkrf import WSA
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
@@ -62,17 +60,19 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_WIDTH = screen.width() * 0.7
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
-        self.initUI(output_file)
+
+        self.controller = SpecAController()
+        self.initUI()
         self.show()
 
 
-    def initUI(self, output_file):
+    def initUI(self):
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
-        self.mainPanel = MainPanel(self,output_file)
+        self.mainPanel = MainPanel(self.controller)
         openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect( self.mainPanel.open_device_dialog)
+        openAction.triggered.connect(self.mainPanel.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
@@ -87,7 +87,7 @@ class MainWindow(QtGui.QMainWindow):
             self.mainPanel.open_device(name)
         else:
             self.mainPanel.open_device_dialog()
-    
+
     def closeEvent(self, event):
         if self.mainPanel.dut:
             self.mainPanel.dut.abort()
@@ -101,12 +101,15 @@ class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
-    def __init__(self, main_window,output_file):
-        self._main_window = main_window
+    def __init__(self, controller):
+        self.controller = controller
+        controller.device_change.connect(self.device_changed)
+        controller.state_change.connect(self.state_changed)
+        controller.capture_receive.connect(self.capture_received)
+
         self.ref_level = 0
         self.dut = None
         self.control_widgets = []
-        self._output_file = output_file
         super(MainPanel, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(screen.width() * 0.7)
@@ -120,6 +123,22 @@ class MainPanel(QtGui.QWidget):
         self.disable_controls()
         self.ref_level = 0
         self._reactor = self._get_reactor()
+
+    def device_changed(self, state, dut):
+        self.plot_state = state  # FIXME: don't store this
+        self.dut_prop = dut.properties
+        self._dev_group.configure(dut.properties)
+        self.enable_controls()
+        cu._select_center_freq(self)
+        self._rbw_box.setCurrentIndex(3)  # wat
+        self._plot.const_window.show()
+        self._plot.iq_window.show()
+        self.plot_state.enable_block_mode(self)
+        self.controller.read_block()
+
+    def state_changed(self, state):
+        self.plot_state = state  # FIXME: don't save this here
+        # FIXME: trigger updates of things
 
     def _get_reactor(self):
         # late import because installReactor is being used
@@ -154,76 +173,12 @@ class MainPanel(QtGui.QWidget):
                 ' {1}. Some features may not work properly'.format(
                 dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
             too_old.exec_()
-        if self._output_file:
-            dut.set_capture_output(self._output_file)
-        self.dut = dut
-        self.plot_state = gui_config.PlotState(dut.properties)
-        self.dut_prop = self.dut.properties
-        self.sweep_dut = SweepDevice(dut, self.receive_sweep)
-        self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
-            device_settings=self.plot_state.dev_set)
-        self._dev_group.configure(self.dut.properties)
-        self.enable_controls()
-        cu._select_center_freq(self)
-        self._rbw_box.setCurrentIndex(3)
-        self._plot.const_window.show()
-        self._plot.iq_window.show()
-        self.plot_state.enable_block_mode(self)
-        self.read_block()
-
-    def read_sweep(self):
-        device_set = dict(self.plot_state.dev_set)
-        device_set.pop('rfe_mode')
-        device_set.pop('freq')
-        device_set.pop('decimation')
-        device_set.pop('fshift')
-        device_set.pop('iq_output_path')
-        self.sweep_dut.capture_power_spectrum(self.plot_state.fstart,
-                                              self.plot_state.fstop,
-                                              self.plot_state.rbw,
-                                              device_set,
-                                              mode=self._sweep_mode)
-
-    def read_block(self):
-        self.cap_dut.capture_time_domain(self.plot_state.rbw)
-        
-
-    def receive_capture(self, fstart, fstop, data):
-        # store usable bins before next call to capture_time_domain
-        self.usable_bins = list(self.cap_dut.usable_bins)
-        self.sweep_segments = None
-
-        if not self.plot_state.block_mode:
-            self.read_sweep()
-            return
-        self.read_block()
-        if 'reflevel' in data['context_pkt']:
-            self.ref_level = data['context_pkt']['reflevel']
-
-        self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-        self.raw_data = data['data_pkt']
-
-        self.update_plot()
-
-    def receive_sweep(self, fstart, fstop, data):
-        self.sweep_segments = list(self.sweep_dut.sweep_segments)
-        self.usable_bins = None
-        if self.plot_state.block_mode:
-            self.read_block()
-            return
-        self.read_sweep()
-
-        if len(data) > 2:
-            self.pow_data = data
-        self.iq_data = None
-
-        self.update_plot()
-
+        self.controller.set_device(dut)
 
     def keyPressEvent(self, event):
         if self.dut:
             hotkey_util(self, event)
-           
+
     def mousePressEvent(self, event):
         if self.dut:
             marker = self._plot.markers[self._marker_tab.currentIndex()]
@@ -248,9 +203,9 @@ class MainPanel(QtGui.QWidget):
 
         # add plot widget
         plot_width = 8
-        
+
         grid.addWidget(self._plot_layout(),0,0,13,plot_width)
-        
+
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
         self.marker_labels.append(marker_label)
@@ -428,7 +383,8 @@ class MainPanel(QtGui.QWidget):
                 self.plot_state.disable_block_mode(self)
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
-                self._sweep_mode = m.split(' ',1)[1]
+                # FIXME: so terrible
+                self.controller._sweep_mode = m.split(' ',1)[1]
                 return
 
             self._plot.const_window.show()
@@ -437,14 +393,15 @@ class MainPanel(QtGui.QWidget):
 
             self.plot_state.dev_set['rfe_mode'] = str(m)
             cu._update_rbw_values(self)
-            self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]
+            self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]  # FIXME: wrong place for this
             if self.plot_state.dev_set['rfe_mode'] == 'IQIN':
                 self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]/M))
             
             self.plot_state.update_freq_set(
                 fcenter=float(self._freq_edit.text()) * M)
             cu._center_plot_view(self)
-            self.cap_dut.configure_device(self.plot_state.dev_set)
+            # FIXME: wrong place for this
+            self.controller._capture_device.configure_device(self.plot_state.dev_set)
 
             self._rbw_box.setCurrentIndex(4 if m == 'SH' else 3)
             cu._center_plot_view(self)
@@ -814,12 +771,20 @@ class MainPanel(QtGui.QWidget):
         diff_label.setMinimumHeight(25)
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
-       
-    def update_plot(self):
-       
+
+    def capture_received(self, state, raw, power, usable, segments):
+        self.plot_state = state  # FIXME: don't store this
+        self.raw_data = raw
+        self.pow_data = power
+        self.usable_bins = usable
+        self.sweep_segments = segments
+
+        # FIXME: seems odd
         self.plot_state.update_freq_range(self.plot_state.fstart,
-                                              self.plot_state.fstop, 
+                                              self.plot_state.fstop,
                                               len(self.pow_data))
+
+        # FIXME: pass values instead of using members
         self.update_trace()
         self.update_iq()
         self.update_marker()
@@ -835,8 +800,10 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
+        if not self.raw_data:
+            return
 
-        if self.raw_data.stream_id == VRT_IFDATA_I14Q14:    
+        if self.raw_data.stream_id == VRT_IFDATA_I14Q14:
             data = self.raw_data.data.numpy_array()
             i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
             q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
