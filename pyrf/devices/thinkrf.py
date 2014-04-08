@@ -239,7 +239,7 @@ class WSA(object):
 
         if src is None:
             buf = yield self.scpiget(":SOURCE:REFERENCE:PLL?")
-            path = buf.strip()
+            src = buf.strip()
         else:
             assert src in ('INT', 'EXT')
             self.scpiset(":SOURCE:REFERENCE:PLL %s" % src)
@@ -766,6 +766,7 @@ class WSA(object):
             'attenuator': self.attenuator,
             'rfe_mode': self.rfe_mode,
             'iq_output_path': self.iq_output_path,
+            'pll_reference': self.pll_reference,
             }
 
         for k, v in settings.iteritems():

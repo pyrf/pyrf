@@ -20,9 +20,13 @@ class DeviceControlsWidget(QtGui.QGroupBox):
 
         row = QtGui.QHBoxLayout()
         row.addWidget(self._mode_control())
-        row.addWidget(self._attenuator_control())
         row.addWidget(self._antenna_control())
         row.addWidget(self._iq_output_control())
+        dev_layout.addLayout(row)
+
+        row = QtGui.QHBoxLayout()
+        row.addWidget(self._attenuator_control())
+        row.addWidget(self._pll_reference_control())
         dev_layout.addLayout(row)
 
         row = QtGui.QHBoxLayout()
@@ -54,6 +58,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
             self._gain_box.show()
             self._attenuator_box.hide()
             self._iq_output_box.hide()
+            self._pll_box.hide()
 
         while self._mode.count():
             self._mode.removeItem(0)
@@ -120,16 +125,24 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         self._ifgain_box = ifgain
         return ifgain
 
+    def _mode_control(self):
+        mode = QtGui.QComboBox()
+        mode.setToolTip("Change the Input mode of the WSA")
+        self._mode = mode
+        return mode
+
     def _attenuator_control(self):
         attenuator = QtGui.QCheckBox("Attenuator")
         attenuator.setChecked(True)
         self._attenuator_box = attenuator
         return attenuator
 
-    def _mode_control(self):
-        mode = QtGui.QComboBox()
-        mode.setToolTip("Change the Input mode of the WSA")
-        self._mode = mode
-        return mode
+    def _pll_reference_control(self):
+        pll = QtGui.QComboBox(self)
+        pll.setToolTip("Choose PLL Reference")
+        pll.addItem("PLL Reference: INTERNAL")
+        pll.addItem("PLL Reference: EXTERNAL")
+        self._pll_box = pll
+        return pll
 
 

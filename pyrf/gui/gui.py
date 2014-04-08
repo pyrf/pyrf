@@ -403,6 +403,14 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
+        def new_pll_reference():
+            if 'INTERNAL' in str(self._dev_group._pll_box.currentText()):
+                src = 'INT'
+            else:
+                src = 'EXT'
+            self.plot_state.dev_set['pll_reference'] = src
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
         def new_iq_path():
             self.plot_state.dev_set['iq_output_path'] = str(self._dev_group._iq_output_box.currentText().split()[-1])
             
@@ -460,6 +468,7 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._attenuator_box.clicked.connect(new_attenuator)
         self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
         self._dev_group._iq_output_box.currentIndexChanged.connect(new_iq_path)
+        self._dev_group._pll_box.currentIndexChanged.connect(new_pll_reference)
     
     def _trigger_control(self):
         trigger = QtGui.QCheckBox("Trigger")
