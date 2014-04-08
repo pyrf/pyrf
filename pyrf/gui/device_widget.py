@@ -18,25 +18,24 @@ class DeviceControlsWidget(QtGui.QGroupBox):
 
         dev_layout = QtGui.QVBoxLayout(self)
 
-        first_row = QtGui.QHBoxLayout()
-        first_row.addWidget(self._mode_control())
-        first_row.addWidget(self._attenuator_control())
-        first_row.addWidget(self._antenna_control())
-        first_row.addWidget(self._iq_output_control())
+        row = QtGui.QHBoxLayout()
+        row.addWidget(self._mode_control())
+        row.addWidget(self._attenuator_control())
+        row.addWidget(self._antenna_control())
+        row.addWidget(self._iq_output_control())
+        dev_layout.addLayout(row)
 
-        second_row = QtGui.QHBoxLayout()
-        second_row.addWidget(self._decimation_control())
+        row = QtGui.QHBoxLayout()
+        row.addWidget(self._decimation_control())
 
         fshift_label, fshift_edit, fshift_unit = self._freq_shift_control()
-        second_row.addWidget(fshift_label)
-        second_row.addWidget(fshift_edit)
-        second_row.addWidget(fshift_unit)
+        row.addWidget(fshift_label)
+        row.addWidget(fshift_edit)
+        row.addWidget(fshift_unit)
 
-        second_row.addWidget(self._gain_control())
-        second_row.addWidget(self._ifgain_control())
-
-        dev_layout.addLayout(first_row)
-        dev_layout.addLayout(second_row)
+        row.addWidget(self._gain_control())
+        row.addWidget(self._ifgain_control())
+        dev_layout.addLayout(row)
 
         self.setLayout(dev_layout)
         self.layout = dev_layout
