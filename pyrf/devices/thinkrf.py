@@ -67,8 +67,8 @@ class WSA5000_220Properties(object):
         'HDR': 162760,
         'SH': 62500000,
         'SHN': 62500000,
-        'IQIN': 625000000,
-        'DD': 625000000,
+        'IQIN': 125 * M,
+        'DD': 62500000,
         }
     USABLE_BW = {
         'ZIF': 100 * M,
@@ -76,39 +76,39 @@ class WSA5000_220Properties(object):
         'SH': 40000000,
         'SHN': 10000000,
         'IQIN': 50000000,
-        'DD': 0,
+        'DD': 50 * M,
         }
     MIN_TUNABLE = {
         'ZIF': 50 * M,
         'HDR': 50 * M,
         'SH': 50 * M,
         'SHN': 50 * M,
-        'IQIN': 0.1 * M,
-        'DD': 0,
+        'IQIN': 0,
+        'DD': 25 * M,
         }
     MAX_TUNABLE = {
         'ZIF': 20000 * M,
         'HDR': 20000 * M,
         'SH': 20000 * M,
         'SHN': 20000 * M,
-        'IQIN': 0.1 * M,
-        'DD': 0,
+        'IQIN': 0,
+        'DD': 25 * M,
         }
     MIN_DECIMATION = {
         'ZIF': 4,
         'HDR': None,
         'SH': 4,
         'SHN': 4,
-        'IQIN': None,
-        'DD': None,
+        'IQIN': 4,
+        'DD': 4,
         }
     MAX_DECIMATION = {
         'ZIF': 1024,
         'HDR': None,
         'SH': 4,
         'SHN': 4,
-        'IQIN': None,
-        'DD': None,
+        'IQIN': 1024,
+        'DD': 1024,
         }
     DECIMATED_USABLE = 0.80
     PASS_BAND_CENTER = {
@@ -117,7 +117,7 @@ class WSA5000_220Properties(object):
         'SH': 0.56,
         'SHN': 0.56,
         'IQIN': 0.5,
-        'DD': 0.5,
+        'DD': 0.4,
         }
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
@@ -126,8 +126,8 @@ class WSA5000_220Properties(object):
         'HDR': False,
         'SH': True,
         'SHN': True,
-        'IQIN': False,
-        'DD': False,
+        'IQIN': True,
+        'DD': True,
         }
     MAX_FSHIFT = {'ZIF': 62.5*M}
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
