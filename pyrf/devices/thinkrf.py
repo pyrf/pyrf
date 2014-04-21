@@ -159,7 +159,7 @@ class WSA5000_220Properties(object):
         'fshift': 0,
         'device_settings': {
             'attenuator': 0,
-            'pll_reference': 'INTERNAL',
+            'pll_reference': 'INT',
             'iq_output_path': 'DIGITIZER',
             },
         'device_class': 'thinkrf.WSA',
