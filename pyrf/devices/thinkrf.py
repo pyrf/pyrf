@@ -27,6 +27,7 @@ class WSA4000Properties(object):
 
     RFE_MODES = ('ZIF',)
 
+    DEFAULT_SAMPLE_TYPE = {'ZIF': IQ} # almost true, see CAPTURE_FREQ_RANGES
     FULL_BW = {'ZIF': 125*M}
     USABLE_BW = {'ZIF': 90*M}
     MIN_TUNABLE = {'ZIF': 90*M}
@@ -53,8 +54,9 @@ class WSA5000_220Properties(object):
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
 
     RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'IQIN', 'DD')
-
-    FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000 , 'SHN': 62500000, 'IQIN': 625000000, 'DD': 625000000}
+    DEFAULT_SAMPLE_TYPE = {'ZIF': IQ, 'SH': I_ONLY, 'SHN': I_ONLY, 'HDR': I_ONLY,
+        'IQIN': IQ, 'DD': I_ONLY}
+    FULL_BW = {'ZIF': 125*M, 'HDR': 162760, 'SH': 62500000, 'SHN': 62500000, 'IQIN': 625000000, 'DD': 625000000}
     USABLE_BW = {'ZIF': 100*M, 'HDR': 100000, 'SH': 40000000,'SHN': 10000000, 'IQIN': 50000000, 'DD': 0}
     MIN_TUNABLE = {'ZIF': 50*M, 'HDR': 50*M, 'SH': 50*M, 'SHN': 50*M,'IQIN': 0.1*M, 'DD': 0}
     MAX_TUNABLE = {'ZIF': 20000*M, 'HDR': 20000*M, 'SH': 20000*M,'SHN': 20000*M, 'IQIN': 0.1*M, 'DD': 0}
