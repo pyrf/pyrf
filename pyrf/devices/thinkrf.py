@@ -43,6 +43,21 @@ class WSA4000Properties(object):
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
+    SPECA_DEFAULTS = {
+        'mode': 'ZIF',
+        'center': 2450 * M,
+        'rbw': 122070,
+        'span': 125 * M,
+        'decimation': 1,
+        'fshift': 0,
+        'device_settings': {
+            'ifgain': 0,
+            'gain': 'low',
+            },
+        'device_class': 'thinkrf.WSA',
+        'device_identifier': 'unknown',
+        }
+
 
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
@@ -134,6 +149,22 @@ class WSA5000_220Properties(object):
         'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
+    SPECA_DEFAULTS = {
+        'mode': 'ZIF',
+        'center': 2450 * M,
+        'rbw': 122070,
+        'span': 125 * M,
+        'decimation': 1,
+        'fshift': 0,
+        'device_settings': {
+            'attenuator': 0,
+            'pll_reference': 'INTERNAL',
+            'iq_output_path': 'DIGITIZER',
+            },
+        'device_class': 'thinkrf.WSA',
+        'device_identifier': 'unknown',
+        }
 
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
