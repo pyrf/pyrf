@@ -18,7 +18,7 @@ except ImportError:
 
 setup(
     name='pyrf',
-    version='2.0.1-dev',
+    version='2.0.1',
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
     packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui'],
