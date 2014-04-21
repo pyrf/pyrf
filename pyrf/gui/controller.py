@@ -1,4 +1,3 @@
-import json
 from PySide import QtCore
 
 from pyrf.sweep_device import SweepDevice
@@ -49,15 +48,26 @@ class SpecAState(object):
         self.playback = other.playback if playback is None else playback
 
     @classmethod
-    def from_json(cls, j, playback=True):
-        data = json.loads(j)
+    def from_json_object(cls, j, playback=True):
+        """
+        Create state from an unserialized JSON dict.
+
+        :param j: dict containing values for all state parameters
+            except playback
+        :param playback: plaback value to use, default True
+        """
         try:
-            return cls(None, playback=playback, **data)
+            return cls(None, playback=playback, **j)
         except AttributeError:
             raise TypeError('JSON missing required settings %r' % data)
 
-    def to_json(self):
-        return json.dumps({
+    def to_json_object(self):
+        """
+        Return this state as a dict that can be serialized as JSON.
+
+        Playback state is excluded.
+        """
+        return {
             'mode': self.mode,
             'center': self.center,
             'rbw': self.rbw,
@@ -67,13 +77,8 @@ class SpecAState(object):
             'device_settings': self.device_settings,
             'device_class': self.device_class,
             'device_identifier': self.device_identifier,
-            # don't serialize playback
+            # don't serialize playback info
             })
-
-
-
-def state_change(state, **kwargs):
-    
 
 
 class SpecAController(QtCore.QObject):
@@ -86,6 +91,7 @@ class SpecAController(QtCore.QObject):
     _sweep_device = None
     _capture_device = None
     _plot_state = None
+    _speca_state = None
 
     device_change = QtCore.Signal(gui_config.PlotState, object)
     state_change = QtCore.Signal(gui_config.PlotState)
