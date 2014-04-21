@@ -50,6 +50,8 @@ class CaptureDevice(object):
         self._configure_device_flag = True
         for param in device_settings:
             self._device_set[param] = device_settings[param]
+        if self._device_set['iq_output_path'] == 'CONNECTOR':
+            self.real_device.apply_device_settings(self._device_set)
 
     def capture_time_domain(self, rbw, device_settings=None, min_points=128):
         """

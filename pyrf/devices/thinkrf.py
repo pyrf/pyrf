@@ -324,6 +324,23 @@ class WSA(object):
         yield path
 
     @sync_async
+    def pll_reference(self, src=None):
+        """
+        This command sets or queries the WSA's PLL reference source
+
+        :param src: 'INT', 'EXT', or None to query
+        :returns: the current PLL reference source
+        """
+
+        if src is None:
+            buf = yield self.scpiget(":SOURCE:REFERENCE:PLL?")
+            src = buf.strip()
+        else:
+            assert src in ('INT', 'EXT')
+            self.scpiset(":SOURCE:REFERENCE:PLL %s" % src)
+        yield src
+
+    @sync_async
     def freq(self, freq=None):
         """
         This command sets or queries the tuned center frequency of the WSA.
@@ -844,6 +861,7 @@ class WSA(object):
             'attenuator': self.attenuator,
             'rfe_mode': self.rfe_mode,
             'iq_output_path': self.iq_output_path,
+            'pll_reference': self.pll_reference,
             }
 
         for k, v in settings.iteritems():

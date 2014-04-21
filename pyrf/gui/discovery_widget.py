@@ -90,4 +90,7 @@ class DiscoveryWidget(QtGui.QWidget):
         wsas_on_network = discover_wsa()
         wsas_on_network.sort(key=operator.itemgetter('SERIAL'))
         for wsa in wsas_on_network:
-            self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]]))
+            if "WSA5000" in wsa["MODEL"]:
+                self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["FIRMWARE"], wsa["HOST"]]))
+            elif "WSA4000" in wsa["MODEL"]:
+                self._list.addItem(" ".join([wsa["MODEL"],  wsa["SERIAL"], wsa["HOST"]]))

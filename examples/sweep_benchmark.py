@@ -21,7 +21,7 @@ else:
 dut.reset()
 dut.request_read_perm()
 
-for spp in [min(2**i, 2**16-16) for i in range(9, 17)]:
+for spp in [min(2**i, 2**16-16) for i in range(7, 17)]:
     dut.abort()
     dut.flush()
     dut.sweep_clear()
