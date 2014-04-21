@@ -78,7 +78,7 @@ class SpecAState(object):
             'device_class': self.device_class,
             'device_identifier': self.device_identifier,
             # don't serialize playback info
-            })
+            }
 
 
 class SpecAController(QtCore.QObject):
