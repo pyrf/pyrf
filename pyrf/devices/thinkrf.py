@@ -73,9 +73,9 @@ class WSA5000_220Properties(object):
     USABLE_BW = {
         'ZIF': 100 * M,
         'HDR': 100000,
-        'SH': 40000000,
-        'SHN': 10000000,
-        'IQIN': 50000000,
+        'SH': 40 * M,
+        'SHN': 10 * M,
+        'IQIN': 50 * M,
         'DD': 50 * M,
         }
     MIN_TUNABLE = {
