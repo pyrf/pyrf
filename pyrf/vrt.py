@@ -348,11 +348,11 @@ class DataPacket(object):
         else:
             self.data = IQData(payload)
 
-        self.valid_data = bool((trailer >> 18) & 1)
-        self.reference_lock = bool((trailer >> 17) & 1)
-        self.spec_inv = bool((trailer >> 14) & 1)
-        self.over_range = bool((trailer >> 13) & 1)
-        self.sample_loss = bool((trailer >> 12) & 1)
+        self.valid_data = bool((trailer >> 18) & (trailer >> 30) & 1)
+        self.reference_lock = bool((trailer >> 17) & (trailer >> 29) & 1)
+        self.spec_inv = bool((trailer >> 14) & (trailer >> 26) & 1)
+        self.over_range = bool((trailer >> 13) & (trailer >> 25) & 1)
+        self.sample_loss = bool((trailer >> 12) & (trailer >> 24) & 1)
 
 
     def is_data_packet(self):
