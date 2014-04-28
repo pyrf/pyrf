@@ -47,7 +47,7 @@ class DiscoveryWidget(QtGui.QWidget):
 
         def list_clicked():
             if self._list.currentItem() is not None:
-                self._ip.setText(self._list.currentItem().text()[-14:])
+                self._ip.setText(self._list.currentItem().text().split(" ")[-1])
         self._list.currentItemChanged.connect(list_clicked)
 
         return self._list
