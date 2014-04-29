@@ -329,8 +329,6 @@ def _external_digitizer_mode(layout):
     # remove sweep capture modes
     c = layout._dev_group._mode.count()
     layout._dev_group._mode.removeItem(c - 1)
-    layout._dev_group._mode.removeItem(c - 2)
-    layout._dev_group._mode.removeItem(c - 3)
 
     # remove all digitizer controls
     layout._dev_group._dec_box.hide()
@@ -356,8 +354,6 @@ def _internal_digitizer_mode(layout):
     layout.setMinimumHeight(screen.height() * 0.6)
 
     # add sweep commands
-    layout._dev_group._mode.addItem('Sweep ZIF')
-    layout._dev_group._mode.addItem('Sweep ZIF left band')
     layout._dev_group._mode.addItem('Sweep SH')
 
     # show digitizer controls
