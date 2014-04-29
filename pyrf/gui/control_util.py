@@ -295,7 +295,6 @@ def _update_rbw_values(layout):
     """
     update the RBW values depending on the current mode of operation
     """
-
     for index in range(layout._rbw_box.count()):
         layout._rbw_box.removeItem(0)
         

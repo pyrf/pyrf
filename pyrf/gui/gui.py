@@ -424,36 +424,41 @@ class MainPanel(QtGui.QWidget):
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_input_mode():
-            m = self._dev_group._mode.currentText()
-            if not m:
+            input_mode = self._dev_group._mode.currentText()
+            if not input_mode:
                 return
-            if m.startswith('Sweep '):
+            if input_mode.startswith('Sweep '):
+
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
+                self.plot_state.dev_set['rfe_mode'] = str(input_mode.split(" ")[-1])
+                cu._update_rbw_values(self)
                 self.plot_state.disable_block_mode(self)
+                self._rbw_box.setCurrentIndex(0)
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
-                self._sweep_mode = m.split(' ',1)[1]
+                self._sweep_mode = input_mode.split(' ',1)[1]
+
                 return
 
             self._plot.const_window.show()
             self._plot.iq_window.show()
             self.plot_state.enable_block_mode(self)
 
-            self.plot_state.dev_set['rfe_mode'] = str(m)
+            self.plot_state.dev_set['rfe_mode'] = str(input_mode)
             cu._update_rbw_values(self)
-            self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]
+            self.plot_state.bandwidth = self.dut_prop.FULL_BW[input_mode]
             if self.plot_state.dev_set['rfe_mode'] == 'IQIN':
                 self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]/M))
-            
+
             self.plot_state.update_freq_set(
                 fcenter=float(self._freq_edit.text()) * M)
-            cu._center_plot_view(self)
+            self._bw_edit.setText(str(float(self.dut.properties.FULL_BW[self.plot_state.dev_set['rfe_mode']])/ M) + '\n')
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
-            self._rbw_box.setCurrentIndex(4 if m == 'SH' else 3)
+            self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
             cu._center_plot_view(self)
-            if m == 'HDR':
+            if input_mode == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
             else:
@@ -469,7 +474,7 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
         self._dev_group._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._dev_group._pll_box.currentIndexChanged.connect(new_pll_reference)
-    
+
     def _trigger_control(self):
         trigger = QtGui.QCheckBox("Trigger")
         trigger.setToolTip("[T]\nTurn the Triggers on/off") 
