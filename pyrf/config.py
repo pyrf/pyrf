@@ -87,7 +87,7 @@ class SweepEntry(object):
         self.level_fstop = level_fstop
         self.level_amplitude = level_amplitude
         self.attenuator = attenuator
-        self.rfe_mode = 'ZIF'
+        self.rfe_mode = rfe_mode
 
 
     def __str__(self):
