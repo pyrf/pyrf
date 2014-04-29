@@ -234,8 +234,7 @@ class SweepDevice(object):
         # adjust for not-centered pass band
         pbc = self.real_device.properties.PASS_BAND_CENTER[self.rfe_mode]
         if pbc != 0.5:
-            # XXX here we "know" that bins = samples/2
-            offset = int(len(packet.data) / 2 * (pbc - 0.5))
+            offset = int(len(pow_data) * (pbc - 0.5))
             if packet.spec_inv:
                 offset = -offset
             start += offset
@@ -390,6 +389,10 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
     # we now have our actual fstop
     fstop = ((bins_keep + bins_pass - 1) // usable_bins) * step_size + (
         (bins_keep + bins_pass - 1) % usable_bins + 1) * bin_size + fstart
+
+    # adjust points for I-only data
+    if mode == 'SH':
+        points *= 2
 
     assert fcenter % prop.TUNING_RESOLUTION == 0, fcenter
     assert step_size > 0 and step_size % prop.TUNING_RESOLUTION == 0, step_size
