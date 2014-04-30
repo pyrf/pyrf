@@ -138,7 +138,8 @@ class CaptureDevice(object):
             'data_pkt' : packet}
 
         # XXX here we "know" that bins = samples/2
-        if packet.spec_inv:
+        if packet.spec_inv and self._device_set['rfe_mode'] == 'SH':
+
             [(start, run)] = self.usable_bins
             start = len(packet.data) / 2 - start - run
             self.usable_bins = [(start, run)]

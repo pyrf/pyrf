@@ -427,6 +427,17 @@ class MainPanel(QtGui.QWidget):
             input_mode = self._dev_group._mode.currentText()
             if not input_mode:
                 return
+
+            if self.plot_state.dev_set['rfe_mode'] == 'IQIN' or self.plot_state.dev_set['rfe_mode'] == 'DD':
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
+                self.update_freq_edit()
+
+            if input_mode == 'IQIN' or input_mode == 'DD':
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
+                self.update_freq_edit()
+
             if input_mode.startswith('Sweep '):
 
                 self._plot.const_window.hide()
@@ -445,15 +456,6 @@ class MainPanel(QtGui.QWidget):
                 self.plot_state.enable_block_mode(self)
 
             cu._update_rbw_values(self)
-            if self.plot_state.dev_set['rfe_mode'] == 'IQIN' or self.plot_state.dev_set['rfe_mode'] == 'DD':
-                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode]/M))
-                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode])
-                self.update_freq_edit()
-
-            if input_mode == 'IQIN' or input_mode == 'DD':
-                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode]/M))
-                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode])
-                self.update_freq_edit()
 
             self.plot_state.dev_set['rfe_mode'] = str(input_mode)
             self._bw_edit.setText(str(float(self.dut.properties.FULL_BW[input_mode])/ M))
@@ -707,7 +709,7 @@ class MainPanel(QtGui.QWidget):
             
             elif self.plot_state.freq_sel == 'BW':
                 f = (float(self._bw_edit.text()) + delta) * M
-                if f < 0:
+                if self.plot_state.center_freq - (f / 2) < min_tunable or self.plot_state.center_freq + (f / 2) > max_tunable:
                     return
                 self.plot_state.update_freq_set(bw = f)
             for trace in self._plot.traces:
