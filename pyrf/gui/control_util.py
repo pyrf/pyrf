@@ -313,11 +313,14 @@ def _external_digitizer_mode(layout):
     layout._plot_group.hide()
     layout._trace_group.hide()
     layout._plot_layout.hide()
+    if layout._main_window.isMaximized():
+        layout._main_window.showNormal()
 
     # resize window
     for x in range(8):
         layout._grid.setColumnMinimumWidth(x, 0)
     screen = QtGui.QDesktopWidget().screenGeometry()
+
     layout.setMinimumWidth(0)
     layout.setMinimumHeight(0)
     layout._main_window.setMinimumWidth(0)
