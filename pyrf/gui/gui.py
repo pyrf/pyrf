@@ -192,6 +192,7 @@ class MainPanel(QtGui.QWidget):
 
         if not self.plot_state.block_mode:
             self.read_sweep()
+            print self.sweep_dut.plan
             return
         self.read_block()
         if 'reflevel' in data['context_pkt']:
