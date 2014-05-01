@@ -192,6 +192,7 @@ class MainPanel(QtGui.QWidget):
 
         if not self.plot_state.block_mode:
             self.read_sweep()
+            print self.sweep_dut.plan
             return
         self.read_block()
         if 'reflevel' in data['context_pkt']:
@@ -427,6 +428,17 @@ class MainPanel(QtGui.QWidget):
             input_mode = self._dev_group._mode.currentText()
             if not input_mode:
                 return
+
+            if self.plot_state.dev_set['rfe_mode'] == 'IQIN' or self.plot_state.dev_set['rfe_mode'] == 'DD':
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
+                self.update_freq_edit()
+
+            if input_mode == 'IQIN' or input_mode == 'DD':
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
+                self.update_freq_edit()
+
             if input_mode.startswith('Sweep '):
 
                 self._plot.const_window.hide()
@@ -438,22 +450,19 @@ class MainPanel(QtGui.QWidget):
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
                 self._sweep_mode = input_mode.split(' ',1)[1]
-
                 return
+            else:
+                self._plot.const_window.show()
+                self._plot.iq_window.show()
+                self.plot_state.enable_block_mode(self)
 
-            self._plot.const_window.show()
-            self._plot.iq_window.show()
-            self.plot_state.enable_block_mode(self)
+            cu._update_rbw_values(self)
 
             self.plot_state.dev_set['rfe_mode'] = str(input_mode)
-            cu._update_rbw_values(self)
-            self.plot_state.bandwidth = self.dut_prop.FULL_BW[input_mode]
-            if self.plot_state.dev_set['rfe_mode'] == 'IQIN':
-                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]/M))
+            self._bw_edit.setText(str(float(self.dut.properties.FULL_BW[input_mode])/ M))
+            self.plot_state.update_freq_set(bw = self.dut.properties.FULL_BW[input_mode])
+            self.update_freq_edit()
 
-            self.plot_state.update_freq_set(
-                fcenter=float(self._freq_edit.text()) * M)
-            self._bw_edit.setText(str(float(self.dut.properties.FULL_BW[self.plot_state.dev_set['rfe_mode']])/ M) + '\n')
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
             self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
@@ -678,7 +687,7 @@ class MainPanel(QtGui.QWidget):
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
         if delta == None:
-            delta = 0    
+            delta = 0
         try:
             if self.plot_state.freq_sel == 'CENT':
                 f = (float(self._freq_edit.text()) + delta) * M
@@ -701,7 +710,7 @@ class MainPanel(QtGui.QWidget):
             
             elif self.plot_state.freq_sel == 'BW':
                 f = (float(self._bw_edit.text()) + delta) * M
-                if f < 0:
+                if self.plot_state.center_freq - (f / 2) < min_tunable or self.plot_state.center_freq + (f / 2) > max_tunable:
                     return
                 self.plot_state.update_freq_set(bw = f)
             for trace in self._plot.traces:
@@ -718,10 +727,10 @@ class MainPanel(QtGui.QWidget):
                 self._plot.freqtrig_lines.setRegion([self.plot_state.fstart,self.plot_state. fstop]) 
 
     def update_freq_edit(self):
-        self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
-        self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
-        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
-        self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
+        self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ M))
+        self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ M))
+        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / M))
+        self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / M))
         self._center_bt.click()
 
     def _plot_controls(self):
