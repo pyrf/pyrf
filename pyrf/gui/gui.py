@@ -839,7 +839,8 @@ class MainPanel(QtGui.QWidget):
        
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop, 
-                                              len(self.pow_data))
+                                              len(self.pow_data),
+                                              self.plot_state.dev_set['rfe_mode'])
         self.update_trace()
         self.update_iq()
         self.update_marker()
