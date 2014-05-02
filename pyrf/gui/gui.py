@@ -455,7 +455,7 @@ class MainPanel(QtGui.QWidget):
                 self._plot.const_window.show()
                 self._plot.iq_window.show()
                 self.plot_state.enable_block_mode(self)
-
+            self.plot_state.dev_set['rfe_mode'] = str(input_mode.split(" ")[-1])
             cu._update_rbw_values(self)
 
             self.plot_state.dev_set['rfe_mode'] = str(input_mode)
