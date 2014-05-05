@@ -413,11 +413,11 @@ class MainPanel(QtGui.QWidget):
             cu._update_rbw_values(self)
 
             self.plot_state.dev_set['rfe_mode'] = str(input_mode)
-            self._bw_edit.setText(str(float(self.dut.properties.FULL_BW[input_mode])/ M))
-            self.plot_state.update_freq_set(bw = self.dut.properties.FULL_BW[input_mode])
+            self._bw_edit.setText(str(float(self.dut_prop.FULL_BW[input_mode])/ M))
+            self.plot_state.update_freq_set(bw = self.dut_prop.FULL_BW[input_mode])
             self.update_freq_edit()
             # FIXME: wrong place for this
-            self.controller._capure_device.configure_device(self.plot_state.dev_set)
+            self.controller._capture_device.configure_device(self.plot_state.dev_set)
 
             self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
             cu._center_plot_view(self)
