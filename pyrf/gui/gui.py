@@ -797,12 +797,13 @@ class MainPanel(QtGui.QWidget):
         self.sweep_segments = segments
 
         # FIXME: seems odd
-        self.plot_state.update_freq_range(self.plot_state.fstart,
+        self.plot_state.update_freq_range(
         # FIXME: pass values instead of using members
-                                              self.plot_state.fstop, 
-                                              len(self.pow_data),
-                                              self.plot_state.dev_set['rfe_mode'],
-                                              self.raw_data.spec_inv)
+            self.plot_state.fstart,
+            self.plot_state.fstop,
+            len(self.pow_data),
+            self.plot_state.dev_set['rfe_mode'],
+            False if raw is None else raw.spec_inv)
         self.update_trace()
         self.update_iq()
         self.update_marker()
