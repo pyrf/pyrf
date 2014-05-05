@@ -5,7 +5,7 @@ from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER_TYPE_NONE
 from pyrf.units import M
 
 INIT_CENTER_FREQ = 2450 * M
-INIT_BANDWIDTH = 500 * M
+INIT_BANDWIDTH = 125 * M
 INIT_RBW = 244141
 
 PLOT_YMIN = -160
@@ -62,12 +62,8 @@ class PlotState(object):
 
     def enable_block_mode(self, layout):
         self.block_mode = True
-        layout._bw_edit.setText('125.0')
-        self.update_freq_set(bw = 125e6)
-        layout._cfreq.click()
 
-        layout.update_freq()
-        layout.update_freq_edit()
+        layout._cfreq.click()
         util.disable_freq_cont(layout)
 
     def disable_triggers(self, layout):
@@ -86,9 +82,18 @@ class PlotState(object):
                                         self.center_freq - 10e6,-100)
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
 
-    def update_freq_range(self, start, stop, size):
-        self.freq_range = np.linspace(start, stop, size)
-
+    def update_freq_range(self, start, stop, size, mode, inv):
+        
+        if self.block_mode and mode == 'SH':
+            if inv:
+                pass_area = self.device_properties.PASS_BAND_CENTER[mode]
+            else:
+                pass_area = 1 - self.device_properties.PASS_BAND_CENTER[mode]
+            total = stop - start
+            center = (start + (total * pass_area))
+            self.freq_range = np.linspace(center - total/2, center + total/2, size)
+        else:
+            self.freq_range = np.linspace(start, stop, size)
 
 
     def update_freq_set(self,
@@ -98,7 +103,6 @@ class PlotState(object):
                           rbw=None,
                           bw=None):
         prop = self.device_properties
-
         rfe_mode = self.dev_set['rfe_mode']
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
@@ -143,9 +147,8 @@ class PlotState(object):
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))
 
         elif bw != None:
-            bw = max(bw, prop.TUNING_RESOLUTION)
-            self.fstart = max(min_tunable, (self.center_freq - (bw / 2)))
-            self.fstop = min(max_tunable, (self.center_freq + (bw / 2)))
+            self.fstart =  self.center_freq - (bw / 2)
+            self.fstop = self.center_freq + (bw / 2)
             self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self.rbw))

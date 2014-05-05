@@ -295,7 +295,6 @@ def _update_rbw_values(layout):
     """
     update the RBW values depending on the current mode of operation
     """
-
     for index in range(layout._rbw_box.count()):
         layout._rbw_box.removeItem(0)
         
@@ -314,11 +313,14 @@ def _external_digitizer_mode(layout):
     layout._plot_group.hide()
     layout._trace_group.hide()
     layout._plot_layout.hide()
+    if layout._main_window.isMaximized():
+        layout._main_window.showNormal()
 
     # resize window
     for x in range(8):
         layout._grid.setColumnMinimumWidth(x, 0)
     screen = QtGui.QDesktopWidget().screenGeometry()
+
     layout.setMinimumWidth(0)
     layout.setMinimumHeight(0)
     layout._main_window.setMinimumWidth(0)
@@ -329,8 +331,6 @@ def _external_digitizer_mode(layout):
     # remove sweep capture modes
     c = layout._dev_group._mode.count()
     layout._dev_group._mode.removeItem(c - 1)
-    layout._dev_group._mode.removeItem(c - 2)
-    layout._dev_group._mode.removeItem(c - 3)
 
     # remove all digitizer controls
     layout._dev_group._dec_box.hide()
@@ -356,8 +356,6 @@ def _internal_digitizer_mode(layout):
     layout.setMinimumHeight(screen.height() * 0.6)
 
     # add sweep commands
-    layout._dev_group._mode.addItem('Sweep ZIF')
-    layout._dev_group._mode.addItem('Sweep ZIF left band')
     layout._dev_group._mode.addItem('Sweep SH')
 
     # show digitizer controls

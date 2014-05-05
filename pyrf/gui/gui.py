@@ -40,8 +40,8 @@ RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.6293
 
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
 
-PLOT_YMIN = -160
-PLOT_YMAX = 20
+PLOT_YMIN = -140
+PLOT_YMAX = 0
 
 ZIF_BITS = 2**13
 CONST_POINTS = 512
@@ -377,38 +377,51 @@ class MainPanel(QtGui.QWidget):
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_input_mode():
-            m = self._dev_group._mode.currentText()
-            if not m:
+            input_mode = self._dev_group._mode.currentText()
+            if not input_mode:
                 return
-            if m.startswith('Sweep '):
+
+            if self.plot_state.dev_set['rfe_mode'] == 'IQIN' or self.plot_state.dev_set['rfe_mode'] == 'DD':
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
+                self.update_freq_edit()
+
+            if input_mode == 'IQIN' or input_mode == 'DD':
+                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
+                self.update_freq_edit()
+
+            if input_mode.startswith('Sweep '):
+
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
+                self.plot_state.dev_set['rfe_mode'] = str(input_mode.split(" ")[-1])
+                cu._update_rbw_values(self)
                 self.plot_state.disable_block_mode(self)
+                self._rbw_box.setCurrentIndex(0)
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
                 # FIXME: so terrible
-                self.controller._sweep_mode = m.split(' ',1)[1]
+                self.controller._sweep_mode = input_mode.split(' ',1)[1]
                 return
+            else:
+                self._plot.const_window.show()
+                self._plot.iq_window.show()
+                self.plot_state.enable_block_mode(self)
 
-            self._plot.const_window.show()
-            self._plot.iq_window.show()
-            self.plot_state.enable_block_mode(self)
-
-            self.plot_state.dev_set['rfe_mode'] = str(m)
+            self.plot_state.dev_set['rfe_mode'] = str(input_mode.split(" ")[-1])
             cu._update_rbw_values(self)
-            self.plot_state.bandwidth = self.dut_prop.FULL_BW[m]  # FIXME: wrong place for this
-            if self.plot_state.dev_set['rfe_mode'] == 'IQIN':
-                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[self.plot_state.dev_set['rfe_mode']]/M))
-            
-            self.plot_state.update_freq_set(
-                fcenter=float(self._freq_edit.text()) * M)
-            cu._center_plot_view(self)
-            # FIXME: wrong place for this
-            self.controller._capture_device.configure_device(self.plot_state.dev_set)
 
-            self._rbw_box.setCurrentIndex(4 if m == 'SH' else 3)
+            self.plot_state.dev_set['rfe_mode'] = str(input_mode)
+            self._bw_edit.setText(str(float(self.dut.properties.FULL_BW[input_mode])/ M))
+            self.plot_state.update_freq_set(bw = self.dut.properties.FULL_BW[input_mode])
+            self.update_freq_edit()
+            # FIXME: wrong place for this
+            self.controller._capure_device.configure_device(self.plot_state.dev_set)
+
+            self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
             cu._center_plot_view(self)
-            if m == 'HDR':
+            if input_mode == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
                 self._dev_group._freq_shift_edit.setEnabled(False)
             else:
@@ -424,7 +437,7 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
         self._dev_group._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._dev_group._pll_box.currentIndexChanged.connect(new_pll_reference)
-    
+
     def _trigger_control(self):
         trigger = QtGui.QCheckBox("Trigger")
         trigger.setToolTip("[T]\nTurn the Triggers on/off") 
@@ -628,7 +641,7 @@ class MainPanel(QtGui.QWidget):
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
         if delta == None:
-            delta = 0    
+            delta = 0
         try:
             if self.plot_state.freq_sel == 'CENT':
                 f = (float(self._freq_edit.text()) + delta) * M
@@ -651,7 +664,7 @@ class MainPanel(QtGui.QWidget):
             
             elif self.plot_state.freq_sel == 'BW':
                 f = (float(self._bw_edit.text()) + delta) * M
-                if f < 0:
+                if self.plot_state.center_freq - (f / 2) < min_tunable or self.plot_state.center_freq + (f / 2) > max_tunable:
                     return
                 self.plot_state.update_freq_set(bw = f)
             for trace in self._plot.traces:
@@ -668,10 +681,10 @@ class MainPanel(QtGui.QWidget):
                 self._plot.freqtrig_lines.setRegion([self.plot_state.fstart,self.plot_state. fstop]) 
 
     def update_freq_edit(self):
-        self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ 1e6))
-        self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ 1e6))
-        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / 1e6))
-        self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / 1e6))
+        self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ M))
+        self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ M))
+        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / M))
+        self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / M))
         self._center_bt.click()
 
     def _plot_controls(self):
@@ -785,10 +798,11 @@ class MainPanel(QtGui.QWidget):
 
         # FIXME: seems odd
         self.plot_state.update_freq_range(self.plot_state.fstart,
-                                              self.plot_state.fstop,
-                                              len(self.pow_data))
-
         # FIXME: pass values instead of using members
+                                              self.plot_state.fstop, 
+                                              len(self.pow_data),
+                                              self.plot_state.dev_set['rfe_mode'],
+                                              self.raw_data.spec_inv)
         self.update_trace()
         self.update_iq()
         self.update_marker()
