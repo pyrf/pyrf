@@ -200,6 +200,7 @@ class MainPanel(QtGui.QWidget):
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
         self.raw_data = data['data_pkt']
 
+
         self.update_plot()
 
     def receive_sweep(self, fstart, fstop, data):
@@ -840,7 +841,8 @@ class MainPanel(QtGui.QWidget):
         self.plot_state.update_freq_range(self.plot_state.fstart,
                                               self.plot_state.fstop, 
                                               len(self.pow_data),
-                                              self.plot_state.dev_set['rfe_mode'])
+                                              self.plot_state.dev_set['rfe_mode'],
+                                              self.raw_data.spec_inv)
         self.update_trace()
         self.update_iq()
         self.update_marker()
