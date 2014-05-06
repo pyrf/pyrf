@@ -85,12 +85,13 @@ class PlotState(object):
     def update_freq_range(self, start, stop, size, mode, inv):
         
         if self.block_mode:
-            pass_area = self.device_properties.PASS_BAND_CENTER[mode]
+            if inv:
+                pass_area = self.device_properties.PASS_BAND_CENTER[mode]
+            else:
+                pass_area = 1 - self.device_properties.PASS_BAND_CENTER[mode]
             total = stop - start
             center = (start + (total * pass_area))
             self.freq_range = np.linspace(center - total/2, center + total/2, size)
-            if not inv:
-                self.freq_range = np.flipud(self.freq_range)
         else:
             self.freq_range = np.linspace(start, stop, size)
 
