@@ -383,11 +383,13 @@ class MainPanel(QtGui.QWidget):
 
             if self.plot_state.dev_set['rfe_mode'] == 'IQIN' or self.plot_state.dev_set['rfe_mode'] == 'DD':
                 self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self._freq_edit.setEnabled(True)
                 self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
                 self.update_freq_edit()
 
             if input_mode == 'IQIN' or input_mode == 'DD':
                 self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
+                self._freq_edit.setEnabled(False)
                 self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
                 self.update_freq_edit()
 
