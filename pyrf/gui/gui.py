@@ -421,7 +421,7 @@ class MainPanel(QtGui.QWidget):
             # FIXME: wrong place for this
             self.controller._capture_device.configure_device(self.plot_state.dev_set)
 
-            self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
+            self._rbw_box.setCurrentIndex(4 if input_mode in ['SH', 'SHN'] else 3)
             cu._center_plot_view(self)
             if input_mode == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
