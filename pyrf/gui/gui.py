@@ -813,18 +813,21 @@ class MainPanel(QtGui.QWidget):
                 symbol = 'o',
                 size = 1, pen = 'y',
                 brush = 'y')
-        
+
         else:
             data = self.raw_data.data.numpy_array()
             i_data = np.array(data, dtype=float)
+
             if self.raw_data.stream_id == VRT_IFDATA_I14:
                 i_data = i_data /ZIF_BITS
+
+            elif self.raw_data.stream_id == VRT_IFDATA_I24:
+                i_data = i_data / (np.mean(i_data)) - 1
             self._plot.i_curve.setData(i_data)
-            
+
             self._plot.q_curve.clear()
             self._plot.const_plot.clear()
-            
-    
+
     def update_trig(self):
             if self.plot_state.trig_set:
                 freq_region = self._plot.freqtrig_lines.getRegion()
