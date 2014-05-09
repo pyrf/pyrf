@@ -84,7 +84,7 @@ class PlotState(object):
 
     def update_freq_range(self, start, stop, size, mode, inv):
         
-        if self.block_mode and mode == 'SH':
+        if self.block_mode and mode in ['SH', 'SHN']:
             if inv:
                 pass_area = self.device_properties.PASS_BAND_CENTER[mode]
             else:
