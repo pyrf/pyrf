@@ -366,7 +366,6 @@ class MainPanel(QtGui.QWidget):
 
         def new_iq_path():
             self.plot_state.dev_set['iq_output_path'] = str(self._dev_group._iq_output_box.currentText().split()[-1])
-            
             if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
                 # disable unwanted controls
                 cu._external_digitizer_mode(self)
@@ -780,13 +779,8 @@ class MainPanel(QtGui.QWidget):
         self.usable_bins = usable
         self.sweep_segments = segments
 
-        # FIXME: seems odd
         self.plot_state.update_freq_range(
-        # FIXME: pass values instead of using members
-            self.plot_state.fstart,
-            self.plot_state.fstop,
             len(self.pow_data),
-            self.plot_state.dev_set['rfe_mode'],
             False if raw is None else raw.spec_inv)
         self.update_trace()
         self.update_iq()
