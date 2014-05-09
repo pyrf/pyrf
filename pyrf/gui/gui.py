@@ -439,25 +439,7 @@ class MainPanel(QtGui.QWidget):
         self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
         self._dev_group._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._dev_group._pll_box.currentIndexChanged.connect(new_pll_reference)
-
-    def _trigger_control(self):
-        trigger = QtGui.QCheckBox("Trigger")
-        trigger.setToolTip("[T]\nTurn the Triggers on/off") 
-        trigger.clicked.connect(lambda: cu._trigger_control(self))
-        self._trigger = trigger
-        self.control_widgets.append(self._trigger)
-        return trigger
-
-    def _attenuator_control(self):
-        attenuator = QtGui.QCheckBox("Attenuator")
-        attenuator.setChecked(True)
-        def new_attenuator():
-            self.plot_state.dev_set['attenuator'] = attenuator.isChecked()
-        attenuator.clicked.connect(new_attenuator)
-        self._attenuator_box = attenuator
-        self.control_widgets.append(attenuator)
-        return attenuator
-    
+   
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")
         self._freq_group = freq_group
