@@ -99,7 +99,7 @@ class WSA5000_220Properties(object):
         'SH': 50 * M,
         'SHN': 50 * M,
         'IQIN': 0,
-        'DD': 25 * M,
+        'DD': 31.24 * M,
         }
     MAX_TUNABLE = {
         'ZIF': 20000 * M,
@@ -107,7 +107,7 @@ class WSA5000_220Properties(object):
         'SH': 20000 * M,
         'SHN': 20000 * M,
         'IQIN': 0,
-        'DD': 25 * M,
+        'DD': 0 * M,
         }
     MIN_DECIMATION = {
         'ZIF': 4,
