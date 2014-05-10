@@ -131,7 +131,7 @@ class WSA5000_220Properties(object):
         'HDR': 0.6,
         'SH': 0.56,
         'SHN': 0.56,
-        'IQIN': 0.5,
+        'IQIN': 0.7,
         'DD': 0.4,
         }
     DC_OFFSET_BW = 240000 # XXX: an educated guess
