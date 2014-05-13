@@ -38,6 +38,7 @@ class SweepStep(namedtuple('SweepStep', '''
         extra parameters (gain, antenna etc.) may be provided as keyword
         parameters
         """
+        # FIXME: this maximum depends on rfe_mode
         if self.points > 32*1024:
             raise SweepDeviceError('large captures not yet supported')
 

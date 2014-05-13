@@ -4,10 +4,6 @@ from pyrf.gui import colors
 from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER_TYPE_NONE
 from pyrf.units import M
 
-INIT_CENTER_FREQ = 2450 * M
-INIT_BANDWIDTH = 125 * M
-INIT_RBW = 244141
-
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -18,20 +14,10 @@ class PlotState(object):
 
     def __init__(self,
             device_properties,
-            center_freq=INIT_CENTER_FREQ,
-            bandwidth=INIT_BANDWIDTH,
-            rbw=INIT_RBW,
             ):
 
         self.grid = False
 
-        self.dev_set = {
-            'attenuator': 1,
-            'freq':INIT_CENTER_FREQ,
-            'decimation': 1,
-            'fshift': 0,
-            'rfe_mode': 'ZIF',
-            'iq_output_path': 'DIGITIZER'}
         self.mhold = False
         self.mhold_fft = None
 
@@ -40,11 +26,12 @@ class PlotState(object):
         self.peak = False
 
         self.freq_range = None
-        self.center_freq = center_freq
-        self.bandwidth = device_properties.FULL_BW[self.dev_set['rfe_mode']]
+        self.center_freq = device_properties.SPECA_DEFAULTS['center']
+        self.bandwidth = device_properties.FULL_BW[
+            device_properties.SPECA_DEFAULTS['mode']]
         self.fstart = self.center_freq - self.bandwidth / 2
         self.fstop = self.center_freq + self.bandwidth / 2
-        self.rbw = rbw
+        self.rbw = device_properties.SPECA_DEFAULTS['rbw']
         self.enable_plot = True
         self.freq_sel = 'CENT'
 
@@ -82,9 +69,7 @@ class PlotState(object):
                                         self.center_freq - 10e6,-100)
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
 
-    def update_freq_range(self, size, inv):
-        
-        mode = self.dev_set['rfe_mode']
+    def update_freq_range(self, mode, size, inv):
         if self.block_mode and mode in ['SH', 'SHN']:
             if inv:
                 pass_area = self.device_properties.PASS_BAND_CENTER[mode]

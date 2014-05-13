@@ -80,6 +80,9 @@ class SpecAState(object):
             # don't serialize playback info
             }
 
+    def is_sweeping(self):
+        return self.mode.startswith('Sweep ')
+
 
 class SpecAController(QtCore.QObject):
     """
@@ -93,25 +96,32 @@ class SpecAController(QtCore.QObject):
     _plot_state = None
     _speca_state = None
 
-    device_change = QtCore.Signal(gui_config.PlotState, object)
-    state_change = QtCore.Signal(gui_config.PlotState)
-    capture_receive = QtCore.Signal(gui_config.PlotState, object, object, object, object)
+    device_change = QtCore.Signal(SpecAState, object)
+    state_change = QtCore.Signal(SpecAState, list)
+    capture_receive = QtCore.Signal(SpecAState, object, object, object, object)
 
-    def set_device(self, dut):
+    def set_device(self, dut, playback=False):
+        """
+        Attach to a new device or playback stream
+        """
         if self._dut:
             self._dut.disconnect()
         self._dut = dut
         self._sweep_device = SweepDevice(dut, self.process_sweep)
-        self._plot_state = gui_config.PlotState(dut.properties)
         self._capture_device = CaptureDevice(dut,
-            async_callback=self.process_capture,
-            device_settings=self._plot_state.dev_set)
+            async_callback=self.process_capture)
+        self._speca_state = SpecAState.from_json_object(
+            dut.properties.SPECA_DEFAULTS, playback)
 
-        self.device_change.emit(self._plot_state, dut)
+        self.device_change.emit(self._speca_state, dut)
 
 
     def read_block(self):
-        self._capture_device.capture_time_domain(self._plot_state.rbw)
+        self._capture_device.capture_time_domain(
+            self._speca_state.mode,
+            self._speca_state.center,
+            self._speca_state.rbw,
+            self._speca_state.device_settings)
 
 
     def read_sweep(self):
@@ -134,8 +144,8 @@ class SpecAController(QtCore.QObject):
         usable_bins = list(self._capture_device.usable_bins)
 
         # only read data if WSA digitizer is used
-        if self._plot_state.dev_set['iq_output_path'] == 'DIGITIZER':
-            if not self._plot_state.block_mode:
+        if self._speca_state.device_settings['iq_output_path'] == 'DIGITIZER':
+            if self._speca_state.is_sweeping():
                 self.read_sweep()
                 return
             self.read_block()
@@ -146,7 +156,7 @@ class SpecAController(QtCore.QObject):
                 data['data_pkt'], data['context_pkt'], ref=self._ref_level)
 
             self.capture_receive.emit(
-                self._plot_state,
+                self._speca_state,
                 data['data_pkt'],
                 pow_data,
                 usable_bins,
@@ -169,4 +179,25 @@ class SpecAController(QtCore.QObject):
             self.pow_data,
             None,
             sweep_segments)
+
+    def apply_device_settings(self, **kwargs):
+        """
+        Apply device-specific settings and trigger a state change event.
+
+        :param kwargs: keyword arguments of SpecAState.device_settings
+        """
+        device_settings = dict(self._speca_state.device_settings, **kwargs)
+        self._speca_state = SpecAState(self._speca_state,
+            device_settings=device_settings)
+        self.state_change.emit(self._speca_state, ['device_settings'])
+
+    def apply_settings(self, **kwargs):
+        """
+        Apply state settings and trigger a state change event.
+
+        :param kwargs: keyword arguments of SpecAState attributes
+        """
+        self._speca_state = SpecAState(self._speca_state, **kwargs)
+        self.state_change.emit(self._speca_state, kwargs.keys())
+
 

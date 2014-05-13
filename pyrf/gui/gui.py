@@ -153,22 +153,36 @@ class MainPanel(QtGui.QWidget):
         self.initUI()
         self.disable_controls()
         self.ref_level = 0
+        self.plot_state = None
 
     def device_changed(self, state, dut):
-        self.plot_state = state  # FIXME: don't store this
+        self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = dut.properties
         self._dev_group.configure(dut.properties)
+
+        self.state_changed(
+            state,
+            state.to_json_object(),  # everything may have changed
+            )
+
         self.enable_controls()
         cu._select_center_freq(self)
         self._rbw_box.setCurrentIndex(3)  # wat
         self._plot.const_window.show()
         self._plot.iq_window.show()
         self.plot_state.enable_block_mode(self)
+
         self.controller.read_block()
 
-    def state_changed(self, state):
-        self.plot_state = state  # FIXME: don't save this here
-        # FIXME: trigger updates of things
+    def state_changed(self, state, changed):
+        if 'center' in changed or 'span' in changed:
+            f = state.center - (state.span / 2)
+            self._fstart_edit.setText(str(f / float(M)))
+            f = state.center + (state.span / 2)
+            self._fstop_edit.setText(str(f / float(M)))
+            self._freq_edit.setText(str(state.center / float(M)))
+            self._bw_edit.setText(str(state.span / float(M)))
+        # FIXME: trigger updates of other things
 
     def keyPressEvent(self, event):
         if self.dut:
@@ -321,14 +335,12 @@ class MainPanel(QtGui.QWidget):
     def _connect_device_controls(self):
 
         def new_antenna():
-            self.plot_state.dev_set['antenna'] = (int(self._dev_group._antenna_box.currentText().split()[-1]))
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-        
+            self.controller.apply_device_settings(antenna=
+                int(self._dev_group._antenna_box.currentText().split()[-1]))
+
         def new_dec():
-            self.plot_state.dev_set['decimation'] = int(
-                self._dev_group._dec_box.currentText().split(' ')[-1])
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-            self.update_freq()
+            self.controller.apply_settings(decimation=int(
+                self._dev_group._dec_box.currentText().split(' ')[-1]))
 
         def new_freq_shift():
             rfe_mode = 'ZIF'
@@ -501,7 +513,7 @@ class MainPanel(QtGui.QWidget):
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
         cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq_edit = QtGui.QLineEdit(str(gui_config.INIT_CENTER_FREQ / float(M)))
+        freq_edit = QtGui.QLineEdit()
         self._freq_edit = freq_edit
         self.control_widgets.append(self._cfreq)
         self.control_widgets.append(self._freq_edit)
@@ -550,11 +562,11 @@ class MainPanel(QtGui.QWidget):
         bw.setToolTip("[3]\nChange the bandwidth of the current plot")
         self._bw = bw
         bw.clicked.connect(lambda: cu._select_bw(self))
-        bw_edit = QtGui.QLineEdit(str(gui_config.INIT_BANDWIDTH / float(M)))
+        bw_edit = QtGui.QLineEdit()
         def freq_change():
             cu._select_bw(self)
             self.update_freq()
-            self.update_freq_edit()   
+            self.update_freq_edit()
         bw_edit.returnPressed.connect(lambda: freq_change())
         self._bw_edit = bw_edit
         self.control_widgets.append(self._bw_edit)
@@ -566,8 +578,7 @@ class MainPanel(QtGui.QWidget):
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
         fstart.clicked.connect(lambda: cu._select_fstart(self))
-        f = gui_config.INIT_CENTER_FREQ - (gui_config.INIT_BANDWIDTH / 2)
-        freq = QtGui.QLineEdit(str(f / float(M)))
+        freq = QtGui.QLineEdit()
         def freq_change():
             cu._select_fstart(self)
             self.update_freq()
@@ -581,15 +592,14 @@ class MainPanel(QtGui.QWidget):
 
     def _fstop_controls(self):
         fstop = QtGui.QPushButton('Stop')
-        fstop.setToolTip("[4]Tune the stop frequency") 
+        fstop.setToolTip("[4]Tune the stop frequency")
         self._fstop = fstop
         fstop.clicked.connect(lambda: cu._select_fstop(self))
-        f = gui_config.INIT_CENTER_FREQ + (gui_config.INIT_BANDWIDTH / 2)
-        freq = QtGui.QLineEdit(str(f / float(M)))
+        freq = QtGui.QLineEdit()
         def freq_change():
-            cu._select_fstop(self)   
+            cu._select_fstop(self)
             self.update_freq()
-            self.update_freq_edit()            
+            self.update_freq_edit()
         freq.returnPressed.connect(lambda: freq_change())
         self._fstop_edit = freq
         self.control_widgets.append(self._fstop)
@@ -773,15 +783,16 @@ class MainPanel(QtGui.QWidget):
         return marker_label,delta_label, diff_label
 
     def capture_received(self, state, raw, power, usable, segments):
-        self.plot_state = state  # FIXME: don't store this
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
         self.sweep_segments = segments
 
         self.plot_state.update_freq_range(
+            state.mode,
             len(self.pow_data),
             False if raw is None else raw.spec_inv)
+
         self.update_trace()
         self.update_iq()
         self.update_marker()

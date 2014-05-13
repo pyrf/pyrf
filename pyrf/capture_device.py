@@ -53,10 +53,13 @@ class CaptureDevice(object):
         if self._device_set['iq_output_path'] == 'CONNECTOR':
             self.real_device.apply_device_settings(self._device_set)
 
-    def capture_time_domain(self, rbw, device_settings=None, min_points=128):
+    def capture_time_domain(self, rfe_mode, freq, rbw, device_settings=None,
+            min_points=128):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
+        :param rfe_mode: radio front end mode, e.g. 'ZIF', 'SH', ...
+        :param freq: center frequency
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
@@ -68,19 +71,19 @@ class CaptureDevice(object):
         """
         prop = self.real_device.properties
 
-        if device_settings:
-            self.configure_device(device_settings)
+        self.configure_device(dict(
+            freq=freq,
+            rfe_mode=rfe_mode,
+            **(device_settings if device_settings else {})))
 
         if self._configure_device_flag:
             self.real_device.apply_device_settings(self._device_set)
             self._configure_device_flag = False
 
-        rfe_mode = self._device_set['rfe_mode']
         full_bw = prop.FULL_BW[rfe_mode]
         usable_bw = prop.USABLE_BW[rfe_mode]
         pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
 
-        freq = self._device_set['freq']
         self.fstart = freq - full_bw * pass_band_center
         self.fstop = freq + full_bw * (1 - pass_band_center)
 
