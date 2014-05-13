@@ -51,6 +51,7 @@ class WSA4000Properties(object):
         'decimation': 1,
         'fshift': 0,
         'device_settings': {
+            'antenna': 1,
             'ifgain': 0,
             'gain': 'low',
             },
