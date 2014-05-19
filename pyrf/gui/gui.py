@@ -33,7 +33,7 @@ from util import find_max_index, find_nearest_index
 from util import hotkey_util, update_marker_traces
 import control_util as cu
 from plot_widget import Plot
-from device_widget import DeviceControlsWidget
+from device_controls import DeviceControls
 from discovery_widget import DiscoveryWidget
 
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
@@ -369,7 +369,7 @@ class MainPanel(QtGui.QWidget):
         return max_hold, min_hold, write, store, blank
 
     def _device_controls(self):
-        self._dev_group = DeviceControlsWidget(self.controller)
+        self._dev_group = DeviceControls(self.controller)
         self.control_widgets.append(self._dev_group)
         return self._dev_group
 

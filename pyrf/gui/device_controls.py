@@ -1,7 +1,6 @@
 from PySide import QtGui
 
-class DeviceControlsWidget(QtGui.QGroupBox):
-
+class DeviceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
     can be used to control the WSA4000/WSA5000
@@ -9,7 +8,7 @@ class DeviceControlsWidget(QtGui.QGroupBox):
     """
 
     def __init__(self, controller, name="Device Control"):
-        super(DeviceControlsWidget, self).__init__()
+        super(DeviceControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
