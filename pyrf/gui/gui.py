@@ -175,6 +175,11 @@ class MainPanel(QtGui.QWidget):
         self.controller.read_block()
 
     def state_changed(self, state, changed):
+        """
+        signal handler for speca state changes
+        :param state: new SpecAState object
+        :param changed: list of attribute names changed
+        """
         if 'center' in changed or 'span' in changed:
             f = state.center - (state.span / 2)
             self._fstart_edit.setText(str(f / float(M)))
@@ -182,7 +187,53 @@ class MainPanel(QtGui.QWidget):
             self._fstop_edit.setText(str(f / float(M)))
             self._freq_edit.setText(str(state.center / float(M)))
             self._bw_edit.setText(str(state.span / float(M)))
-        # FIXME: trigger updates of other things
+
+        if 'mode' in changed:
+            if state.mode == 'IQIN' or state.mode == 'DD':
+                self._freq_edit.setText(str(
+                    self.dut_prop.MIN_TUNABLE[state.rfe_mode()] / M))
+                self._freq_edit.setEnabled(False)
+                self.plot_state.update_freq_set(
+                    fcenter=self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
+                self.update_freq_edit()
+
+            if state.rfe_mode() == 'HDR':
+                self._rbw_use_hdr_values()
+            else:
+                self._rbw_use_normal_values()
+
+            if state.sweeping():
+                self._plot.const_window.hide()
+                self._plot.iq_window.hide()
+                self.plot_state.disable_block_mode(self)
+                self._rbw_box.setCurrentIndex(0)
+                self._dev_group._dec_box.setEnabled(False)
+                self._dev_group._freq_shift_edit.setEnabled(False)
+                # FIXME: so terrible
+                self.controller._sweep_mode = state.rfe_mode()
+                return
+            self._plot.const_window.show()
+            self._plot.iq_window.show()
+            self.plot_state.enable_block_mode(self)
+
+
+            self._bw_edit.setText(str(float(
+                self.dut_prop.FULL_BW[state.mode]) / M))
+            self.plot_state.update_freq_set(
+                bw=self.dut_prop.FULL_BW[state.mode])
+            self.update_freq_edit()
+
+            # FIXME: wat
+            self._rbw_box.setCurrentIndex(
+                4 if state.mode in ['SH', 'SHN'] else 3)
+
+            cu._center_plot_view(self)
+            if state.mode == 'HDR':
+                self._dev_group._dec_box.setEnabled(False)
+                self._dev_group._freq_shift_edit.setEnabled(False)
+            else:
+                self._dev_group._dec_box.setEnabled(True)
+                self._dev_group._freq_shift_edit.setEnabled(True)
 
     def keyPressEvent(self, event):
         if self.dut:
@@ -391,55 +442,7 @@ class MainPanel(QtGui.QWidget):
             input_mode = self._dev_group._mode.currentText()
             if not input_mode:
                 return
-
-            if self.plot_state.dev_set['rfe_mode'] == 'IQIN' or self.plot_state.dev_set['rfe_mode'] == 'DD':
-                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
-                self._freq_edit.setEnabled(True)
-                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
-                self.update_freq_edit()
-
-            if input_mode == 'IQIN' or input_mode == 'DD':
-                self._freq_edit.setText(str(self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]]/M))
-                self._freq_edit.setEnabled(False)
-                self.plot_state.update_freq_set(fcenter = self.dut_prop.MIN_TUNABLE[input_mode.split(" ")[-1]])
-                self.update_freq_edit()
-
-            if input_mode.startswith('Sweep '):
-
-                self._plot.const_window.hide()
-                self._plot.iq_window.hide()
-                self.plot_state.dev_set['rfe_mode'] = str(input_mode.split(" ")[-1])
-                cu._update_rbw_values(self)
-                self.plot_state.disable_block_mode(self)
-                self._rbw_box.setCurrentIndex(0)
-                self._dev_group._dec_box.setEnabled(False)
-                self._dev_group._freq_shift_edit.setEnabled(False)
-                # FIXME: so terrible
-                self.controller._sweep_mode = input_mode.split(' ',1)[1]
-                return
-            else:
-                self._plot.const_window.show()
-                self._plot.iq_window.show()
-                self.plot_state.enable_block_mode(self)
-
-            self.plot_state.dev_set['rfe_mode'] = str(input_mode.split(" ")[-1])
-            cu._update_rbw_values(self)
-
-            self.plot_state.dev_set['rfe_mode'] = str(input_mode)
-            self._bw_edit.setText(str(float(self.dut_prop.FULL_BW[input_mode])/ M))
-            self.plot_state.update_freq_set(bw = self.dut_prop.FULL_BW[input_mode])
-            self.update_freq_edit()
-            # FIXME: wrong place for this
-            self.controller._capture_device.configure_device(self.plot_state.dev_set)
-
-            self._rbw_box.setCurrentIndex(4 if input_mode in ['SH', 'SHN'] else 3)
-            cu._center_plot_view(self)
-            if input_mode == 'HDR':
-                self._dev_group._dec_box.setEnabled(False)
-                self._dev_group._freq_shift_edit.setEnabled(False)
-            else:
-                self._dev_group._dec_box.setEnabled(True)
-                self._dev_group._freq_shift_edit.setEnabled(True)
+            self.controller.apply_settings(mode=input_mode)
 
         self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
         self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
@@ -606,20 +609,35 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._fstop_edit)
         return fstop, freq
 
+    def _rbw_replace_items(self, items):
+        for i in range(self._rbw_box.count()):
+            self._rbw_box.removeItem(0)
+        self._rbw_box.addItems(items)
+
+    def _rbw_use_normal_values(self):
+        values = [v * 1000 for v in RBW_VALUES]  # wat
+        if values == self._rbw_values:
+            return
+        self._rbw_values = values
+        self._rbw_replace_items([str(p) + ' KHz' for p in RBW_VALUES])
+
+    def _rbw_use_hdr_values(self):
+        values = HDR_RBW_VALUES
+        if values == self._rbw_values:
+            return
+        self._rbw_values = values
+        self._rbw_replace_items([str(p) + ' Hz' for p in HDR_RBW_VALUES])
+
     def _rbw_controls(self):
         rbw = QtGui.QComboBox(self)
         rbw.setToolTip("Change the RBW of the FFT plot")
-        self._points_values = RBW_VALUES
-        self._hdr_points_values = HDR_RBW_VALUES
         self._rbw_box = rbw
-        rbw.addItems([str(p) + ' KHz' for p in self._points_values])
+        self._rbw_values = None
+        self._rbw_use_normal_values()
 
         def new_rbw():
-        
-            if not self.plot_state.dev_set['rfe_mode'] == 'HDR':    
-                self.plot_state.update_freq_set(rbw = 1e3 * self._points_values[rbw.currentIndex()])
-            else:
-                self.plot_state.update_freq_set(rbw = self._hdr_points_values[rbw.currentIndex()])
+            self.controller.apply_settings(rbw=self._rbw_values[
+                rbw.currentIndex()])
 
         rbw.setCurrentIndex(0)
         rbw.currentIndexChanged.connect(new_rbw)

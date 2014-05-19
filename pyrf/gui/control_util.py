@@ -290,20 +290,7 @@ def _trigger_control(layout):
         else:
             layout.plot_state.disable_block_mode(layout)
         layout.update_trig()
-        
-def _update_rbw_values(layout):
-    """
-    update the RBW values depending on the current mode of operation
-    """
-    for index in range(layout._rbw_box.count()):
-        layout._rbw_box.removeItem(0)
-        
-    if not layout.plot_state.dev_set['rfe_mode'] == 'HDR':
-        layout._rbw_box.addItems([str(p) + ' KHz' for p in layout._points_values])
-    
-    else:
-        layout._rbw_box.addItems([str(p) + ' Hz' for p in layout._hdr_points_values])
-            
+
 def _external_digitizer_mode(layout):
     """
     Disable all controls/plots that are irrelavant in external digitizer mode

@@ -42,6 +42,7 @@ class PlotState(object):
                                         self.center_freq + 10e6,
                                         self.center_freq - 10e6,-100)
         self.device_properties = device_properties
+        self.dev_set = {}
 
     def disable_block_mode(self, layout):
         self.block_mode = False
@@ -82,14 +83,13 @@ class PlotState(object):
             self.freq_range = np.linspace(self.fstart, self.fstop, size)
 
 
-    def update_freq_set(self,
+    def update_freq_set(self, rfe_mode,
                           fstart=None,
                           fstop=None,
                           fcenter=None,
                           rbw=None,
                           bw=None):
         prop = self.device_properties
-        rfe_mode = self.dev_set['rfe_mode']
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
 

@@ -80,8 +80,13 @@ class SpecAState(object):
             # don't serialize playback info
             }
 
-    def is_sweeping(self):
+    def sweeping(self):
         return self.mode.startswith('Sweep ')
+
+    def rfe_mode(self):
+        if self.mode.startswith('Sweep '):
+            return self.mode[6:]
+        return self.mode
 
 
 class SpecAController(QtCore.QObject):
@@ -145,7 +150,7 @@ class SpecAController(QtCore.QObject):
 
         # only read data if WSA digitizer is used
         if self._speca_state.device_settings['iq_output_path'] == 'DIGITIZER':
-            if self._speca_state.is_sweeping():
+            if self._speca_state.sweeping():
                 self.read_sweep()
                 return
             self.read_block()
