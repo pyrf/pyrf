@@ -6,13 +6,14 @@ class DeviceControlsWidget(QtGui.QGroupBox):
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
     can be used to control the WSA4000/WSA5000
     :param name: The name of the groupBox
-    
-    Note: All the widgets inside this groupBox are not connected to any controls, and must be
-    connected within the parent layout.
+    """
 
-"""
-    def __init__(self, name = "Device Control"):
+    def __init__(self, controller, name="Device Control"):
         super(DeviceControlsWidget, self).__init__()
+
+        self.controller = controller
+        controller.device_change.connect(self.device_changed)
+        controller.state_change.connect(self.state_changed)
 
         self.setTitle(name)
 
@@ -44,10 +45,81 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         self.setLayout(dev_layout)
         self.layout = dev_layout
 
-    def configure(self, dut_prop):
-        """
-        :param dut_prop: device properties object
-        """
+        self._connect_device_controls()
+
+    def _connect_device_controls(self):
+        def new_antenna():
+            self.controller.apply_device_settings(antenna=
+                int(self._antenna_box.currentText().split()[-1]))
+
+        def new_dec():
+            self.controller.apply_settings(decimation=int(
+                self._dec_box.currentText().split(' ')[-1]))
+
+        def new_freq_shift():
+            rfe_mode = 'ZIF'
+            prop = self.dut.properties
+            max_fshift = prop.MAX_FSHIFT[rfe_mode]
+            try:
+                if float(self._freq_shift_edit.text()) * M < max_fshift:
+                    self.plot_state.dev_set['fshift'] = float(self._freq_shift_edit.text()) * M
+                else:
+                    self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+            except ValueError:
+                self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+                return
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
+        def new_gain():
+            self.plot_state.dev_set['gain'] = self._gain_box.currentText().split()[-1].lower().encode('ascii')
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
+        def new_ifgain():
+            self.plot_state.dev_set['ifgain'] = self._ifgain_box.value()
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
+        def new_attenuator():
+            self.plot_state.dev_set['attenuator'] = self._attenuator_box.isChecked()
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
+        def new_pll_reference():
+            if 'INTERNAL' in str(self._pll_box.currentText()):
+                src = 'INT'
+            else:
+                src = 'EXT'
+            self.plot_state.dev_set['pll_reference'] = src
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
+        def new_iq_path():
+            self.plot_state.dev_set['iq_output_path'] = str(self._iq_output_box.currentText().split()[-1])
+            if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
+                # disable unwanted controls
+                cu._external_digitizer_mode(self)
+            else:
+                cu._internal_digitizer_mode(self)
+                self.cap_dut.configure_device(self.plot_state.dev_set)
+                self.read_block()
+            self.cap_dut.configure_device(self.plot_state.dev_set)
+
+        def new_input_mode():
+            input_mode = self._mode.currentText()
+            if not input_mode:
+                return
+            self.controller.apply_settings(mode=input_mode)
+
+        self._antenna_box.currentIndexChanged.connect(new_antenna)
+        self._gain_box.currentIndexChanged.connect(new_gain)
+        self._dec_box.currentIndexChanged.connect(new_dec)
+        self._freq_shift_edit.returnPressed.connect(new_freq_shift) 
+        self._ifgain_box.valueChanged.connect(new_ifgain)
+        self._attenuator_box.clicked.connect(new_attenuator)
+        self._mode.currentIndexChanged.connect(new_input_mode)
+        self._iq_output_box.currentIndexChanged.connect(new_iq_path)
+        self._pll_box.currentIndexChanged.connect(new_pll_reference)
+
+    def device_changed(self, state, dut):
+        dut_prop = dut.properties
+        # FIXME: remove device-specific code, use device properties instead
         if dut_prop.model.startswith('WSA5000'):
             self._antenna_box.hide()
             self._gain_box.hide()
@@ -65,6 +137,18 @@ class DeviceControlsWidget(QtGui.QGroupBox):
         for m in dut_prop.RFE_MODES:
             self._mode.addItem(m)
         self._mode.addItem('Sweep SH')
+
+    def state_changed(self, state, changed):
+        if 'mode' in changed:
+            if state.sweeping():
+                self._dec_box.setEnabled(False)
+                self._freq_shift_edit.setEnabled(False)
+            elif state.mode == 'HDR':
+                self._dec_box.setEnabled(False)
+                self._freq_shift_edit.setEnabled(False)
+            else:
+                self._dec_box.setEnabled(True)
+                self._freq_shift_edit.setEnabled(True)
 
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)

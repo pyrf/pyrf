@@ -158,7 +158,6 @@ class MainPanel(QtGui.QWidget):
     def device_changed(self, state, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = dut.properties
-        self._dev_group.configure(dut.properties)
 
         self.state_changed(
             state,
@@ -207,8 +206,6 @@ class MainPanel(QtGui.QWidget):
                 self._plot.iq_window.hide()
                 self.plot_state.disable_block_mode(self)
                 self._rbw_box.setCurrentIndex(0)
-                self._dev_group._dec_box.setEnabled(False)
-                self._dev_group._freq_shift_edit.setEnabled(False)
                 # FIXME: so terrible
                 self.controller._sweep_mode = state.rfe_mode()
                 return
@@ -228,12 +225,6 @@ class MainPanel(QtGui.QWidget):
                 4 if state.mode in ['SH', 'SHN'] else 3)
 
             cu._center_plot_view(self)
-            if state.mode == 'HDR':
-                self._dev_group._dec_box.setEnabled(False)
-                self._dev_group._freq_shift_edit.setEnabled(False)
-            else:
-                self._dev_group._dec_box.setEnabled(True)
-                self._dev_group._freq_shift_edit.setEnabled(True)
 
     def keyPressEvent(self, event):
         if self.dut:
@@ -378,82 +369,10 @@ class MainPanel(QtGui.QWidget):
         return max_hold, min_hold, write, store, blank
 
     def _device_controls(self):
-        self._dev_group = DeviceControlsWidget()
-        self._connect_device_controls()
+        self._dev_group = DeviceControlsWidget(self.controller)
         self.control_widgets.append(self._dev_group)
         return self._dev_group
 
-    def _connect_device_controls(self):
-
-        def new_antenna():
-            self.controller.apply_device_settings(antenna=
-                int(self._dev_group._antenna_box.currentText().split()[-1]))
-
-        def new_dec():
-            self.controller.apply_settings(decimation=int(
-                self._dev_group._dec_box.currentText().split(' ')[-1]))
-
-        def new_freq_shift():
-            rfe_mode = 'ZIF'
-            prop = self.dut.properties
-            max_fshift = prop.MAX_FSHIFT[rfe_mode]
-            try:
-                if float(self._dev_group._freq_shift_edit.text()) * M < max_fshift:
-                    self.plot_state.dev_set['fshift'] = float(self._dev_group._freq_shift_edit.text()) * M
-                else:
-                    self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
-            except ValueError:
-                self._dev_group._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
-                return
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_gain():
-            self.plot_state.dev_set['gain'] = self._dev_group._gain_box.currentText().split()[-1].lower().encode('ascii')
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_ifgain():
-            self.plot_state.dev_set['ifgain'] = self._dev_group._ifgain_box.value()
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_attenuator():
-            self.plot_state.dev_set['attenuator'] = self._dev_group._attenuator_box.isChecked()
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_pll_reference():
-            if 'INTERNAL' in str(self._dev_group._pll_box.currentText()):
-                src = 'INT'
-            else:
-                src = 'EXT'
-            self.plot_state.dev_set['pll_reference'] = src
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_iq_path():
-            self.plot_state.dev_set['iq_output_path'] = str(self._dev_group._iq_output_box.currentText().split()[-1])
-            if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
-                # disable unwanted controls
-                cu._external_digitizer_mode(self)
-            else:
-                cu._internal_digitizer_mode(self)
-                self.cap_dut.configure_device(self.plot_state.dev_set)
-                self.read_block()
-            self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_input_mode():
-            input_mode = self._dev_group._mode.currentText()
-            if not input_mode:
-                return
-            self.controller.apply_settings(mode=input_mode)
-
-        self._dev_group._antenna_box.currentIndexChanged.connect(new_antenna)
-        self._dev_group._gain_box.currentIndexChanged.connect(new_gain)
-        self._dev_group._dec_box.currentIndexChanged.connect(new_dec)
-        self._dev_group._freq_shift_edit.returnPressed.connect(new_freq_shift) 
-        self._dev_group._ifgain_box.valueChanged.connect(new_ifgain)
-        self._dev_group._attenuator_box.clicked.connect(new_attenuator)
-        self._dev_group._mode.currentIndexChanged.connect(new_input_mode)
-        self._dev_group._iq_output_box.currentIndexChanged.connect(new_iq_path)
-        self._dev_group._pll_box.currentIndexChanged.connect(new_pll_reference)
-   
     def _freq_controls(self):
         freq_group = QtGui.QGroupBox("Frequency Control")
         self._freq_group = freq_group
