@@ -1,5 +1,10 @@
 from PySide import QtGui
 
+# FIXME: calculate choices from device properties instead
+RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
+HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
+
+
 class DeviceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -39,6 +44,12 @@ class DeviceControls(QtGui.QGroupBox):
 
         row.addWidget(self._gain_control())
         row.addWidget(self._ifgain_control())
+        dev_layout.addLayout(row)
+
+        row = QtGui.QHBoxLayout()
+        rbw_label, rbw_box = self._rbw_controls()
+        row.addWidget(rbw_label)
+        row.addWidget(rbw_box)
         dev_layout.addLayout(row)
 
         self.setLayout(dev_layout)
@@ -137,6 +148,7 @@ class DeviceControls(QtGui.QGroupBox):
             self._mode.addItem(m)
         self._mode.addItem('Sweep SH')
 
+
     def state_changed(self, state, changed):
         if 'mode' in changed:
             if state.sweeping():
@@ -148,6 +160,16 @@ class DeviceControls(QtGui.QGroupBox):
             else:
                 self._dec_box.setEnabled(True)
                 self._freq_shift_edit.setEnabled(True)
+
+            if state.rfe_mode() == 'HDR':
+                self._rbw_use_hdr_values()
+            else:
+                self._rbw_use_normal_values()
+            # FIXME: way too much knowledge about rbw levels here
+            self._rbw_box.setCurrentIndex(
+                0 if state.sweeping() else
+                4 if state.mode in ['SH', 'SHN'] else
+                3)
 
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)
@@ -225,5 +247,41 @@ class DeviceControls(QtGui.QGroupBox):
         pll.addItem("PLL Reference: EXTERNAL")
         self._pll_box = pll
         return pll
+
+    def _rbw_replace_items(self, items):
+        for i in range(self._rbw_box.count()):
+            self._rbw_box.removeItem(0)
+        self._rbw_box.addItems(items)
+
+    def _rbw_use_normal_values(self):
+        values = [v * 1000 for v in RBW_VALUES]  # wat
+        if values == self._rbw_values:
+            return
+        self._rbw_values = values
+        self._rbw_replace_items([str(p) + ' KHz' for p in RBW_VALUES])
+
+    def _rbw_use_hdr_values(self):
+        values = HDR_RBW_VALUES
+        if values == self._rbw_values:
+            return
+        self._rbw_values = values
+        self._rbw_replace_items([str(p) + ' Hz' for p in HDR_RBW_VALUES])
+
+    def _rbw_controls(self):
+        rbw_label = QtGui.QLabel('Resolution Bandwidth:')
+
+        rbw = QtGui.QComboBox(self)
+        rbw.setToolTip("Change the RBW of the FFT plot")
+        self._rbw_box = rbw
+        self._rbw_values = None
+        self._rbw_use_normal_values()
+
+        def new_rbw():
+            self.controller.apply_settings(rbw=self._rbw_values[
+                rbw.currentIndex()])
+
+        rbw.setCurrentIndex(0)
+        rbw.currentIndexChanged.connect(new_rbw)
+        return rbw_label, rbw
 
 

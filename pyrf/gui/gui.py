@@ -36,10 +36,6 @@ from plot_widget import Plot
 from device_controls import DeviceControls
 from discovery_widget import DiscoveryWidget
 
-RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
-
-HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
-
 PLOT_YMIN = -140
 PLOT_YMAX = 0
 
@@ -166,7 +162,6 @@ class MainPanel(QtGui.QWidget):
 
         self.enable_controls()
         cu._select_center_freq(self)
-        self._rbw_box.setCurrentIndex(3)  # wat
         self._plot.const_window.show()
         self._plot.iq_window.show()
         self.plot_state.enable_block_mode(self)
@@ -196,16 +191,10 @@ class MainPanel(QtGui.QWidget):
                     fcenter=self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
                 self.update_freq_edit()
 
-            if state.rfe_mode() == 'HDR':
-                self._rbw_use_hdr_values()
-            else:
-                self._rbw_use_normal_values()
-
             if state.sweeping():
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 self.plot_state.disable_block_mode(self)
-                self._rbw_box.setCurrentIndex(0)
                 # FIXME: so terrible
                 self.controller._sweep_mode = state.rfe_mode()
                 return
@@ -219,10 +208,6 @@ class MainPanel(QtGui.QWidget):
             self.plot_state.update_freq_set(
                 bw=self.dut_prop.FULL_BW[state.mode])
             self.update_freq_edit()
-
-            # FIXME: wat
-            self._rbw_box.setCurrentIndex(
-                4 if state.mode in ['SH', 'SHN'] else 3)
 
             cu._center_plot_view(self)
 
@@ -414,18 +399,11 @@ class MainPanel(QtGui.QWidget):
         freq_inc_hbox.addWidget(freq_inc_plus)
         self._freq_inc_hbox = freq_inc_hbox
 
-        rbw_hbox = QtGui.QHBoxLayout()
-        rbw = self._rbw_controls()
-        rbw_hbox.addWidget(QtGui.QLabel('Resolution Bandwidth:'))
-        rbw_hbox.addWidget(rbw)
-        self._rbw_hbox = rbw_hbox
-        
         freq_layout.addLayout(self._fstart_hbox)
         freq_layout.addLayout(self._cfreq_hbox)
         freq_layout.addLayout(self._bw_hbox)
         freq_layout.addLayout(self._fstop_hbox)
         freq_layout.addLayout(self._freq_inc_hbox)
-        freq_layout.addLayout(self._rbw_hbox)
         freq_group.setLayout(freq_layout)
         self._freq_layout = freq_layout
         return freq_group
@@ -527,41 +505,6 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._fstop)
         self.control_widgets.append(self._fstop_edit)
         return fstop, freq
-
-    def _rbw_replace_items(self, items):
-        for i in range(self._rbw_box.count()):
-            self._rbw_box.removeItem(0)
-        self._rbw_box.addItems(items)
-
-    def _rbw_use_normal_values(self):
-        values = [v * 1000 for v in RBW_VALUES]  # wat
-        if values == self._rbw_values:
-            return
-        self._rbw_values = values
-        self._rbw_replace_items([str(p) + ' KHz' for p in RBW_VALUES])
-
-    def _rbw_use_hdr_values(self):
-        values = HDR_RBW_VALUES
-        if values == self._rbw_values:
-            return
-        self._rbw_values = values
-        self._rbw_replace_items([str(p) + ' Hz' for p in HDR_RBW_VALUES])
-
-    def _rbw_controls(self):
-        rbw = QtGui.QComboBox(self)
-        rbw.setToolTip("Change the RBW of the FFT plot")
-        self._rbw_box = rbw
-        self._rbw_values = None
-        self._rbw_use_normal_values()
-
-        def new_rbw():
-            self.controller.apply_settings(rbw=self._rbw_values[
-                rbw.currentIndex()])
-
-        rbw.setCurrentIndex(0)
-        rbw.currentIndexChanged.connect(new_rbw)
-        self.control_widgets.append(self._rbw_box)
-        return rbw
 
     def update_freq(self, delta=None):
         if not self.dut:
