@@ -43,16 +43,6 @@ class PlotState(object):
         self.device_properties = device_properties
         self.dev_set = {}
 
-    def disable_block_mode(self, layout):
-        self.block_mode = False
-        util.enable_freq_cont(layout)
-
-    def enable_block_mode(self, layout):
-        self.block_mode = True
-
-        layout._cfreq.click()
-        util.disable_freq_cont(layout)
-
     def disable_triggers(self, layout):
         layout._plot.amptrig_line.setValue(-100)
         layout._plot.remove_trigger()

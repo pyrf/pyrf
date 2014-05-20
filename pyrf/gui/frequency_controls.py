@@ -59,9 +59,8 @@ class FrequencyControls(QtGui.QGroupBox):
         self.setLayout(freq_layout)
         self._freq_layout = freq_layout
 
-        self.update_freq()
 
-    def device_changed(self, state, dut):
+    def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
 
@@ -176,7 +175,7 @@ class FrequencyControls(QtGui.QGroupBox):
         self._fstop_edit = freq
         return fstop, freq
 
-    def increment_freq(self, delta=0):
+    def update_freq(self, delta=0):
         min_tunable = self.min_tunable
         max_tunable = self.max_tunable
         try:
@@ -282,4 +281,65 @@ class FrequencyControls(QtGui.QGroupBox):
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
+
+    def select_fstart(self):
+        """
+        changes the color of the fstart button to orange and all others to default
+        """
+        self._fstart.setStyleSheet(
+            'background-color: %s; color: white;' % colors.ORANGE)
+        self._cfreq.setStyleSheet("")
+        self._fstop.setStyleSheet("")
+        self._bw.setStyleSheet("")
+        self.freq_sel = 'FSTART'
+
+    def select_center(self):
+        """
+        changes the color of the fcenter button to orange and all others to default
+        """
+        self._cfreq.setStyleSheet(
+            'background-color: %s; color: white;' % colors.ORANGE)
+        self._fstart.setStyleSheet("")
+        self._fstop.setStyleSheet("")
+        self._bw.setStyleSheet("")
+        self.freq_sel = 'CENT'
+
+    def select_bw(self):
+        """
+        changes the color of the span button to orange and all others to default
+        """
+        self._bw.setStyleSheet(
+            'background-color: %s; color: white;' % colors.ORANGE)
+        self._fstart.setStyleSheet("")
+        self._cfreq.setStyleSheet("")
+        self._fstop.setStyleSheet("")
+        self.freq_sel = 'BW'
+
+    def select_fstop(self):
+        """
+        changes the color of the fstop button to orange and all others to default
+        """
+        self._fstop.setStyleSheet(
+            'background-color: %s; color: white;' % colors.ORANGE)
+        self._fstart.setStyleSheet("")
+        self._cfreq.setStyleSheet("")
+        self._bw.setStyleSheet("")
+        self.freq_sel = 'FSTOP'
+
+    def enable(self):
+        self._bw.setEnabled(True)
+        self._bw_edit.setEnabled(True)
+        self._fstart.setEnabled(True)
+        self._fstart_edit.setEnabled(True)
+        self._fstop.setEnabled(True)
+        self._fstop_edit.setEnabled(True)
+
+    def disable(self):
+        self._bw.setEnabled(False)
+        self._bw_edit.setEnabled(False)
+        self._fstart.setEnabled(False)
+        self._fstart_edit.setEnabled(False)
+        self._fstop.setEnabled(False)
+        self._fstop_edit.setEnabled(False)
+
 

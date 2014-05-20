@@ -101,7 +101,7 @@ class SpecAController(QtCore.QObject):
     _plot_state = None
     _speca_state = None
 
-    device_change = QtCore.Signal(SpecAState, object)
+    device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, object, object, object, object)
 
@@ -115,11 +115,16 @@ class SpecAController(QtCore.QObject):
         self._sweep_device = SweepDevice(dut, self.process_sweep)
         self._capture_device = CaptureDevice(dut,
             async_callback=self.process_capture)
+
+        self.device_change.emit(dut)
+
         self._speca_state = SpecAState.from_json_object(
             dut.properties.SPECA_DEFAULTS, playback)
-
-        self.device_change.emit(self._speca_state, dut)
-
+        self.state_change.emit(
+            state,
+            # assume everything has changed
+            list(dut.properties.SPECA_DEFAULTS),
+            )
 
     def read_block(self):
         self._capture_device.capture_time_domain(

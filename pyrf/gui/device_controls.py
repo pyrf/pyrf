@@ -127,7 +127,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
 
-    def device_changed(self, state, dut):
+    def device_changed(self, dut):
         dut_prop = dut.properties
         # FIXME: remove device-specific code, use device properties instead
         if dut_prop.model.startswith('WSA5000'):

@@ -152,20 +152,13 @@ class MainPanel(QtGui.QWidget):
         self.ref_level = 0
         self.plot_state = None
 
-    def device_changed(self, state, dut):
+    def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = dut.properties
 
-        self.state_changed(
-            state,
-            state.to_json_object(),  # everything may have changed
-            )
-
         self.enable_controls()
-        cu._select_center_freq(self)
         self._plot.const_window.show()
         self._plot.iq_window.show()
-        self.plot_state.enable_block_mode(self)
 
         self.controller.read_block()
 
@@ -186,7 +179,6 @@ class MainPanel(QtGui.QWidget):
             self._plot.const_window.show()
             self._plot.iq_window.show()
             self.plot_state.enable_block_mode(self)
-
 
             cu._center_plot_view(self)
 

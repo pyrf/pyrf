@@ -3,6 +3,8 @@ import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
 
+from frequency_controls import FrequencyControls
+
 AXIS_OFFSET = 7
 IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': -1, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
 IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
@@ -15,34 +17,7 @@ def _center_plot_view(layout):
     layout._plot.iq_window.setYRange(IQ_PLOT_YMIN[layout.plot_state.dev_set['rfe_mode']],
                                     IQ_PLOT_YMAX[layout.plot_state.dev_set['rfe_mode']])
 
-def _select_center_freq(layout):
-    """
-    select the center freq for arrow control
-    """
-    layout.plot_state.freq_sel = 'CENT'
-    util.select_center(layout)
-    
-def _select_bw(layout):
-    """
-    select the bw for arrow control
-    """
-    layout.plot_state.freq_sel = 'BW'
-    util.select_bw(layout)
 
-def _select_fstart(layout):
-    """
-    select the fstart for arrow control
-    """
-    layout.plot_state.freq_sel = 'FSTART'
-    util.select_fstart(layout)
-    
-def _select_fstop(layout):
-    """
-    select the fstop for arrow control
-    """
-    layout.plot_state.freq_sel = 'FSTOP'
-    util.select_fstop(layout)
-    
 def _up_arrow_key(layout):
     """
     increase the step size of the +/- buttons
@@ -352,11 +327,11 @@ def _internal_digitizer_mode(layout):
     layout._dev_group._fshift_unit.show()
 
 
-hotkey_dict = {'1': _select_fstart,
-                '2': _select_center_freq,
-                '3': _select_bw,
-                '4': _select_fstop,
-                'UP KEY': _up_arrow_key, 
+hotkey_dict = {'1': FrequencyControls.select_fstart,
+                '2': FrequencyControls.select_center,
+                '3': FrequencyControls.select_bw,
+                '4': FrequencyControls.select_fstop,
+                'UP KEY': _up_arrow_key,
                 'DOWN KEY': _down_arrow_key,
                 'RIGHT KEY': _right_arrow_key,
                 'LEFT KEY': _left_arrow_key,
