@@ -33,7 +33,6 @@ class PlotState(object):
         self.fstop = self.center_freq + self.bandwidth / 2
         self.rbw = device_properties.SPECA_DEFAULTS['rbw']
         self.enable_plot = True
-        self.freq_sel = 'CENT'
 
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN
@@ -71,7 +70,7 @@ class PlotState(object):
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
 
     def update_freq_range(self, mode, size, inv):
-        if self.block_mode and mode in ['SH', 'SHN']:
+        if self.block_mode and (mode == 'SH' or mode == 'SHN'):
             if inv:
                 pass_area = self.device_properties.PASS_BAND_CENTER[mode]
             else:
@@ -82,64 +81,4 @@ class PlotState(object):
         else:
             self.freq_range = np.linspace(self.fstart, self.fstop, size)
 
-
-    def update_freq_set(self, rfe_mode,
-                          fstart=None,
-                          fstop=None,
-                          fcenter=None,
-                          rbw=None,
-                          bw=None):
-        prop = self.device_properties
-        min_tunable = prop.MIN_TUNABLE[rfe_mode]
-        max_tunable = prop.MAX_TUNABLE[rfe_mode]
-
-        if self.block_mode:
-            decimation = self.dev_set['decimation']
-        else:
-            decimation = 1
-        if fcenter is not None:
-
-            if self.block_mode:
-                self.bandwidth = prop.FULL_BW[rfe_mode]
-                self.fstart = fcenter - ((self.bandwidth / 2)) / decimation
-                self.fstop =  fcenter + (self.bandwidth / 2) / decimation
-            else:
-
-                self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
-                self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
-
-            self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = self.fstart + (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-            self.dev_set['freq'] =  fcenter
-
-        elif fstart is not None:
-            fstart = min(fstart, self.fstop - prop.TUNING_RESOLUTION)
-            self.fstart = fstart
-            self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = fstart + (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-
-        elif fstop is not None:
-            fstop = max(fstop, self.fstart + prop.TUNING_RESOLUTION)
-            self.fstop = fstop
-            self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = fstop - (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-
-        elif rbw is not None:
-
-            self.rbw = rbw
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-
-        elif bw != None:
-            self.fstart =  self.center_freq - (bw / 2)
-            self.fstop = self.center_freq + (bw / 2)
-            self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = self.fstart + (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-
-    def reset_freq_bounds(self):
-            self.start_freq = None
-            self.stop_freq = None
 
