@@ -11,6 +11,7 @@ and placed to left of the controls.
 
 import sys
 from PySide import QtGui, QtCore
+import pyqtgraph as pg
 import numpy as np
 import math
 
@@ -32,7 +33,7 @@ HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.93
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
-
+M = 1e6
 ZIF_BITS = 2**13
 CONST_POINTS = 512
 try:
@@ -86,11 +87,7 @@ class MainPanel(QtGui.QWidget):
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(screen.width() * 0.7)
         self.setMinimumHeight(screen.height() * 0.6)
-
-
         self._vrt_context = {}
-        self.initUI()
-
         self._reactor = self._get_reactor()
 
     def _get_reactor(self):
@@ -121,12 +118,14 @@ class MainPanel(QtGui.QWidget):
         self.dut_prop = self.dut.properties
         self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
             device_settings=self.dev_set)
+        self.initUI()
         self.enable_controls()
         self.read_block()
 
     def read_block(self):
-        self.cap_dut.capture_time_domain(self.rbw)
+        self.cap_dut.capture_time_domain(self.rbw * 1e3)
 
+        
     def receive_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
         self.usable_bins = list(self.cap_dut.usable_bins)
@@ -135,7 +134,6 @@ class MainPanel(QtGui.QWidget):
         self.read_block()
         if 'reflevel' in data['context_pkt']:
             self.ref_level = data['context_pkt']['reflevel']
-        print self.ref_level
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
         self.raw_data = data['data_pkt']
         self.update_plot()
@@ -150,6 +148,17 @@ class MainPanel(QtGui.QWidget):
         plot_width = 8
         y = 0
         x = plot_width
+        self.window = pg.PlotWidget(name='pyrf_plot')
+        self.fft_curve = self.window.plot(pen = 'g')
+        grid.addWidget(self.window, 0,0,0,8)
+        
+        controls_layout = QtGui.QVBoxLayout()
+        controls_layout.addWidget(self._rbw_controls())
+        controls_layout.addWidget(self._center_freq())
+        controls_layout.addWidget(self._attenuator_control())
+        controls_layout.addStretch()
+        grid.addLayout(controls_layout, y, x, 13, 1)
+
         self._grid = grid
         self.setLayout(grid)
 
@@ -158,28 +167,24 @@ class MainPanel(QtGui.QWidget):
         attenuator.setChecked(True)
         
         def new_attenuator():
-            self.plot_state.dev_set['attenuator'] = attenuator.isChecked()
+            self.dev_set['attenuator'] = attenuator.isChecked()
+            self.cap_dut.configure_device(self.dev_set)
+            
         attenuator.clicked.connect(new_attenuator)
         self._attenuator_box = attenuator
         self.control_widgets.append(attenuator)
         return attenuator
-    
 
     def _center_freq(self):
-        cfreq = QtGui.QPushButton('Center')
-        cfreq.setToolTip("[2]\nTune the center frequency") 
-        self._cfreq = cfreq
-        cfreq.clicked.connect(lambda: cu._select_center_freq(self))
-        freq_edit = QtGui.QLineEdit(str(gui_config.INIT_CENTER_FREQ / float(M)))
+        freq_edit = QtGui.QLineEdit(str(self.dev_set['freq'] / float(M)))
         self._freq_edit = freq_edit
-        self.control_widgets.append(self._cfreq)
         self.control_widgets.append(self._freq_edit)
         
         def freq_change():
-            print 'hello'
-
+            self.dev_set['freq'] = float(freq_edit.text()) * M
+            self.cap_dut.configure_device(self.dev_set)
         freq_edit.returnPressed.connect(lambda: freq_change())
-        return cfreq, freq_edit
+        return freq_edit
   
 
     def _rbw_controls(self):
@@ -191,10 +196,7 @@ class MainPanel(QtGui.QWidget):
         rbw.addItems([str(p) + ' KHz' for p in self._points_values])
 
         def new_rbw():
-            if not self.plot_state.dev_set['rfe_mode'] == 'HDR':    
-                self.plot_state.update_freq_set(rbw = 1e3 * self._points_values[rbw.currentIndex()])
-            else:
-                self.plot_state.update_freq_set(rbw = self._hdr_points_values[rbw.currentIndex()])
+            self.rbw = self._points_values[rbw.currentIndex()]
         rbw.setCurrentIndex(0)
         rbw.currentIndexChanged.connect(new_rbw)
         self.control_widgets.append(self._rbw_box)
@@ -205,7 +207,11 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
 
     def update_trace(self):
-        print 'hello'
+        freq_range = np.linspace(self.dev_set['freq'] -62.5, 
+                                self.dev_set['freq'] + 62.5, 
+                                len(self.pow_data)) 
+        self.fft_curve.setData(freq_range, self.pow_data)
+        
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
