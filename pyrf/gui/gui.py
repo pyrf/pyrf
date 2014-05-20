@@ -160,8 +160,6 @@ class MainPanel(QtGui.QWidget):
         self._plot.const_window.show()
         self._plot.iq_window.show()
 
-        self.controller.read_block()
-
     def state_changed(self, state, changed):
         """
         signal handler for speca state changes

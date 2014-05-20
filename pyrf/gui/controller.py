@@ -1,3 +1,5 @@
+import logging
+
 from PySide import QtCore
 
 from pyrf.sweep_device import SweepDevice
@@ -5,6 +7,7 @@ from pyrf.capture_device import CaptureDevice
 from pyrf.gui import gui_config
 from pyrf.numpy_util import compute_fft
 
+logger = logging.getLogger(__name__)
 
 class SpecAState(object):
     """
@@ -121,7 +124,7 @@ class SpecAController(QtCore.QObject):
         self._speca_state = SpecAState.from_json_object(
             dut.properties.SPECA_DEFAULTS, playback)
         self.state_change.emit(
-            state,
+            self._speca_state,
             # assume everything has changed
             list(dut.properties.SPECA_DEFAULTS),
             )
@@ -207,6 +210,9 @@ class SpecAController(QtCore.QObject):
 
         :param kwargs: keyword arguments of SpecAState attributes
         """
+        if self._speca_state is None:
+            logger.warn('apply_settings with _speca_state == None: %r' % kwargs)
+            return
         self._speca_state = SpecAState(self._speca_state, **kwargs)
         self.state_change.emit(self._speca_state, kwargs.keys())
 

@@ -1,5 +1,7 @@
 from PySide import QtGui
 
+from pyrf.units import M
+
 
 class FrequencyControls(QtGui.QGroupBox):
 
@@ -65,17 +67,18 @@ class FrequencyControls(QtGui.QGroupBox):
         self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
+        self.state = state
         if 'mode' in changed:
-            self.min_tunable = self.dut_prop.MIN_TUNABLE[state.rfe_mode()]
-            self.max_tunable = self.dut_prop.MAX_TUNABLE[state.rfe_mode()]
+            min_tunable = self.dut_prop.MIN_TUNABLE[state.rfe_mode()]
+            max_tunable = self.dut_prop.MAX_TUNABLE[state.rfe_mode()]
             if state.mode == 'IQIN' or state.mode == 'DD':
-                self._freq_edit.setText(str(self.min_tunable / M))
+                self._freq_edit.setText(str(min_tunable / M))
                 self._freq_edit.setEnabled(False)
-                self.plot_state.update_freq_set(fcenter=self.max_tunable)
+                self.plot_state.update_freq_set(fcenter=max_tunable)
             else:
                 self._bw_edit.setText(str(float(
                     self.dut_prop.FULL_BW[state.mode]) / M))
-                self.plot_state.update_freq_set(
+                self.update_freq_set(
                     bw=self.dut_prop.FULL_BW[state.mode])
             self.update_freq_edit()
 
@@ -136,13 +139,13 @@ class FrequencyControls(QtGui.QGroupBox):
         bw = QtGui.QPushButton('Span')
         bw.setToolTip("[3]\nChange the bandwidth of the current plot")
         self._bw = bw
-        bw.clicked.connect(lambda: cu._select_bw(self))
+        bw.clicked.connect(self.select_bw)
         bw_edit = QtGui.QLineEdit()
         def freq_change():
             cu._select_bw(self)
             self.update_freq()
             self.update_freq_edit()
-        bw_edit.returnPressed.connect(lambda: freq_change())
+        bw_edit.returnPressed.connect(freq_change)
         self._bw_edit = bw_edit
         return bw, bw_edit
 
@@ -150,14 +153,14 @@ class FrequencyControls(QtGui.QGroupBox):
         fstart = QtGui.QPushButton('Start')
         fstart.setToolTip("[1]\nTune the start frequency")
         self._fstart = fstart
-        fstart.clicked.connect(lambda: cu._select_fstart(self))
+        fstart.clicked.connect(self.select_fstart)
         freq = QtGui.QLineEdit()
         def freq_change():
-            cu._select_fstart(self)
+            self.select_fstart()
             self.update_freq()
             self.update_freq_edit()
 
-        freq.returnPressed.connect(lambda: freq_change())
+        freq.returnPressed.connect(freq_change)
         self._fstart_edit = freq
         return fstart, freq
 
@@ -165,19 +168,19 @@ class FrequencyControls(QtGui.QGroupBox):
         fstop = QtGui.QPushButton('Stop')
         fstop.setToolTip("[4]Tune the stop frequency")
         self._fstop = fstop
-        fstop.clicked.connect(lambda: cu._select_fstop(self))
+        fstop.clicked.connect(self.select_fstop)
         freq = QtGui.QLineEdit()
         def freq_change():
             cu._select_fstop(self)
             self.update_freq()
             self.update_freq_edit()
-        freq.returnPressed.connect(lambda: freq_change())
+        freq.returnPressed.connect(freq_change)
         self._fstop_edit = freq
         return fstop, freq
 
     def update_freq(self, delta=0):
-        min_tunable = self.min_tunable
-        max_tunable = self.max_tunable
+        min_tunable = self.dut_prop.MIN_TUNABLE[self.state.rfe_mode()]
+        max_tunable = self.dut_prop.MAX_TUNABLE[self.state.rfe_mode()]
         try:
             if self.freq_sel == 'CENT':
                 f = (float(self._freq_edit.text()) + delta) * M
@@ -222,26 +225,23 @@ class FrequencyControls(QtGui.QGroupBox):
         self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / M))
         self._center_bt.click()
 
-    def update_freq_set(self, rfe_mode,
+    def update_freq_set(self,
                           fstart=None,
                           fstop=None,
                           fcenter=None,
                           rbw=None,
                           bw=None):
-        prop = self.device_properties
+        prop = self.dut_prop
+        rfe_mode = self.state.rfe_mode()
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
 
-        if self.block_mode:
-            decimation = self.dev_set['decimation']
-        else:
-            decimation = 1
         if fcenter is not None:
 
             if self.block_mode:
                 self.bandwidth = prop.FULL_BW[rfe_mode]
-                self.fstart = fcenter - ((self.bandwidth / 2)) / decimation
-                self.fstop =  fcenter + (self.bandwidth / 2) / decimation
+                self.fstart = fcenter - ((self.bandwidth / 2)) / self.decimation
+                self.fstop =  fcenter + (self.bandwidth / 2) / self.decimation
             else:
 
                 self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))

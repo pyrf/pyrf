@@ -120,7 +120,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
-        self._freq_shift_edit.returnPressed.connect(new_freq_shift) 
+        self._freq_shift_edit.returnPressed.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
         self._attenuator_box.clicked.connect(new_attenuator)
         self._mode.currentIndexChanged.connect(new_input_mode)
