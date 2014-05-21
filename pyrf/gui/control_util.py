@@ -6,6 +6,7 @@ from pyrf.config import TriggerSettings
 from frequency_controls import FrequencyControls
 
 AXIS_OFFSET = 7
+# FIXME: calculate from device properties instead
 IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': -1, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
 IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
 def _center_plot_view(layout):
@@ -14,8 +15,8 @@ def _center_plot_view(layout):
     """
     layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth,
                             layout.plot_state.min_level, layout.plot_state.ref_level)
-    layout._plot.iq_window.setYRange(IQ_PLOT_YMIN[layout.plot_state.dev_set['rfe_mode']],
-                                    IQ_PLOT_YMAX[layout.plot_state.dev_set['rfe_mode']])
+    layout._plot.iq_window.setYRange(IQ_PLOT_YMIN[layout.rfe_mode],
+                                    IQ_PLOT_YMAX[layout.rfe_mode])
 
 
 def _up_arrow_key(layout):

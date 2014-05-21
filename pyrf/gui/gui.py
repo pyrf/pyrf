@@ -167,6 +167,7 @@ class MainPanel(QtGui.QWidget):
         :param changed: list of attribute names changed
         """
         if 'mode' in changed:
+            self.rfe_mode = state.rfe_mode()  # used by recentering code
             if state.sweeping():
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
@@ -176,7 +177,6 @@ class MainPanel(QtGui.QWidget):
                 return
             self._plot.const_window.show()
             self._plot.iq_window.show()
-            self.plot_state.enable_block_mode(self)
 
             cu._center_plot_view(self)
 

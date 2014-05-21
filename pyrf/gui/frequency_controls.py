@@ -219,17 +219,17 @@ class FrequencyControls(QtGui.QGroupBox):
                 self._plot.freqtrig_lines.setRegion([self.plot_state.fstart,self.plot_state. fstop]) 
 
     def update_freq_edit(self):
-        self._fstop_edit.setText("%0.1f" % (self.plot_state.fstop/ M))
-        self._fstart_edit.setText("%0.1f" % (self.plot_state.fstart/ M))
-        self._freq_edit.setText("%0.1f" % (self.plot_state.center_freq / M))
-        self._bw_edit.setText("%0.1f" % (self.plot_state.bandwidth / M))
-        self._center_bt.click()
+        self._fstop_edit.setText("%0.1f" % (self.fstop/ M))
+        self._fstart_edit.setText("%0.1f" % (self.fstart/ M))
+        self._freq_edit.setText("%0.1f" % (self.state.center / M))
+        self._bw_edit.setText("%0.1f" % (self.state.span / M))
+        # FIXME: need a nice way to force the recenter, new controller method?
+        #self._center_bt.click()
 
     def update_freq_set(self,
                           fstart=None,
                           fstop=None,
                           fcenter=None,
-                          rbw=None,
                           bw=None):
         prop = self.dut_prop
         rfe_mode = self.state.rfe_mode()
@@ -249,7 +249,7 @@ class FrequencyControls(QtGui.QGroupBox):
 
             self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = self.fstart + (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+            self.bin_size = max(1, int((self.bandwidth) / self.state.rbw))
             self.dev_set['freq'] =  fcenter
 
         elif fstart is not None:
@@ -257,26 +257,21 @@ class FrequencyControls(QtGui.QGroupBox):
             self.fstart = fstart
             self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = fstart + (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+            self.bin_size = max(1, int((self.bandwidth) / self.state.rbw))
 
         elif fstop is not None:
             fstop = max(fstop, self.fstart + prop.TUNING_RESOLUTION)
             self.fstop = fstop
             self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = fstop - (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
-
-        elif rbw is not None:
-
-            self.rbw = rbw
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+            self.bin_size = max(1, int((self.bandwidth) / self.state.rbw))
 
         elif bw != None:
-            self.fstart =  self.center_freq - (bw / 2)
-            self.fstop = self.center_freq + (bw / 2)
+            self.fstart =  self.state.center - (bw / 2)
+            self.fstop = self.state.center + (bw / 2)
             self.bandwidth = (self.fstop - self.fstart)
             self.center_freq = self.fstart + (self.bandwidth / 2)
-            self.bin_size = max(1, int((self.bandwidth) / self.rbw))
+            self.bin_size = max(1, int((self.bandwidth) / self.state.rbw))
 
     def reset_freq_bounds(self):
             self.start_freq = None
