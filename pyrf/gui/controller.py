@@ -129,6 +129,8 @@ class SpecAController(QtCore.QObject):
             list(dut.properties.SPECA_DEFAULTS),
             )
 
+        self.start_capture()
+
     def read_block(self):
         self._capture_device.capture_time_domain(
             self._speca_state.mode,
@@ -150,6 +152,13 @@ class SpecAController(QtCore.QObject):
             self._plot_state.rbw,
             device_set,
             mode=self._sweep_mode)
+
+
+    def start_capture(self):
+        if self._speca_state.sweeping():
+            self.read_sweep()
+        else:
+            self.read_block()
 
 
     def process_capture(self, fstart, fstop, data):
