@@ -304,7 +304,7 @@ class WSA(object):
             mode = buf.strip()
         else:
 
-            self.scpiset(":INPUT:MODE %s" % mode)
+            self.scpiset(":INPUT:MODE %s" % str(mode))
 
         yield mode
 
