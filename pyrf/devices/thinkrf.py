@@ -71,11 +71,9 @@ class WSA5000_220Properties(object):
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
-
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     # v2 -> hardware revision without SHN mode
-
     RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
 
 
@@ -86,6 +84,10 @@ class WSA5000_208Properties(WSA5000_220Properties):
     MAX_TUNABLE = dict((mode, min(8000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
 
+class WSA5000_108Properties(WSA5000_208Properties):
+    model = 'WSA5000-108'
+    # 108 -> limited to SHN, HDR, and DD mode
+    RFE_MODES = ('SHN', 'HDR', 'DD')
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
@@ -145,6 +147,8 @@ class WSA(object):
             self.properties = WSA5000_208_v2Properties
         elif device_id.startswith('ThinkRF,WSA5000-208'):
             self.properties = WSA5000_208Properties
+        elif device_id.startswith('ThinkRF,WSA5000-108'):
+            self.properties = WSA5000_108Properties
         else:
             self.properties = WSA5000_220Properties
 
