@@ -466,7 +466,7 @@ class MainPanel(QtGui.QWidget):
 
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
-            self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
+            self._rbw_box.setCurrentIndex(6 if input_mode in ('SHN', 'SH') else 3)
             cu._center_plot_view(self)
             if input_mode == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
@@ -675,7 +675,7 @@ class MainPanel(QtGui.QWidget):
             else:
                 self.plot_state.update_freq_set(rbw = self._hdr_points_values[rbw.currentIndex()])
 
-        rbw.setCurrentIndex(0)
+        rbw.setCurrentIndex(3)
         rbw.currentIndexChanged.connect(new_rbw)
         self.control_widgets.append(self._rbw_box)
         return rbw
