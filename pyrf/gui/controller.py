@@ -140,18 +140,14 @@ class SpecAController(QtCore.QObject):
 
 
     def read_sweep(self):
-        device_set = dict(self._plot_state.dev_set)
-        device_set.pop('rfe_mode')
-        device_set.pop('freq')
-        device_set.pop('decimation')
-        device_set.pop('fshift')
+        device_set = dict(self._speca_state.device_settings)
         device_set.pop('iq_output_path')
         self._sweep_device.capture_power_spectrum(
-            self._plot_state.fstart,
-            self._plot_state.fstop,
-            self._plot_state.rbw,
+            self._speca_state.center - self._speca_state.span / 2.0,
+            self._speca_state.center + self._speca_state.span / 2.0,
+            self._speca_state.rbw,
             device_set,
-            mode=self._sweep_mode)
+            mode=self._speca_state.rfe_mode())
 
 
     def start_capture(self):

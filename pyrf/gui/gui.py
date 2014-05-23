@@ -172,8 +172,6 @@ class MainPanel(QtGui.QWidget):
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 self.plot_state.disable_block_mode(self)
-                # FIXME: so terrible
-                self.controller._sweep_mode = state.rfe_mode()
                 return
             self._plot.const_window.show()
             self._plot.iq_window.show()
