@@ -198,6 +198,10 @@ class MainPanel(QtGui.QWidget):
             self.ref_level = data['context_pkt']['reflevel']
 
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+        
+        if self.plot_state.dev_set['attenuator']:
+            self.pow_data += self.dut_prop.RFE_ATTENUATION
+            
         self.raw_data = data['data_pkt']
 
 
@@ -466,7 +470,7 @@ class MainPanel(QtGui.QWidget):
 
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
-            self._rbw_box.setCurrentIndex(4 if input_mode == 'SH' else 3)
+            self._rbw_box.setCurrentIndex(6 if input_mode in ('SHN', 'SH') else 3)
             cu._center_plot_view(self)
             if input_mode == 'HDR':
                 self._dev_group._dec_box.setEnabled(False)
@@ -675,7 +679,7 @@ class MainPanel(QtGui.QWidget):
             else:
                 self.plot_state.update_freq_set(rbw = self._hdr_points_values[rbw.currentIndex()])
 
-        rbw.setCurrentIndex(0)
+        rbw.setCurrentIndex(3)
         rbw.currentIndexChanged.connect(new_rbw)
         self.control_widgets.append(self._rbw_box)
         return rbw
@@ -849,12 +853,15 @@ class MainPanel(QtGui.QWidget):
         self.update_diff()
 
     def update_trace(self):
+
+        #FIXME make alternate_colors user defined
         for trace in self._plot.traces:
             trace.update_curve(
                 self.plot_state.freq_range,
                 self.pow_data,
                 self.usable_bins,
-                self.sweep_segments)
+                self.sweep_segments,
+                self.plot_state.alt_colors)
 
 
     def update_iq(self):

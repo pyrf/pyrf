@@ -20,13 +20,14 @@ class DiscoveryWidget(QtGui.QWidget):
         dev_layout = QtGui.QVBoxLayout(self)
 
         first_row = QtGui.QHBoxLayout()
-        first_row.addWidget(QtGui.QLabel("Devices Available on Local Network"))
+        first_row.addWidget(QtGui.QLabel("Devices Detected on Local Network"))
 
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._wsa_list())
 
         third_row = QtGui.QHBoxLayout()
         self._ip = QtGui.QLineEdit()
+        third_row.addWidget(QtGui.QLabel("Manually Enter Device IP:"))
         third_row.addWidget(self._ip)
 
         fourth_row = QtGui.QHBoxLayout()
@@ -53,7 +54,7 @@ class DiscoveryWidget(QtGui.QWidget):
         return self._list
 
     def _ok_button(self):
-        self._ok = QtGui.QPushButton("Ok")
+        self._ok = QtGui.QPushButton("Connect")
 
         def ok_clicked():
             if not self._ip.text() == "":

@@ -41,7 +41,7 @@ class Trace(object):
             self.plot_area.window.removeItem(c)
         self.curves = []
 
-    def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
+    def update_curve(self, xdata, ydata, usable_bins, sweep_segments, alternate_colors):
 
         if self.store or self.blank:
             return
@@ -89,7 +89,8 @@ class Trace(object):
                     pen=self.color if odd else self.alternate_color)
                 self.curves.append(c)
                 i = i + run
-                odd = not odd
+                if alternate_colors:
+                    odd = not odd
 
 class Marker(object):
     """
