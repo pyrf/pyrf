@@ -242,11 +242,12 @@ def _find_peak(layout):
     move the selected marker to the maximum point of the spectrum
     """
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
-    
-    if marker.enabled:
-        trace = layout._plot.traces[marker.trace_index]
-        peak_index = util.find_max_index(trace.data) 
-        marker.data_index = peak_index
+
+    if not marker.enabled:
+        layout._marker_check.click()
+    trace = layout._plot.traces[marker.trace_index]
+    peak_index = util.find_max_index(trace.data)
+    marker.data_index = peak_index
 
 def _change_ref_level(layout):
     """
