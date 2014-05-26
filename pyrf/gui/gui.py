@@ -198,6 +198,10 @@ class MainPanel(QtGui.QWidget):
             self.ref_level = data['context_pkt']['reflevel']
 
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
+        
+        if self.plot_state.dev_set['attenuator']:
+            self.pow_data += self.dut_prop.RFE_ATTENUATION
+            
         self.raw_data = data['data_pkt']
 
 
