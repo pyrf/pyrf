@@ -55,7 +55,8 @@ class PlotState(object):
                                         self.center_freq + 10e6, 
                                         self.center_freq - 10e6,-100)
         self.device_properties = device_properties
-    
+
+        self.alt_colors = False
     def disable_block_mode(self, layout):
         self.block_mode = False
         util.enable_freq_cont(layout)
