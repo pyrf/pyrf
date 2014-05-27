@@ -102,7 +102,7 @@ class SpecAController(QtCore.QObject):
     _sweep_device = None
     _capture_device = None
     _plot_state = None
-    _speca_state = None
+    _state = None
 
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
@@ -121,10 +121,10 @@ class SpecAController(QtCore.QObject):
 
         self.device_change.emit(dut)
 
-        self._speca_state = SpecAState.from_json_object(
+        self._state = SpecAState.from_json_object(
             dut.properties.SPECA_DEFAULTS, playback)
         self.state_change.emit(
-            self._speca_state,
+            self._state,
             # assume everything has changed
             list(dut.properties.SPECA_DEFAULTS),
             )
@@ -133,26 +133,26 @@ class SpecAController(QtCore.QObject):
 
     def read_block(self):
         self._capture_device.capture_time_domain(
-            self._speca_state.mode,
-            self._speca_state.center,
-            self._speca_state.rbw,
-            self._speca_state.device_settings)
+            self._state.mode,
+            self._state.center,
+            self._state.rbw,
+            self._state.device_settings)
 
 
     def read_sweep(self):
-        device_set = dict(self._speca_state.device_settings)
+        device_set = dict(self._state.device_settings)
         device_set.pop('iq_output_path')
         device_set.pop('pll_reference')
         self._sweep_device.capture_power_spectrum(
-            self._speca_state.center - self._speca_state.span / 2.0,
-            self._speca_state.center + self._speca_state.span / 2.0,
-            self._speca_state.rbw,
+            self._state.center - self._state.span / 2.0,
+            self._state.center + self._state.span / 2.0,
+            self._state.rbw,
             device_set,
-            mode=self._speca_state.rfe_mode())
+            mode=self._state.rfe_mode())
 
 
     def start_capture(self):
-        if self._speca_state.sweeping():
+        if self._state.sweeping():
             self.read_sweep()
         else:
             self.read_block()
@@ -163,8 +163,8 @@ class SpecAController(QtCore.QObject):
         usable_bins = list(self._capture_device.usable_bins)
 
         # only read data if WSA digitizer is used
-        if self._speca_state.device_settings['iq_output_path'] == 'DIGITIZER':
-            if self._speca_state.sweeping():
+        if self._state.device_settings['iq_output_path'] == 'DIGITIZER':
+            if self._state.sweeping():
                 self.read_sweep()
                 return
             self.read_block()
@@ -175,7 +175,7 @@ class SpecAController(QtCore.QObject):
                 data['data_pkt'], data['context_pkt'], ref=self._ref_level)
 
             self.capture_receive.emit(
-                self._speca_state,
+                self._state,
                 data['data_pkt'],
                 pow_data,
                 usable_bins,
@@ -183,7 +183,7 @@ class SpecAController(QtCore.QObject):
 
     def process_sweep(self, fstart, fstop, data):
         sweep_segments = list(self._sweep_device.sweep_segments)
-        if not self._speca_state.sweeping():
+        if not self._state.sweeping():
             self.read_block()
             return
         self.read_sweep()
@@ -193,7 +193,7 @@ class SpecAController(QtCore.QObject):
         self.iq_data = None
 
         self.capture_receive.emit(
-            self._speca_state,
+            self._state,
             None,
             self.pow_data,
             None,
@@ -205,10 +205,10 @@ class SpecAController(QtCore.QObject):
 
         :param kwargs: keyword arguments of SpecAState.device_settings
         """
-        device_settings = dict(self._speca_state.device_settings, **kwargs)
-        self._speca_state = SpecAState(self._speca_state,
+        device_settings = dict(self._state.device_settings, **kwargs)
+        self._state = SpecAState(self._state,
             device_settings=device_settings)
-        self.state_change.emit(self._speca_state, ['device_settings'])
+        self.state_change.emit(self._state, ['device_settings'])
 
     def apply_settings(self, **kwargs):
         """
@@ -216,10 +216,10 @@ class SpecAController(QtCore.QObject):
 
         :param kwargs: keyword arguments of SpecAState attributes
         """
-        if self._speca_state is None:
-            logger.warn('apply_settings with _speca_state == None: %r' % kwargs)
+        if self._state is None:
+            logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
-        self._speca_state = SpecAState(self._speca_state, **kwargs)
-        self.state_change.emit(self._speca_state, kwargs.keys())
+        self._state = SpecAState(self._state, **kwargs)
+        self.state_change.emit(self._state, kwargs.keys())
 
 
