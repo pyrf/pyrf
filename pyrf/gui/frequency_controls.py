@@ -1,6 +1,7 @@
 from PySide import QtGui
 
 from pyrf.units import M
+from pyrf.gui import colors
 
 
 class FrequencyControls(QtGui.QGroupBox):
@@ -77,9 +78,9 @@ class FrequencyControls(QtGui.QGroupBox):
                 self.plot_state.update_freq_set(fcenter=max_tunable)
             else:
                 self._bw_edit.setText(str(float(
-                    self.dut_prop.FULL_BW[state.mode]) / M))
+                    self.dut_prop.FULL_BW[state.rfe_mode()]) / M))
                 self.update_freq_set(
-                    bw=self.dut_prop.FULL_BW[state.mode])
+                    bw=self.dut_prop.FULL_BW[state.rfe_mode()])
             self.update_freq_edit()
 
         if 'center' in changed or 'span' in changed:
@@ -95,15 +96,15 @@ class FrequencyControls(QtGui.QGroupBox):
         cfreq = QtGui.QPushButton('Center')
         cfreq.setToolTip("[2]\nTune the center frequency") 
         self._cfreq = cfreq
-        cfreq.clicked.connect(lambda: cu._select_center_freq(self))
+        cfreq.clicked.connect(self.select_center)
         freq_edit = QtGui.QLineEdit()
         self._freq_edit = freq_edit
         def freq_change():
-            cu._select_center_freq(self)
+            self.select_center()
             self.update_freq()
             self.update_freq_edit()
 
-        freq_edit.returnPressed.connect(lambda: freq_change())
+        freq_edit.returnPressed.connect(freq_change)
         return cfreq, freq_edit
 
     def _freq_incr(self):
@@ -189,34 +190,24 @@ class FrequencyControls(QtGui.QGroupBox):
                 self.update_freq_set(fcenter = f)
             elif self.freq_sel == 'FSTART':
                 f = (float(self._fstart_edit.text()) + delta) * M
-                if f > max_tunable or f <min_tunable or f > self.plot_state.fstop:
+                if f > max_tunable or f <min_tunable or f > self._fstop:
                     return
-                self.plot_state.update_freq_set(fstart = f)
+                self.update_freq_set(fstart = f)
 
             elif self.freq_sel == 'FSTOP':
                 f = (float(self._fstop_edit.text()) + delta) * M
 
-                if f > max_tunable or f < min_tunable or f < self.plot_state.fstart:
+                if f > max_tunable or f < min_tunable or f < self._fstart:
                     return
-                self.plot_state.update_freq_set(fstop = f)
+                self.update_freq_set(fstop = f)
 
             elif self.freq_sel == 'BW':
                 f = (float(self._bw_edit.text()) + delta) * M
-                if self.plot_state.center_freq - (f / 2) < min_tunable or self.plot_state.center_freq + (f / 2) > max_tunable:
+                if self._state.center - (f / 2) < min_tunable or self._state.center + (f / 2) > max_tunable:
                     return
-                self.plot_state.update_freq_set(bw = f)
-            for trace in self._plot.traces:
-                try:
-                    trace.data = self.pow_data
-                except AttributeError:
-                    break
-
+                self.update_freq_set(bw = f)
         except ValueError:
             return
-        if self.plot_state.trig:
-            freq_region = self._plot.freqtrig_lines.getRegion()
-            if (freq_region[0] < self.plot_state.fstart and freq_region[1] < self.plot_state.fstart) or (freq_region[0] > self.plot_state.fstop and freq_region[1] > self.plot_state.fstop):
-                self._plot.freqtrig_lines.setRegion([self.plot_state.fstart,self.plot_state. fstop]) 
 
     def update_freq_edit(self):
         self._fstop_edit.setText("%0.1f" % (self.fstop/ M))
@@ -238,40 +229,43 @@ class FrequencyControls(QtGui.QGroupBox):
 
         if fcenter is not None:
 
-            if self.block_mode:
+            if not self._state.sweeping():
                 self.bandwidth = prop.FULL_BW[rfe_mode]
-                self.fstart = fcenter - ((self.bandwidth / 2)) / self.decimation
-                self.fstop =  fcenter + (self.bandwidth / 2) / self.decimation
-            else:
+                self.fstart = fcenter - ((self.bandwidth / 2)) / self._state.decimation
+                self.fstop =  fcenter + (self.bandwidth / 2) / self._state.decimation
+                self.controller.apply_settings(center=fcenter)
+                return
 
-                self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
-                self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
-
+            self.fstart = max(min_tunable, fcenter - (self.bandwidth / 2))
+            self.fstop = min(max_tunable, fcenter + (self.bandwidth / 2))
             self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = self.fstart + (self.bandwidth / 2)
+            fcenter = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self._state.rbw))
-            self.dev_set['freq'] =  fcenter
+            self.controller.apply_settings(center=fcenter, span=self.bandwidth)
 
         elif fstart is not None:
             fstart = min(fstart, self.fstop - prop.TUNING_RESOLUTION)
             self.fstart = fstart
             self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = fstart + (self.bandwidth / 2)
+            fcenter = fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self._state.rbw))
+            self.controller.apply_settings(center=fcenter, span=self.bandwidth)
 
         elif fstop is not None:
             fstop = max(fstop, self.fstart + prop.TUNING_RESOLUTION)
             self.fstop = fstop
             self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = fstop - (self.bandwidth / 2)
+            fcenter = fstop - (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self._state.rbw))
+            self.controller.apply_settings(center=fcenter, span=self.bandwidth)
 
-        elif bw != None:
+        elif bw is not None:
             self.fstart =  self._state.center - (bw / 2)
             self.fstop = self._state.center + (bw / 2)
             self.bandwidth = (self.fstop - self.fstart)
-            self.center_freq = self.fstart + (self.bandwidth / 2)
+            fcenter = self.fstart + (self.bandwidth / 2)
             self.bin_size = max(1, int((self.bandwidth) / self._state.rbw))
+            self.controller.apply_settings(center=fcenter, span=self.bandwidth)
 
     def reset_freq_bounds(self):
             self.start_freq = None

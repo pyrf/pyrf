@@ -171,7 +171,6 @@ class MainPanel(QtGui.QWidget):
             if state.sweeping():
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
-                self.plot_state.disable_block_mode(self)
                 return
             self._plot.const_window.show()
             self._plot.iq_window.show()
