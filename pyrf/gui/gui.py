@@ -152,6 +152,8 @@ class MainPanel(QtGui.QWidget):
         self.ref_level = 0
         self.plot_state = None
 
+        self._plot_center_span = None, None
+
     def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.dut_prop = dut.properties
@@ -447,6 +449,11 @@ class MainPanel(QtGui.QWidget):
         xdata = np.linspace(fstart, fstop, len(power))
 
         self.update_trace(xdata)
+
+        if self._plot_center_span != (state.center, state.span):
+            self._plot_center_span = (state.center, state.span)
+            self._plot.center_view(state.center, state.span)
+
         self.update_iq()
         self.update_marker()
         self.update_diff()

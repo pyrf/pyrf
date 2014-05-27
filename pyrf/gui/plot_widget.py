@@ -220,9 +220,10 @@ class Plot(object):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
 
-    def center_view(self,f,bw, min_level, ref_level):
+    def center_view(self,f,bw, min_level=None, ref_level=None):
         self.window.setXRange(f - (bw/2),f + (bw / 2))
-        self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+        if min_level is not None:
+            self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
 
     def grid(self,state):
         self.window.showGrid(state,state)

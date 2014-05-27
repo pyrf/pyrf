@@ -214,8 +214,6 @@ class FrequencyControls(QtGui.QGroupBox):
         self._fstart_edit.setText("%0.1f" % (self.fstart/ M))
         self._freq_edit.setText("%0.1f" % (self._state.center / M))
         self._bw_edit.setText("%0.1f" % (self._state.span / M))
-        # FIXME: need a nice way to force the recenter, new controller method?
-        #self._center_bt.click()
 
     def update_freq_set(self,
                           fstart=None,
