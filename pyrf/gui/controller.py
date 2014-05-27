@@ -142,6 +142,7 @@ class SpecAController(QtCore.QObject):
     def read_sweep(self):
         device_set = dict(self._speca_state.device_settings)
         device_set.pop('iq_output_path')
+        device_set.pop('pll_reference')
         self._sweep_device.capture_power_spectrum(
             self._speca_state.center - self._speca_state.span / 2.0,
             self._speca_state.center + self._speca_state.span / 2.0,
@@ -182,7 +183,7 @@ class SpecAController(QtCore.QObject):
 
     def process_sweep(self, fstart, fstop, data):
         sweep_segments = list(self._sweep_device.sweep_segments)
-        if self._plot_state.block_mode:
+        if not self._speca_state.sweeping():
             self.read_block()
             return
         self.read_sweep()
@@ -192,7 +193,7 @@ class SpecAController(QtCore.QObject):
         self.iq_data = None
 
         self.capture_receive.emit(
-            self._plot_state,
+            self._speca_state,
             None,
             self.pow_data,
             None,
