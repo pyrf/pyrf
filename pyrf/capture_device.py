@@ -84,9 +84,6 @@ class CaptureDevice(object):
         usable_bw = prop.USABLE_BW[rfe_mode]
         pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
 
-        self.fstart = freq - full_bw * pass_band_center
-        self.fstop = freq + full_bw * (1 - pass_band_center)
-
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.request_read_perm()
@@ -140,14 +137,25 @@ class CaptureDevice(object):
             'context_pkt' : self._vrt_context,
             'data_pkt' : packet}
 
-        # XXX here we "know" that bins = samples/2
-        if packet.spec_inv and self._device_set['rfe_mode'] == 'SH':
+        freq = self._device_set['freq']
+        rfe_mode = self._device_set['rfe_mode']
+        full_bw = self.real_device.properties.FULL_BW[rfe_mode]
+        pass_band_center = self.real_device.properties.PASS_BAND_CENTER[
+            rfe_mode]
 
+        offset = full_bw * (0.5 - pass_band_center)
+        if packet.spec_inv:
+            offset = -offset
+        fstart = freq - full_bw / 2.0 + offset
+        fstop = freq + full_bw / 2.0 + offset
+
+        # XXX here we "know" that bins = samples/2
+        if packet.spec_inv:
             [(start, run)] = self.usable_bins
             start = len(packet.data) / 2 - start - run
             self.usable_bins = [(start, run)]
 
         if self.async_callback:
-            self.async_callback(self.fstart, self.fstop, data)
+            self.async_callback(fstart, fstop, data)
             return
-        return (self.fstart, self.fstop, data)
+        return (fstart, fstop, data)
