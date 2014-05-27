@@ -85,7 +85,7 @@ class PlotState(object):
     
     def update_freq_range(self, start, stop, size, mode, inv):
         
-        if self.block_mode and mode == 'SH':
+        if self.block_mode and mode in ['SH', 'SHN']:
             if inv:
                 pass_area = self.device_properties.PASS_BAND_CENTER[mode]
             else:
@@ -93,9 +93,12 @@ class PlotState(object):
             total = stop - start
             center = (start + (total * pass_area))
             self.freq_range = np.linspace(center - total/2, center + total/2, size)
+
+            # FIXME find more elegant way to do this
+            if mode == 'SHN':
+                self.freq_range +=  self.device_properties.PASS_BAND_OFFSET[mode]
         else:
             self.freq_range = np.linspace(start, stop, size)
-
 
     def update_freq_set(self,
                           fstart=None, 
