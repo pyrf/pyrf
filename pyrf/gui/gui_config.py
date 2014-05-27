@@ -42,6 +42,7 @@ class PlotState(object):
                                         self.center_freq - 10e6,-100)
         self.device_properties = device_properties
         self.dev_set = {}
+        self.alt_colors = False
 
     def disable_triggers(self, layout):
         layout._plot.amptrig_line.setValue(-100)

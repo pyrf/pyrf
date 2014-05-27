@@ -459,12 +459,15 @@ class MainPanel(QtGui.QWidget):
         self.update_diff()
 
     def update_trace(self, xdata):
+
+        #FIXME make alternate_colors user defined
         for trace in self._plot.traces:
             trace.update_curve(
                 xdata,
                 self.pow_data,
                 self.usable_bins,
-                self.sweep_segments)
+                self.sweep_segments,
+                self.plot_state.alt_colors)
 
 
     def update_iq(self):

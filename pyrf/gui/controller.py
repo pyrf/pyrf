@@ -174,6 +174,9 @@ class SpecAController(QtCore.QObject):
             pow_data = compute_fft(self._dut,
                 data['data_pkt'], data['context_pkt'], ref=self._ref_level)
 
+            if self._state.device_settings.get('attenuator'):
+                pow_data += self._dut.properties.RFE_ATTENUATION
+
             self.capture_receive.emit(
                 self._state,
                 fstart,

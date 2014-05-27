@@ -1,4 +1,5 @@
 from PySide import QtGui, QtCore
+import numpy as np
 import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
@@ -218,11 +219,23 @@ def _find_peak(layout):
     move the selected marker to the maximum point of the spectrum
     """
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
-    
-    if marker.enabled:
+
+    # enable the marker if it is not already enabled
+    if not marker.enabled:
+        layout._marker_check.click()
+
+    # retrieve the min/max x-axis of the current window
+    window_freq = layout._plot.view_box.viewRange()[0]
+    indexes_of_window = []
+
+    for freq in layout.plot_state.freq_range:
+        if freq < max(window_freq) and freq > min(window_freq):
+            indexes_of_window.append(np.where(layout.plot_state.freq_range == freq)[0])
+
+    if len(indexes_of_window) > 0:
         trace = layout._plot.traces[marker.trace_index]
-        peak_index = util.find_max_index(trace.data) 
-        marker.data_index = peak_index
+        peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
+        marker.data_index = min(indexes_of_window) + peak_index
 
 def _change_ref_level(layout):
     """
