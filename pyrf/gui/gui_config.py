@@ -59,16 +59,3 @@ class PlotState(object):
                                         self.center_freq - 10e6,-100)
         layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
 
-    def update_freq_range(self, mode, size, inv):
-        if self.block_mode and (mode == 'SH' or mode == 'SHN'):
-            if inv:
-                pass_area = self.device_properties.PASS_BAND_CENTER[mode]
-            else:
-                pass_area = 1 - self.device_properties.PASS_BAND_CENTER[mode]
-            total = self.fstop - self.fstart
-            center = (self.fstart + (total * pass_area))
-            self.freq_range = np.linspace(center - total/2, center + total/2, size)
-        else:
-            self.freq_range = np.linspace(self.fstart, self.fstop, size)
-
-

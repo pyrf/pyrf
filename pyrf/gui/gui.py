@@ -429,26 +429,32 @@ class MainPanel(QtGui.QWidget):
         self._diff_lab = diff_label
         return marker_label,delta_label, diff_label
 
-    def capture_received(self, state, raw, power, usable, segments):
+    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
+        """
+        :param state: SpecAState when capture was requested
+        :param fstart: lowest frequency included in data in Hz
+        :param fstop: highest frequency included in data in Hz
+        :param raw: raw samples (None if not available)
+        :param power: power spectrum
+        :param usable: usable bins from power (None when sweeping)
+        :param segments: bin segments from power (None when not sweeping)
+        """
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
         self.sweep_segments = segments
 
-        self.plot_state.update_freq_range(
-            state.mode,
-            len(self.pow_data),
-            False if raw is None else raw.spec_inv)
+        xdata = np.linspace(fstart, fstop, len(power))
 
-        self.update_trace()
+        self.update_trace(xdata)
         self.update_iq()
         self.update_marker()
         self.update_diff()
 
-    def update_trace(self):
+    def update_trace(self, xdata):
         for trace in self._plot.traces:
             trace.update_curve(
-                self.plot_state.freq_range,
+                xdata,
                 self.pow_data,
                 self.usable_bins,
                 self.sweep_segments)

@@ -106,7 +106,7 @@ class SpecAController(QtCore.QObject):
 
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
-    capture_receive = QtCore.Signal(SpecAState, object, object, object, object)
+    capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
 
     def set_device(self, dut, playback=False):
         """
@@ -176,6 +176,8 @@ class SpecAController(QtCore.QObject):
 
             self.capture_receive.emit(
                 self._state,
+                fstart,
+                fstop,
                 data['data_pkt'],
                 pow_data,
                 usable_bins,
@@ -194,6 +196,8 @@ class SpecAController(QtCore.QObject):
 
         self.capture_receive.emit(
             self._state,
+            fstart,
+            fstop,
             None,
             self.pow_data,
             None,
