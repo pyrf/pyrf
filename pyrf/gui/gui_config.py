@@ -97,6 +97,8 @@ class PlotState(object):
             # FIXME find more elegant way to do this
             if mode == 'SHN':
                 self.freq_range +=  self.device_properties.PASS_BAND_OFFSET[mode]
+                if not inv:
+                    self.freq_range -=  2 * self.device_properties.PASS_BAND_OFFSET[mode]
         else:
             self.freq_range = np.linspace(start, stop, size)
 
