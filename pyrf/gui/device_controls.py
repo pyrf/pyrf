@@ -89,8 +89,7 @@ class DeviceControls(QtGui.QGroupBox):
             self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_attenuator():
-            self.plot_state.dev_set['attenuator'] = self._attenuator_box.isChecked()
-            self.cap_dut.configure_device(self.plot_state.dev_set)
+            self.controller.apply_device_settings(attenuator = self._attenuator_box.isChecked())
 
         def new_pll_reference():
             if 'INTERNAL' in str(self._pll_box.currentText()):

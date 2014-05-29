@@ -159,7 +159,7 @@ class WSA5000_220Properties(object):
         'decimation': 1,
         'fshift': 0,
         'device_settings': {
-            'attenuator': 0,
+            'attenuator': True,
             'pll_reference': 'INT',
             'iq_output_path': 'DIGITIZER',
             },
