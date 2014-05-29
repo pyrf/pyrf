@@ -136,8 +136,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._mode.removeItem(0)
         for m in dut_prop.RFE_MODES:
             self._mode.addItem(m)
-        self._mode.addItem('Sweep SH')
-
 
     def state_changed(self, state, changed):
         if 'mode' in changed:
