@@ -109,6 +109,8 @@ class FrequencyControls(QtGui.QGroupBox):
             self._freq_edit.setText(str(state.center / float(M)))
             self._bw_edit.setText(str(state.span / float(M)))
 
+        if 'decimation' in changed:
+            self.update_freq()
 
     def _center_freq(self):
         cfreq = QtGui.QPushButton('Center')

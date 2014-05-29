@@ -115,6 +115,7 @@ class SpecAController(QtCore.QObject):
         if self._dut:
             self._dut.disconnect()
         self._dut = dut
+        self._dut.reset()
         self._sweep_device = SweepDevice(dut, self.process_sweep)
         self._capture_device = CaptureDevice(dut,
             async_callback=self.process_capture)

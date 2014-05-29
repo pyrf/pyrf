@@ -139,7 +139,7 @@ class CaptureDevice(object):
 
         freq = self._device_set['freq']
         rfe_mode = self._device_set['rfe_mode']
-        full_bw = self.real_device.properties.FULL_BW[rfe_mode]
+        full_bw = self._vrt_context['bandwidth']
         pass_band_center = self.real_device.properties.PASS_BAND_CENTER[
             rfe_mode]
 
