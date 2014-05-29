@@ -96,8 +96,7 @@ class DeviceControls(QtGui.QGroupBox):
                 src = 'INT'
             else:
                 src = 'EXT'
-            self.plot_state.dev_set['pll_reference'] = src
-            self.cap_dut.configure_device(self.plot_state.dev_set)
+            self.controller.apply_device_settings(pll_reference=src)
 
         def new_iq_path():
             self.plot_state.dev_set['iq_output_path'] = str(self._iq_output_box.currentText().split()[-1])
