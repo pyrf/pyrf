@@ -138,7 +138,6 @@ class SpecAController(QtCore.QObject):
             self._state.rbw,
             self._state.device_settings)
 
-
     def read_sweep(self):
         device_set = dict(self._state.device_settings)
         device_set.pop('iq_output_path')
@@ -216,6 +215,10 @@ class SpecAController(QtCore.QObject):
         self._state = SpecAState(self._state,
             device_settings=device_settings)
         self.state_change.emit(self._state, ['device_settings'])
+
+        # FIXME find appropriate area for this
+        if device_settings['iq_output_path'] == 'DIGITIZER':
+            self.start_capture()
 
     def apply_settings(self, **kwargs):
         """

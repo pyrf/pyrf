@@ -67,7 +67,7 @@ class MainWindow(QtGui.QMainWindow):
         name = None
         if len(sys.argv) > 1:
             name = sys.argv[1]
-        self.mainPanel = MainPanel(self.controller)
+        self.mainPanel = MainPanel(self.controller, self)
         openAction = QtGui.QAction('&Open Device', self)
         openAction.triggered.connect(self.open_device_dialog)
         exitAction = QtGui.QAction('&Exit', self)
@@ -129,11 +129,13 @@ class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
     """
-    def __init__(self, controller):
+    def __init__(self, controller,  main_window):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+
+        self._main_window = main_window
 
         self.ref_level = 0
         self.dut = None
@@ -179,6 +181,40 @@ class MainPanel(QtGui.QWidget):
 
             cu._center_plot_view(self)
 
+        if 'device_settings' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                    # remove plots
+                self._plot_group.hide()
+                self._trace_group.hide()
+                self._plot_layout.hide()
+                if self._main_window.isMaximized():
+                    self._main_window.showNormal()
+
+                # resize window
+                for x in range(self.plot_width):
+                    self._grid.setColumnMinimumWidth(x, 0)
+                screen = QtGui.QDesktopWidget().screenGeometry()
+
+                self.setMinimumWidth(0)
+                self.setMinimumHeight(0)
+                self._main_window.setMinimumWidth(0)
+                self._main_window.setMinimumHeight(0)
+                self.resize(0,0)
+                self._main_window.resize(0,0)
+
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                # show plots
+                self._plot_group.show()
+                self._trace_group.show()
+                self._plot_layout.show()
+
+                # resize window
+                for x in range(self.plot_width):
+                    self._grid.setColumnMinimumWidth(x, 300)
+                screen = QtGui.QDesktopWidget().screenGeometry()
+                self.setMinimumWidth(screen.width() * 0.7)
+                self.setMinimumHeight(screen.height() * 0.6)
+
     def keyPressEvent(self, event):
         if self.dut:
             hotkey_util(self, event)
@@ -202,13 +238,12 @@ class MainPanel(QtGui.QWidget):
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        for x in range(8):
+        self.plot_width = 8
+
+        for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
 
-        # add plot widget
-        plot_width = 8
-
-        grid.addWidget(self._plot_layout(),0,0,13,plot_width)
+        grid.addWidget(self._plot_layout(),0,0,13,self.plot_width)
 
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
@@ -219,7 +254,7 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(diff_label , 0, 5, 1, 2)
 
         y = 0
-        x = plot_width
+        x = self.plot_width
 
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.addWidget(self._trace_controls())
@@ -230,7 +265,6 @@ class MainPanel(QtGui.QWidget):
         grid.addLayout(controls_layout, y, x, 13, 5)
 
         self._grid = grid
-
         self.setLayout(grid)
 
     def _plot_layout(self):

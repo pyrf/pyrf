@@ -99,15 +99,7 @@ class DeviceControls(QtGui.QGroupBox):
             self.controller.apply_device_settings(pll_reference=src)
 
         def new_iq_path():
-            self.plot_state.dev_set['iq_output_path'] = str(self._iq_output_box.currentText().split()[-1])
-            if self.plot_state.dev_set['iq_output_path'] == 'CONNECTOR':
-                # disable unwanted controls
-                cu._external_digitizer_mode(self)
-            else:
-                cu._internal_digitizer_mode(self)
-                self.cap_dut.configure_device(self.plot_state.dev_set)
-                self.read_block()
-            self.cap_dut.configure_device(self.plot_state.dev_set)
+            self.controller.apply_device_settings(iq_output_path = str(self._iq_output_box.currentText().split()[-1]))
 
         def new_input_mode():
             input_mode = self._mode.currentText()
@@ -166,8 +158,29 @@ class DeviceControls(QtGui.QGroupBox):
             # FIXME: way too much knowledge about rbw levels here
             self._rbw_box.setCurrentIndex(
                 0 if state.sweeping() else
-                4 if state.mode in ['SH', 'SHN'] else
-                3)
+                4 if state.mode in ['SH', 'SHN'] else 3)
+
+        if 'device_settings' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                # remove sweep capture modes
+                c = self._mode.count()
+                self._mode.removeItem(c - 1)
+
+                # remove all digitizer controls
+                self._dec_box.hide()
+                self._freq_shift_edit.hide()
+                self._fshift_label.hide()
+                self._fshift_unit.hide()
+
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                # add sweep SH mode
+                self._mode.addItem('Sweep SH')
+
+                # show digitizer controls
+                self._dec_box.show()
+                self._freq_shift_edit.show()
+                self._fshift_label.show()
+                self._fshift_unit.show()
 
     def _antenna_control(self):
         antenna = QtGui.QComboBox(self)

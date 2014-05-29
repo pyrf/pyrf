@@ -280,67 +280,6 @@ def _trigger_control(layout):
             layout.plot_state.disable_block_mode(layout)
         layout.update_trig()
 
-def _external_digitizer_mode(layout):
-    """
-    Disable all controls/plots that are irrelavant in external digitizer mode
-    """
-
-    # remove plots
-    layout._plot_group.hide()
-    layout._trace_group.hide()
-    layout._plot_layout.hide()
-    if layout._main_window.isMaximized():
-        layout._main_window.showNormal()
-
-    # resize window
-    for x in range(8):
-        layout._grid.setColumnMinimumWidth(x, 0)
-    screen = QtGui.QDesktopWidget().screenGeometry()
-
-    layout.setMinimumWidth(0)
-    layout.setMinimumHeight(0)
-    layout._main_window.setMinimumWidth(0)
-    layout._main_window.setMinimumHeight(0)
-    layout.resize(0,0)
-    layout._main_window.resize(0,0)
-
-    # remove sweep capture modes
-    c = layout._dev_group._mode.count()
-    layout._dev_group._mode.removeItem(c - 1)
-
-    # remove all digitizer controls
-    layout._dev_group._dec_box.hide()
-    layout._dev_group._freq_shift_edit.hide()
-    layout._dev_group._fshift_label.hide()
-    layout._dev_group._fshift_unit.hide()
-
-def _internal_digitizer_mode(layout):
-    """
-    Enable all controls/plots that are irrelavant in internal digitizer mode
-    """
-
-    # show plots
-    layout._plot_group.show()
-    layout._trace_group.show()
-    layout._plot_layout.show()
-
-    # resize window
-    for x in range(8):
-        layout._grid.setColumnMinimumWidth(x, 300)
-    screen = QtGui.QDesktopWidget().screenGeometry()
-    layout.setMinimumWidth(screen.width() * 0.7)
-    layout.setMinimumHeight(screen.height() * 0.6)
-
-    # add sweep commands
-    layout._dev_group._mode.addItem('Sweep SH')
-
-    # show digitizer controls
-    layout._dev_group._dec_box.show()
-    layout._dev_group._freq_shift_edit.show()
-    layout._dev_group._fshift_label.show()
-    layout._dev_group._fshift_unit.show()
-
-
 hotkey_dict = {'1': FrequencyControls.select_fstart,
                 '2': FrequencyControls.select_center,
                 '3': FrequencyControls.select_bw,
