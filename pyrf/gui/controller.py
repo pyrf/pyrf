@@ -26,13 +26,14 @@ class SpecAState(object):
     :param span: span in Hz
     :param decimation: decimation where 1 is no decimation
     :param fshift: fshift in Hz
+    :param iq_output_path: IQ path, e.g. 'DIGITIZER' or 'CONNECTOR'
     :param device_settings: device-specific settings dict
     :param device_class: name of device class, e.g. 'thinkrf.WSA'
     :param device_identifier: device identification string
     :param playback: set to True if this state is from a recording
     """
     def __init__(self, other=None, mode=None, center=None, rbw=None,
-            span=None, decimation=None, fshift=None, device_settings=None,
+            span=None, decimation=None, fshift=None, iq_output_path = None, device_settings=None,
             device_class=None, device_identifier=None, playback=None):
 
         self.mode = other.mode if mode is None else mode
@@ -42,6 +43,7 @@ class SpecAState(object):
         self.decimation = (other.decimation
             if decimation is None else decimation)
         self.fshift = other.fshift if fshift is None else fshift
+        self.iq_output_path = other.iq_output_path if iq_output_path is None else iq_output_path
         self.device_settings = dict(other.device_settings
             if device_settings is None else device_settings)
         self.device_class = (other.device_class
@@ -136,6 +138,7 @@ class SpecAController(QtCore.QObject):
         device_set = dict(self._state.device_settings)
 
         device_set['decimation'] = self._state.decimation
+        device_set['iq_output_path'] = self._state.iq_output_path
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
@@ -144,7 +147,6 @@ class SpecAController(QtCore.QObject):
 
     def read_sweep(self):
         device_set = dict(self._state.device_settings)
-        device_set.pop('iq_output_path')
         device_set.pop('pll_reference')
         self._sweep_device.capture_power_spectrum(
             self._state.center - self._state.span / 2.0,
@@ -166,7 +168,7 @@ class SpecAController(QtCore.QObject):
         usable_bins = list(self._capture_device.usable_bins)
 
         # only read data if WSA digitizer is used
-        if self._state.device_settings['iq_output_path'] == 'DIGITIZER':
+        if self._state.iq_output_path == 'DIGITIZER':
             if self._state.sweeping():
                 self.read_sweep()
                 return
@@ -220,9 +222,7 @@ class SpecAController(QtCore.QObject):
             device_settings=device_settings)
         self.state_change.emit(self._state, ['device_settings'])
 
-        # FIXME find appropriate area for this
-        if device_settings['iq_output_path'] == 'DIGITIZER':
-            self.start_capture()
+
 
     def apply_settings(self, **kwargs):
         """
@@ -234,6 +234,10 @@ class SpecAController(QtCore.QObject):
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
         self._state = SpecAState(self._state, **kwargs)
+
+        # FIXME find appropriate area for this
+        if 'DIGITIZER' in self._state.iq_output_path:
+            self.start_capture()
         self.state_change.emit(self._state, kwargs.keys())
 
 

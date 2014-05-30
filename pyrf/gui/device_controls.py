@@ -99,7 +99,7 @@ class DeviceControls(QtGui.QGroupBox):
             self.controller.apply_device_settings(pll_reference=src)
 
         def new_iq_path():
-            self.controller.apply_device_settings(iq_output_path = str(self._iq_output_box.currentText().split()[-1]))
+            self.controller.apply_settings(iq_output_path = str(self._iq_output_box.currentText().split()[-1]))
 
         def new_input_mode():
             input_mode = self._mode.currentText()
@@ -159,8 +159,8 @@ class DeviceControls(QtGui.QGroupBox):
                 0 if state.sweeping() else
                 4 if state.mode in ['SH', 'SHN'] else 3)
 
-        if 'device_settings' in changed:
-            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+        if 'iq_output_path' in changed:
+            if 'CONNECTOR' in state.iq_output_path:
                 # remove sweep capture modes
                 c = self._mode.count()
                 self._mode.removeItem(c - 1)
@@ -171,7 +171,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._fshift_label.hide()
                 self._fshift_unit.hide()
 
-            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+            elif 'DIGITIZER' in state.iq_output_path:
                 # add sweep SH mode
                 self._mode.addItem('Sweep SH')
 
