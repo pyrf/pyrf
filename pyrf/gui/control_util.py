@@ -228,9 +228,9 @@ def _find_peak(layout):
     window_freq = layout._plot.view_box.viewRange()[0]
     indexes_of_window = []
 
-    for freq in layout.plot_state.freq_range:
+    for freq in layout.xdata:
         if freq < max(window_freq) and freq > min(window_freq):
-            indexes_of_window.append(np.where(layout.plot_state.freq_range == freq)[0])
+            indexes_of_window.append(np.where(layout.xdata == freq)[0])
 
     if len(indexes_of_window) > 0:
         trace = layout._plot.traces[marker.trace_index]

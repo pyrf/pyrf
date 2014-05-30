@@ -479,9 +479,9 @@ class MainPanel(QtGui.QWidget):
         self.usable_bins = usable
         self.sweep_segments = segments
 
-        xdata = np.linspace(fstart, fstop, len(power))
+        self.xdata = np.linspace(fstart, fstop, len(power))
 
-        self.update_trace(xdata)
+        self.update_trace()
 
         if self._plot_center_span != (state.center, state.span):
             self._plot_center_span = (state.center, state.span)
@@ -491,12 +491,12 @@ class MainPanel(QtGui.QWidget):
         self.update_marker()
         self.update_diff()
 
-    def update_trace(self, xdata):
+    def update_trace(self):
 
         #FIXME make alternate_colors user defined
         for trace in self._plot.traces:
             trace.update_curve(
-                xdata,
+                self.xdata,
                 self.pow_data,
                 self.usable_bins,
                 self.sweep_segments,
