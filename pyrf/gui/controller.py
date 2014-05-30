@@ -133,11 +133,14 @@ class SpecAController(QtCore.QObject):
         self.start_capture()
 
     def read_block(self):
+        device_set = dict(self._state.device_settings)
+
+        device_set['decimation'] = self._state.decimation
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
             self._state.rbw,
-            self._state.device_settings)
+            device_set)
 
     def read_sweep(self):
         device_set = dict(self._state.device_settings)

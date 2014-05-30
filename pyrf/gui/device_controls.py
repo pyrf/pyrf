@@ -63,7 +63,7 @@ class DeviceControls(QtGui.QGroupBox):
                 int(self._antenna_box.currentText().split()[-1]))
 
         def new_dec():
-            self.controller.apply_device_settings(decimation=int(
+            self.controller.apply_settings(decimation=int(
                 self._dec_box.currentText().split(' ')[-1]))
 
         def new_freq_shift():
@@ -138,6 +138,7 @@ class DeviceControls(QtGui.QGroupBox):
             self._mode.addItem(m)
 
     def state_changed(self, state, changed):
+
         if 'mode' in changed:
             if state.sweeping():
                 self._dec_box.setEnabled(False)
