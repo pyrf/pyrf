@@ -181,8 +181,8 @@ class MainPanel(QtGui.QWidget):
 
             cu._center_plot_view(self)
 
-        if 'iq_output_path' in changed:
-            if 'CONNECTOR' in state.iq_output_path:
+        if 'device_settings.iq_output_path' in changed:
+            if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove plots
                 self._plot_group.hide()
                 self._trace_group.hide()
@@ -202,7 +202,7 @@ class MainPanel(QtGui.QWidget):
                 self.resize(0,0)
                 self._main_window.resize(0,0)
 
-            elif 'DIGITIZER' in state.iq_output_path:
+            elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show plots
                 self._plot_group.show()
                 self._trace_group.show()

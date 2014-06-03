@@ -158,9 +158,9 @@ class WSA5000_220Properties(object):
         'span': 125 * M,
         'decimation': 1,
         'fshift': 0,
-        'iq_output_path': 'DIGITIZER',
         'device_settings': {
             'attenuator': True,
+            'iq_output_path': 'DIGITIZER',
             'pll_reference': 'INT',
             },
         'device_class': 'thinkrf.WSA',
