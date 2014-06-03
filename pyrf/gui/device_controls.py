@@ -115,7 +115,7 @@ class DeviceControls(QtGui.QGroupBox):
             if self._level_trigger.isChecked():
                 start = self.gui_state.center - (self.gui_state.span / 2)
                 stop = self.gui_state.center + (self.gui_state.span / 2)
-                level = INITIAL_AMPLITUDE
+                level = trigger_settings['amplitude']
                 self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                                                                 'fstart': start,
                                                                 'fstop': stop,

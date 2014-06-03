@@ -218,6 +218,7 @@ class SpecAController(QtCore.QObject):
             device_settings=device_settings)
 
         changed = ['device_settings.%s' % s for s in kwargs]
+        print changed
             # FIXME find appropriate area for this
         if 'DIGITIZER' in self._state.device_settings['iq_output_path']:
             self.start_capture()

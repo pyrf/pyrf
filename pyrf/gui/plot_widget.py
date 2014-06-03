@@ -173,8 +173,8 @@ class Plot(object):
         self.freqtrig_lines = pg.LinearRegionItem()
 
         # update trigger settings when ever a line is changed
-        self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
-        self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
+        # self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
+        # self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
 
         self.grid(True)
 
@@ -215,11 +215,18 @@ class Plot(object):
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
 
-    def device_changed(state, changed):
-        x = 5
+    def device_changed(self, state, changed):
+        self.remove(trigger)
 
-    def state_changed(state, changed):
-        x  = 6
+    def state_changed(self, state, changed):
+
+        if 'device_settings.trigger' in changed:
+            print 'hello'
+            if 'NONE' in state.device_settings['trigger']['type']:
+                self.remove_trigger()
+            elif 'LEVEL' in state.device_settings['trigger']['type']:
+                self.add_trigger(state.device_settings['trigger']['fstart'],
+                                state.device_settings['trigger']['fstop'])
 
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])

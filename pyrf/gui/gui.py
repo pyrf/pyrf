@@ -553,15 +553,6 @@ class MainPanel(QtGui.QWidget):
             self._plot.q_curve.clear()
             self._plot.const_plot.clear()
 
-    def update_trig(self):
-            if self.plot_state.trig_set:
-                freq_region = self._plot.freqtrig_lines.getRegion()
-                self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
-                                                        min(freq_region), 
-                                                        max(freq_region),
-                                                        self._plot.amptrig_line.value())
-
-                self.dut.trigger(self.plot_state.trig_set)
     def update_marker(self):        
             
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
