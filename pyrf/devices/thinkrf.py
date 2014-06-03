@@ -80,15 +80,15 @@ class WSA5000_220Properties(object):
         }
     FULL_BW = {
         'ZIF': 125 * M,
-        'HDR': 162760,
-        'SH': 62500000,
-        'SHN': 62500000,
+        'HDR': 0.16276 * M,
+        'SH': 62.5 * M,
+        'SHN': 62.5 * M,
         'IQIN': 125 * M,
-        'DD': 62500000,
+        'DD': 62.5 * M,
         }
     USABLE_BW = {
         'ZIF': 100 * M,
-        'HDR': 100000,
+        'HDR': 0.1 * M,
         'SH': 40 * M,
         'SHN': 10 * M,
         'IQIN': 50 * M,

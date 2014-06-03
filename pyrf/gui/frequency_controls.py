@@ -69,20 +69,20 @@ class FrequencyControls(QtGui.QGroupBox):
 
     def state_changed(self, state, changed):
         self._state = state
+        
         if 'mode' in changed:
-            min_tunable = self.dut_prop.MIN_TUNABLE[state.rfe_mode()]
-            max_tunable = self.dut_prop.MAX_TUNABLE[state.rfe_mode()]
-
-            if state.mode == 'IQIN' or state.mode == 'DD':
-                self._freq_edit.setText(str(min_tunable / M))
+            min_tunable = self.dut_prop.MIN_TUNABLE[state.mode]
+            max_tunable = self.dut_prop.MAX_TUNABLE[state.mode]
+            if state.mode in  ('IQIN', 'DD'):
+                self._freq_edit.setText(str(min_tunable / M) + '\n')
                 self._freq_edit.setEnabled(False)
-                self.plot_state.update_freq_set(fcenter=max_tunable)
 
             else:
                 self._bw_edit.setText(str(float(
                     self.dut_prop.FULL_BW[state.rfe_mode()]) / M))
                 self.update_freq_set(
                     bw=self.dut_prop.FULL_BW[state.rfe_mode()])
+                self._freq_edit.setEnabled(True)
 
             if 'Sweep' in state.mode:
                 self._fstart_edit.setEnabled(True)
