@@ -13,6 +13,8 @@ def main():
     if '-v' in sys.argv:
         sys.argv.remove('-v')
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig()
     if '-d' in sys.argv:
         d_index = sys.argv.index('-d')
         name = sys.argv[d_index + 1]

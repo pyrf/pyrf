@@ -53,67 +53,11 @@ def find_nearest_index(value, array):
     idx = (np.abs(array-value)).argmin()
     return idx
     
-def select_fstart(layout):
-    """
-    changes the color of the fstart button to orange and all others to default    
-    """
-    layout._fstart.setStyleSheet(
-        'background-color: %s; color: white;' % colors.ORANGE)
-    layout._cfreq.setStyleSheet("")
-    layout._fstop.setStyleSheet("")
-    layout._bw.setStyleSheet("")
-    
-def select_center(layout):
-    """
-    changes the color of the fcenter button to orange and all others to default    
-    """
-    layout._cfreq.setStyleSheet(
-        'background-color: %s; color: white;' % colors.ORANGE)
-    layout._fstart.setStyleSheet("")
-    layout._fstop.setStyleSheet("")
-    layout._bw.setStyleSheet("")
-    
-def select_bw(layout):
-    """
-    changes the color of the span button to orange and all others to default    
-    """
-    layout._bw.setStyleSheet(
-        'background-color: %s; color: white;' % colors.ORANGE)
-    layout._fstart.setStyleSheet("")
-    layout._cfreq.setStyleSheet("")
-    layout._fstop.setStyleSheet("")
-
-def select_fstop(layout):
-    """
-    changes the color of the fstop button to orange and all others to default    
-    """
-    layout._fstop.setStyleSheet(
-        'background-color: %s; color: white;' % colors.ORANGE)
-    layout._fstart.setStyleSheet("")
-    layout._cfreq.setStyleSheet("")
-    layout._bw.setStyleSheet("")
-    
 def change_item_color(item, textColor, backgroundColor):
     """
     changes the color of the specified item with the specified text color/background color 
     """
     item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
-
-def enable_freq_cont(layout):
-    layout._bw.setEnabled(True)
-    layout._bw_edit.setEnabled(True)
-    layout._fstart.setEnabled(True)
-    layout._fstart_edit.setEnabled(True)
-    layout._fstop.setEnabled(True)
-    layout._fstop_edit.setEnabled(True)
-    
-def disable_freq_cont(layout):
-    layout._bw.setEnabled(False)
-    layout._bw_edit.setEnabled(False)
-    layout._fstart.setEnabled(False)
-    layout._fstart_edit.setEnabled(False)
-    layout._fstop.setEnabled(False)
-    layout._fstop_edit.setEnabled(False)
 
 def update_marker_traces(combo_box, traces):
     """

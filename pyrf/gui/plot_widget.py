@@ -151,28 +151,30 @@ class Plot(object):
     def __init__(self, layout):
     
         # initialize main fft window
-        self.window = pg.PlotWidget(name='pyrf_plot')
+        self.window = pg.PlotWidget(name = 'pyrf_plot')
         self.view_box = self.window.plotItem.getViewBox()
+        self.view_box.setMouseEnabled(x = True, y = False)
+        
         # initialize the x-axis of the plot
-        self.window.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
+        self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
         self.window.setLabel('left', text = 'Power', units = 'dBm')
-        
+
         # initialize fft curve
         self.fft_curve = self.window.plot(pen = colors.TEAL_NUM)
-         
+
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
-        
+
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
         self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
-        
+
         self.grid(True)
-        
+
         # IQ constellation window
         self.const_window = pg.PlotWidget(name='const_plot')
         self.const_plot = pg.ScatterPlotItem(pen = 'y')
@@ -187,7 +189,6 @@ class Plot(object):
         self.i_curve = self.iq_window.plot(pen = 'g')
         self.q_curve = self.iq_window.plot(pen = 'r')
 
-        
         # add traces
         self.traces = []
         first_trace = labels.TRACES[0]
@@ -210,19 +211,20 @@ class Plot(object):
         self.markers = []
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
-            
+
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])
         self.window.addItem(self.amptrig_line)
         self.window.addItem(self.freqtrig_lines)
-                
+
     def remove_trigger(self):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
-        
-    def center_view(self,f,bw, min_level, ref_level):
+
+    def center_view(self,f,bw, min_level=None, ref_level=None):
         self.window.setXRange(f - (bw/2),f + (bw / 2))
-        self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
-        
+        if min_level is not None:
+            self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+
     def grid(self,state):
         self.window.showGrid(state,state)

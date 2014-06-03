@@ -53,10 +53,13 @@ class CaptureDevice(object):
         if self._device_set['iq_output_path'] == 'CONNECTOR':
             self.real_device.apply_device_settings(self._device_set)
 
-    def capture_time_domain(self, rbw, device_settings=None, min_points=128):
+    def capture_time_domain(self, rfe_mode, freq, rbw, device_settings=None,
+            min_points=128):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
+        :param rfe_mode: radio front end mode, e.g. 'ZIF', 'SH', ...
+        :param freq: center frequency
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
@@ -68,21 +71,18 @@ class CaptureDevice(object):
         """
         prop = self.real_device.properties
 
-        if device_settings:
-            self.configure_device(device_settings)
+        self.configure_device(dict(
+            freq=freq,
+            rfe_mode=rfe_mode,
+            **(device_settings if device_settings else {})))
 
         if self._configure_device_flag:
             self.real_device.apply_device_settings(self._device_set)
             self._configure_device_flag = False
 
-        rfe_mode = self._device_set['rfe_mode']
         full_bw = prop.FULL_BW[rfe_mode]
         usable_bw = prop.USABLE_BW[rfe_mode]
         pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
-
-        freq = self._device_set['freq']
-        self.fstart = freq - full_bw * pass_band_center
-        self.fstop = freq + full_bw * (1 - pass_band_center)
 
         self.real_device.abort()
         self.real_device.flush()
@@ -137,14 +137,26 @@ class CaptureDevice(object):
             'context_pkt' : self._vrt_context,
             'data_pkt' : packet}
 
-        # XXX here we "know" that bins = samples/2
-        if packet.spec_inv and self._device_set['rfe_mode'] == 'SH':
+        rfe_mode = self._device_set['rfe_mode']
+        if rfe_mode in ('DD', 'IQIN'):
+            freq = self.real_device.properties.MIN_TUNABLE[rfe_mode]
+        else:
+            freq = self._device_set['freq']
+        full_bw = self.real_device.properties.FULL_BW[rfe_mode]
+        pass_band_center = self.real_device.properties.PASS_BAND_CENTER[rfe_mode]
 
+        offset = full_bw * (0.5 - pass_band_center)
+        if packet.spec_inv:
+            offset = -offset
+        fstart = freq - full_bw / 2.0 + offset
+        fstop = freq + full_bw / 2.0 + offset
+        # XXX here we "know" that bins = samples/2
+        if packet.spec_inv:
             [(start, run)] = self.usable_bins
             start = len(packet.data) / 2 - start - run
             self.usable_bins = [(start, run)]
 
         if self.async_callback:
-            self.async_callback(self.fstart, self.fstop, data)
+            self.async_callback(fstart, fstop, data)
             return
-        return (self.fstart, self.fstop, data)
+        return (fstart, fstop, data)

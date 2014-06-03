@@ -4,46 +4,10 @@ import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
 
+from frequency_controls import FrequencyControls
+
 AXIS_OFFSET = 7
-IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': 431000, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
-IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 432800, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
-def _center_plot_view(layout):
-    """
-    move the view to the center of the current FFT displayed
-    """
-    layout._plot.center_view(layout.plot_state.center_freq, layout.plot_state.bandwidth,
-                            layout.plot_state.min_level, layout.plot_state.ref_level)
-    layout._plot.iq_window.setYRange(IQ_PLOT_YMIN[layout.plot_state.dev_set['rfe_mode']],
-                                    IQ_PLOT_YMAX[layout.plot_state.dev_set['rfe_mode']])
 
-def _select_center_freq(layout):
-    """
-    select the center freq for arrow control
-    """
-    layout.plot_state.freq_sel = 'CENT'
-    util.select_center(layout)
-    
-def _select_bw(layout):
-    """
-    select the bw for arrow control
-    """
-    layout.plot_state.freq_sel = 'BW'
-    util.select_bw(layout)
-
-def _select_fstart(layout):
-    """
-    select the fstart for arrow control
-    """
-    layout.plot_state.freq_sel = 'FSTART'
-    util.select_fstart(layout)
-    
-def _select_fstop(layout):
-    """
-    select the fstop for arrow control
-    """
-    layout.plot_state.freq_sel = 'FSTOP'
-    util.select_fstop(layout)
-    
 def _up_arrow_key(layout):
     """
     increase the step size of the +/- buttons
@@ -252,9 +216,9 @@ def _find_peak(layout):
     window_freq = layout._plot.view_box.viewRange()[0]
     indexes_of_window = []
 
-    for freq in layout.plot_state.freq_range:
+    for freq in layout.xdata:
         if freq < max(window_freq) and freq > min(window_freq):
-            indexes_of_window.append(np.where(layout.plot_state.freq_range == freq)[0])
+            indexes_of_window.append(np.where(layout.xdata == freq)[0])
 
     if len(indexes_of_window) > 0:
         trace = layout._plot.traces[marker.trace_index]
@@ -303,90 +267,15 @@ def _trigger_control(layout):
         else:
             layout.plot_state.disable_block_mode(layout)
         layout.update_trig()
-        
-def _update_rbw_values(layout):
-    """
-    update the RBW values depending on the current mode of operation
-    """
-    for index in range(layout._rbw_box.count()):
-        layout._rbw_box.removeItem(0)
-        
-    if not layout.plot_state.dev_set['rfe_mode'] == 'HDR':
-        layout._rbw_box.addItems([str(p) + ' KHz' for p in layout._points_values])
-    
-    else:
-        layout._rbw_box.addItems([str(p) + ' Hz' for p in layout._hdr_points_values])
-            
-def _external_digitizer_mode(layout):
-    """
-    Disable all controls/plots that are irrelavant in external digitizer mode
-    """
 
-    # remove plots
-    layout._plot_group.hide()
-    layout._trace_group.hide()
-    layout._plot_layout.hide()
-    if layout._main_window.isMaximized():
-        layout._main_window.showNormal()
-
-    # resize window
-    for x in range(8):
-        layout._grid.setColumnMinimumWidth(x, 0)
-    screen = QtGui.QDesktopWidget().screenGeometry()
-
-    layout.setMinimumWidth(0)
-    layout.setMinimumHeight(0)
-    layout._main_window.setMinimumWidth(0)
-    layout._main_window.setMinimumHeight(0)
-    layout.resize(0,0)
-    layout._main_window.resize(0,0)
-
-    # remove sweep capture modes
-    c = layout._dev_group._mode.count()
-    layout._dev_group._mode.removeItem(c - 1)
-
-    # remove all digitizer controls
-    layout._dev_group._dec_box.hide()
-    layout._dev_group._freq_shift_edit.hide()
-    layout._dev_group._fshift_label.hide()
-    layout._dev_group._fshift_unit.hide()
-
-def _internal_digitizer_mode(layout):
-    """
-    Enable all controls/plots that are irrelavant in internal digitizer mode
-    """
-
-    # show plots
-    layout._plot_group.show()
-    layout._trace_group.show()
-    layout._plot_layout.show()
-
-    # resize window
-    for x in range(8):
-        layout._grid.setColumnMinimumWidth(x, 300)
-    screen = QtGui.QDesktopWidget().screenGeometry()
-    layout.setMinimumWidth(screen.width() * 0.7)
-    layout.setMinimumHeight(screen.height() * 0.6)
-
-    # add sweep commands
-    layout._dev_group._mode.addItem('Sweep SH')
-
-    # show digitizer controls
-    layout._dev_group._dec_box.show()
-    layout._dev_group._freq_shift_edit.show()
-    layout._dev_group._fshift_label.show()
-    layout._dev_group._fshift_unit.show()
-
-
-hotkey_dict = {'1': _select_fstart,
-                '2': _select_center_freq,
-                '3': _select_bw,
-                '4': _select_fstop,
-                'UP KEY': _up_arrow_key, 
+hotkey_dict = {'1': FrequencyControls.select_fstart,
+                '2': FrequencyControls.select_center,
+                '3': FrequencyControls.select_bw,
+                '4': FrequencyControls.select_fstop,
+                'UP KEY': _up_arrow_key,
                 'DOWN KEY': _down_arrow_key,
                 'RIGHT KEY': _right_arrow_key,
                 'LEFT KEY': _left_arrow_key,
-                'C': _center_plot_view,
                 'M': _marker_control,
                 'P': _find_peak,
                 } 
