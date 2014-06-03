@@ -137,8 +137,11 @@ class CaptureDevice(object):
             'context_pkt' : self._vrt_context,
             'data_pkt' : packet}
 
-        freq = self._device_set['freq']
         rfe_mode = self._device_set['rfe_mode']
+        if rfe_mode in ('DD', 'IQIN'):
+            freq = self.real_device.properties.MIN_TUNABLE[rfe_mode]
+        else:
+            freq = self._device_set['freq']
         full_bw = self.real_device.properties.FULL_BW[rfe_mode]
         pass_band_center = self.real_device.properties.PASS_BAND_CENTER[rfe_mode]
 
@@ -147,7 +150,6 @@ class CaptureDevice(object):
             offset = -offset
         fstart = freq - full_bw / 2.0 + offset
         fstop = freq + full_bw / 2.0 + offset
-
         # XXX here we "know" that bins = samples/2
         if packet.spec_inv:
             [(start, run)] = self.usable_bins

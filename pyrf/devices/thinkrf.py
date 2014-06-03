@@ -91,8 +91,8 @@ class WSA5000_220Properties(object):
         'HDR': 0.1 * M,
         'SH': 40 * M,
         'SHN': 10 * M,
-        'IQIN': 50 * M,
-        'DD': 50 * M,
+        'IQIN': 100 * M,
+        'DD': 62.5 * M,
         }
     MIN_TUNABLE = {
         'ZIF': 50 * M,
@@ -108,7 +108,7 @@ class WSA5000_220Properties(object):
         'SH': 20000 * M,
         'SHN': 20000 * M,
         'IQIN': 0,
-        'DD': 0 * M,
+        'DD': 31.24 * M,
         }
     MIN_DECIMATION = {
         'ZIF': 4,
@@ -132,8 +132,8 @@ class WSA5000_220Properties(object):
         'HDR': 0.6,
         'SH': 0.56,
         'SHN': 0.45,
-        'IQIN': 0.7,
-        'DD': 0.4,
+        'IQIN': 0.5,
+        'DD': 0.5,
         }
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000

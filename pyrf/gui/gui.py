@@ -42,6 +42,11 @@ PLOT_YMAX = 0
 
 ZIF_BITS = 2**13
 CONST_POINTS = 512
+
+# FIXME: calculate from device properties instead
+IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': -1, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
+IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
+
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -176,11 +181,24 @@ class MainPanel(QtGui.QWidget):
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 return
+
             self._plot.const_window.show()
             self._plot.iq_window.show()
 
-            cu._center_plot_view(self)
+            if self.rfe_mode in ('DD', 'IQIN'):
+                freq = self.dut_prop.MIN_TUNABLE[self.rfe_mode]
+                full_bw = self.dut_prop.FULL_BW[self.rfe_mode]
 
+                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
+                                        IQ_PLOT_YMAX[self.rfe_mode])
+            else:
+                freq = state.center
+                full_bw = state.span
+
+                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
+                                        IQ_PLOT_YMAX[self.rfe_mode])
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove plots

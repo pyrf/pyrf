@@ -69,14 +69,13 @@ class FrequencyControls(QtGui.QGroupBox):
 
     def state_changed(self, state, changed):
         self._state = state
-        
         if 'mode' in changed:
             min_tunable = self.dut_prop.MIN_TUNABLE[state.mode]
-            max_tunable = self.dut_prop.MAX_TUNABLE[state.mode]
-            if state.mode in  ('IQIN', 'DD'):
-                self._freq_edit.setText(str(min_tunable / M) + '\n')
-                self._freq_edit.setEnabled(False)
 
+            if state.mode in  ('IQIN', 'DD'):
+                self._freq_edit.setText(str(min_tunable / M))
+                self._freq_edit.setEnabled(False)
+                self.update_freq_edit()
             else:
                 self._bw_edit.setText(str(float(
                     self.dut_prop.FULL_BW[state.rfe_mode()]) / M))
@@ -99,9 +98,8 @@ class FrequencyControls(QtGui.QGroupBox):
                 self._bw.setEnabled(False)
                 self._bw_edit.setEnabled(False)
 
-            self.update_freq_edit()
-
         if 'center' in changed or 'span' in changed:
+
             f = state.center - (state.span / 2)
             self._fstart_edit.setText(str(f / float(M)))
             f = state.center + (state.span / 2)
