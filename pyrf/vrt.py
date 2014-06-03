@@ -9,6 +9,7 @@ VRTDATA = 1
 VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
+VRTSPECA = 0x5370eca0
 VRT_IFDATA_I14Q14 = 0x90000003
 VRT_IFDATA_I14 = 0x90000005
 VRT_IFDATA_I24 = 0x90000006
@@ -79,20 +80,22 @@ class ContextPacket(object):
         self.ptype = packet_type
         self.count = count
         self.size = size
-        (self.stream_id, self.tsi, self.tsf,indicatorsField,
+        (self.stream_id, self.tsi, self.tsf, indicators,
             ) = struct.unpack(">IIQI", tmpstr[0:20])
         self.fields = {}
 
-        # now read all the indicators
-        if self.stream_id == VRTRECEIVER:
-            self._parseReceiverContext(indicatorsField, tmpstr[20:])
-        elif self.stream_id == VRTDIGITIZER:
-            self._parseDigitizerContext(indicatorsField, tmpstr[20:])
-        elif self.stream_id == VRTCUSTOM:
-            self._parseCustomContext(indicatorsField, tmpstr[20:])
+        parse = {
+            VRTRECEIVER: self._parse_receiver_context,
+            VRTDIGITIZER: self._parse_digitizer_context,
+            VRTCUSTOM: self._parse_custom_context,
+            VRTSPECA: self._parse_speca_context,
+        }.get(self.stream_id)
+
+        if parse:
+            parse(indicators, tmpstr[20:])
 
 
-    def _parseReceiverContext(self, indicators, data):
+    def _parse_receiver_context(self, indicators, data):
         i = 0
 
         if indicators & CTX_REFERENCEPOINT:
@@ -123,7 +126,8 @@ class ContextPacket(object):
         else:
             self.fields['unknown'] = (indicators, data)
 
-    def _parseDigitizerContext(self, indicators, data):
+
+    def _parse_digitizer_context(self, indicators, data):
         i = 0
 
         if indicators & CTX_BANDWIDTH:
@@ -148,7 +152,7 @@ class ContextPacket(object):
             self.fields['unknown'] = (indicators, data)
 
 
-    def _parseCustomContext(self, indicators, data):
+    def _parse_custom_context(self, indicators, data):
         i = 0
 
         if indicators & CTX_SWEEPID:
@@ -164,6 +168,13 @@ class ContextPacket(object):
             i += 4
 
         else:
+            self.fields['unknown'] = (indicators, data)
+
+
+    def _parse_speca_context(self, indicators, data):
+        try:
+            self.fields['speca'] = json.loads(zlib.decompress(data))
+        except ValueError:
             self.fields['unknown'] = (indicators, data)
 
 
@@ -371,3 +382,22 @@ class DataPacket(object):
 
     def __str__(self):
         return ("Data #%02d [%d.%012d, %d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))
+
+
+def generate_speca_packet(data, count=0):
+    """
+    :param data: a python dict that can be serialized as JSON
+    :param count: int count for the header of this packet
+
+    :returns: (vrt packet bytes, next count int)
+    """
+    payload = zlib.compress(json.dumps(data, separators=(',', ':')))
+    padding = '\0' * ((-len(payload)) % 4)
+    size = 2 + (len(payload) + len(padding)) / 4
+    assert size < 2 ** 16, 'speca data is too large: %s' % data
+    header = struct.pack('>II',
+        (VRTCUSTOMCONTEXT << 28) | ((count & 0x0f) << 16) | size,
+        VRTSPECA,
+        )
+    return ''.join((header, payload, pad)), (count + 1) & 0x0f
+
