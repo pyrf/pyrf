@@ -148,8 +148,11 @@ class Plot(object):
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
     
-    def __init__(self, layout):
+    def __init__(self, controller, layout):
     
+        self.controller = controller
+        controller.device_change.connect(self.device_changed)
+        controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
         self.view_box = self.window.plotItem.getViewBox()
@@ -211,6 +214,12 @@ class Plot(object):
         self.markers = []
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
+
+    def device_changed(state, changed):
+        x = 5
+
+    def state_changed(state, changed):
+        x  = 6
 
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])

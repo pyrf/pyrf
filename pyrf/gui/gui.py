@@ -151,7 +151,7 @@ class MainPanel(QtGui.QWidget):
         self.setMinimumHeight(screen.height() * 0.6)
         self.plot_state = None
         # plot window
-        self._plot = Plot(self)
+        self._plot = Plot(controller, self)
         self._marker_trace = None
         self._vrt_context = {}
         self.initUI()

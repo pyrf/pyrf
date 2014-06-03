@@ -1,4 +1,4 @@
-from pyrf.config import SweepEntry, TriggerSettings, TriggerSettingsError
+from pyrf.config import SweepEntry, TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER_TYPE_NONE, TriggerSettingsError
 from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader, I_ONLY, IQ
@@ -151,6 +151,8 @@ class WSA5000_220Properties(object):
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
+    LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
+
     SPECA_DEFAULTS = {
         'mode': 'ZIF',
         'center': 2450 * M,
@@ -162,6 +164,10 @@ class WSA5000_220Properties(object):
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
             'pll_reference': 'INT',
+            'trigger': {'type': 'NONE',
+                        'fstart': 2440 * M,
+                        'fstop': 2460 * M,
+                        'amplitude': -110},
             },
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
@@ -520,42 +526,29 @@ class WSA(object):
         enable the trigger engine.
 
         :param settings: the new trigger settings; None to query
-        :type settings: pyrf.config.TriggerSettings
+        :type settings: dictionary
         :returns: the trigger settings
         """
         if settings is None:
             # find out what kind of trigger is set
             trigstr = yield self.scpiget(":TRIGGER:TYPE?")
-            if trigstr == "NONE":
-                settings = TriggerSettings("NONE")
-
-            elif trigstr == "LEVEL":
-                # build our return object
-                settings = TriggerSettings("LEVEL")
-
+            if trigstr == "LEVEL":
                 # read the settings from the box
                 trigstr = yield self.scpiget(":TRIGGER:LEVEL?")
-                settings.fstart, settings.fstop, settings.amplitude = trigstr.split(",")
-
-                # convert to integers
-                settings.fstart = int(settings.fstart)
-                settings.fstop = int(settings.fstop)
-                settings.amplitude = float(settings.amplitude)
-
+                settings = {"type": trigstr,
+                            "fstart": int(trigstr.split(",")[0]),
+                            "fstop": int(trigstr.split(",")[1]),
+                            "amplitude": int(trigstr.split(",")[2])}
             else:
-                raise TriggerSettingsError("unsupported trigger type set: %s" % trigstr)
-
+                settings = {"type": trigstr}
         else:
-            if settings.trigtype == "NONE":
-                self.scpiset(":TRIGGER:TYPE NONE")
+            self.scpiset(":TRIGGER:TYPE %s" % settings["type"])
 
-            elif settings.trigtype == "LEVEL":
-                self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings.fstart, settings.fstop, settings.amplitude))
-                self.scpiset(":TRIGGER:TYPE LEVEL")
-
+            if settings["type"] == "LEVEL":
+                self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings['fstart'], 
+                                                            settings['fstop'], 
+                                                            settings['amplitude']))
         yield settings
-
-
 
     def capture(self, spp, ppb):
         """
@@ -868,6 +861,7 @@ class WSA(object):
             'rfe_mode': self.rfe_mode,
             'iq_output_path': self.iq_output_path,
             'pll_reference': self.pll_reference,
+            'trigger': self.trigger,
             }
 
         for k, v in settings.iteritems():

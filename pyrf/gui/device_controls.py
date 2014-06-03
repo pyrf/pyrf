@@ -4,7 +4,6 @@ from PySide import QtGui
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
 
-
 class DeviceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -50,6 +49,10 @@ class DeviceControls(QtGui.QGroupBox):
         rbw_label, rbw_box = self._rbw_controls()
         row.addWidget(rbw_label)
         row.addWidget(rbw_box)
+        dev_layout.addLayout(row)
+
+        row = QtGui.QHBoxLayout()
+        row.addWidget(self._level_trigger_control())
         dev_layout.addLayout(row)
 
         self.setLayout(dev_layout)
@@ -107,6 +110,23 @@ class DeviceControls(QtGui.QGroupBox):
                 return
             self.controller.apply_settings(mode=input_mode)
 
+        def new_trigger():
+            trigger_settings = self.gui_state.device_settings['trigger']
+            if self._level_trigger.isChecked():
+                start = self.gui_state.center - (self.gui_state.span / 2)
+                stop = self.gui_state.center + (self.gui_state.span / 2)
+                level = INITIAL_AMPLITUDE
+                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                                'fstart': start,
+                                                                'fstop': stop,
+                                                                'amplitude': trigger_settings['amplitude']})
+            else:
+                self.controller.apply_device_settings(trigger = {'type': 'NONE',
+                                                                'fstart': trigger_settings['fstart'],
+                                                                'fstop': trigger_settings['fstop'],
+                                                                'amplitude': trigger_settings['amplitude']})
+
+
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
@@ -116,6 +136,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._mode.currentIndexChanged.connect(new_input_mode)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
+        self._level_trigger.clicked.connect(new_trigger)
 
     def device_changed(self, dut):
         dut_prop = dut.properties
@@ -138,7 +159,7 @@ class DeviceControls(QtGui.QGroupBox):
             self._mode.addItem(m)
 
     def state_changed(self, state, changed):
-
+        self.gui_state = state
         if 'mode' in changed:
             if state.sweeping():
                 self._dec_box.setEnabled(False)
@@ -257,6 +278,12 @@ class DeviceControls(QtGui.QGroupBox):
         pll.addItem("PLL Reference: EXTERNAL")
         self._pll_box = pll
         return pll
+
+    def _level_trigger_control(self):
+        level_trigg = QtGui.QCheckBox("Level Triggers")
+        level_trigg.setToolTip("Enable Frequency Level Triggers")
+        self._level_trigger = level_trigg
+        return level_trigg
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
