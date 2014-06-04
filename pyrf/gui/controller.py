@@ -133,14 +133,10 @@ class SpecAController(QtCore.QObject):
         self.start_capture()
 
     def read_block(self):
-        device_set = dict(self._state.device_settings)
-
-        device_set['decimation'] = self._state.decimation
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
-            self._state.rbw,
-            device_set)
+            self._state.rbw)
 
     def read_sweep(self):
         device_set = dict(self._state.device_settings)
@@ -218,18 +214,22 @@ class SpecAController(QtCore.QObject):
             device_settings=device_settings)
 
         changed = ['device_settings.%s' % s for s in kwargs]
-        print changed
+ 
             # FIXME find appropriate area for this
         if 'DIGITIZER' in self._state.device_settings['iq_output_path']:
             self.start_capture()
         self.state_change.emit(self._state, changed)
 
+        # apply settings to device
+        device_set = dict(self._state.device_settings)
+        self._capture_device.configure_device(device_set)
     def apply_settings(self, **kwargs):
         """
         Apply state settings and trigger a state change event.
 
         :param kwargs: keyword arguments of SpecAState attributes
         """
+
         if self._state is None:
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
