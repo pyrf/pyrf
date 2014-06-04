@@ -175,6 +175,8 @@ class MainPanel(QtGui.QWidget):
         :param state: new SpecAState object
         :param changed: list of attribute names changed
         """
+        self.gui_state = state
+
         if 'mode' in changed:
             self.rfe_mode = state.rfe_mode()  # used by recentering code
             if state.sweeping():
@@ -448,20 +450,29 @@ class MainPanel(QtGui.QWidget):
     def _center_control(self):
         center = QtGui.QPushButton('Recenter')
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
-        center.clicked.connect(lambda: cu._center_plot_view(self))
+        center.clicked.connect(lambda: self._plot.center_view(self.gui_state.center, 
+                                                                self.gui_state.span,
+                                                                min_level = int(self._min_level.text()),
+                                                                ref_level = int(self._ref_level.text())))
         self._center_bt = center
         self.control_widgets.append(self._center_bt)
         return center
     
     def _ref_controls(self):
         ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
-        ref_level.returnPressed.connect(lambda: cu._change_ref_level(self))
+        ref_level.returnPressed.connect(lambda: self._plot.center_view(self.gui_state.center, 
+                                                                self.gui_state.span,
+                                                                min_level = int(self._min_level.text()),
+                                                                ref_level = int(self._ref_level.text())))
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
         ref_label = QtGui.QLabel('Reference Level: ')
         
         min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
-        min_level.returnPressed.connect(lambda: cu._change_min_level(self))
+        min_level.returnPressed.connect(lambda: self._plot.center_view(self.gui_state.center, 
+                                                        self.gui_state.span,
+                                                        min_level = int(self._min_level.text()),
+                                                        ref_level = int(self._ref_level.text())))
         min_label = QtGui.QLabel('Minimum Level: ')
         self._min_level = min_level
         self.control_widgets.append(self._min_level)

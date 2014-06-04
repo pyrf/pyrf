@@ -165,6 +165,13 @@ class DeviceControls(QtGui.QGroupBox):
             if self._level_trigger.isChecked():
                 self._level_trigger.click()
         if 'mode' in changed:
+            if state.rfe_mode() in ['HDR', 'DD', 'IQIN']:
+                self._level_trigger.setEnabled(False)
+                if self._level_trigger.isChecked():
+                    self._level_trigger.click()
+            else:
+                self._level_trigger.setEnabled(True)
+
             if state.sweeping():
                 self._dec_box.setEnabled(False)
                 self._freq_shift_edit.setEnabled(False)
@@ -198,6 +205,7 @@ class DeviceControls(QtGui.QGroupBox):
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # add sweep SH mode
+                print 'got here'
                 self._mode.addItem('Sweep SH')
 
                 # show digitizer controls
