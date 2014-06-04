@@ -159,7 +159,7 @@ class MainPanel(QtGui.QWidget):
         self.ref_level = 0
         self.plot_state = None
 
-        self._plot_center_span = None, None
+        self.freq_range = None, None
 
     def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
@@ -450,29 +450,29 @@ class MainPanel(QtGui.QWidget):
     def _center_control(self):
         center = QtGui.QPushButton('Recenter')
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
-        center.clicked.connect(lambda: self._plot.center_view(self.gui_state.center, 
-                                                                self.gui_state.span,
-                                                                min_level = int(self._min_level.text()),
-                                                                ref_level = int(self._ref_level.text())))
+        center.clicked.connect(lambda: self._plot.center_view(min(self.xdata), 
+                                                            max(self.xdata),
+                                                            min_level = int(self._min_level.text()),
+                                                            ref_level = int(self._ref_level.text())))
         self._center_bt = center
         self.control_widgets.append(self._center_bt)
         return center
     
     def _ref_controls(self):
         ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
-        ref_level.returnPressed.connect(lambda: self._plot.center_view(self.gui_state.center, 
-                                                                self.gui_state.span,
-                                                                min_level = int(self._min_level.text()),
-                                                                ref_level = int(self._ref_level.text())))
+        ref_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
+                                                                        max(self.xdata),
+                                                                        min_level = int(self._min_level.text()),
+                                                                        ref_level = int(self._ref_level.text())))
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
         ref_label = QtGui.QLabel('Reference Level: ')
         
         min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
-        min_level.returnPressed.connect(lambda: self._plot.center_view(self.gui_state.center, 
-                                                        self.gui_state.span,
-                                                        min_level = int(self._min_level.text()),
-                                                        ref_level = int(self._ref_level.text())))
+        min_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
+                                                                        max(self.xdata),
+                                                                        min_level = int(self._min_level.text()),
+                                                                        ref_level = int(self._ref_level.text())))
         min_label = QtGui.QLabel('Minimum Level: ')
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
@@ -511,10 +511,10 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
 
         self.update_trace()
+        if self.freq_range != (fstart, fstop):
+            self.freq_range = (fstart, fstop)
 
-        if self._plot_center_span != (state.center, state.span):
-            self._plot_center_span = (state.center, state.span)
-            self._plot.center_view(state.center, state.span)
+            self._plot.center_view(fstart, fstop)
 
         self.update_iq()
         self.update_marker()

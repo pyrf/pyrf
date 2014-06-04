@@ -222,6 +222,8 @@ class SpecAController(QtCore.QObject):
 
         # apply settings to device
         device_set = dict(self._state.device_settings)
+        device_set['decimation'] = self._state.decimation
+        device_set['fshift'] = self._state.fshift
         self._capture_device.configure_device(device_set)
     def apply_settings(self, **kwargs):
         """
@@ -234,7 +236,7 @@ class SpecAController(QtCore.QObject):
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
         self._state = SpecAState(self._state, **kwargs)
-
+        self.apply_device_settings()
         self.state_change.emit(self._state, kwargs.keys())
 
 

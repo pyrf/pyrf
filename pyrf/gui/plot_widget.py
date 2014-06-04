@@ -251,8 +251,8 @@ class Plot(object):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
 
-    def center_view(self,f,bw, min_level=None, ref_level=None):
-        self.window.setXRange(f - (bw/2),f + (bw / 2))
+    def center_view(self, fstart, fstop, min_level=None, ref_level=None):
+        self.window.setXRange(fstart, fstop)
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
 
