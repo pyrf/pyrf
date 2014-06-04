@@ -70,7 +70,7 @@ class FrequencyControls(QtGui.QGroupBox):
     def state_changed(self, state, changed):
         self.gui_state = state
         if 'mode' in changed:
-            min_tunable = self.dut_prop.MIN_TUNABLE[state.mode]
+            min_tunable = self.dut_prop.MIN_TUNABLE[state.mode.split(' ')[-1]]
 
             if state.mode in  ('IQIN', 'DD'):
                 self._freq_edit.setText(str(min_tunable / M))
@@ -161,7 +161,7 @@ class FrequencyControls(QtGui.QGroupBox):
         bw.clicked.connect(self.select_bw)
         bw_edit = QtGui.QLineEdit()
         def freq_change():
-            cu._select_bw(self)
+            self.select_bw()
             self.update_freq()
             self.update_freq_edit()
         bw_edit.returnPressed.connect(freq_change)
@@ -190,7 +190,7 @@ class FrequencyControls(QtGui.QGroupBox):
         fstop.clicked.connect(self.select_fstop)
         freq = QtGui.QLineEdit()
         def freq_change():
-            cu._select_fstop(self)
+            self.select_fstop()
             self.update_freq()
             self.update_freq_edit()
         freq.returnPressed.connect(freq_change)
@@ -208,14 +208,16 @@ class FrequencyControls(QtGui.QGroupBox):
                 self.update_freq_set(fcenter = f)
             elif self.freq_sel == 'FSTART':
                 f = (float(self._fstart_edit.text()) + delta) * M
-                if f > max_tunable or f <min_tunable or f > self._fstop:
+                if f > max_tunable or f <min_tunable or f > self.fstop:
                     return
                 self.update_freq_set(fstart = f)
 
             elif self.freq_sel == 'FSTOP':
+
                 f = (float(self._fstop_edit.text()) + delta) * M
 
-                if f > max_tunable or f < min_tunable or f < self._fstart:
+                if f > max_tunable or f < min_tunable or f < self.fstart:
+                    print f, self._fstart, max_tunable, min_tunable
                     return
                 self.update_freq_set(fstop = f)
 
@@ -242,7 +244,6 @@ class FrequencyControls(QtGui.QGroupBox):
         rfe_mode = self.gui_state.rfe_mode()
         min_tunable = prop.MIN_TUNABLE[rfe_mode]
         max_tunable = prop.MAX_TUNABLE[rfe_mode]
-
         if fcenter is not None:
 
             if not self.gui_state.sweeping():

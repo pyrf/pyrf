@@ -139,11 +139,14 @@ class DeviceControls(QtGui.QGroupBox):
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
+
         # FIXME: remove device-specific code, use device properties instead
         if self.dut_prop.model.startswith('WSA5000'):
             self._antenna_box.hide()
             self._gain_box.hide()
             self._ifgain_box.hide()
+            self._iq_output_box.show()
+            self._pll_box.show()
 
         else:
             self._antenna_box.show()
@@ -156,6 +159,8 @@ class DeviceControls(QtGui.QGroupBox):
             self._mode.removeItem(0)
         for m in self.dut_prop.RFE_MODES:
             self._mode.addItem(m)
+        if self.dut_prop.model.startswith('WSA5000'):
+            self._mode.addItem('Sweep SH')
 
     def state_changed(self, state, changed):
         self.gui_state = state
@@ -185,6 +190,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._rbw_use_hdr_values()
             else:
                 self._rbw_use_normal_values()
+
             # FIXME: way too much knowledge about rbw levels here
             self._rbw_box.setCurrentIndex(
                 0 if state.sweeping() else
@@ -204,7 +210,6 @@ class DeviceControls(QtGui.QGroupBox):
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # add sweep SH mode
-                print 'got here'
                 self._mode.addItem('Sweep SH')
 
                 # show digitizer controls
