@@ -172,10 +172,6 @@ class Plot(object):
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
 
-        # update trigger settings when ever a line is changed
-        # self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
-        # self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
-
         self.grid(True)
 
         # IQ constellation window
@@ -215,13 +211,30 @@ class Plot(object):
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
 
+        self.connect_plot_controls()
+
+    def connect_plot_controls(self):
+        
+        def new_trigger_freq():
+            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                            'fstart': min(self.freqtrig_lines.getRegion()),
+                                                            'fstop': max(self.freqtrig_lines.getRegion()),
+                                                            'amplitude': self.gui_state.device_settings['trigger']['amplitude']})
+        def new_trigger_amp():
+            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                'fstart': self.gui_state.device_settings['trigger']['fstart'],
+                'fstop': self.gui_state.device_settings['trigger']['fstop'],
+                'amplitude': self.amptrig_line.value()})
+        # update trigger settings when ever a line is changed
+        self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
+        self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
+    
     def device_changed(self, state, changed):
         self.remove(trigger)
 
     def state_changed(self, state, changed):
-
+        self.gui_state = state
         if 'device_settings.trigger' in changed:
-            print 'hello'
             if 'NONE' in state.device_settings['trigger']['type']:
                 self.remove_trigger()
             elif 'LEVEL' in state.device_settings['trigger']['type']:
