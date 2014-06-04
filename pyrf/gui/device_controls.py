@@ -160,6 +160,10 @@ class DeviceControls(QtGui.QGroupBox):
 
     def state_changed(self, state, changed):
         self.gui_state = state
+
+        if 'center' in changed:
+            if self._level_trigger.isChecked():
+                self._level_trigger.click()
         if 'mode' in changed:
             if state.sweeping():
                 self._dec_box.setEnabled(False)
