@@ -1,5 +1,5 @@
 from PySide import QtGui
-
+from pyrf.units import M
 # FIXME: calculate choices from device properties instead
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
@@ -71,17 +71,16 @@ class DeviceControls(QtGui.QGroupBox):
 
         def new_freq_shift():
             rfe_mode = 'ZIF'
-            prop = self.dut.properties
+            prop = self.dut_prop
             max_fshift = prop.MAX_FSHIFT[rfe_mode]
             try:
                 if float(self._freq_shift_edit.text()) * M < max_fshift:
-                    self.plot_state.dev_set['fshift'] = float(self._freq_shift_edit.text()) * M
+                    self.controller.apply_settings(fshift = float(self._freq_shift_edit.text()) * M)
                 else:
                     self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
             except ValueError:
                 self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
                 return
-            self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_gain():
             self.plot_state.dev_set['gain'] = self._gain_box.currentText().split()[-1].lower().encode('ascii')
@@ -139,9 +138,9 @@ class DeviceControls(QtGui.QGroupBox):
         self._level_trigger.clicked.connect(new_trigger)
 
     def device_changed(self, dut):
-        dut_prop = dut.properties
+        self.dut_prop = dut.properties
         # FIXME: remove device-specific code, use device properties instead
-        if dut_prop.model.startswith('WSA5000'):
+        if self.dut_prop.model.startswith('WSA5000'):
             self._antenna_box.hide()
             self._gain_box.hide()
             self._ifgain_box.hide()
@@ -155,7 +154,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         while self._mode.count():
             self._mode.removeItem(0)
-        for m in dut_prop.RFE_MODES:
+        for m in self.dut_prop.RFE_MODES:
             self._mode.addItem(m)
 
     def state_changed(self, state, changed):
