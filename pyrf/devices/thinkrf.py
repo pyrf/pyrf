@@ -256,7 +256,7 @@ class WSA(object):
             self.properties = WSA5000_220Properties
 
         self.fw_version = device_id.split(',')[-1]
-        self.device_state = self.properties.SPECA_DEFAULTS
+        self.device_state = None
 
     def disconnect(self):
         """
@@ -849,6 +849,9 @@ class WSA(object):
 
         :param settings: dict containing settings such as gain,antenna,etc
         """
+        if self.device_state is None:
+            self.device_state = settings
+
         device_setting = {
             'freq': self.freq,
             'antenna': self.antenna,
@@ -867,7 +870,9 @@ class WSA(object):
             }
 
         for k, v in settings.iteritems():
-            device_setting[k](v)
+            print k, self.device_state[k], v
+            if not self.device_state[k] == v:
+                device_setting[k](v)
 
 def parse_discovery_response(response):
     """
