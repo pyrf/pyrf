@@ -226,6 +226,8 @@ class SpecAController(QtCore.QObject):
         device_set = dict(self._state.device_settings)
         device_set['decimation'] = self._state.decimation
         device_set['fshift'] = self._state.fshift
+        device_set['rfe_mode'] = self._state.mode
+        device_set['freq'] = self._state.center
         self._capture_device.configure_device(device_set)
     def apply_settings(self, **kwargs):
         """
