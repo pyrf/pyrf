@@ -216,7 +216,6 @@ class Plot(object):
     def connect_plot_controls(self):
         
         def new_trigger_freq():
-            
             self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                                                             'fstart': min(self.freqtrig_lines.getRegion()),
                                                             'fstop': max(self.freqtrig_lines.getRegion()),

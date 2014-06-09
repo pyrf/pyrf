@@ -1,5 +1,3 @@
-from pyrf.config import TriggerSettings
-
 import math
 
 
@@ -165,7 +163,7 @@ class CaptureDevice(object):
         fstop = freq + full_bw / 2.0 + offset
 
         # XXX here we "know" that bins = samples/2
-        if packet.spec_inv:
+        if packet.spec_inv and rfe_mode in ('SH', 'SHN'):
             [(start, run)] = self.usable_bins
             start = len(packet.data) / 2 - start - run
             self.usable_bins = [(start, run)]

@@ -256,6 +256,7 @@ class WSA(object):
             self.properties = WSA5000_220Properties
 
         self.fw_version = device_id.split(',')[-1]
+        self.device_state = self.properties.SPECA_DEFAULTS
 
     def disconnect(self):
         """
@@ -867,7 +868,6 @@ class WSA(object):
 
         for k, v in settings.iteritems():
             device_setting[k](v)
-
 
 def parse_discovery_response(response):
     """
