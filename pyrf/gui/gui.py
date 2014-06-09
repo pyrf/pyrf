@@ -533,11 +533,21 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
-        if not self.raw_data:
-            return
 
-        if self.raw_data.stream_id == VRT_IFDATA_I14Q14:
-            data = self.raw_data.data.numpy_array()
+    if not self.raw_data:
+            return
+        trace = self._plot.traces[self._trace_tab.currentIndex()]
+
+        if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
+            return
+        if not trace.store:
+            data_pkt = self.raw_data
+            trace.raw_packet = self.raw_data
+        else:
+            data_pkt = trace.raw_packet
+
+        if data_pkt.stream_id == VRT_IFDATA_I14Q14:
+            data = data_pkt.data.numpy_array()
             i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
             q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
             self._plot.i_curve.setData(i_data)
@@ -551,21 +561,21 @@ class MainPanel(QtGui.QWidget):
                 brush = 'y')
 
         else:
-            data = self.raw_data.data.numpy_array()
+            data = data_pkt.data.numpy_array()
             i_data = np.array(data, dtype=float)
 
-            if self.raw_data.stream_id == VRT_IFDATA_I14:
+            if data_pkt.stream_id == VRT_IFDATA_I14:
                 i_data = i_data /ZIF_BITS
 
-            elif self.raw_data.stream_id == VRT_IFDATA_I24:
+            elif data_pkt.stream_id == VRT_IFDATA_I24:
                 i_data = i_data / (np.mean(i_data)) - 1
             self._plot.i_curve.setData(i_data)
 
             self._plot.q_curve.clear()
-            self._plot.const_plot.clear()
+        self._plot.const_plot.clear()
 
-    def update_marker(self):        
-            
+    def update_marker(self):
+
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
@@ -576,7 +586,7 @@ class MainPanel(QtGui.QWidget):
                                                                             trace.color[2]))
                         
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
+                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dB' % (trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
                         marker_label.setText(marker_text)
 
@@ -608,15 +618,14 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
-            
-        
+
         for key in self._trace_attr:
             self._trace_attr[key].setEnabled(True)
         
     def disable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(False)
-            
+
         for key in self._trace_attr:
             self._trace_attr[key].setEnabled(False)
 

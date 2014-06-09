@@ -26,6 +26,7 @@ class Trace(object):
         self.write = write
         self.store = False
         self.data = None
+        self.raw_packet = None
         self.freq_range = None
         self.color = trace_color
         self.edge_color = trace_color + (40,)
