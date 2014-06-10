@@ -25,7 +25,9 @@ win.setWindowTitle("PYRF FFT Plot Example")
 
 # connect to WSA device
 dut = WSA()
-dut.connect(sys.argv[1])
+ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
+                    'Enter a hostname or IP address:')
+dut.connect(ip)
 
 # initialize WSA configurations
 dut.reset()

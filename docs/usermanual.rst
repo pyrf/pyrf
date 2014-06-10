@@ -11,37 +11,20 @@ Installation
 Windows Dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
-Download and install, in the order as listed, the latest version of:
-
-* `32-bit version of Python 2.7 <http://www.python.org/ftp/python/2.7/python-2.7.msi>`_
-* `setuptools <https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py>`_
-
-Add ``Python27`` and ``Python27\Scripts`` directories to your PATH environment
-variable.  e.g. if using the default install path, add::
-
-  ;C:\Python27;C:\Python27\Scripts
-
-Next install:
-
-* `pywin32 for 32-bit Python 2.7 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
-  (e.g. "pywin32-218.win32-py2.7.exe")
-* `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_
-  (e.g. "numpy-1.x.x-win32-superpack-python2.7.exe")
-* `PySide <http://qt-project.org/wiki/PySide_Binaries_Windows>`_
-  (e.g. "PySide-1.x.x.win32-py2.7.exe")
-* `zope.interface <http://pypi.python.org/pypi/zope.interface#download>`_
-  (e.g. "zope.interface-x.x.x.win32-py2.7.exe")
-* `Twisted <http://twistedmatrix.com/trac/>`_
-  (e.g. "Twisted-x.x.x.win32-py2.7.msi")
-* `pywin32 <http://sourceforge.net/projects/pywin32/files/pywin32/>`_
-  (e.g. "pywin32-xxx.win32-py2.7.exe")
-* `qtreactor <https://github.com/pyrf/qtreactor/releases>`_,
-  extract it then switch to the qtreactor directory and run::
-
-    python setup.py install
-
-Continue from :ref:`pyrf-installation` below.
-
+1. Download https://s3.amazonaws.com/ThinkRF/Support-Resources/pyrf-dependencies.zip
+2. Extract the contents of the zipped file
+3. Install Python 2.7.6 (python-2.7.6.msi)
+4. Add the following to the windows PATH ';C:\Python27;C:\Python27\Scripts'
+5. Install Numpy (numpy-1.8.1-win32-superpack-python2.7)
+6. Install Scipy (scipy-0.14.0-win32-superpack-python2.7)
+7. Install Pyside (PySide-1.2.0.win32-py2.7)
+8. Install Pyqtgraph (pyqtgraph-0.9.8.win32)
+9. Install zope.interface (zope.interface-4.1.1.win32-py2.7)
+10. Install twisted (Twisted-14.0.0.win32-py2.7)
+11. Install pywin32 (pywin32-219.win32-py2.7)
+12. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
+13. Obtain PyRF source code from https://github.com/pyrf/pyrf
+14. Go the pyrf directory and run 'setup.py install'
 
 Debian/Ubuntu Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
