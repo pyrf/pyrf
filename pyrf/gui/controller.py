@@ -133,18 +133,16 @@ class SpecAController(QtCore.QObject):
         self.start_capture()
 
     def read_block(self):
-        device_set = dict(self._state.device_settings)
-
-        device_set['decimation'] = self._state.decimation
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
-            self._state.rbw,
-            device_set)
+            self._state.rbw)
 
     def read_sweep(self):
         device_set = dict(self._state.device_settings)
         device_set.pop('pll_reference')
+        device_set.pop('iq_output_path')
+        device_set.pop('trigger')
         self._sweep_device.capture_power_spectrum(
             self._state.center - self._state.span / 2.0,
             self._state.center + self._state.span / 2.0,
@@ -218,22 +216,31 @@ class SpecAController(QtCore.QObject):
             device_settings=device_settings)
 
         changed = ['device_settings.%s' % s for s in kwargs]
+ 
             # FIXME find appropriate area for this
         if 'DIGITIZER' in self._state.device_settings['iq_output_path']:
             self.start_capture()
         self.state_change.emit(self._state, changed)
 
+        # apply settings to device
+        device_set = dict(self._state.device_settings)
+        device_set['decimation'] = self._state.decimation
+        device_set['fshift'] = self._state.fshift
+        device_set['rfe_mode'] = self._state.mode
+        device_set['freq'] = self._state.center
+        self._capture_device.configure_device(device_set)
     def apply_settings(self, **kwargs):
         """
         Apply state settings and trigger a state change event.
 
         :param kwargs: keyword arguments of SpecAState attributes
         """
+
         if self._state is None:
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
         self._state = SpecAState(self._state, **kwargs)
-
+        self.apply_device_settings()
         self.state_change.emit(self._state, kwargs.keys())
 
 

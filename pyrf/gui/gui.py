@@ -151,7 +151,7 @@ class MainPanel(QtGui.QWidget):
         self.setMinimumHeight(screen.height() * 0.6)
         self.plot_state = None
         # plot window
-        self._plot = Plot(self)
+        self._plot = Plot(controller, self)
         self._marker_trace = None
         self._vrt_context = {}
         self.initUI()
@@ -159,7 +159,7 @@ class MainPanel(QtGui.QWidget):
         self.ref_level = 0
         self.plot_state = None
 
-        self._plot_center_span = None, None
+        self.freq_range = None, None
 
     def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
@@ -175,6 +175,8 @@ class MainPanel(QtGui.QWidget):
         :param state: new SpecAState object
         :param changed: list of attribute names changed
         """
+        self.gui_state = state
+
         if 'mode' in changed:
             self.rfe_mode = state.rfe_mode()  # used by recentering code
             if state.sweeping():
@@ -448,20 +450,29 @@ class MainPanel(QtGui.QWidget):
     def _center_control(self):
         center = QtGui.QPushButton('Recenter')
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
-        center.clicked.connect(lambda: cu._center_plot_view(self))
+        center.clicked.connect(lambda: self._plot.center_view(min(self.xdata), 
+                                                            max(self.xdata),
+                                                            min_level = int(self._min_level.text()),
+                                                            ref_level = int(self._ref_level.text())))
         self._center_bt = center
         self.control_widgets.append(self._center_bt)
         return center
     
     def _ref_controls(self):
         ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
-        ref_level.returnPressed.connect(lambda: cu._change_ref_level(self))
+        ref_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
+                                                                        max(self.xdata),
+                                                                        min_level = int(self._min_level.text()),
+                                                                        ref_level = int(self._ref_level.text())))
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
         ref_label = QtGui.QLabel('Reference Level: ')
         
         min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
-        min_level.returnPressed.connect(lambda: cu._change_min_level(self))
+        min_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
+                                                                        max(self.xdata),
+                                                                        min_level = int(self._min_level.text()),
+                                                                        ref_level = int(self._ref_level.text())))
         min_label = QtGui.QLabel('Minimum Level: ')
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
@@ -500,10 +511,10 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
 
         self.update_trace()
+        if self.freq_range != (fstart, fstop):
+            self.freq_range = (fstart, fstop)
 
-        if self._plot_center_span != (state.center, state.span):
-            self._plot_center_span = (state.center, state.span)
-            self._plot.center_view(state.center, state.span)
+            self._plot.center_view(fstart, fstop)
 
         self.update_iq()
         self.update_marker()
@@ -522,11 +533,21 @@ class MainPanel(QtGui.QWidget):
 
 
     def update_iq(self):
-        if not self.raw_data:
-            return
 
-        if self.raw_data.stream_id == VRT_IFDATA_I14Q14:
-            data = self.raw_data.data.numpy_array()
+        if not self.raw_data:
+                return
+        trace = self._plot.traces[self._trace_tab.currentIndex()]
+
+        if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
+            return
+        if not trace.store:
+            data_pkt = self.raw_data
+            trace.raw_packet = self.raw_data
+        else:
+            data_pkt = trace.raw_packet
+
+        if data_pkt.stream_id == VRT_IFDATA_I14Q14:
+            data = data_pkt.data.numpy_array()
             i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
             q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
             self._plot.i_curve.setData(i_data)
@@ -540,30 +561,21 @@ class MainPanel(QtGui.QWidget):
                 brush = 'y')
 
         else:
-            data = self.raw_data.data.numpy_array()
+            data = data_pkt.data.numpy_array()
             i_data = np.array(data, dtype=float)
 
-            if self.raw_data.stream_id == VRT_IFDATA_I14:
+            if data_pkt.stream_id == VRT_IFDATA_I14:
                 i_data = i_data /ZIF_BITS
 
-            elif self.raw_data.stream_id == VRT_IFDATA_I24:
+            elif data_pkt.stream_id == VRT_IFDATA_I24:
                 i_data = i_data / (np.mean(i_data)) - 1
             self._plot.i_curve.setData(i_data)
 
             self._plot.q_curve.clear()
-            self._plot.const_plot.clear()
+        self._plot.const_plot.clear()
 
-    def update_trig(self):
-            if self.plot_state.trig_set:
-                freq_region = self._plot.freqtrig_lines.getRegion()
-                self.plot_state.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
-                                                        min(freq_region), 
-                                                        max(freq_region),
-                                                        self._plot.amptrig_line.value())
+    def update_marker(self):
 
-                self.dut.trigger(self.plot_state.trig_set)
-    def update_marker(self):        
-            
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
@@ -574,7 +586,7 @@ class MainPanel(QtGui.QWidget):
                                                                             trace.color[2]))
                         
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
+                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dB' % (trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
                         marker_label.setText(marker_text)
 
@@ -606,15 +618,14 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
-            
-        
+
         for key in self._trace_attr:
             self._trace_attr[key].setEnabled(True)
         
     def disable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(False)
-            
+
         for key in self._trace_attr:
             self._trace_attr[key].setEnabled(False)
 

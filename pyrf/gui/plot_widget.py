@@ -26,6 +26,7 @@ class Trace(object):
         self.write = write
         self.store = False
         self.data = None
+        self.raw_packet = None
         self.freq_range = None
         self.color = trace_color
         self.edge_color = trace_color + (40,)
@@ -148,8 +149,11 @@ class Plot(object):
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
     
-    def __init__(self, layout):
+    def __init__(self, controller, layout):
     
+        self.controller = controller
+        controller.device_change.connect(self.device_changed)
+        controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
         self.view_box = self.window.plotItem.getViewBox()
@@ -168,10 +172,6 @@ class Plot(object):
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
-
-        # update trigger settings when ever a line is changed
-        self.freqtrig_lines.sigRegionChangeFinished.connect(layout.update_trig)
-        self.amptrig_line.sigPositionChangeFinished.connect(layout.update_trig)
 
         self.grid(True)
 
@@ -212,6 +212,36 @@ class Plot(object):
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
 
+        self.connect_plot_controls()
+
+    def connect_plot_controls(self):
+        
+        def new_trigger_freq():
+            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                            'fstart': min(self.freqtrig_lines.getRegion()),
+                                                            'fstop': max(self.freqtrig_lines.getRegion()),
+                                                            'amplitude': self.gui_state.device_settings['trigger']['amplitude']})
+        def new_trigger_amp():
+            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                'fstart': self.gui_state.device_settings['trigger']['fstart'],
+                'fstop': self.gui_state.device_settings['trigger']['fstop'],
+                'amplitude': self.amptrig_line.value()})
+        # update trigger settings when ever a line is changed
+        self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
+        self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
+    
+    def device_changed(self, state, changed):
+        self.remove(trigger)
+
+    def state_changed(self, state, changed):
+        self.gui_state = state
+        if 'device_settings.trigger' in changed:
+            if 'NONE' in state.device_settings['trigger']['type']:
+                self.remove_trigger()
+            elif 'LEVEL' in state.device_settings['trigger']['type']:
+                self.add_trigger(state.device_settings['trigger']['fstart'],
+                                state.device_settings['trigger']['fstop'])
+
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([fstart,fstop])
         self.window.addItem(self.amptrig_line)
@@ -221,8 +251,8 @@ class Plot(object):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
 
-    def center_view(self,f,bw, min_level=None, ref_level=None):
-        self.window.setXRange(f - (bw/2),f + (bw / 2))
+    def center_view(self, fstart, fstop, min_level=None, ref_level=None):
+        self.window.setXRange(fstart, fstop)
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
 

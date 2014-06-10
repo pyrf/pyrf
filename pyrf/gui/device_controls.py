@@ -1,9 +1,8 @@
 from PySide import QtGui
-
+from pyrf.units import M
 # FIXME: calculate choices from device properties instead
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
-
 
 class DeviceControls(QtGui.QGroupBox):
     """
@@ -52,6 +51,10 @@ class DeviceControls(QtGui.QGroupBox):
         row.addWidget(rbw_box)
         dev_layout.addLayout(row)
 
+        row = QtGui.QHBoxLayout()
+        row.addWidget(self._level_trigger_control())
+        dev_layout.addLayout(row)
+
         self.setLayout(dev_layout)
         self.layout = dev_layout
 
@@ -68,17 +71,16 @@ class DeviceControls(QtGui.QGroupBox):
 
         def new_freq_shift():
             rfe_mode = 'ZIF'
-            prop = self.dut.properties
+            prop = self.dut_prop
             max_fshift = prop.MAX_FSHIFT[rfe_mode]
             try:
                 if float(self._freq_shift_edit.text()) * M < max_fshift:
-                    self.plot_state.dev_set['fshift'] = float(self._freq_shift_edit.text()) * M
+                    self.controller.apply_settings(fshift = float(self._freq_shift_edit.text()) * M)
                 else:
                     self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
             except ValueError:
                 self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
                 return
-            self.cap_dut.configure_device(self.plot_state.dev_set)
 
         def new_gain():
             self.plot_state.dev_set['gain'] = self._gain_box.currentText().split()[-1].lower().encode('ascii')
@@ -107,6 +109,23 @@ class DeviceControls(QtGui.QGroupBox):
                 return
             self.controller.apply_settings(mode=input_mode)
 
+        def new_trigger():
+            trigger_settings = self.gui_state.device_settings['trigger']
+            if self._level_trigger.isChecked():
+                start = self.gui_state.center - (self.gui_state.span / 2) + 20e6
+                stop = self.gui_state.center + (self.gui_state.span / 2) - 20e6
+                level = trigger_settings['amplitude']
+                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                                'fstart': start,
+                                                                'fstop': stop,
+                                                                'amplitude': trigger_settings['amplitude']})
+            else:
+                self.controller.apply_device_settings(trigger = {'type': 'NONE',
+                                                                'fstart': trigger_settings['fstart'],
+                                                                'fstop': trigger_settings['fstop'],
+                                                                'amplitude': trigger_settings['amplitude']})
+
+
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
@@ -116,15 +135,19 @@ class DeviceControls(QtGui.QGroupBox):
         self._mode.currentIndexChanged.connect(new_input_mode)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
+        self._level_trigger.clicked.connect(new_trigger)
 
     def device_changed(self, dut):
-        dut_prop = dut.properties
+        self.dut_prop = dut.properties
+
         # FIXME: remove device-specific code, use device properties instead
-        if dut_prop.model.startswith('WSA5000'):
+        if self.dut_prop.model.startswith('WSA5000'):
             self._antenna_box.hide()
             self._gain_box.hide()
             self._ifgain_box.hide()
-
+            self._iq_output_box.show()
+            self._pll_box.show()
+            self._level_trigger.hide()
         else:
             self._antenna_box.show()
             self._gain_box.show()
@@ -134,12 +157,25 @@ class DeviceControls(QtGui.QGroupBox):
 
         while self._mode.count():
             self._mode.removeItem(0)
-        for m in dut_prop.RFE_MODES:
+        for m in self.dut_prop.RFE_MODES:
             self._mode.addItem(m)
+        if self.dut_prop.model.startswith('WSA5000'):
+            self._mode.addItem('Sweep SH')
 
     def state_changed(self, state, changed):
+        self.gui_state = state
 
+        if 'center' in changed:
+            if self._level_trigger.isChecked():
+                self._level_trigger.click()
         if 'mode' in changed:
+            if state.rfe_mode() in ['HDR', 'DD', 'IQIN']:
+                self._level_trigger.setEnabled(False)
+                if self._level_trigger.isChecked():
+                    self._level_trigger.click()
+            else:
+                self._level_trigger.setEnabled(True)
+
             if state.sweeping():
                 self._dec_box.setEnabled(False)
                 self._freq_shift_edit.setEnabled(False)
@@ -154,6 +190,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._rbw_use_hdr_values()
             else:
                 self._rbw_use_normal_values()
+
             # FIXME: way too much knowledge about rbw levels here
             self._rbw_box.setCurrentIndex(
                 0 if state.sweeping() else
@@ -257,6 +294,12 @@ class DeviceControls(QtGui.QGroupBox):
         pll.addItem("PLL Reference: EXTERNAL")
         self._pll_box = pll
         return pll
+
+    def _level_trigger_control(self):
+        level_trigg = QtGui.QCheckBox("Level Triggers")
+        level_trigg.setToolTip("Enable Frequency Level Triggers")
+        self._level_trigger = level_trigg
+        return level_trigg
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
