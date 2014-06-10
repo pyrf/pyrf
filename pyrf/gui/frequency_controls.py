@@ -70,7 +70,7 @@ class FrequencyControls(QtGui.QGroupBox):
     def state_changed(self, state, changed):
         self.gui_state = state
         if 'mode' in changed:
-            min_tunable = self.dut_prop.MIN_TUNABLE[state.mode.split(' ')[-1]]
+            min_tunable = self.dut_prop.MIN_TUNABLE[state.rfe_mode()]
 
             if state.mode in  ('IQIN', 'DD'):
                 self._freq_edit.setText(str(min_tunable / M))
