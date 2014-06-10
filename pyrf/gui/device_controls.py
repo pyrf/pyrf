@@ -147,7 +147,7 @@ class DeviceControls(QtGui.QGroupBox):
             self._ifgain_box.hide()
             self._iq_output_box.show()
             self._pll_box.show()
-
+            self._level_trigger.hide()
         else:
             self._antenna_box.show()
             self._gain_box.show()
