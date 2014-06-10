@@ -230,10 +230,10 @@ class FrequencyControls(QtGui.QGroupBox):
             return
 
     def update_freq_edit(self):
-        self._fstop_edit.setText("%0.1f" % (self.fstop/ M))
-        self._fstart_edit.setText("%0.1f" % (self.fstart/ M))
-        self._freq_edit.setText("%0.1f" % (self.gui_state.center / M))
-        self._bw_edit.setText("%0.1f" % (self.gui_state.span / M))
+        self._fstop_edit.setText("%0.2f" % (self.fstop/ M))
+        self._fstart_edit.setText("%0.2f" % (self.fstart/ M))
+        self._freq_edit.setText("%0.2f" % (self.gui_state.center / M))
+        self._bw_edit.setText("%0.2f" % (self.gui_state.span / M))
 
     def update_freq_set(self,
                           fstart=None,

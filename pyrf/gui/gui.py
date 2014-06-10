@@ -534,8 +534,8 @@ class MainPanel(QtGui.QWidget):
 
     def update_iq(self):
 
-    if not self.raw_data:
-            return
+        if not self.raw_data:
+                return
         trace = self._plot.traces[self._trace_tab.currentIndex()]
 
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
