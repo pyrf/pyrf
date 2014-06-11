@@ -26,22 +26,12 @@ class PlotState(object):
         self.peak = False
 
         self.freq_range = None
-        self.center_freq = device_properties.SPECA_DEFAULTS['center']
-        self.bandwidth = device_properties.FULL_BW[
-            device_properties.SPECA_DEFAULTS['mode']]
-        self.fstart = self.center_freq - self.bandwidth / 2
-        self.fstop = self.center_freq + self.bandwidth / 2
-        self.rbw = device_properties.SPECA_DEFAULTS['rbw']
         self.enable_plot = True
 
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN
-        self.trig = False
-        self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
-                                        self.center_freq + 10e6,
-                                        self.center_freq - 10e6,-100)
+
         self.device_properties = device_properties
-        self.dev_set = {}
         self.alt_colors = False
 
     def disable_triggers(self, layout):
