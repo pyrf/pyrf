@@ -16,6 +16,7 @@ SAMPLE_SIZE = 1024
 ATTENUATOR = 1
 BANDWIDTH = (125 *1e6)
 DECIMATION = 1
+RFE_MODE = 'ZIF'
 
 # create GUI instance
 app = QtGui.QApplication([])
@@ -35,7 +36,7 @@ dut.request_read_perm()
 dut.freq(CENTER_FREQ)
 dut.decimation(DECIMATION)
 dut.attenuator(ATTENUATOR)
-
+dut.rfe_mode(RFE_MODE)
 # initialize plot
 fft_plot = win.addPlot(title="Power Vs. Frequency")
 
