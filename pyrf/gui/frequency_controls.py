@@ -83,7 +83,7 @@ class FrequencyControls(QtGui.QGroupBox):
                     bw=self.dut_prop.FULL_BW[state.rfe_mode()])
                 self._freq_edit.setEnabled(True)
 
-            if state.mode.sweeping():
+            if state.sweeping():
                 self._fstart_edit.setEnabled(True)
                 self._fstart.setEnabled(True)
                 self._fstop.setEnabled(True)

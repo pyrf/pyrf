@@ -14,8 +14,8 @@ from pyrf.numpy_util import compute_fft
 CENTER_FREQ = 2450 * 1e6 
 SAMPLE_SIZE = 1024
 ATTENUATOR = 1
-BANDWIDTH = (125 *1e6)
 DECIMATION = 1
+RFE_MODE = 'ZIF'
 
 # create GUI instance
 app = QtGui.QApplication([])
@@ -25,8 +25,11 @@ win.setWindowTitle("PYRF FFT Plot Example")
 
 # connect to WSA device
 dut = WSA()
-ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
-                    'Enter a hostname or IP address:')
+if len(sys.argv) < 2:
+    ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
+                        'Enter a hostname or IP address:')
+else:
+    ip = sys.argv[1]
 dut.connect(ip)
 
 # initialize WSA configurations
@@ -35,7 +38,9 @@ dut.request_read_perm()
 dut.freq(CENTER_FREQ)
 dut.decimation(DECIMATION)
 dut.attenuator(ATTENUATOR)
+dut.rfe_mode(RFE_MODE)
 
+BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
 # initialize plot
 fft_plot = win.addPlot(title="Power Vs. Frequency")
 
@@ -61,16 +66,17 @@ def update():
     
     # read data
     data, context = read_data_and_context(dut, SAMPLE_SIZE)
+    # compute the fft and plot the data
+    pow_data = compute_fft(dut, data, context)
     
     # update the frequency range (Hz)
-    freq_range = np.linspace(plot_xmin , plot_xmax, SAMPLE_SIZE)
+    freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
     
     # initialize the x-axis of the plot
     fft_plot.setXRange(plot_xmin,plot_xmax)
     fft_plot.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
     
-    # compute the fft and plot the data
-    pow_data = compute_fft(dut, data, context)
+
     curve.setData(freq_range,pow_data, pen = 'g')
 
 timer = QtCore.QTimer()
