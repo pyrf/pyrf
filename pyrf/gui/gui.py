@@ -466,7 +466,7 @@ class MainPanel(QtGui.QWidget):
                                                                         ref_level = int(self._ref_level.text())))
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Reference Level: ')
+        ref_label = QtGui.QLabel('Maximum Level: ')
         
         min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
         min_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
