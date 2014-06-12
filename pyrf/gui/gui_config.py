@@ -16,37 +16,23 @@ class PlotState(object):
             device_properties,
             ):
 
+        # plot paramaterss
         self.grid = False
-
         self.mhold = False
         self.mhold_fft = None
-
-        self.trig = False
         self.block_mode = True
         self.peak = False
-
         self.freq_range = None
         self.enable_plot = True
-
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN
-
         self.device_properties = device_properties
         self.alt_colors = False
 
-    def disable_triggers(self, layout):
-        layout._plot.amptrig_line.setValue(-100)
-        layout._plot.remove_trigger()
+        # DSP paramaters
+        correct_phase=True
+        hide_differential_dc_offset=False
+        convert_to_dbm=True
+        ref = None
 
-        self.trig_set = TriggerSettings(TRIGGER_TYPE_NONE,
-                                        self.center_freq + 10e6,
-                                        self.center_freq - 10e6,-100)
-        layout.update_trig()
-        self.trig = False
-    def enable_triggers(self, layout):
-        self.trig = True
-        self.trig_set = TriggerSettings(TRIGGER_TYPE_LEVEL,
-                                        self.center_freq + 10e6,
-                                        self.center_freq - 10e6,-100)
-        layout._plot.add_trigger(self.trig_set.fstart, self.trig_set.fstop)
 
