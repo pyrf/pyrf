@@ -104,7 +104,7 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
-
+        self.setWindowTitle('Spectrum Analyzer Connected To: %s' %name)
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
