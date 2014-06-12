@@ -25,13 +25,14 @@ class DiscoveryWidget(QtGui.QWidget):
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(self._wsa_list())
 
+        ok = self._ok_button()
+
         third_row = QtGui.QHBoxLayout()
-        self._ip = QtGui.QLineEdit()
         third_row.addWidget(QtGui.QLabel("Manually Enter Device IP:"))
-        third_row.addWidget(self._ip)
+        third_row.addWidget(self._ip_edit())
 
         fourth_row = QtGui.QHBoxLayout()
-        fourth_row.addWidget(self._ok_button())
+        fourth_row.addWidget(ok)
         fourth_row.addWidget(self._refresh_button())
         fourth_row.addWidget(self._cancel_button())
 
@@ -42,6 +43,9 @@ class DiscoveryWidget(QtGui.QWidget):
         self.setLayout(dev_layout)
         self.layout = dev_layout
 
+    def return_pressed(self):
+        self._ok.click()
+
     def _wsa_list(self):
         self._list = QtGui.QListWidget()
         self._refresh_list()
@@ -50,36 +54,35 @@ class DiscoveryWidget(QtGui.QWidget):
             if self._list.currentItem() is not None:
                 self._ip.setText(self._list.currentItem().text().split(" ")[-1])
         self._list.currentItemChanged.connect(list_clicked)
-
         return self._list
+
+    def _ip_edit(self):
+        self._ip = QtGui.QLineEdit()
+        self._ip.returnPressed.connect(self.return_pressed)
+        return self._ip
 
     def _ok_button(self):
         self._ok = QtGui.QPushButton("Connect")
-
         def ok_clicked():
             if not self._ip.text() == "":
                 if self._open_device_callback is not None:
                     self._open_device_callback(self._ip.text(), True)
                 self.close()
         self._ok.clicked.connect(ok_clicked)
-
         return self._ok
 
     def _refresh_button(self):
         self._refresh = QtGui.QPushButton("Refresh")
         self._refresh.clicked.connect(self._refresh_list)
-
         return self._refresh
 
     def _cancel_button(self):
         self._cancel = QtGui.QPushButton("Cancel")
-
         def cancel_clicked():
             if self._open_device_callback is not None:
                 self._open_device_callback(self._ip.text(), False)
             self.close()
         self._cancel.clicked.connect(cancel_clicked)
-
         return self._cancel
 
     def closeEvent(self, event):
