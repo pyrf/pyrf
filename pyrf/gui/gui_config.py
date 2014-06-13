@@ -30,9 +30,13 @@ class PlotState(object):
         self.alt_colors = False
 
         # DSP paramaters
-        correct_phase=True
-        hide_differential_dc_offset=False
-        convert_to_dbm=True
-        ref = None
+        self.correct_phase = True
+        self.correct_dc_offset = True
+        self.convert_to_dbm = True
+        self.apply_reference = True
+        self.apply_spec_inv = True
+        self.apply_window = True
+
+        self.reference_level = 0
 
 

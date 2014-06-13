@@ -36,6 +36,7 @@ from plot_widget import Plot
 from device_controls import DeviceControls
 from frequency_controls import FrequencyControls
 from discovery_widget import DiscoveryWidget
+from dsp_widget import DSPWidget
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
@@ -277,6 +278,7 @@ class MainPanel(QtGui.QWidget):
 
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.addWidget(self._trace_controls())
+        controls_layout.addWidget(self._dsp_controls())
         controls_layout.addWidget(self._plot_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._freq_controls())
@@ -371,6 +373,11 @@ class MainPanel(QtGui.QWidget):
         self._trace_attr = trace_attr
         self._trace_attr['write'].click()
         return max_hold, min_hold, write, store, blank
+
+    def _dsp_controls(self):
+        self._dsp_group = DSPWidget()
+        self.control_widgets.append(self._dsp_group)
+        return self._dsp_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
