@@ -38,18 +38,14 @@ def _right_arrow_key(layout):
     """
     handle arrow key right action
     """
+    layout._freq_group._freq_plus.click()
 
-    if layout.plot_state.enable_plot:
-        layout._freq_plus.click()
-        layout.plot_state.max_hold_fft = None
 
 def _left_arrow_key(layout):
     """
     handle left arrow key action
     """
-    if layout.plot_state.enable_plot:
-        layout._freq_minus.click()
-        layout.plot_state.max_hold_fft = None
+    layout._freq_group._freq_plus.click()
         
 def _trace_tab_change(layout):
     """
