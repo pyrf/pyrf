@@ -33,19 +33,18 @@ def _down_arrow_key(layout):
         step = 0
         layout._fstep_box.setCurrentIndex(step)
     layout._fstep_box.setCurrentIndex(step)
-       
+
 def _right_arrow_key(layout):
     """
     handle arrow key right action
     """
     layout._freq_group._freq_plus.click()
 
-
 def _left_arrow_key(layout):
     """
     handle left arrow key action
     """
-    layout._freq_group._freq_plus.click()
+    layout._freq_group._freq_minus.click()
         
 def _trace_tab_change(layout):
     """
