@@ -237,7 +237,7 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumHeight(screen.height() * 0.6)
 
     def keyPressEvent(self, event):
-        if self.dut:
+        if self.dut_prop:
             hotkey_util(self, event)
 
     def mousePressEvent(self, event):
