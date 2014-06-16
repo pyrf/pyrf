@@ -278,7 +278,8 @@ class MainPanel(QtGui.QWidget):
 
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.addWidget(self._trace_controls())
-        controls_layout.addWidget(self._dsp_controls())
+        if '--dev' in sys.argv:
+            controls_layout.addWidget(self._dsp_controls())
         controls_layout.addWidget(self._plot_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._freq_controls())

@@ -16,7 +16,7 @@ class DSPWidget(QtGui.QGroupBox):
         self.setMinimumWidth(400)
         self.setTitle(name)
         layout = QtGui.QVBoxLayout(self)
-        
+
         # First row
         row = QtGui.QHBoxLayout()
         row.addWidget(QtGui.QLabel("Correct IQ Offset"))
