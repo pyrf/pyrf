@@ -104,7 +104,7 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
-
+        self.setWindowTitle('Spectrum Analyzer Connected To: %s' %name)
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
@@ -466,7 +466,7 @@ class MainPanel(QtGui.QWidget):
                                                                         ref_level = int(self._ref_level.text())))
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Reference Level: ')
+        ref_label = QtGui.QLabel('Maximum Level: ')
         
         min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
         min_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
@@ -586,7 +586,7 @@ class MainPanel(QtGui.QWidget):
                                                                             trace.color[2]))
                         
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dB' % (trace.freq_range[marker.data_index]/1e6, 
+                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
                         marker_label.setText(marker_text)
 
@@ -610,7 +610,7 @@ class MainPanel(QtGui.QWidget):
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
             
-            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dBm' % (freq_diff, power_diff )
+            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
             self._diff_lab.setText('')
