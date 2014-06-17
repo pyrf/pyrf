@@ -36,7 +36,6 @@ from plot_widget import Plot
 from device_controls import DeviceControls
 from frequency_controls import FrequencyControls
 from discovery_widget import DiscoveryWidget
-from dsp_widget import DSPWidget
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
@@ -66,6 +65,7 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
+        self.init_menu_bar()
         self.controller = SpecAController()
         self.initUI()
 
@@ -74,21 +74,27 @@ class MainWindow(QtGui.QMainWindow):
         if len(sys.argv) > 1:
             name = sys.argv[1]
         self.mainPanel = MainPanel(self.controller, self)
-        openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect(self.open_device_dialog)
-        exitAction = QtGui.QAction('&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.close)
-        menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
         if name:
             self.open_device(name, True)
         else:
             self.open_device_dialog()
+
+    def init_menu_bar(self):
+        openAction = QtGui.QAction('&Open Device', self)
+        openAction.triggered.connect(self.open_device_dialog)
+        exitAction = QtGui.QAction('&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.triggered.connect(self.close)
+        menubar = self.menuBar()
+
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(openAction)
+        fileMenu.addAction(exitAction)
+
+        self.dsp_menu = menubar.addMenu('&DSP Options')
 
     def open_device_dialog(self):
         self.discovery_widget = DiscoveryWidget(
@@ -142,6 +148,7 @@ class MainPanel(QtGui.QWidget):
         controller.capture_receive.connect(self.capture_received)
 
         self._main_window = main_window
+        self._dsp_menu = self._main_window.dsp_menu
 
         self.ref_level = 0
         self.dut = None
@@ -256,6 +263,8 @@ class MainPanel(QtGui.QWidget):
                         self._plot.markers[self._marker_tab.currentIndex()].data_index = index
 
     def initUI(self):
+
+        self.init_menu()
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
         self.plot_width = 8
@@ -278,8 +287,7 @@ class MainPanel(QtGui.QWidget):
 
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.addWidget(self._trace_controls())
-        if '--dev' in sys.argv:
-            controls_layout.addWidget(self._dsp_controls())
+
         controls_layout.addWidget(self._plot_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._freq_controls())
@@ -288,6 +296,37 @@ class MainPanel(QtGui.QWidget):
 
         self._grid = grid
         self.setLayout(grid)
+
+    def init_menu(self):
+        correct_phase = QtGui.QAction('&IQ Offset Correction', self)
+        correct_phase.setCheckable(True)
+        correct_phase.toggle()
+        self._dsp_menu.addAction(correct_phase)
+
+        dc_offset = QtGui.QAction('&DC Offset', self)
+        dc_offset.setCheckable(True)
+        dc_offset.toggle()
+        self._dsp_menu.addAction(dc_offset)
+
+        convert_dbm = QtGui.QAction('&Convert to dBm', self)
+        convert_dbm.setCheckable(True)
+        convert_dbm.toggle()
+        self._dsp_menu.addAction(convert_dbm)
+
+        apply_reference = QtGui.QAction('&Apply Reference', self)
+        apply_reference.setCheckable(True)
+        apply_reference.toggle()
+        self._dsp_menu.addAction(apply_reference)
+
+        apply_spec_inv = QtGui.QAction('&Apply Spectral Inversion', self)
+        apply_spec_inv.setCheckable(True)
+        apply_spec_inv.toggle()
+        self._dsp_menu.addAction(apply_spec_inv)
+
+        apply_window = QtGui.QAction('&Apply Hanning Window', self)
+        apply_window.setCheckable(True)
+        apply_window.toggle()
+        self._dsp_menu.addAction(apply_window)
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
@@ -521,9 +560,7 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         if self.freq_range != (fstart, fstop):
             self.freq_range = (fstart, fstop)
-
             self._plot.center_view(fstart, fstop)
-
         self.update_iq()
         self.update_marker()
         self.update_diff()

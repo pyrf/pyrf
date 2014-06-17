@@ -226,6 +226,7 @@ class SpecAController(QtCore.QObject):
         device_set['rfe_mode'] = self._state.mode
         device_set['freq'] = self._state.center
         self._capture_device.configure_device(device_set)
+
     def apply_settings(self, **kwargs):
         """
         Apply state settings and trigger a state change event.
@@ -240,4 +241,9 @@ class SpecAController(QtCore.QObject):
         self.apply_device_settings()
         self.state_change.emit(self._state, kwargs.keys())
 
+    def apply_dsp_options(self, options):
+        """
+        Apply the dsp options which are passed to compute the FFT.
 
+        :param kwargs: keyword arguments of SpecAState attributes
+        """

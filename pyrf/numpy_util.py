@@ -66,7 +66,6 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         return power_spectrum + noiselevel_offset
     return power_spectrum
 
-
 def _compute_fft(i_data, q_data, correct_phase,
         hide_differential_dc_offset, convert_to_dbm, apply_window):
     import numpy as np
