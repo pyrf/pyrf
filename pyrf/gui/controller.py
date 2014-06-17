@@ -1,4 +1,5 @@
 import logging
+import os
 
 from PySide import QtCore
 
@@ -103,6 +104,7 @@ class SpecAController(QtCore.QObject):
     _capture_device = None
     _plot_state = None
     _state = None
+    _recording_file = None
 
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
@@ -132,7 +134,33 @@ class SpecAController(QtCore.QObject):
 
         self.start_capture()
 
+    def start_recording(self, filename=None):
+        if not filename:
+            i = 0
+            while True:
+                filename = 'recording-%04d.vrt' % i
+                if not os.path.lexists(filename):
+                    break
+                i += 1
+        self._recording_file = open(filename, 'wb')
+        self._dut.set_recording_output(self._recording_file)
+        self._dut.inject_recording_state(self._state.to_json_object())
+
+    def stop_recording(self):
+        if not self._recording_file:
+            return
+        self._dut.set_capture_output(None)
+        self._recording_file.close()
+        self._recording_file = None
+
     def read_block(self):
+        device_set = dict(self._state.device_settings)
+        device_set['decimation'] = self._state.decimation
+        device_set['fshift'] = self._state.fshift
+        device_set['rfe_mode'] = self._state.rfe_mode()
+        device_set['freq'] = self._state.center
+        self._capture_device.configure_device(device_set)
+
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
@@ -150,13 +178,11 @@ class SpecAController(QtCore.QObject):
             device_set,
             mode=self._state.rfe_mode())
 
-
     def start_capture(self):
         if self._state.sweeping():
             self.read_sweep()
         else:
             self.read_block()
-
 
     def process_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
@@ -203,29 +229,34 @@ class SpecAController(QtCore.QObject):
             None,
             sweep_segments)
 
+    def _state_changed(self, state, changed):
+        """
+        Emit signal and handle special cases where extra work is needed in
+        response to a state change.
+        """
+        self._state = state
+        # start capture loop again when user switches output path
+        # back to the internal digitizer XXX: very WSA5000-specific
+        if ('device_settings.iq_output_path' in changed and
+                state.device_settings.get('iq_output_path') == 'DIGITIZER'):
+            self.start_capture()
+
+        if self._recording_file:
+            self._dut.inject_recording_state(state.to_json_object())
+
+        self.state_change.emit(state, changed)
+
     def apply_device_settings(self, **kwargs):
         """
         Apply device-specific settings and trigger a state change event.
         :param kwargs: keyword arguments of SpecAState.device_settings
         """
         device_settings = dict(self._state.device_settings, **kwargs)
-        self._state = SpecAState(self._state,
-            device_settings=device_settings)
+        state = SpecAState(self._state, device_settings=device_settings)
 
         changed = ['device_settings.%s' % s for s in kwargs]
- 
-            # FIXME find appropriate area for this
-        if 'DIGITIZER' in self._state.device_settings['iq_output_path']:
-            self.start_capture()
-        self.state_change.emit(self._state, changed)
+        self._state_changed(state, changed)
 
-        # apply settings to device
-        device_set = dict(self._state.device_settings)
-        device_set['decimation'] = self._state.decimation
-        device_set['fshift'] = self._state.fshift
-        device_set['rfe_mode'] = self._state.mode
-        device_set['freq'] = self._state.center
-        self._capture_device.configure_device(device_set)
     def apply_settings(self, **kwargs):
         """
         Apply state settings and trigger a state change event.
@@ -236,8 +267,7 @@ class SpecAController(QtCore.QObject):
         if self._state is None:
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
-        self._state = SpecAState(self._state, **kwargs)
-        self.apply_device_settings()
-        self.state_change.emit(self._state, kwargs.keys())
+        state = SpecAState(self._state, **kwargs)
+        self._state_changed(state, kwargs.keys())
 
 
