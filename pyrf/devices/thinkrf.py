@@ -226,12 +226,20 @@ class WSA(object):
         self.connector = connector
         self._output_file = None
 
-    def set_capture_output(self, output_file=None):
+    def set_recording_output(self, output_file=None):
         """
         Dump a recording of all the received packets to output_file
         """
         self.connector.set_recording_output(output_file)
         self._output_file = output_file
+
+    def inject_recording_state(self, state):
+        """
+        Inject the current speca state into the recording stream when
+        the next capture is received.  Replaces previous data if not
+        yet sent.
+        """
+        self.connector.inject_recording_state(state)
 
     @sync_async
     def connect(self, host):
