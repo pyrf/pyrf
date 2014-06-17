@@ -65,6 +65,7 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
+        self.recording = False
         self.controller = SpecAController()
         self.initUI()
 
@@ -73,15 +74,27 @@ class MainWindow(QtGui.QMainWindow):
         if len(sys.argv) > 1:
             name = sys.argv[1]
         self.mainPanel = MainPanel(self.controller, self)
-        openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect(self.open_device_dialog)
-        exitAction = QtGui.QAction('&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.close)
+        open_action = QtGui.QAction('&Open Device', self)
+        open_action.triggered.connect(self.open_device_dialog)
+        play_action = QtGui.QAction('&Playback Recording', self)
+        play_action.triggered.connect(self.open_playback_dialog)
+        self.record_action = QtGui.QAction('Start &Recording', self)
+        self.record_action.triggered.connect(self.controller.start_recording)
+        self.stop_action = QtGui.QAction('&Stop Recording', self)
+        self.stop_action.triggered.connect(self.controller.stop_recording)
+        self.stop_action.setDisabled(True)
+        exit_action = QtGui.QAction('&Exit', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(self.close)
         menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+        file_menu = menubar.addMenu('&File')
+        file_menu.addAction(open_action)
+        file_menu.addAction(play_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.record_action)
+        file_menu.addAction(self.stop_action)
+        file_menu.addSeparator()
+        file_menu.addAction(exit_action)
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
         if name:
@@ -94,6 +107,11 @@ class MainWindow(QtGui.QMainWindow):
             open_device_callback=self.open_device,
             name="Open Device")
         self.discovery_widget.show()
+
+    def open_playback_dialog(self):
+        playback_file_name = QtGui.QFileDialog.getOpenFileName(self,
+            "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
+        print playback_file_name
 
     @inlineCallbacks
     def open_device(self, name, ok):
