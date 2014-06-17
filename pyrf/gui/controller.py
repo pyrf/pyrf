@@ -1,5 +1,5 @@
 import logging
-import os
+import glob
 
 from PySide import QtCore
 
@@ -136,12 +136,14 @@ class SpecAController(QtCore.QObject):
 
     def start_recording(self, filename=None):
         if not filename:
-            i = 0
-            while True:
-                filename = 'recording-%04d.vrt' % i
-                if not os.path.lexists(filename):
-                    break
-                i += 1
+            names = glob.glob('recording-*.vrt')
+            last_index = -1
+            for n in names:
+                try:
+                    last_index = max(last_index, int(n[10:-4]))
+                except ValueError:
+                    pass
+            filename = 'recording-%04d.vrt' % (last_index + 1)
         self._recording_file = open(filename, 'wb')
         self._dut.set_recording_output(self._recording_file)
         self._dut.inject_recording_state(self._state.to_json_object())
