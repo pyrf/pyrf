@@ -97,7 +97,7 @@ def _compute_fft_i_only(i_data, convert_to_dbm):
 
     windowed_i = i_data * np.hanning(len(i_data))
 
-    power_spectrum = np.fft.rfft(windowed_i)
+    power_spectrum = np.abs(np.fft.rfft(windowed_i))/len(i_data)
     if convert_to_dbm:
         power_spectrum = 20 * np.log10(np.abs(power_spectrum)/len(power_spectrum))
     return power_spectrum
