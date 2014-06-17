@@ -28,15 +28,3 @@ class PlotState(object):
         self.min_level = PLOT_YMIN
         self.device_properties = device_properties
         self.alt_colors = False
-
-        # DSP paramaters
-        self.correct_phase = True
-        self.correct_dc_offset = True
-        self.convert_to_dbm = True
-        self.apply_reference = True
-        self.apply_spec_inv = True
-        self.apply_window = True
-
-        self.reference_level = 0
-
-

@@ -298,35 +298,48 @@ class MainPanel(QtGui.QWidget):
         self.setLayout(grid)
 
     def init_menu(self):
-        correct_phase = QtGui.QAction('&IQ Offset Correction', self)
-        correct_phase.setCheckable(True)
-        correct_phase.toggle()
-        self._dsp_menu.addAction(correct_phase)
 
-        dc_offset = QtGui.QAction('&DC Offset', self)
-        dc_offset.setCheckable(True)
-        dc_offset.toggle()
-        self._dsp_menu.addAction(dc_offset)
+        # correct phase menu
+        cp_action = QtGui.QAction('&IQ Offset Correction', self)
+        cp_action.setCheckable(True)
+        cp_action.toggle()
+        self._dsp_menu.addAction(cp_action)
+        cp_action.triggered.connect(lambda: self.controller.apply_dsp_options(correct_phase=cp_action.isChecked()))
 
-        convert_dbm = QtGui.QAction('&Convert to dBm', self)
-        convert_dbm.setCheckable(True)
-        convert_dbm.toggle()
-        self._dsp_menu.addAction(convert_dbm)
+        #dc offset correction
+        dc_action = QtGui.QAction('&DC Offset', self)
+        dc_action.setCheckable(True)
+        dc_action.toggle()
+        self._dsp_menu.addAction(dc_action)
+        dc_action.triggered.connect(lambda: self.controller.apply_dsp_options(hide_differential_dc_offset=dc_action.isChecked()))
 
-        apply_reference = QtGui.QAction('&Apply Reference', self)
-        apply_reference.setCheckable(True)
-        apply_reference.toggle()
-        self._dsp_menu.addAction(apply_reference)
+        #dbm conversion
+        dbm_action = QtGui.QAction('&Convert to dBm', self)
+        dbm_action.setCheckable(True)
+        dbm_action.toggle()
+        self._dsp_menu.addAction(dbm_action)
+        dbm_action.triggered.connect(lambda: self.controller.apply_dsp_options(convert_to_dbm=dbm_action.isChecked()))
 
-        apply_spec_inv = QtGui.QAction('&Apply Spectral Inversion', self)
-        apply_spec_inv.setCheckable(True)
-        apply_spec_inv.toggle()
-        self._dsp_menu.addAction(apply_spec_inv)
+        # apply reference level
+        ref_Action = QtGui.QAction('&Apply Reference', self)
+        ref_Action.setCheckable(True)
+        ref_Action.toggle()
+        self._dsp_menu.addAction(ref_Action)
+        ref_Action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_reference=ref_Action.isChecked()))
 
-        apply_window = QtGui.QAction('&Apply Hanning Window', self)
-        apply_window.setCheckable(True)
-        apply_window.toggle()
-        self._dsp_menu.addAction(apply_window)
+        # apply spectral inversion
+        inv_action = QtGui.QAction('&Apply Spectral Inversion', self)
+        inv_action.setCheckable(True)
+        inv_action.toggle()
+        self._dsp_menu.addAction(inv_action)
+        inv_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_spec_inv=inv_action.isChecked()))
+
+        # apply hanning window
+        wind_action = QtGui.QAction('&Apply Hanning Window', self)
+        wind_action.setCheckable(True)
+        wind_action.toggle()
+        self._dsp_menu.addAction(wind_action)
+        wind_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_window=wind_action.isChecked()))
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()

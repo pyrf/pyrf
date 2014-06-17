@@ -5,7 +5,7 @@ from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
 
 def compute_fft(dut, data_pkt, context, correct_phase=True,
         hide_differential_dc_offset=False, convert_to_dbm=True, 
-        apply_window=True, apply_spec_inv = True, ref=None):
+        apply_window=True, apply_spec_inv=True, apply_reference=True,ref=None):
     """
     Return an array of dBm values by computing the FFT of
     the passed data and reference level.
@@ -60,7 +60,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         if data_pkt.spec_inv:  # handle inverted spectrum
             power_spectrum = np.flipud(power_spectrum)
 
-    if convert_to_dbm:
+    if apply_reference:
         noiselevel_offset = (
             reference_level - prop.NOISEFLOOR_CALIBRATION - prop.ADC_DYNAMIC_RANGE)
         return power_spectrum + noiselevel_offset
@@ -81,10 +81,9 @@ def _compute_fft(i_data, q_data, correct_phase,
     if apply_window:
         iq = iq * np.hanning(len(i_data))
 
-    power_spectrum = np.fft.fftshift(np.fft.fft(iq))
+    power_spectrum = np.abs(np.fft.fftshift(np.fft.fft(iq)))/len(i_data)
     if convert_to_dbm:
-        power_spectrum = 20 * np.log10(
-            np.abs(power_spectrum)/len(power_spectrum))
+        power_spectrum = 20 * np.log10(power_spectrum)
 
     if hide_differential_dc_offset:
         median_index = len(power_spectrum) // 2

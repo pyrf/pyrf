@@ -112,6 +112,15 @@ class SpecAController(QtCore.QObject):
         """
         Attach to a new device or playback stream
         """
+
+        # DSP options
+        self.dsp_options = {"correct_phase" : True,
+                            "hide_differential_dc_offset" : True,
+                            "convert_to_dbm" : True,
+                            "apply_reference" : True,
+                            "apply_spec_inv" : True,
+                            "apply_window" : True}
+
         if self._dut:
             self._dut.disconnect()
         self._dut = dut
@@ -172,7 +181,15 @@ class SpecAController(QtCore.QObject):
                 self._ref_level = data['context_pkt']['reflevel']
 
             pow_data = compute_fft(self._dut,
-                data['data_pkt'], data['context_pkt'], ref=self._ref_level)
+                                   data['data_pkt'],
+                                   data['context_pkt'],
+                                   correct_phase = self.dsp_options["correct_phase"],
+                                   hide_differential_dc_offset = self.dsp_options["hide_differential_dc_offset"],
+                                   convert_to_dbm = self.dsp_options["convert_to_dbm"],
+                                   apply_window = self.dsp_options["apply_window"],
+                                   apply_spec_inv = self.dsp_options["apply_spec_inv"],
+                                   apply_reference = self.dsp_options["apply_reference"],
+                                    ref = self._ref_level)
 
             self.capture_receive.emit(
                 self._state,
@@ -241,9 +258,10 @@ class SpecAController(QtCore.QObject):
         self.apply_device_settings()
         self.state_change.emit(self._state, kwargs.keys())
 
-    def apply_dsp_options(self, options):
+    def apply_dsp_options(self, **kwargs):
         """
         Apply the dsp options which are passed to compute the FFT.
 
-        :param kwargs: keyword arguments of SpecAState attributes
+        :param kwargs: keyword arguments of the dsp options
         """
+        self.dsp_options.update(kwargs)
