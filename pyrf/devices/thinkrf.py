@@ -131,7 +131,7 @@ class WSA5000_220Properties(object):
         'ZIF': 0.5,
         'HDR': 0.6,
         'SH': 0.56,
-        'SHN': 0.45,
+        'SHN': 0.56,
         'IQIN': 0.5,
         'DD': 0.5,
         }

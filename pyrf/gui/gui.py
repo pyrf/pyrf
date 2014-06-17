@@ -65,6 +65,7 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
+        self.init_menu_bar()
         self.controller = SpecAController()
         self.initUI()
 
@@ -73,21 +74,27 @@ class MainWindow(QtGui.QMainWindow):
         if len(sys.argv) > 1:
             name = sys.argv[1]
         self.mainPanel = MainPanel(self.controller, self)
-        openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect(self.open_device_dialog)
-        exitAction = QtGui.QAction('&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.close)
-        menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
         if name:
             self.open_device(name, True)
         else:
             self.open_device_dialog()
+
+    def init_menu_bar(self):
+        openAction = QtGui.QAction('&Open Device', self)
+        openAction.triggered.connect(self.open_device_dialog)
+        exitAction = QtGui.QAction('&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.triggered.connect(self.close)
+        menubar = self.menuBar()
+
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(openAction)
+        fileMenu.addAction(exitAction)
+
+        self.dsp_menu = menubar.addMenu('&DSP Options')
 
     def open_device_dialog(self):
         self.discovery_widget = DiscoveryWidget(
@@ -141,6 +148,7 @@ class MainPanel(QtGui.QWidget):
         controller.capture_receive.connect(self.capture_received)
 
         self._main_window = main_window
+        self._dsp_menu = self._main_window.dsp_menu
 
         self.ref_level = 0
         self.dut = None
@@ -236,7 +244,7 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumHeight(screen.height() * 0.6)
 
     def keyPressEvent(self, event):
-        if self.dut:
+        if self.dut_prop:
             hotkey_util(self, event)
 
     def mousePressEvent(self, event):
@@ -255,6 +263,8 @@ class MainPanel(QtGui.QWidget):
                         self._plot.markers[self._marker_tab.currentIndex()].data_index = index
 
     def initUI(self):
+
+        self.init_menu()
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
         self.plot_width = 8
@@ -277,6 +287,7 @@ class MainPanel(QtGui.QWidget):
 
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.addWidget(self._trace_controls())
+
         controls_layout.addWidget(self._plot_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._freq_controls())
@@ -285,6 +296,50 @@ class MainPanel(QtGui.QWidget):
 
         self._grid = grid
         self.setLayout(grid)
+
+    def init_menu(self):
+
+        # correct phase menu
+        cp_action = QtGui.QAction('&IQ Offset Correction', self)
+        cp_action.setCheckable(True)
+        cp_action.toggle()
+        self._dsp_menu.addAction(cp_action)
+        cp_action.triggered.connect(lambda: self.controller.apply_dsp_options(correct_phase=cp_action.isChecked()))
+
+        #dc offset correction
+        dc_action = QtGui.QAction('&DC Offset', self)
+        dc_action.setCheckable(True)
+        dc_action.toggle()
+        self._dsp_menu.addAction(dc_action)
+        dc_action.triggered.connect(lambda: self.controller.apply_dsp_options(hide_differential_dc_offset=dc_action.isChecked()))
+
+        #dbm conversion
+        dbm_action = QtGui.QAction('&Convert to dBm', self)
+        dbm_action.setCheckable(True)
+        dbm_action.toggle()
+        self._dsp_menu.addAction(dbm_action)
+        dbm_action.triggered.connect(lambda: self.controller.apply_dsp_options(convert_to_dbm=dbm_action.isChecked()))
+
+        # apply reference level
+        ref_Action = QtGui.QAction('&Apply Reference', self)
+        ref_Action.setCheckable(True)
+        ref_Action.toggle()
+        self._dsp_menu.addAction(ref_Action)
+        ref_Action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_reference=ref_Action.isChecked()))
+
+        # apply spectral inversion
+        inv_action = QtGui.QAction('&Apply Spectral Inversion', self)
+        inv_action.setCheckable(True)
+        inv_action.toggle()
+        self._dsp_menu.addAction(inv_action)
+        inv_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_spec_inv=inv_action.isChecked()))
+
+        # apply hanning window
+        wind_action = QtGui.QAction('&Apply Hanning Window', self)
+        wind_action.setCheckable(True)
+        wind_action.toggle()
+        self._dsp_menu.addAction(wind_action)
+        wind_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_window=wind_action.isChecked()))
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
@@ -371,6 +426,11 @@ class MainPanel(QtGui.QWidget):
         self._trace_attr = trace_attr
         self._trace_attr['write'].click()
         return max_hold, min_hold, write, store, blank
+
+    def _dsp_controls(self):
+        self._dsp_group = DSPWidget()
+        self.control_widgets.append(self._dsp_group)
+        return self._dsp_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
@@ -466,7 +526,7 @@ class MainPanel(QtGui.QWidget):
                                                                         ref_level = int(self._ref_level.text())))
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Reference Level: ')
+        ref_label = QtGui.QLabel('Maximum Level: ')
         
         min_level = QtGui.QLineEdit(str(PLOT_YMIN)) 
         min_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
@@ -513,9 +573,7 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         if self.freq_range != (fstart, fstop):
             self.freq_range = (fstart, fstop)
-
             self._plot.center_view(fstart, fstop)
-
         self.update_iq()
         self.update_marker()
         self.update_diff()
