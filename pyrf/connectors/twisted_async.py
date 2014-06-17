@@ -18,7 +18,7 @@ except ImportError:
     from StringIO import StringIO
 
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
-from pyrf.vrt import vrt_packet_reader
+from pyrf.vrt import vrt_packet_reader, generate_speca_packet
 
 import logging
 logger = logging.getLogger(__name__)
@@ -57,6 +57,9 @@ class TwistedConnector(object):
 
     def set_recording_output(self, output_file=None):
         self._vrt.set_recording_output(output_file)
+
+    def inject_recording_state(self, state):
+        self._vrt.inject_recording_state(state)
 
     def disconnect(self):
         self._vrt.transport.loseConnection()
@@ -100,10 +103,14 @@ class VRTClient(Protocol):
     """
     _buf = None
     eof = False
+    _new_output_file = None
     _output_file = None
+    _inject_recording_state = None
+    _at_vrt_boundary = True
 
     def __init__(self, receive_callback):
         self._receive_callback = receive_callback
+        self._output_data = []
 
     def makeConnection(self, transport):
         Protocol.makeConnection(self, transport)
@@ -113,7 +120,41 @@ class VRTClient(Protocol):
         self._processData()
 
     def set_recording_output(self, output_file=None):
-        self._output_file = output_file
+        if not output_file:
+            self._output_file = None
+            self._new_output_file = None
+            self._output_data = []
+        else:
+            self._new_output_file = output_file
+        if self._at_vrt_boundary:
+            self._reached_vrt_boundary()
+
+    def inject_recording_state(self, state):
+        self._inject_recording_state = state
+        if self._at_vrt_boundary:
+            self._reached_vrt_boundary()
+
+    def _reached_vrt_boundary(self):
+        """
+        In between VRT packets we can record complete vrt packets
+        to start new recordings and inject speca state packets
+        into recordings.
+        """
+        if self._output_file and self._output_data:
+            for d in self._output_data:
+                self._output_file.write(d)
+            self._output_data = []
+
+        if self._new_output_file:
+            self._output_file = self._new_output_file
+            self._new_output_file = None
+            self._inject_recording_count = 0
+
+        if self._inject_recording_state and self._output_file:
+            data, self._inject_recording_count = generate_speca_packet(
+                self._inject_recording_state, self._inject_recording_count)
+            self._inject_recording_state = None
+            self._output_file.write(data)
 
     def _resetReader(self):
         self._packet_reader = vrt_packet_reader(self._setBytesRequired)
@@ -131,10 +172,13 @@ class VRTClient(Protocol):
             data = self._bufConsume(self._bytes_required)
             if not data:
                 break
+            self._at_vrt_boundary = False
             if self._output_file:
-                self._output_file.write(data)
+                self._output_data.append(data)
             response = self._packet_reader.send(data)
             if response:
+                self._at_vrt_boundary = True
+                self._reached_vrt_boundary()
                 self._receive_callback(response)
                 self._resetReader()
 
