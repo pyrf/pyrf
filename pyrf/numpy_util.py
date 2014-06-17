@@ -70,13 +70,14 @@ def _compute_fft(i_data, q_data, correct_phase,
         hide_differential_dc_offset, convert_to_dbm, apply_window):
     import numpy as np
 
-    i_removed_dc_offset = i_data - np.mean(i_data)
-    q_removed_dc_offset = q_data - np.mean(q_data)
+    if hide_differential_dc_offset:
+        i_data = i_data - np.mean(i_data)
+        q_data = q_data - np.mean(q_data)
     if correct_phase:
-        calibrated_q = _calibrate_i_q(i_removed_dc_offset, q_removed_dc_offset)
+        calibrated_q = _calibrate_i_q(i_data, q_data)
     else:
-        calibrated_q = q_removed_dc_offset
-    iq = i_removed_dc_offset + 1j * calibrated_q
+        calibrated_q = q_data
+    iq = i_data + 1j * calibrated_q
 
     if apply_window:
         iq = iq * np.hanning(len(i_data))
