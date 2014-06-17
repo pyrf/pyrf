@@ -1,6 +1,8 @@
 import struct
 import array
 import sys
+import zlib
+import json
 
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
@@ -399,5 +401,5 @@ def generate_speca_packet(data, count=0):
         (VRTCUSTOMCONTEXT << 28) | ((count & 0x0f) << 16) | size,
         VRTSPECA,
         )
-    return ''.join((header, payload, pad)), (count + 1) & 0x0f
+    return ''.join((header, payload, padding)), (count + 1) & 0x0f
 
