@@ -36,6 +36,7 @@ from plot_widget import Plot
 from device_controls import DeviceControls
 from frequency_controls import FrequencyControls
 from discovery_widget import DiscoveryWidget
+from trace_controls import TraceControls
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
@@ -358,74 +359,15 @@ class MainPanel(QtGui.QWidget):
         return self._plot_layout
 
     def _trace_controls(self):
-        trace_group = QtGui.QGroupBox("Traces")
-
-        self._trace_group = trace_group
-
-        trace_controls_layout = QtGui.QVBoxLayout()
-
-        # first row will contain the tabs
-        first_row = QtGui.QHBoxLayout()
-
-        # add tabs for each trace
-        trace_tab = QtGui.QTabBar()
-        count = 0
-        for (trace,(r,g,b)) in zip(labels.TRACES, colors.TRACE_COLORS):
-            trace_tab.addTab(trace)
-            color = QtGui.QColor()
-            color.setRgb(r,g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            trace_tab.setTabIcon(count,icon)
-            count += 1
-
-        self._trace_tab = trace_tab
-        trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
-
-        self.control_widgets.append(self._trace_tab)
-        first_row.addWidget(trace_tab)
-
-        # second row contains the tab attributes
-        second_row = QtGui.QHBoxLayout()
-        max_hold, min_hold, write, store, blank  = self._trace_items()
-        second_row.addWidget(max_hold)
-        second_row.addWidget(min_hold)
-        second_row.addWidget(write)
-        second_row.addWidget(blank)
-        second_row.addWidget(store)
-        trace_controls_layout.addLayout(first_row)
-        trace_controls_layout.addLayout(second_row) 
-        trace_group.setLayout(trace_controls_layout)
-        return trace_group
-
-    def _trace_items(self):
-
-        trace_attr = {}
-        store = QtGui.QCheckBox('Store')
-        store.clicked.connect(lambda: cu._store_trace(self))
-        store.setEnabled(False)
-        trace_attr['store'] = store
-
-        max_hold = QtGui.QRadioButton('Max Hold')
-        max_hold.clicked.connect(lambda: cu._max_hold(self))
-        trace_attr['max_hold'] = max_hold
-
-        min_hold = QtGui.QRadioButton('Min Hold')
-        min_hold.clicked.connect(lambda: cu._min_hold(self))
-        trace_attr['min_hold'] = min_hold
-
-        write = QtGui.QRadioButton('Write')
-        write.clicked.connect(lambda: cu._trace_write(self))
-        trace_attr['write'] = write
-
-        blank = QtGui.QRadioButton('Blank')
-        blank.clicked.connect(lambda: cu._blank_trace(self))
-        trace_attr['blank'] = blank
-
-        self._trace_attr = trace_attr
-        self._trace_attr['write'].click()
-        return max_hold, min_hold, write, store, blank
+        self.trace_group = TraceControls()
+        self.trace_group.trace_attr['store'].clicked.connect(lambda: cu._store_trace(self))
+        self.trace_group.trace_attr['max_hold'].clicked.connect(lambda: cu.max_hold(self))
+        self.trace_group.trace_attr['min_hold'].clicked.connect(lambda: cu.min_hold(self))
+        self.trace_group.trace_attr['write'].clicked.connect(lambda: cu.trace_write(self))
+        self.trace_group.trace_attr['blank'].clicked.connect(lambda: cu.blank_trace(self))
+        self.trace_group.trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
+        self.control_widgets.append(self.trace_group)
+        return self.trace_group
 
     def _dsp_controls(self):
         self._dsp_group = DSPWidget()
@@ -589,12 +531,11 @@ class MainPanel(QtGui.QWidget):
                 self.sweep_segments,
                 self.plot_state.alt_colors)
 
-
     def update_iq(self):
 
         if not self.raw_data:
                 return
-        trace = self._plot.traces[self._trace_tab.currentIndex()]
+        trace = self._plot.traces[self.trace_group.trace_tab.currentIndex()]
 
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return
@@ -677,14 +618,14 @@ class MainPanel(QtGui.QWidget):
         for item in self.control_widgets:
             item.setEnabled(True)
 
-        for key in self._trace_attr:
-            self._trace_attr[key].setEnabled(True)
+        for key in self.trace_group.trace_attr:
+            self.trace_group.trace_attr[key].setEnabled(True)
         
     def disable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(False)
 
-        for key in self._trace_attr:
-            self._trace_attr[key].setEnabled(False)
+        for key in self.trace_group.trace_attr:
+            self.trace_group.trace_attr[key].setEnabled(False)
 
         
