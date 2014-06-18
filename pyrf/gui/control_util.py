@@ -50,70 +50,70 @@ def _trace_tab_change(layout):
     """
     change the selected trace
     """
-    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace = layout._plot.traces[layout.trace_group.trace_tab.currentIndex()]
 
     if trace.write:
-        layout._trace_attr['write'].click()
+        layout.trace_group.trace_attr['write'].click()
     elif trace.max_hold:
-        layout._trace_attr['max_hold'].click()
+        layout.trace_group.trace_attr['max_hold'].click()
     elif trace.min_hold:
-        layout._trace_attr['min_hold'].click()
+        layout.trace_group.trace_attr['min_hold'].click()
     elif trace.blank:
-        layout._trace_attr['blank'].click()
+        layout.trace_group.trace_attr['blank'].click()
     
-    if layout._plot.traces[layout._trace_tab.currentIndex()].store:
+    if layout._plot.traces[layout.trace_group.trace_tab.currentIndex()].store:
         state =  QtCore.Qt.CheckState.Checked
     else:
         state =  QtCore.Qt.CheckState.Unchecked
-    layout._trace_attr['store'].setCheckState(state) 
+    layout.trace_group.trace_attr['store'].setCheckState(state) 
         
-def _max_hold(layout):
+def max_hold(layout):
     """
     disable/enable max hold on a trace
     """
-    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace = layout._plot.traces[layout.trace_group.trace_tab.currentIndex()]
     trace.write = False
     trace.max_hold = True
     trace.min_hold = False
     trace.blank = False
-    layout._trace_attr['store'].setEnabled(True)
+    layout.trace_group.trace_attr['store'].setEnabled(True)
     util.update_marker_traces(layout._marker_trace, layout._plot.traces)    
     
-def _min_hold(layout):
+def min_hold(layout):
     """
     disable/enable min hold on a trace
     """
-    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace = layout._plot.traces[layout.trace_group.trace_tab.currentIndex()]
     trace.write = False
     trace.max_hold = False
     trace.min_hold = True
     trace.blank = False
-    layout._trace_attr['store'].setEnabled(True)   
+    layout.trace_group.trace_attr['store'].setEnabled(True)   
     util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
     
-def _trace_write(layout):
+def trace_write(layout):
     """
     disable/enable running FFT mode the selected trace
     """        
-    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    trace = layout._plot.traces[layout.trace_group.trace_tab.currentIndex()]
     trace.write = True
     trace.max_hold = False
     trace.min_hold = False
     trace.blank = False
-    layout._trace_attr['store'].setEnabled(True)
+    layout.trace_group.trace_attr['store'].setEnabled(True)
     
     if layout._marker_trace is not None:
         util.update_marker_traces(layout._marker_trace, layout._plot.traces) 
     
-def _blank_trace(layout):
+def blank_trace(layout):
     """
     disable/enable the selected trace
     """
-    if layout._trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
+    if layout.trace_group.trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
         layout._trace_attr['store'].click()
     
-    layout._trace_attr['store'].setEnabled(False)
-    trace = layout._plot.traces[layout._trace_tab.currentIndex()]
+    layout.trace_group.trace_attr['store'].setEnabled(False)
+    trace = layout._plot.traces[layout.trace_group.trace_tab.currentIndex()]
     trace.write = False
     trace.max_hold = False
     trace.min_hold = False
@@ -123,7 +123,7 @@ def _blank_trace(layout):
 
     count = 0
     for marker in layout._plot.markers:
-        if marker.enabled and marker.trace_index ==  layout._trace_tab.currentIndex():
+        if marker.enabled and marker.trace_index ==  layout.trace_group.trace_tab.currentIndex():
             marker.disable(layout._plot)
             if count == layout._marker_tab.currentIndex():
                 layout._marker_check.click()
@@ -135,10 +135,10 @@ def _store_trace(layout):
     """
     store the current trace's data
     """
-    if layout._trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
-        layout._plot.traces[layout._trace_tab.currentIndex()].store = True
+    if layout.trace_group.trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
+        layout._plot.traces[layout.trace_group.trace_tab.currentIndex()].store = True
     else:
-        layout._plot.traces[layout._trace_tab.currentIndex()].store = False
+        layout._plot.traces[layout.trace_group.trace_tab.currentIndex()].store = False
         
 def _marker_control(layout):
     """
@@ -195,8 +195,6 @@ def _marker_tab_change(layout):
         layout._marker_check.setCheckState(QtCore.Qt.CheckState.Unchecked)
     marker.selected = True
 
-    
-    
 def _find_peak(layout):
     """
     move the selected marker to the maximum point of the spectrum
@@ -244,24 +242,6 @@ def _change_min_level(layout):
         return
     layout.plot_state.min_level = min
     _center_plot_view(layout)
-
-def _trigger_control(layout):
-    """
-    enable/disable triggers in the layout plot
-    """
-
-    if layout._dev_group._trigger.checkState() is QtCore.Qt.CheckState.Checked:
-        layout.plot_state.enable_triggers(layout)
-        layout.plot_state.enable_block_mode(layout)
-        _select_center_freq(layout)
-        layout.update_trig()
-  
-    else:
-        if layout._iq_plot_checkbox.checkState() is QtCore.Qt.CheckState.Checked:
-            layout.plot_state.disable_triggers(layout)
-        else:
-            layout.plot_state.disable_block_mode(layout)
-        layout.update_trig()
 
 hotkey_dict = {'1': FrequencyControls.select_fstart,
                 '2': FrequencyControls.select_center,
