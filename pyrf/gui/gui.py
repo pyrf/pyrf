@@ -79,9 +79,9 @@ class MainWindow(QtGui.QMainWindow):
         play_action = QtGui.QAction('&Playback Recording', self)
         play_action.triggered.connect(self.open_playback_dialog)
         self.record_action = QtGui.QAction('Start &Recording', self)
-        self.record_action.triggered.connect(self.controller.start_recording)
+        self.record_action.triggered.connect(self.start_recording)
         self.stop_action = QtGui.QAction('&Stop Recording', self)
-        self.stop_action.triggered.connect(self.controller.stop_recording)
+        self.stop_action.triggered.connect(self.stop_recording)
         self.stop_action.setDisabled(True)
         exit_action = QtGui.QAction('&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
@@ -101,6 +101,14 @@ class MainWindow(QtGui.QMainWindow):
             self.open_device(name, True)
         else:
             self.open_device_dialog()
+
+    def start_recording(self):
+        self.stop_action.setDisabled(False)
+        self.controller.start_recording()
+
+    def stop_recording(self):
+        self.stop_action.setDisabled(True)
+        self.controller.stop_recording()
 
     def open_device_dialog(self):
         self.discovery_widget = DiscoveryWidget(
