@@ -571,7 +571,6 @@ class MainPanel(QtGui.QWidget):
             self._plot.i_curve.setData(i_data)
 
             self._plot.q_curve.clear()
-        self._plot.const_plot.clear()
 
     def update_marker(self):
 
