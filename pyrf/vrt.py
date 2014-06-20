@@ -49,11 +49,13 @@ def vrt_packet_reader(raw_read):
     packet_type = (word >> 28) & 0x0f
     count = (word >> 16) & 0x0f
     size = (word >> 0) & 0xffff
+    has_timestamp = bool((word >> 20) & 0x0f)
 
     if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
         packet_size = (size - 1) * 4
         context_data = yield raw_read(packet_size)
-        yield ContextPacket(packet_type, count, size, context_data)
+        yield ContextPacket(packet_type, count, size, context_data,
+            has_timestamp)
 
     elif packet_type == VRTDATA:
         data_header = yield raw_read(16)
@@ -78,12 +80,21 @@ class ContextPacket(object):
        a dict containing field names and values from the packet
     """
 
-    def __init__(self, packet_type, count, size, tmpstr):
+    def __init__(self, packet_type, count, size, tmpstr, has_timestamp):
         self.ptype = packet_type
         self.count = count
         self.size = size
-        (self.stream_id, self.tsi, self.tsf, indicators,
-            ) = struct.unpack(">IIQI", tmpstr[0:20])
+        if has_timestamp:
+            (self.stream_id, self.tsi, self.tsf, indicators,
+                ) = struct.unpack(">IIQI", tmpstr[0:20])
+            offset = 20
+        else:
+            (self.stream_id,) = struct.unpack(">I", tmpstr[:4])
+            self.tsi = None
+            self.tsf = None
+            indicators = None
+            offset = 4
+
         self.fields = {}
 
         parse = {
@@ -94,7 +105,7 @@ class ContextPacket(object):
         }.get(self.stream_id)
 
         if parse:
-            parse(indicators, tmpstr[20:])
+            parse(indicators, tmpstr[offset:])
 
 
     def _parse_receiver_context(self, indicators, data):
