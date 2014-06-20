@@ -9,7 +9,6 @@ All the buttons and controls and their callback functions are built in
 and placed to left of the controls.
 """
 
-import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import math
@@ -58,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
     """
     The main window and menus
     """
-    def __init__(self, output_file=None):
+    def __init__(self, dut_address=None, playback_filename=None):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = screen.width() * 0.7
@@ -67,12 +66,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self.recording = False
         self.controller = SpecAController()
-        self.initUI()
+        self.initUI(dut_address, playback_filename)
 
-    def initUI(self):
-        name = None
-        if len(sys.argv) > 1:
-            name = sys.argv[1]
+    def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
         open_action = QtGui.QAction('&Open Device', self)
         open_action.triggered.connect(self.open_device_dialog)
@@ -97,8 +93,10 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(exit_action)
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
-        if name:
-            self.open_device(name, True)
+        if dut_address:
+            self.open_device(dut_address, True)
+        elif playback_filename:
+            self.start_playback(playback_filename)
         else:
             self.open_device_dialog()
 
@@ -120,9 +118,12 @@ class MainWindow(QtGui.QMainWindow):
         playback_filename, file_type = QtGui.QFileDialog.getOpenFileName(self,
             "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
         if playback_filename:
-            self.controller.set_device(
-                playback_filename=playback_filename,
-                playback_connector=TwistedConnector(self._get_reactor()))
+            self.start_playback(playback_filename)
+
+    def start_playback(self, playback_filename):
+        self.controller.set_device(
+            playback_filename=playback_filename,
+            playback_connector=TwistedConnector(self._get_reactor()))
 
     @inlineCallbacks
     def open_device(self, name, ok):
