@@ -34,7 +34,7 @@ class SpecAState(object):
     :param playback: set to True if this state is from a recording
     """
     def __init__(self, other=None, mode=None, center=None, rbw=None,
-            span=None, decimation=None, fshift=None, iq_output_path = None, device_settings=None,
+            span=None, decimation=None, fshift=None, device_settings=None,
             device_class=None, device_identifier=None, playback=None):
 
         self.mode = other.mode if mode is None else mode
