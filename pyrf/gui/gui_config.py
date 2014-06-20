@@ -18,21 +18,7 @@ class PlotState(object):
 
         # plot paramaterss
         self.grid = False
-        self.mhold = False
-        self.mhold_fft = None
-        self.block_mode = True
-        self.peak = False
         self.freq_range = None
-        self.enable_plot = True
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN
-        self.device_properties = device_properties
         self.alt_colors = False
-
-        # DSP paramaters
-        correct_phase=True
-        hide_differential_dc_offset=False
-        convert_to_dbm=True
-        ref = None
-
-
