@@ -117,9 +117,12 @@ class MainWindow(QtGui.QMainWindow):
         self.discovery_widget.show()
 
     def open_playback_dialog(self):
-        playback_file_name = QtGui.QFileDialog.getOpenFileName(self,
+        playback_filename, file_type = QtGui.QFileDialog.getOpenFileName(self,
             "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
-        print playback_file_name
+        if playback_filename:
+            self.controller.set_device(
+                playback_filename=playback_filename,
+                playback_connector=TwistedConnector(self._get_reactor()))
 
     @inlineCallbacks
     def open_device(self, name, ok):
