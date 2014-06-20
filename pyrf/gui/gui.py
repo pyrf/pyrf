@@ -35,6 +35,7 @@ from plot_widget import Plot
 from device_controls import DeviceControls
 from frequency_controls import FrequencyControls
 from discovery_widget import DiscoveryWidget
+from trace_controls import TraceControls
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
@@ -65,11 +66,21 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         self.recording = False
+        self.init_menu_bar()
         self.controller = SpecAController()
         self.initUI(dut_address, playback_filename)
 
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
+
+        self.setWindowTitle('Spectrum Analyzer')
+        self.setCentralWidget(self.mainPanel)
+        if name:
+            self.open_device(name, True)
+        else:
+            self.open_device_dialog()
+
+    def init_menu_bar(self):
         open_action = QtGui.QAction('&Open Device', self)
         open_action.triggered.connect(self.open_device_dialog)
         play_action = QtGui.QAction('&Playback Recording', self)
@@ -91,14 +102,8 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(self.stop_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
-        self.setWindowTitle('Spectrum Analyzer')
-        self.setCentralWidget(self.mainPanel)
-        if dut_address:
-            self.open_device(dut_address, True)
-        elif playback_filename:
-            self.start_playback(playback_filename)
-        else:
-            self.open_device_dialog()
+
+        self.dsp_menu = menubar.addMenu('&DSP Options')
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
@@ -169,6 +174,7 @@ class MainPanel(QtGui.QWidget):
         controller.capture_receive.connect(self.capture_received)
 
         self._main_window = main_window
+        self._dsp_menu = self._main_window.dsp_menu
 
         self.ref_level = 0
         self.dut = None
@@ -226,7 +232,7 @@ class MainPanel(QtGui.QWidget):
                 freq = state.center
                 full_bw = state.span
 
-                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
+                self._plot.center_view(freq - full_bw/2, freq + full_bw/2, self.plot_state.min_level, self.plot_state.ref_level)
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
                                         IQ_PLOT_YMAX[self.rfe_mode])
         if 'device_settings.iq_output_path' in changed:
@@ -283,6 +289,8 @@ class MainPanel(QtGui.QWidget):
                         self._plot.markers[self._marker_tab.currentIndex()].data_index = index
 
     def initUI(self):
+
+        self.init_menu()
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
         self.plot_width = 8
@@ -305,6 +313,7 @@ class MainPanel(QtGui.QWidget):
 
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.addWidget(self._trace_controls())
+
         controls_layout.addWidget(self._plot_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._freq_controls())
@@ -313,6 +322,50 @@ class MainPanel(QtGui.QWidget):
 
         self._grid = grid
         self.setLayout(grid)
+
+    def init_menu(self):
+
+        # correct phase menu
+        cp_action = QtGui.QAction('&IQ Offset Correction', self)
+        cp_action.setCheckable(True)
+        cp_action.toggle()
+        self._dsp_menu.addAction(cp_action)
+        cp_action.triggered.connect(lambda: self.controller.apply_dsp_options(correct_phase=cp_action.isChecked()))
+
+        #dc offset correction
+        dc_action = QtGui.QAction('&DC Offset', self)
+        dc_action.setCheckable(True)
+        dc_action.toggle()
+        self._dsp_menu.addAction(dc_action)
+        dc_action.triggered.connect(lambda: self.controller.apply_dsp_options(hide_differential_dc_offset=dc_action.isChecked()))
+
+        #dbm conversion
+        dbm_action = QtGui.QAction('&Convert to dBm', self)
+        dbm_action.setCheckable(True)
+        dbm_action.toggle()
+        self._dsp_menu.addAction(dbm_action)
+        dbm_action.triggered.connect(lambda: self.controller.apply_dsp_options(convert_to_dbm=dbm_action.isChecked()))
+
+        # apply reference level
+        ref_Action = QtGui.QAction('&Apply Reference', self)
+        ref_Action.setCheckable(True)
+        ref_Action.toggle()
+        self._dsp_menu.addAction(ref_Action)
+        ref_Action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_reference=ref_Action.isChecked()))
+
+        # apply spectral inversion
+        inv_action = QtGui.QAction('&Apply Spectral Inversion', self)
+        inv_action.setCheckable(True)
+        inv_action.toggle()
+        self._dsp_menu.addAction(inv_action)
+        inv_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_spec_inv=inv_action.isChecked()))
+
+        # apply hanning window
+        wind_action = QtGui.QAction('&Apply Hanning Window', self)
+        wind_action.setCheckable(True)
+        wind_action.toggle()
+        self._dsp_menu.addAction(wind_action)
+        wind_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_window=wind_action.isChecked()))
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
@@ -331,74 +384,20 @@ class MainPanel(QtGui.QWidget):
         return self._plot_layout
 
     def _trace_controls(self):
-        trace_group = QtGui.QGroupBox("Traces")
+        self.trace_group = TraceControls()
+        self.trace_group.trace_attr['store'].clicked.connect(lambda: cu._store_trace(self))
+        self.trace_group.trace_attr['max_hold'].clicked.connect(lambda: cu.max_hold(self))
+        self.trace_group.trace_attr['min_hold'].clicked.connect(lambda: cu.min_hold(self))
+        self.trace_group.trace_attr['write'].clicked.connect(lambda: cu.trace_write(self))
+        self.trace_group.trace_attr['blank'].clicked.connect(lambda: cu.blank_trace(self))
+        self.trace_group.trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
+        self.control_widgets.append(self.trace_group)
+        return self.trace_group
 
-        self._trace_group = trace_group
-
-        trace_controls_layout = QtGui.QVBoxLayout()
-
-        # first row will contain the tabs
-        first_row = QtGui.QHBoxLayout()
-
-        # add tabs for each trace
-        trace_tab = QtGui.QTabBar()
-        count = 0
-        for (trace,(r,g,b)) in zip(labels.TRACES, colors.TRACE_COLORS):
-            trace_tab.addTab(trace)
-            color = QtGui.QColor()
-            color.setRgb(r,g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            trace_tab.setTabIcon(count,icon)
-            count += 1
-
-        self._trace_tab = trace_tab
-        trace_tab.currentChanged.connect(lambda: cu._trace_tab_change(self))
-
-        self.control_widgets.append(self._trace_tab)
-        first_row.addWidget(trace_tab)
-
-        # second row contains the tab attributes
-        second_row = QtGui.QHBoxLayout()
-        max_hold, min_hold, write, store, blank  = self._trace_items()
-        second_row.addWidget(max_hold)
-        second_row.addWidget(min_hold)
-        second_row.addWidget(write)
-        second_row.addWidget(blank)
-        second_row.addWidget(store)
-        trace_controls_layout.addLayout(first_row)
-        trace_controls_layout.addLayout(second_row) 
-        trace_group.setLayout(trace_controls_layout)
-        return trace_group
-
-    def _trace_items(self):
-
-        trace_attr = {}
-        store = QtGui.QCheckBox('Store')
-        store.clicked.connect(lambda: cu._store_trace(self))
-        store.setEnabled(False)
-        trace_attr['store'] = store
-
-        max_hold = QtGui.QRadioButton('Max Hold')
-        max_hold.clicked.connect(lambda: cu._max_hold(self))
-        trace_attr['max_hold'] = max_hold
-
-        min_hold = QtGui.QRadioButton('Min Hold')
-        min_hold.clicked.connect(lambda: cu._min_hold(self))
-        trace_attr['min_hold'] = min_hold
-
-        write = QtGui.QRadioButton('Write')
-        write.clicked.connect(lambda: cu._trace_write(self))
-        trace_attr['write'] = write
-
-        blank = QtGui.QRadioButton('Blank')
-        blank.clicked.connect(lambda: cu._blank_trace(self))
-        trace_attr['blank'] = blank
-
-        self._trace_attr = trace_attr
-        self._trace_attr['write'].click()
-        return max_hold, min_hold, write, store, blank
+    def _dsp_controls(self):
+        self._dsp_group = DSPWidget()
+        self.control_widgets.append(self._dsp_group)
+        return self._dsp_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
@@ -541,9 +540,7 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         if self.freq_range != (fstart, fstop):
             self.freq_range = (fstart, fstop)
-
             self._plot.center_view(fstart, fstop)
-
         self.update_iq()
         self.update_marker()
         self.update_diff()
@@ -559,12 +556,11 @@ class MainPanel(QtGui.QWidget):
                 self.sweep_segments,
                 self.plot_state.alt_colors)
 
-
     def update_iq(self):
 
         if not self.raw_data:
                 return
-        trace = self._plot.traces[self._trace_tab.currentIndex()]
+        trace = self._plot.traces[self.trace_group.trace_tab.currentIndex()]
 
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return
@@ -600,7 +596,6 @@ class MainPanel(QtGui.QWidget):
             self._plot.i_curve.setData(i_data)
 
             self._plot.q_curve.clear()
-        self._plot.const_plot.clear()
 
     def update_marker(self):
 
@@ -647,14 +642,14 @@ class MainPanel(QtGui.QWidget):
         for item in self.control_widgets:
             item.setEnabled(True)
 
-        for key in self._trace_attr:
-            self._trace_attr[key].setEnabled(True)
+        for key in self.trace_group.trace_attr:
+            self.trace_group.trace_attr[key].setEnabled(True)
         
     def disable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(False)
 
-        for key in self._trace_attr:
-            self._trace_attr[key].setEnabled(False)
+        for key in self.trace_group.trace_attr:
+            self.trace_group.trace_attr[key].setEnabled(False)
 
         

@@ -5,7 +5,7 @@ from pyrf.devices.thinkrf import discover_wsa
 class DiscoveryWidget(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
-    can be used to control the WSA4000/WSA5000
+    can be used to display WSA5000's available on the network
     :param name: The name of the groupBox
     :open_device_callback: A function that is called which returns the IP selected
 
