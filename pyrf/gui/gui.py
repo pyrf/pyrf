@@ -75,8 +75,10 @@ class MainWindow(QtGui.QMainWindow):
 
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
-        if name:
-            self.open_device(name, True)
+        if dut_address:
+            self.open_device(dut_address, True)
+        elif playback_filename:
+            self.start_playback(playback_filename)
         else:
             self.open_device_dialog()
 
@@ -126,9 +128,8 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_playback(self, playback_filename):
-        self.controller.set_device(
-            playback_filename=playback_filename,
-            playback_connector=TwistedConnector(self._get_reactor()))
+        self.controller.set_device(playback_filename=playback_filename)
+        self.show()
 
     @inlineCallbacks
     def open_device(self, name, ok):

@@ -47,6 +47,15 @@ class WSA(object):
         self.connector = connector
         self._output_file = None
 
+    def async_connector(self):
+        """
+        Return True if the connector being used is asynchronous
+        """
+        return hasattr(self.connector, 'vrt_callback')
+
+    def set_async_callback(self, callback):
+        self.connector.vrt_callback = callback
+
     def set_recording_output(self, output_file=None):
         """
         Dump a recording of all the received packets to output_file

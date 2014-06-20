@@ -80,12 +80,12 @@ class SweepDevice(object):
     def __init__(self, real_device, async_callback=None):
         self.real_device = real_device
         self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-        if real_device and hasattr(real_device.connector, 'vrt_callback'):
+        if real_device.async_connector():
             if not async_callback:
                 raise SweepDeviceError(
                     "async_callback required for async operation")
             # disable receiving data until we are expecting it
-            self.connector.vrt_callback = None
+            real_device.set_async_callback(None)
         else:
             if async_callback:
                 raise SweepDeviceError(
@@ -100,8 +100,6 @@ class SweepDevice(object):
         self.past_end_bytes_discarded = 0
         self.fft_calculation_seconds = 0.0
         self.bin_collection_seconds = 0.0
-
-    connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
             fstart, fstop, rbw,
@@ -167,7 +165,7 @@ class SweepDevice(object):
             if not self.plan:
                 self.async_callback(self.fstart, self.fstop, [])
                 return
-            self.connector.vrt_callback = self._vrt_receive
+            self.real_device.set_async_callback(self._vrt_receive)
             self._start_sweep(entries)
             return
 
