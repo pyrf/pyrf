@@ -20,13 +20,12 @@ class CaptureDevice(object):
     def __init__(self, real_device, async_callback=None, device_settings=None):
 
         self.real_device = real_device
-        self.connector = self.real_device.connector
-        if hasattr(self.connector, 'vrt_callback'):
+        if real_device and hasattr(self.real_device.connector, 'vrt_callback'):
             if not async_callback:
                 raise CaptureDeviceError(
                     "async_callback required for async operation")
             # disable receiving data until we are expecting it
-            self.connector.vrt_callback = None
+            self.real_device.connector.vrt_callback = None
         else:
             if async_callback:
                 raise CaptureDeviceError(
@@ -129,7 +128,7 @@ class CaptureDevice(object):
             self.usable_bins = [(0, points)]
 
         if self.async_callback:
-            self.connector.vrt_callback = self.read_data
+            self.real_device.connector.vrt_callback = self.read_data
             self.real_device.capture(points, 1)
             return
 

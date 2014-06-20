@@ -137,9 +137,10 @@ class SpecAController(QtCore.QObject):
         self._dut = dut
         if dut:
             self._dut.reset()
-        self._sweep_device = SweepDevice(dut, self.process_sweep)
+        self._sweep_device = SweepDevice(dut,
+            async_callback=None if playback_filename else self.process_sweep)
         self._capture_device = CaptureDevice(dut,
-            async_callback=self.process_capture)
+            async_callback=None if playback_filename else self.process_capture)
 
         self.device_change.emit(dut)
 
@@ -147,7 +148,7 @@ class SpecAController(QtCore.QObject):
             state_json = dut.properties.SPECA_DEFAULTS
         elif self._playback_file:
             vrt_packet = self._playback_vrt(auto_rewind=False)
-            state_json = vrt_packet['speca']
+            state_json = vrt_packet.fields['speca']
         else:
             return
 
