@@ -228,8 +228,8 @@ class Plot(object):
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
         self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
-    
-    def device_changed(self, state, changed):
+
+    def device_changed(self, dut):
         self.remove(trigger)
 
     def state_changed(self, state, changed):
