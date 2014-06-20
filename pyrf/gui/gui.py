@@ -143,11 +143,9 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def closeEvent(self, event):
-        if self.mainPanel.dut:
-            self.mainPanel.dut.abort()
-            self.mainPanel.dut.flush()
-            self.mainPanel.dut.reset()
         event.accept()
+        self.controller.stop_recording()
+        self.controller.set_device()
         self._get_reactor().stop()
 
     def _get_reactor(self):
