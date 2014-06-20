@@ -207,7 +207,7 @@ class MainPanel(QtGui.QWidget):
                 freq = state.center
                 full_bw = state.span
 
-                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
+                self._plot.center_view(freq - full_bw/2, freq _ full_bw/2, self.plot_state.min_level, self.plot_state.ref_level)
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
                                         IQ_PLOT_YMAX[self.rfe_mode])
         if 'device_settings.iq_output_path' in changed:
