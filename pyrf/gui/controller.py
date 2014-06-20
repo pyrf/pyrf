@@ -153,10 +153,10 @@ class SpecAController(QtCore.QObject):
             self._playback_file = None
 
         self._dut = dut
-        self.device_change.emit(dut)
-
         if not dut:
             return
+
+        self.device_change.emit(dut)
 
         self._state = SpecAState.from_json_object(state_json)
         self.state_change.emit(
