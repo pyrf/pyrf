@@ -113,13 +113,15 @@ class SpecAController(QtCore.QObject):
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
 
-    def set_device(self, dut=None, playback_filename=None):
+    def set_device(self, dut=None, playback_filename=None,
+            playback_scheduler=None):
         """
         Detach any currenly attached device and stop playback then
         optionally attach to a new device or playback file.
 
         :param dut: a :class:`pyrf.thinkrf.WSA` or None
         :param playback_filename: recorded VRT data filename or None
+        :param playback_scheduler: function to schedule each playback capture
         """
         if self._playback_file:
             self._playback_file.close()
@@ -139,6 +141,7 @@ class SpecAController(QtCore.QObject):
             self._playback_file = open(playback_filename, 'rb')
             self._playback_reader = vrt_packet_reader(
                 self._playback_file.read)
+            self._playback_scheduler = playback_scheduler
             vrt_packet = self._playback_vrt(auto_rewind=False)
             state_json = vrt_packet.fields['speca']
             dut = Playback(state_json['device_class'],
@@ -246,7 +249,12 @@ class SpecAController(QtCore.QObject):
             self.read_block()
 
     def schedule_playback(self):
-        pass
+        self._playback_scheduler(self._playback_step)
+
+    def _playback_step(self):
+        """
+
+        """
 
     def process_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
