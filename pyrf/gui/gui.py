@@ -188,10 +188,11 @@ class MainPanel(QtGui.QWidget):
         if 'mode' in changed:
             self.rfe_mode = state.rfe_mode()  # used by recentering code
             if state.sweeping():
+                self.cf_marker.setEnabled(True)
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 return
-
+            self.cf_marker.setEnabled(False)
             self._plot.const_window.show()
             self._plot.iq_window.show()
 
