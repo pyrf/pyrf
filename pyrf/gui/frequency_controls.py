@@ -349,4 +349,7 @@ class FrequencyControls(QtGui.QGroupBox):
         self._fstop.setEnabled(False)
         self._fstop_edit.setEnabled(False)
 
-
+    def change_center_freq(self, freq):
+        self._cfreq.click()
+        self._freq_edit.setText("%0.2f \n" % (freq / M))
+        self.update_freq()
