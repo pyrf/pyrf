@@ -3,7 +3,6 @@ import numpy as np
 import util
 import pyqtgraph as pg
 from pyrf.config import TriggerSettings
-
 from frequency_controls import FrequencyControls
 
 AXIS_OFFSET = 7
@@ -207,16 +206,16 @@ def _find_peak(layout):
 
     # retrieve the min/max x-axis of the current window
     window_freq = layout._plot.view_box.viewRange()[0]
-    indexes_of_window = []
+    data_range = layout.xdata
+    if max(window_freq) < min(data_range) or min(window_freq) > max(data_range):
+        return
 
-    for freq in layout.xdata:
-        if freq < max(window_freq) and freq > min(window_freq):
-            indexes_of_window.append(np.where(layout.xdata == freq)[0])
+    min_index = np.abs(data_range - min(window_freq)).argmin()
+    max_index = np.abs(data_range - max(window_freq)).argmin()
 
-    if len(indexes_of_window) > 0:
-        trace = layout._plot.traces[marker.trace_index]
-        peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
-        marker.data_index = min(indexes_of_window) + peak_index
+    trace = layout._plot.traces[marker.trace_index]
+    peak_value = np.max(trace.data[min_index:max_index])
+    marker.data_index = np.where(trace.data==peak_value)[0]
 
 def _change_ref_level(layout):
     """
