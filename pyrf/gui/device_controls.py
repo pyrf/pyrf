@@ -208,8 +208,8 @@ class DeviceControls(QtGui.QGroupBox):
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove sweep capture modes
                 c = self._mode.count()
-                self._mode.removeItem(c - 1)
-
+                self._mode.removeItem(0)
+                self._mode.setCurrentIndex(0)
                 # remove all digitizer controls
                 self._dec_box.hide()
                 self._freq_shift_edit.hide()
@@ -218,7 +218,7 @@ class DeviceControls(QtGui.QGroupBox):
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # add sweep SH mode
-                self._mode.addItem('Auto')
+                self._mode.insertItem(0, 'Auto')
 
                 # show digitizer controls
                 self._dec_box.show()

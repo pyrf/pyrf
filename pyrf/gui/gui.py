@@ -213,7 +213,7 @@ class MainPanel(QtGui.QWidget):
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove plots
                 self._plot_group.hide()
-                self._trace_group.hide()
+                self.trace_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -233,7 +233,7 @@ class MainPanel(QtGui.QWidget):
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show plots
                 self._plot_group.show()
-                self._trace_group.show()
+                self.trace_group.show()
                 self._plot_layout.show()
 
                 # resize window
