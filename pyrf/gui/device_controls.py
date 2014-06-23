@@ -107,6 +107,9 @@ class DeviceControls(QtGui.QGroupBox):
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
+            if 'Auto' in input_mode:
+                input_mode = 'Sweep SH'
+
             self.controller.apply_settings(mode=input_mode)
 
         def new_trigger():
@@ -140,6 +143,10 @@ class DeviceControls(QtGui.QGroupBox):
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
+        # remove all RFE modes
+        while self._mode.count():
+            self._mode.removeItem(0)
+
         # FIXME: remove device-specific code, use device properties instead
         if self.dut_prop.model.startswith('WSA5000'):
             self._antenna_box.hide()
@@ -155,12 +162,13 @@ class DeviceControls(QtGui.QGroupBox):
             self._iq_output_box.hide()
             self._pll_box.hide()
 
-        while self._mode.count():
-            self._mode.removeItem(0)
+        # Sweep SH mode is the default mode for the WSA5K
+        if self.dut_prop.model.startswith('WSA5000'):
+            self._mode.addItem('Auto')
+
         for m in self.dut_prop.RFE_MODES:
             self._mode.addItem(m)
-        if self.dut_prop.model.startswith('WSA5000'):
-            self._mode.addItem('Sweep SH')
+
 
     def state_changed(self, state, changed):
         self.gui_state = state
@@ -200,8 +208,8 @@ class DeviceControls(QtGui.QGroupBox):
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove sweep capture modes
                 c = self._mode.count()
-                self._mode.removeItem(c - 1)
-
+                self._mode.removeItem(0)
+                self._mode.setCurrentIndex(0)
                 # remove all digitizer controls
                 self._dec_box.hide()
                 self._freq_shift_edit.hide()
@@ -210,7 +218,7 @@ class DeviceControls(QtGui.QGroupBox):
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # add sweep SH mode
-                self._mode.addItem('Sweep SH')
+                self._mode.insertItem(0, 'Auto')
 
                 # show digitizer controls
                 self._dec_box.show()
