@@ -213,7 +213,7 @@ class SpecAController(QtCore.QObject):
         """
         if not self._recording_file:
             return
-        self._dut.set_capture_output(None)
+        self._dut.set_recording_output(None)
         self._recording_file.close()
         self._recording_file = None
 
