@@ -137,7 +137,6 @@ class MainWindow(QtGui.QMainWindow):
         from twisted.internet import reactor
         return reactor
 
-
 class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
