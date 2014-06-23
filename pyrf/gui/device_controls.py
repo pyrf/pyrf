@@ -107,7 +107,7 @@ class DeviceControls(QtGui.QGroupBox):
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
-            if 'Auto' in input_mode:
+            if input_mode == 'Auto':  # FIXME: too 5k-specific
                 input_mode = 'Sweep SH'
 
             self.controller.apply_settings(mode=input_mode)
