@@ -207,11 +207,10 @@ def _find_peak(layout):
     # retrieve the min/max x-axis of the current window
     window_freq = layout._plot.view_box.viewRange()[0]
     data_range = layout.xdata
-    if max(window_freq) < data_range[0] or min(window_freq) > data_range[-1]:
+    if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
         return
 
-    min_index = np.abs(data_range - min(window_freq)).argmin()
-    max_index = np.abs(data_range - max(window_freq)).argmin()
+    min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
 
     trace = layout._plot.traces[marker.trace_index]
     peak_value = np.max(trace.data[min_index:max_index])
