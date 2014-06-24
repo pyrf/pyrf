@@ -207,7 +207,7 @@ def _find_peak(layout):
     # retrieve the min/max x-axis of the current window
     window_freq = layout._plot.view_box.viewRange()[0]
     data_range = layout.xdata
-    if max(window_freq) < min(data_range) or min(window_freq) > max(data_range):
+    if max(window_freq) < data_range[0] or min(window_freq) > data_range[-1]:
         return
 
     min_index = np.abs(data_range - min(window_freq)).argmin()
