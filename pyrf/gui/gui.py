@@ -89,6 +89,7 @@ class MainWindow(QtGui.QMainWindow):
         play_action.triggered.connect(self.open_playback_dialog)
         self.record_action = QtGui.QAction('Start &Recording', self)
         self.record_action.triggered.connect(self.start_recording)
+        self.record_action.setDisabled(True)
         self.stop_action = QtGui.QAction('&Stop Recording', self)
         self.stop_action.triggered.connect(self.stop_recording)
         self.stop_action.setDisabled(True)
@@ -130,6 +131,8 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_playback(self, playback_filename):
+        self.record_action.setDisabled(True)
+        self.stop_action.setDisabled(True)
         self.controller.set_device(playback_filename=playback_filename)
         self.show()
 
@@ -152,7 +155,8 @@ class MainWindow(QtGui.QMainWindow):
                 dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
             too_old.exec_()
         self.controller.set_device(dut)
-
+        self.record_action.setDisabled(False)
+        self.stop_action.setDisabled(True)
 
     def closeEvent(self, event):
         event.accept()
