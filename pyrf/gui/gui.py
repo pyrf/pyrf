@@ -169,7 +169,6 @@ class MainWindow(QtGui.QMainWindow):
         from twisted.internet import reactor
         return reactor
 
-
 class MainPanel(QtGui.QWidget):
     """
     The spectrum view and controls
@@ -221,10 +220,11 @@ class MainPanel(QtGui.QWidget):
         if 'mode' in changed:
             self.rfe_mode = state.rfe_mode()  # used by recentering code
             if state.sweeping():
+                self.cf_marker.setEnabled(True)
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
                 return
-
+            self.cf_marker.setEnabled(False)
             self._plot.const_window.show()
             self._plot.iq_window.show()
 
@@ -246,7 +246,7 @@ class MainPanel(QtGui.QWidget):
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove plots
                 self._plot_group.hide()
-                self._trace_group.hide()
+                self.trace_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -266,7 +266,7 @@ class MainPanel(QtGui.QWidget):
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show plots
                 self._plot_group.show()
-                self._trace_group.show()
+                self.trace_group.show()
                 self._plot_layout.show()
 
                 # resize window
@@ -420,40 +420,44 @@ class MainPanel(QtGui.QWidget):
 
         plot_group = QtGui.QGroupBox("Plot Control")
         self._plot_group = plot_group
-        
+
         plot_controls_layout = QtGui.QVBoxLayout()
-        
+
         first_row = QtGui.QHBoxLayout()
         marker_tab = QtGui.QTabBar()
         for marker in labels.MARKERS:
             marker_tab.addTab(marker)
         marker_tab.currentChanged.connect(lambda: cu._marker_tab_change(self))
         first_row.addWidget(marker_tab)
-        
+
         self._marker_tab = marker_tab
         self.control_widgets.append(self._marker_tab)
         marker_check, marker_trace = self._marker_control()
-        
+
         second_row = QtGui.QHBoxLayout()
         second_row.addWidget(marker_trace)
         second_row.addWidget(marker_check)
-                
+
         third_row = QtGui.QHBoxLayout()
         third_row.addWidget(self._peak_control())
         third_row.addWidget(self._center_control())
-        
+
         fourth_row = QtGui.QHBoxLayout()
         ref_level, ref_label, min_level, min_label = self._ref_controls()
-        
+
         fourth_row.addWidget(ref_label)
         fourth_row.addWidget(ref_level)
         fourth_row.addWidget(min_label)
         fourth_row.addWidget(min_level)
 
+        fifth_row = QtGui.QHBoxLayout()
+        fifth_row.addWidget(self._cf_marker())
+
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
         plot_controls_layout.addLayout(third_row)
         plot_controls_layout.addLayout(fourth_row)
+        plot_controls_layout.addLayout(fifth_row)
         plot_group.setLayout(plot_controls_layout)
         
         return plot_group
@@ -491,7 +495,23 @@ class MainPanel(QtGui.QWidget):
         self._center_bt = center
         self.control_widgets.append(self._center_bt)
         return center
-    
+
+    def _cf_marker(self):
+        cf_marker = QtGui.QPushButton('Center Frequency to Marker')
+        cf_marker.setToolTip("Center the frequency on the current marker") 
+
+        def cf_marker_click():
+            current_marker = self._marker_tab.currentIndex()
+            marker = self._plot.markers[current_marker]
+
+            if marker.enabled:
+                self._freq_group.change_center_freq(self.xdata[marker.data_index])
+                marker.data_index = len(self.pow_data)/2
+        cf_marker.clicked.connect(cf_marker_click)
+
+        self.cf_marker = cf_marker
+        self.control_widgets.append(self.cf_marker)
+        return cf_marker
     def _ref_controls(self):
         ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
         ref_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata), 
@@ -614,7 +634,7 @@ class MainPanel(QtGui.QWidget):
                         marker_label.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
                                                                              trace.color[1],
                                                                             trace.color[2]))
-                        
+
                         marker.update_pos(trace.freq_range, trace.data)
                         marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
