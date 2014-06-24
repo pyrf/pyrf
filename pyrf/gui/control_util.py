@@ -221,23 +221,26 @@ def _find_right_peak(layout):
     move the selected marker to the next peak on the right
     """
     marker = layout._plot.markers[layout._marker_tab.currentIndex()]
-
+    trace = layout._plot.traces[marker.trace_index]
     # enable the marker if it is not already enabled
     if not marker.enabled:
         layout._marker_check.click()
 
     # retrieve the min/max x-axis of the current window
     window_freq = layout._plot.view_box.viewRange()[0]
-    indexes_of_window = []
+    if marker.data_index is None:
+        marker.data_index = len(trace.data) / 2 
+    data_range = layout.xdata[marker.data_index:-1]
 
-    for freq in layout.xdata:
-        if freq < max(window_freq) and freq > min(window_freq):
-            indexes_of_window.append(np.where(layout.xdata == freq)[0])
+    if len(data_range) == 0:
+        return
 
-    if len(indexes_of_window) > 0:
-        trace = layout._plot.traces[marker.trace_index]
-        peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
-        marker.data_index = min(indexes_of_window) + peak_index
+    if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
+        return
+    min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1])) + marker.data_index
+
+    peak_value = np.max(trace.data[min_index:max_index])
+    marker.data_index = np.where(trace.data==peak_value)[0]
 
 def _find_left_peak(layout):
     """
@@ -251,16 +254,19 @@ def _find_left_peak(layout):
 
     # retrieve the min/max x-axis of the current window
     window_freq = layout._plot.view_box.viewRange()[0]
-    indexes_of_window = []
+    data_range = layout.xdata[0:marker.data_index]
 
-    for freq in layout.xdata:
-        if freq < max(window_freq) and freq > min(window_freq):
-            indexes_of_window.append(np.where(layout.xdata == freq)[0])
+    if len(data_range) == 0:
+        return
 
-    if len(indexes_of_window) > 0:
-        trace = layout._plot.traces[marker.trace_index]
-        peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
-        marker.data_index = min(indexes_of_window) + peak_index
+    if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
+        return
+
+    min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
+
+    trace = layout._plot.traces[marker.trace_index]
+    peak_value = np.max(trace.data[min_index:max_index])
+    marker.data_index = np.where(trace.data==peak_value)[0]
 
 def _change_ref_level(layout):
     """
