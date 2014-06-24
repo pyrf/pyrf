@@ -200,24 +200,26 @@ class ContextPacket(object):
 
     def is_context_packet(self, ptype=None):
         """
-        :param ptype: "Receiver", "Digitizer" or None for any packet type
+        :param ptype: "Receiver", "Digitizer", "Speca" or None for any
+        packet type
 
         :returns: True if this packet matches the type passed
         """
         if ptype is None:
             return True
-
         elif ptype == "Receiver":
             return self.ptype == VRTRECEIVER
-
         elif ptype == "Digitizer":
             return self.ptype == VRTDIGITIZER
+        elif ptype == "Speca":
+            return self.ptype == VRTSPECA
 
-        else:
-            return False
+        return False
 
 
     def __str__(self):
+        if self.tsf is None:
+            return "Context #%02d [" % self.count + str(self.fields) + "]"
         return ("Context #%02d [%d.%012d, 0x%08x " % (
             self.count, self.tsi, self.tsf, self.stream_id)
             ) + str(self.fields) + "]"

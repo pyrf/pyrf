@@ -12,6 +12,9 @@ from pyrf.devices.playback import Playback
 
 logger = logging.getLogger(__name__)
 
+PLAYBACK_STEP_MSEC = 100
+
+
 class SpecAState(object):
     """
     Representation of the Spec-A + device state for passing
@@ -113,8 +116,7 @@ class SpecAController(QtCore.QObject):
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
 
-    def set_device(self, dut=None, playback_filename=None,
-            playback_scheduler=None):
+    def set_device(self, dut=None, playback_filename=None):
         """
         Detach any currenly attached device and stop playback then
         optionally attach to a new device or playback file.
@@ -125,6 +127,7 @@ class SpecAController(QtCore.QObject):
         """
         if self._playback_file:
             self._playback_file.close()
+            self._playback_file = None
 
         # DSP options
         self.dsp_options = {"correct_phase" : True,
@@ -139,9 +142,8 @@ class SpecAController(QtCore.QObject):
 
         if playback_filename:
             self._playback_file = open(playback_filename, 'rb')
-            self._playback_reader = vrt_packet_reader(
-                self._playback_file.read)
-            self._playback_scheduler = playback_scheduler
+            self._playback_started = False
+            self._playback_context = {}
             vrt_packet = self._playback_vrt(auto_rewind=False)
             state_json = vrt_packet.fields['speca']
             dut = Playback(state_json['device_class'],
@@ -153,37 +155,14 @@ class SpecAController(QtCore.QObject):
             self._sweep_device = SweepDevice(dut, self.process_sweep)
             self._capture_device = CaptureDevice(dut, self.process_capture)
             state_json = dut.properties.SPECA_DEFAULTS
-            self._playback_file = None
 
         self._dut = dut
         if not dut:
             return
 
         self.device_change.emit(dut)
-
-        self._state = SpecAState.from_json_object(state_json)
-        self.state_change.emit(
-            self._state,
-            list(state_json),  # assume everything has changed
-            )
-
-        if self._playback_file:
-            self.schedule_playback()
-        else:
-            self.start_capture()
-
-    def _playback_vrt(self, auto_rewind=True):
-        """
-        Return the next VRT packet in the playback file
-        """
-        data = None
-        try:
-            while True:
-                data = self._playback_reader.send(data)
-        except StopIteration:
-            pass
-        # FIXME: implement auto_rewind
-        return data
+        self._apply_complete_settings(state_json, bool(self._playback_file))
+        self.start_capture()
 
     def start_recording(self, filename=None):
         """
@@ -243,18 +222,63 @@ class SpecAController(QtCore.QObject):
             mode=self._state.rfe_mode())
 
     def start_capture(self):
-        if self._state.sweeping():
+        if self._playback_file:
+            self.schedule_playback()
+        elif self._state.sweeping():
             self.read_sweep()
         else:
             self.read_block()
 
     def schedule_playback(self):
-        self._playback_scheduler(self._playback_step)
+        if not self._playback_started:
+            QtCore.QTimer.singleShot(0, self._playback_step)
+            self._playback_started = True
 
     def _playback_step(self):
-        """
+        if not self._playback_file:
+            self._playback_started = False
+            return
 
+        QtCore.QTimer.singleShot(PLAYBACK_STEP_MSEC, self._playback_step)
+
+        while True:
+            pkt = self._playback_vrt()
+
+            if pkt.is_context_packet('Speca'):
+                state_json = pkt.fields['speca']
+                _apply_complete_settings(state_json, playback=True)
+                print state_json
+                continue
+
+            if pkt.is_context_packet():
+                self._playback_context.update(pkt.fields)
+                continue
+
+            break
+
+        # FIXME: render data
+
+
+    def _playback_vrt(self, auto_rewind=True):
         """
+        Return the next VRT packet in the playback file
+        """
+        reader = vrt_packet_reader(self._playback_file.read)
+        data = None
+        try:
+            while True:
+                data = reader.send(data)
+        except StopIteration:
+            pass
+        except ValueError:
+            return None
+
+        if data == '' and auto_rewind:
+            self._playback_file.seek(0)
+            data = self._playback_vrt(auto_rewind=False)
+
+        return None if data == '' else data
+
 
     def process_capture(self, fstart, fstop, data):
         # store usable bins before next call to capture_time_domain
@@ -349,6 +373,33 @@ class SpecAController(QtCore.QObject):
             return
         state = SpecAState(self._state, **kwargs)
         self._state_changed(state, kwargs.keys())
+
+    def _apply_complete_settings(self, state_json, playback):
+        """
+        Apply state setting changes from a complete JSON object. Used for
+        initial settings and applying settings from a recording.
+        """
+        if self._state:
+            old = self._state.to_json_object()
+            old['playback'] = self._state.playback
+        else:
+            old = {}
+
+        changed = [
+            key for key, value in state_json.iteritems()
+            if old.get(key) != value
+            ]
+
+        if 'device_settings' in changed:
+            changed.remove('device_settings')
+            oset = old.get('device_settings', {})
+            dset = state_json['device_settings']
+            changed.extend([
+                'device_settings.%s' % key for key, value in dset.iteritems()
+                if oset.get(key) != value])
+
+        state = SpecAState.from_json_object(state_json, playback)
+        self._state_changed(state, changed)
 
     def apply_dsp_options(self, **kwargs):
         """
