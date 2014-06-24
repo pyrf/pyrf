@@ -9,7 +9,6 @@ All the buttons and controls and their callback functions are built in
 and placed to left of the controls.
 """
 
-import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import math
@@ -59,49 +58,83 @@ class MainWindow(QtGui.QMainWindow):
     """
     The main window and menus
     """
-    def __init__(self, output_file=None):
+    def __init__(self, dut_address=None, playback_filename=None):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = screen.width() * 0.7
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
+        self.recording = False
         self.init_menu_bar()
         self.controller = SpecAController()
-        self.initUI()
+        self.initUI(dut_address, playback_filename)
 
-    def initUI(self):
-        name = None
-        if len(sys.argv) > 1:
-            name = sys.argv[1]
+    def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
 
         self.setWindowTitle('Spectrum Analyzer')
         self.setCentralWidget(self.mainPanel)
-        if name:
-            self.open_device(name, True)
+        if dut_address:
+            self.open_device(dut_address, True)
+        elif playback_filename:
+            self.start_playback(playback_filename)
         else:
             self.open_device_dialog()
 
     def init_menu_bar(self):
-        openAction = QtGui.QAction('&Open Device', self)
-        openAction.triggered.connect(self.open_device_dialog)
-        exitAction = QtGui.QAction('&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(self.close)
+        open_action = QtGui.QAction('&Open Device', self)
+        open_action.triggered.connect(self.open_device_dialog)
+        play_action = QtGui.QAction('&Playback Recording', self)
+        play_action.triggered.connect(self.open_playback_dialog)
+        self.record_action = QtGui.QAction('Start &Recording', self)
+        self.record_action.triggered.connect(self.start_recording)
+        self.record_action.setDisabled(True)
+        self.stop_action = QtGui.QAction('&Stop Recording', self)
+        self.stop_action.triggered.connect(self.stop_recording)
+        self.stop_action.setDisabled(True)
+        exit_action = QtGui.QAction('&Exit', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(self.close)
         menubar = self.menuBar()
-
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+        file_menu = menubar.addMenu('&File')
+        file_menu.addAction(open_action)
+        file_menu.addAction(play_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.record_action)
+        file_menu.addAction(self.stop_action)
+        file_menu.addSeparator()
+        file_menu.addAction(exit_action)
 
         self.dsp_menu = menubar.addMenu('&DSP Options')
 
+    def start_recording(self):
+        self.stop_action.setDisabled(False)
+        self.controller.start_recording()
+
+    def stop_recording(self):
+        self.stop_action.setDisabled(True)
+        self.controller.stop_recording()
+
     def open_device_dialog(self):
+        self.controller.set_device(None)
         self.discovery_widget = DiscoveryWidget(
             open_device_callback=self.open_device,
             name="Open Device")
         self.discovery_widget.show()
+
+    def open_playback_dialog(self):
+        self.controller.set_device(None)
+        playback_filename, file_type = QtGui.QFileDialog.getOpenFileName(self,
+            "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
+        if playback_filename:
+            self.start_playback(playback_filename)
+
+    def start_playback(self, playback_filename):
+        self.record_action.setDisabled(True)
+        self.stop_action.setDisabled(True)
+        self.controller.set_device(playback_filename=playback_filename)
+        self.show()
 
     @inlineCallbacks
     def open_device(self, name, ok):
@@ -122,14 +155,13 @@ class MainWindow(QtGui.QMainWindow):
                 dut.fw_version, dut.properties.MINIMUM_FW_VERSION))
             too_old.exec_()
         self.controller.set_device(dut)
-
+        self.record_action.setDisabled(False)
+        self.stop_action.setDisabled(True)
 
     def closeEvent(self, event):
-        if self.mainPanel.dut:
-            self.mainPanel.dut.abort()
-            self.mainPanel.dut.flush()
-            self.mainPanel.dut.reset()
         event.accept()
+        self.controller.stop_recording()
+        self.controller.set_device()
         self._get_reactor().stop()
 
     def _get_reactor(self):

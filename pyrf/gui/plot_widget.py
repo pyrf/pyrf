@@ -152,7 +152,6 @@ class Plot(object):
     def __init__(self, controller, layout):
     
         self.controller = controller
-        controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
@@ -228,9 +227,6 @@ class Plot(object):
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
         self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
-    
-    def device_changed(self, state, changed):
-        self.remove(trigger)
 
     def state_changed(self, state, changed):
         self.gui_state = state
