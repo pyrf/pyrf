@@ -218,6 +218,52 @@ def _find_peak(layout):
         peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
         marker.data_index = min(indexes_of_window) + peak_index
 
+def _find_right_peak(layout):
+    """
+    move the selected marker to the next peak on the right
+    """
+    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+
+    # enable the marker if it is not already enabled
+    if not marker.enabled:
+        layout._marker_check.click()
+
+    # retrieve the min/max x-axis of the current window
+    window_freq = layout._plot.view_box.viewRange()[0]
+    indexes_of_window = []
+
+    for freq in layout.xdata:
+        if freq < max(window_freq) and freq > min(window_freq):
+            indexes_of_window.append(np.where(layout.xdata == freq)[0])
+
+    if len(indexes_of_window) > 0:
+        trace = layout._plot.traces[marker.trace_index]
+        peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
+        marker.data_index = min(indexes_of_window) + peak_index
+
+def _find_left_peak(layout):
+    """
+    move the selected marker to the next peak on the left
+    """
+    marker = layout._plot.markers[layout._marker_tab.currentIndex()]
+
+    # enable the marker if it is not already enabled
+    if not marker.enabled:
+        layout._marker_check.click()
+
+    # retrieve the min/max x-axis of the current window
+    window_freq = layout._plot.view_box.viewRange()[0]
+    indexes_of_window = []
+
+    for freq in layout.xdata:
+        if freq < max(window_freq) and freq > min(window_freq):
+            indexes_of_window.append(np.where(layout.xdata == freq)[0])
+
+    if len(indexes_of_window) > 0:
+        trace = layout._plot.traces[marker.trace_index]
+        peak_index = util.find_max_index(trace.data[min(indexes_of_window):max(indexes_of_window)])
+        marker.data_index = min(indexes_of_window) + peak_index
+
 def _change_ref_level(layout):
     """
     change the ref level (maximum of the y-axis) of the fft plot

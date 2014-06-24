@@ -407,8 +407,9 @@ class MainPanel(QtGui.QWidget):
         second_row.addWidget(marker_check)
 
         third_row = QtGui.QHBoxLayout()
+        third_row.addWidget(self._peak_left())
         third_row.addWidget(self._peak_control())
-        third_row.addWidget(self._center_control())
+        third_row.addWidget(self._peak_right())
 
         fourth_row = QtGui.QHBoxLayout()
         ref_level, ref_label, min_level, min_label = self._ref_controls()
@@ -420,6 +421,7 @@ class MainPanel(QtGui.QWidget):
 
         fifth_row = QtGui.QHBoxLayout()
         fifth_row.addWidget(self._cf_marker())
+        fifth_row.addWidget(self._center_control())
 
         plot_controls_layout.addLayout(first_row)
         plot_controls_layout.addLayout(second_row)
@@ -452,7 +454,23 @@ class MainPanel(QtGui.QWidget):
         self._peak = peak
         self.control_widgets.append(self._peak)
         return peak
-                
+
+    def _peak_right(self):
+        peak = QtGui.QPushButton('Peak Right')
+        peak.setToolTip("Find peak right of current peak")
+        peak.clicked.connect(lambda: cu._find_right_peak(self))
+        self._peak = peak
+        self.control_widgets.append(self._peak)
+        return peak
+
+    def _peak_left(self):
+        peak = QtGui.QPushButton('Peak Left')
+        peak.setToolTip("Find peak left of current peak")
+        peak.clicked.connect(lambda: cu._find_left_peak(self))
+        self._peak = peak
+        self.control_widgets.append(self._peak)
+        return peak
+
     def _center_control(self):
         center = QtGui.QPushButton('Recenter')
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum") 
