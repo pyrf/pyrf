@@ -9,6 +9,7 @@ from pyrf.gui import gui_config
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.playback import Playback
+from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop
 
 logger = logging.getLogger(__name__)
 
@@ -244,19 +245,46 @@ class SpecAController(QtCore.QObject):
         while True:
             pkt = self._playback_vrt()
 
-            if pkt.is_context_packet('Speca'):
-                state_json = pkt.fields['speca']
-                _apply_complete_settings(state_json, playback=True)
-                print state_json
-                continue
-
             if pkt.is_context_packet():
-                self._playback_context.update(pkt.fields)
+                if 'speca' in pkt.fields:
+                    state_json = pkt.fields['speca']
+                    self._apply_complete_settings(state_json, playback=True)
+                else:
+                    self._playback_context.update(pkt.fields)
                 continue
 
             break
 
-        # FIXME: render data
+        usable_bins = compute_usable_bins(
+            self._dut.properties,
+            self._state.rfe_mode(),
+            len(pkt.data),
+            self._state.decimation,
+            self._state.fshift)
+
+        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            self._dut.properties,
+            self._state.rfe_mode(),
+            len(pkt.data),
+            self._state.decimation,
+            self._state.center,
+            pkt.spec_inv,
+            usable_bins)
+
+        pow_data = compute_fft(
+            self._dut,
+            pkt,
+            self._playback_context,
+            **self.dsp_options)
+
+        self.capture_receive.emit(
+            self._state,
+            fstart,
+            fstop,
+            pkt,
+            pow_data,
+            usable_bins,
+            None)
 
 
     def _playback_vrt(self, auto_rewind=True):

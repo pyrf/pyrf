@@ -200,7 +200,7 @@ class ContextPacket(object):
 
     def is_context_packet(self, ptype=None):
         """
-        :param ptype: "Receiver", "Digitizer", "Speca" or None for any
+        :param ptype: "Receiver", "Digitizer" or None for any
         packet type
 
         :returns: True if this packet matches the type passed
@@ -211,8 +211,6 @@ class ContextPacket(object):
             return self.ptype == VRTRECEIVER
         elif ptype == "Digitizer":
             return self.ptype == VRTDIGITIZER
-        elif ptype == "Speca":
-            return self.ptype == VRTSPECA
 
         return False
 

@@ -1,5 +1,7 @@
 import math
 
+from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop
+
 
 class CaptureDeviceError(Exception):
     pass
@@ -90,8 +92,6 @@ class CaptureDevice(object):
             self._configure_device_flag = False
 
         full_bw = prop.FULL_BW[rfe_mode]
-        usable_bw = prop.USABLE_BW[rfe_mode]
-        pass_band_center = prop.PASS_BAND_CENTER[rfe_mode]
 
         self.real_device.abort()
         self.real_device.flush()
@@ -102,30 +102,9 @@ class CaptureDevice(object):
         points = 2 ** math.ceil(math.log(points, 2))
 
         fshift = self._device_set.get('fshift', 0)
-        pass_band_center += fshift / full_bw
-        start0 = int((pass_band_center - float(usable_bw) / full_bw / 2)
-            * points)
-        if rfe_mode != 'ZIF':
-            run0 = int(points * float(usable_bw) / full_bw)
-            self.usable_bins = [(start0, run0)]
-        else:
-            dc_offset_bw = prop.DC_OFFSET_BW
-            run0 = int(points * (float(usable_bw) - dc_offset_bw)/2 / full_bw)
-            start1 = int(math.ceil((pass_band_center + float(dc_offset_bw)
-                /2 / full_bw) * points))
-            run1 = run0
-            self.usable_bins = [(start0, run0), (start1, run1)]
-        for i, (start, run) in enumerate(self.usable_bins):
-            if start < 0:
-                run += start
-                start = 0
-                self.usable_bins[i] = (start, run)
-        if rfe_mode in ('SH', 'HDR', 'SHN'):
-            # we're getting only 1/2 the bins
-            self.usable_bins = [(x/2, y/2) for x, y in self.usable_bins]
-        # XXX usable bins for HDR aren't correct yet, so remove them
-        if rfe_mode == 'HDR':
-            self.usable_bins = [(0, points)]
+        decimation = self._device_set.get('decimation', 1)
+        self.usable_bins = compute_usable_bins(prop, rfe_mode, points,
+            decimation, fshift)
 
         if self.async_callback:
             self.real_device.set_async_callback(self.read_data)
@@ -147,24 +126,22 @@ class CaptureDevice(object):
             'data_pkt' : packet}
 
         rfe_mode = self._device_set['rfe_mode']
+        # FIXME: add a "can I tune in this mode?" device property instead
+        # of listing modes here
         if rfe_mode in ('DD', 'IQIN'):
             freq = self.real_device.properties.MIN_TUNABLE[rfe_mode]
         else:
             freq = self._device_set['freq']
-        full_bw = self.real_device.properties.FULL_BW[rfe_mode] / self._device_set['decimation']
-        pass_band_center = self.real_device.properties.PASS_BAND_CENTER[rfe_mode]
+        decimation = self._device_set.get('decimation', 1)
 
-        offset = full_bw * (0.5 - pass_band_center)
-        if packet.spec_inv:
-            offset = -offset
-        fstart = freq - full_bw / 2.0 + offset
-        fstop = freq + full_bw / 2.0 + offset
-
-        # XXX here we "know" that bins = samples/2
-        if packet.spec_inv and rfe_mode in ('SH', 'SHN'):
-            [(start, run)] = self.usable_bins
-            start = len(packet.data) / 2 - start - run
-            self.usable_bins = [(start, run)]
+        self.usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            self.real_device.properties,
+            rfe_mode,
+            len(packet.data),
+            decimation,
+            freq,
+            packet.spec_inv,
+            self.usable_bins)
 
         if self.async_callback:
             self.async_callback(fstart, fstop, data)
