@@ -109,7 +109,7 @@ def blank_trace(layout):
     disable/enable the selected trace
     """
     if layout.trace_group.trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
-        layout._trace_attr['store'].click()
+        layout.trace_group.trace_attr['store'].click()
     
     layout.trace_group.trace_attr['store'].setEnabled(False)
     trace = layout._plot.traces[layout.trace_group.trace_tab.currentIndex()]
