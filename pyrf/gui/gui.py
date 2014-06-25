@@ -99,10 +99,10 @@ class MainWindow(QtGui.QMainWindow):
         menubar = self.menuBar()
         file_menu = menubar.addMenu('&File')
         file_menu.addAction(open_action)
-        file_menu.addAction(play_action)
+        # file_menu.addAction(play_action)
         file_menu.addSeparator()
-        file_menu.addAction(self.record_action)
-        file_menu.addAction(self.stop_action)
+        # file_menu.addAction(self.record_action)
+        # file_menu.addAction(self.stop_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
