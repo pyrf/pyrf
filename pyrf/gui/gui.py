@@ -496,7 +496,7 @@ class MainPanel(QtGui.QWidget):
         return center
 
     def _cf_marker(self):
-        cf_marker = QtGui.QPushButton('Center Frequency to Marker')
+        cf_marker = QtGui.QPushButton('Marker to Center Frequency')
         cf_marker.setToolTip("Center the frequency on the current marker") 
 
         def cf_marker_click():
