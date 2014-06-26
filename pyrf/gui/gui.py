@@ -117,7 +117,6 @@ class MainWindow(QtGui.QMainWindow):
         self.controller.stop_recording()
 
     def open_device_dialog(self):
-        self.controller.set_device(None)
         self.discovery_widget = DiscoveryWidget(
             open_device_callback=self.open_device,
             name="Open Device")
@@ -515,7 +514,7 @@ class MainPanel(QtGui.QWidget):
         return center
 
     def _cf_marker(self):
-        cf_marker = QtGui.QPushButton('Center Frequency to Marker')
+        cf_marker = QtGui.QPushButton('Marker to Center Frequency')
         cf_marker.setToolTip("Center the frequency on the current marker") 
 
         def cf_marker_click():

@@ -218,7 +218,8 @@ class DeviceControls(QtGui.QGroupBox):
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # add sweep SH mode
-                self._mode.insertItem(0, 'Auto')
+                if not self._mode.itemText(0) == 'Auto':
+                    self._mode.insertItem(0, 'Auto')
 
                 # show digitizer controls
                 self._dec_box.show()
