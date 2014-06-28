@@ -40,6 +40,14 @@ from trace_controls import TraceControls
 PLOT_YMIN = -140
 PLOT_YMAX = 0
 
+DSP_OPTIONS = [
+    ('&IQ Offset Correction', 'correct_phase', True),
+    ('&DC Offset', 'hide_differential_dc_offset', True),
+    ('&Convert to dBm', 'convert_to_dbm', True),
+    ('Apply &Spectral Inversion', 'apply_spec_inv', True),
+    ('Apply &Hanning Window', 'apply_window', True),
+    ]
+
 # FIXME: we shouldn't be calculating fft in this module
 ZIF_BITS = 2**13
 CONST_POINTS = 512
@@ -66,8 +74,8 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_HEIGHT = screen.height() * 0.6
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
-        self.init_menu_bar()
         self.controller = SpecAController()
+        self.init_menu_bar()
         self.initUI(dut_address, playback_filename)
 
     def initUI(self, dut_address, playback_filename):
@@ -107,47 +115,19 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(exit_action)
 
         self.dsp_menu = menubar.addMenu('&DSP Options')
-        # correct phase menu
-        cp_action = QtGui.QAction('&IQ Offset Correction', self)
-        cp_action.setCheckable(True)
-        cp_action.toggle()
-        self.dsp_menu.addAction(cp_action)
-        cp_action.triggered.connect(lambda: self.controller.apply_dsp_options(correct_phase=cp_action.isChecked()))
-
-        #dc offset correction
-        dc_action = QtGui.QAction('&DC Offset', self)
-        dc_action.setCheckable(True)
-        dc_action.toggle()
-        self.dsp_menu.addAction(dc_action)
-        dc_action.triggered.connect(lambda: self.controller.apply_dsp_options(hide_differential_dc_offset=dc_action.isChecked()))
-
-        #dbm conversion
-        dbm_action = QtGui.QAction('&Convert to dBm', self)
-        dbm_action.setCheckable(True)
-        dbm_action.toggle()
-        self.dsp_menu.addAction(dbm_action)
-        dbm_action.triggered.connect(lambda: self.controller.apply_dsp_options(convert_to_dbm=dbm_action.isChecked()))
-
-        # apply reference level
-        ref_Action = QtGui.QAction('&Apply Reference', self)
-        ref_Action.setCheckable(True)
-        ref_Action.toggle()
-        self.dsp_menu.addAction(ref_Action)
-        ref_Action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_reference=ref_Action.isChecked()))
-
-        # apply spectral inversion
-        inv_action = QtGui.QAction('&Apply Spectral Inversion', self)
-        inv_action.setCheckable(True)
-        inv_action.toggle()
-        self.dsp_menu.addAction(inv_action)
-        inv_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_spec_inv=inv_action.isChecked()))
-
-        # apply hanning window
-        wind_action = QtGui.QAction('&Apply Hanning Window', self)
-        wind_action.setCheckable(True)
-        wind_action.toggle()
-        self.dsp_menu.addAction(wind_action)
-        wind_action.triggered.connect(lambda: self.controller.apply_dsp_options(apply_window=wind_action.isChecked()))
+        dsp_options = {}
+        for text, option, default in DSP_OPTIONS:
+            action = QtGui.QAction(text, self)
+            action.setCheckable(True)
+            if default:
+                action.toggle()
+            self.dsp_menu.addAction(action)
+            def callback(option=option, action=action):
+                self.controller.apply_dsp_options(
+                    **{option: action.isChecked()})
+            action.triggered.connect(callback)
+            dsp_options[option] = default
+        self.controller.apply_dsp_options(**dsp_options)
 
 
     def start_recording(self):

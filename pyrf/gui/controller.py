@@ -117,6 +117,11 @@ class SpecAController(QtCore.QObject):
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
 
+    def __init__(self):
+        super(SpecAController, self).__init__()
+        self.dsp_options = {}
+
+
     def set_device(self, dut=None, playback_filename=None):
         """
         Detach any currenly attached device and stop playback then
@@ -129,14 +134,6 @@ class SpecAController(QtCore.QObject):
         if self._playback_file:
             self._playback_file.close()
             self._playback_file = None
-
-        # DSP options
-        self.dsp_options = {"correct_phase" : True,
-                            "hide_differential_dc_offset" : True,
-                            "convert_to_dbm" : True,
-                            "apply_reference" : True,
-                            "apply_spec_inv" : True,
-                            "apply_window" : True}
 
         if self._dut:
             self._dut.disconnect()
