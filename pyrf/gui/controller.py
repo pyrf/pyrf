@@ -116,10 +116,12 @@ class SpecAController(QtCore.QObject):
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
+    developer_options_change = QtCore.Signal(dict, list)
 
     def __init__(self):
         super(SpecAController, self).__init__()
         self.dsp_options = {}
+        self._developer_options = {}
 
 
     def set_device(self, dut=None, playback_filename=None):
@@ -433,3 +435,11 @@ class SpecAController(QtCore.QObject):
         :param kwargs: keyword arguments of the dsp options
         """
         self.dsp_options.update(kwargs)
+
+    def apply_developer_options(self, **kwargs):
+        """
+
+        """
+        self._developer_options.update(kwargs)
+        self.developer_options_change.emit(self._developer_options,
+            kwargs.keys())

@@ -48,6 +48,12 @@ DSP_OPTIONS = [
     ('Apply &Hanning Window', 'apply_window', True),
     ]
 
+DEVELOPER_OPTIONS = [
+    ('&Manual RFE Mode Selection', 'manual_rfe_mode', False),
+    ('Show &Attenuated Edges', 'show_attenuated_edges', False),
+    ('Show &Sweep Steps', 'show_sweep_steps', False),
+    ]
+
 # FIXME: we shouldn't be calculating fft in this module
 ZIF_BITS = 2**13
 CONST_POINTS = 512
@@ -114,21 +120,28 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
-        self.dsp_menu = menubar.addMenu('&DSP Options')
-        dsp_options = {}
-        for text, option, default in DSP_OPTIONS:
+        def checkbox_action(apply_fn, text, option, default):
             action = QtGui.QAction(text, self)
             action.setCheckable(True)
             if default:
                 action.toggle()
-            self.dsp_menu.addAction(action)
-            def callback(option=option, action=action):
-                self.controller.apply_dsp_options(
-                    **{option: action.isChecked()})
-            action.triggered.connect(callback)
-            dsp_options[option] = default
-        self.controller.apply_dsp_options(**dsp_options)
+            action.triggered.connect(lambda:
+                apply_fn(**{option: action.isChecked()}))
+            return action
 
+        self.dsp_menu = menubar.addMenu('&DSP Options')
+        for text, option, default in DSP_OPTIONS:
+            self.dsp_menu.addAction(checkbox_action(
+                self.controller.apply_dsp_options, text, option, default))
+        self.controller.apply_dsp_options(**dict((option, default)
+            for text, option, default in DSP_OPTIONS))
+
+        self.developer_menu = menubar.addMenu('D&eveloper Options')
+        for text, option, default in DEVELOPER_OPTIONS:
+            self.developer_menu.addAction(checkbox_action(
+                self.controller.apply_developer_options, text, option, default))
+        self.controller.apply_developer_options(**dict((option, default)
+            for text, option, default in DEVELOPER_OPTIONS))
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
