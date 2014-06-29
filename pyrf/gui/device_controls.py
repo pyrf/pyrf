@@ -17,6 +17,7 @@ class DeviceControls(QtGui.QGroupBox):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        self.connected = False
 
         self.setTitle(name)
 
@@ -110,7 +111,8 @@ class DeviceControls(QtGui.QGroupBox):
             if input_mode == 'Auto':  # FIXME: too 5k-specific
                 input_mode = 'Sweep SH'
 
-            self.controller.apply_settings(mode=input_mode)
+            if self.connected:
+                self.controller.apply_settings(mode=input_mode)
 
         def new_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
@@ -162,12 +164,14 @@ class DeviceControls(QtGui.QGroupBox):
             self._iq_output_box.hide()
             self._pll_box.hide()
 
+        self.connected = False
         # Sweep SH mode is the default mode for the WSA5K
         if self.dut_prop.model.startswith('WSA5000'):
             self._mode.addItem('Auto')
 
         for m in self.dut_prop.RFE_MODES:
             self._mode.addItem(m)
+        self.connected = True
 
 
     def state_changed(self, state, changed):
