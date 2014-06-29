@@ -61,7 +61,7 @@ class WSA4000Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
-    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
+    SPECA_MODES = ['Sweep ZIF']
 
 
 class WSA5000_220Properties(object):
@@ -176,7 +176,7 @@ class WSA5000_220Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
-    SPECA_MODES = ['Sweep SH', 'Sweep ZIF left band', 'Sweep ZIF']
+    SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
