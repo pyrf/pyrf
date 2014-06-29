@@ -49,7 +49,6 @@ DSP_OPTIONS = [
     ]
 
 DEVELOPER_OPTIONS = [
-    ('&Manual RFE Mode Selection', 'manual_rfe_mode', False),
     ('Show &Attenuated Edges', 'show_attenuated_edges', False),
     ('Show &Sweep Steps', 'show_sweep_steps', False),
     ]

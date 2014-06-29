@@ -61,6 +61,7 @@ class WSA4000Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
+    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
 
 
 class WSA5000_220Properties(object):
@@ -175,6 +176,7 @@ class WSA5000_220Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
+    SPECA_MODES = ['Sweep SH', 'Sweep ZIF left band', 'Sweep ZIF']
 
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
@@ -194,6 +196,7 @@ class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
+    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'

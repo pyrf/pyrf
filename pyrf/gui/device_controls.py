@@ -105,14 +105,15 @@ class DeviceControls(QtGui.QGroupBox):
             self.controller.apply_device_settings(iq_output_path = str(self._iq_output_box.currentText().split()[-1]))
 
         def new_input_mode():
+            if not self.connected:
+                return
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
-            if input_mode == 'Auto':  # FIXME: too 5k-specific
-                input_mode = 'Sweep SH'
+            if input_mode == 'Auto':
+                input_mode = self.dut_prop.SPECA_MODES[0]
 
-            if self.connected:
-                self.controller.apply_settings(mode=input_mode)
+            self.controller.apply_settings(mode=input_mode)
 
         def new_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
@@ -145,10 +146,6 @@ class DeviceControls(QtGui.QGroupBox):
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
-        # remove all RFE modes
-        while self._mode.count():
-            self._mode.removeItem(0)
-
         # FIXME: remove device-specific code, use device properties instead
         if self.dut_prop.model.startswith('WSA5000'):
             self._antenna_box.hide()
@@ -164,13 +161,22 @@ class DeviceControls(QtGui.QGroupBox):
             self._iq_output_box.hide()
             self._pll_box.hide()
 
-        self.connected = False
-        # Sweep SH mode is the default mode for the WSA5K
-        if self.dut_prop.model.startswith('WSA5000'):
-            self._mode.addItem('Auto')
+        self._update_modes()
 
+
+    def _update_modes(self):
+        # prevent mode list changes from sending updates
+        self.connected = False
+
+        while self._mode.count():
+            self._mode.removeItem(0)
+
+        self._mode.addItem("Auto")
+        for m in self.dut_prop.SPECA_MODES:
+            self._mode.addItem(m)
         for m in self.dut_prop.RFE_MODES:
             self._mode.addItem(m)
+
         self.connected = True
 
 
