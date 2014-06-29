@@ -120,7 +120,7 @@ class SpecAController(QtCore.QObject):
 
     def __init__(self):
         super(SpecAController, self).__init__()
-        self.dsp_options = {}
+        self._dsp_options = {}
         self._developer_options = {}
 
 
@@ -274,7 +274,7 @@ class SpecAController(QtCore.QObject):
             self._dut,
             pkt,
             self._playback_context,
-            **self.dsp_options)
+            **self._dsp_options)
 
         self.capture_receive.emit(
             self._state,
@@ -320,16 +320,12 @@ class SpecAController(QtCore.QObject):
             if 'reflevel' in data['context_pkt']:
                 self._ref_level = data['context_pkt']['reflevel']
 
-            pow_data = compute_fft(self._dut,
-                                   data['data_pkt'],
-                                   data['context_pkt'],
-                                   correct_phase = self.dsp_options["correct_phase"],
-                                   hide_differential_dc_offset = self.dsp_options["hide_differential_dc_offset"],
-                                   convert_to_dbm = self.dsp_options["convert_to_dbm"],
-                                   apply_window = self.dsp_options["apply_window"],
-                                   apply_spec_inv = self.dsp_options["apply_spec_inv"],
-                                   apply_reference = self.dsp_options["apply_reference"],
-                                    ref = self._ref_level)
+            pow_data = compute_fft(
+                self._dut,
+                data['data_pkt'],
+                data['context_pkt'],
+                ref=self._ref_level,
+                **self._dsp_options)
 
             self.capture_receive.emit(
                 self._state,
@@ -434,7 +430,7 @@ class SpecAController(QtCore.QObject):
 
         :param kwargs: keyword arguments of the dsp options
         """
-        self.dsp_options.update(kwargs)
+        self._dsp_options.update(kwargs)
 
     def apply_developer_options(self, **kwargs):
         """
