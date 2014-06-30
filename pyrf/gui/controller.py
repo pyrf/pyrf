@@ -329,6 +329,8 @@ class SpecAController(QtCore.QObject):
             key for key, value in state_json.iteritems()
             if old.get(key) != value
             ]
+        if old.get('playback') != playback:
+            changed.append('playback')
 
         if 'device_settings' in changed:
             changed.remove('device_settings')

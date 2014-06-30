@@ -164,18 +164,27 @@ class DeviceControls(QtGui.QGroupBox):
         self._update_modes()
 
 
-    def _update_modes(self):
+    def _update_modes(self, single_mode=None):
+        """
+        :param single_mode: if set remove all modes except this one
+            and disable the dropdown (used for playback)
+        """
         # prevent mode list changes from sending updates
         self.connected = False
 
         while self._mode.count():
             self._mode.removeItem(0)
 
-        self._mode.addItem("Auto")
-        for m in self.dut_prop.SPECA_MODES:
-            self._mode.addItem(m)
-        for m in self.dut_prop.RFE_MODES:
-            self._mode.addItem(m)
+        if single_mode:
+            self._mode.addItem(single_mode)
+            self._mode.setEnabled(False)
+        else:
+            self._mode.addItem("Auto")
+            for m in self.dut_prop.SPECA_MODES:
+                self._mode.addItem(m)
+            for m in self.dut_prop.RFE_MODES:
+                self._mode.addItem(m)
+            self._mode.setEnabled(True)
 
         self.connected = True
 
@@ -183,11 +192,26 @@ class DeviceControls(QtGui.QGroupBox):
     def state_changed(self, state, changed):
         self.gui_state = state
 
+        if 'playback' in changed:
+            if state.playback:
+                self._update_modes(state.mode)
+                self._level_trigger.setEnabled(False)
+                self._dec_box.setEnabled(False)
+                self._freq_shift_edit.setEnabled(False)
+            else:
+                self._update_modes()
+                self._level_trigger.setEnabled(
+                    state.mode in self.dut_prop.LEVEL_TRIGGER_RFE_MODES)
+                decimation_available = self.dut_prop.MIN_DECIMATION[
+                    state.rfe_mode()] is not None
+                self._dec_box.setEnabled(decimaton_available)
+                self._freq_shift_edit.setEnabled(decimation_available)
+
         if 'center' in changed:
             if self._level_trigger.isChecked():
                 self._level_trigger.click()
         if 'mode' in changed:
-            if state.rfe_mode() in ['HDR', 'DD', 'IQIN']:
+            if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self._level_trigger.setEnabled(False)
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
@@ -197,13 +221,12 @@ class DeviceControls(QtGui.QGroupBox):
             if state.sweeping():
                 self._dec_box.setEnabled(False)
                 self._freq_shift_edit.setEnabled(False)
-            elif state.mode == 'HDR':
-                self._dec_box.setEnabled(False)
-                self._freq_shift_edit.setEnabled(False)
-            else:
-                self._dec_box.setEnabled(True)
-                self._freq_shift_edit.setEnabled(True)
+            decimation_available = self.dut_prop.MIN_DECIMATION[
+                state.rfe_mode()] is not None
+            self._dec_box.setEnabled(decimation_available)
+            self._freq_shift_edit.setEnabled(decimation_available)
 
+            # FIXME: calculate values from FULL_BW[rfe_mode] instead
             if state.rfe_mode() == 'HDR':
                 self._rbw_use_hdr_values()
             else:
