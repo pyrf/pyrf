@@ -3,6 +3,8 @@ from PySide import QtGui
 from pyrf.units import M
 from pyrf.gui import colors
 
+SPIN_BOX_HEIGHT = 40
+
 
 class FrequencyControls(QtGui.QGroupBox):
 
@@ -19,28 +21,28 @@ class FrequencyControls(QtGui.QGroupBox):
 
         grid = QtGui.QGridLayout()
 
-        fstart_bt, fstart_txt = self._fstart_controls()
-        grid.addWidget(fstart_bt, 0, 0, 1, 1)
-        grid.addWidget(fstart_txt, 0, 1, 1, 1)
+        cfreq_bt, cfreq_txt = self._center_freq()
+        grid.addWidget(cfreq_bt, 0, 0, 1, 1)
+        grid.addWidget(cfreq_txt, 0, 1, 1, 1)
         grid.addWidget(QtGui.QLabel('MHz'), 0, 2, 1, 1)
 
-        cfreq_bt, cfreq_txt = self._center_freq()
-        grid.addWidget(cfreq_bt, 1, 0, 1, 1)
-        grid.addWidget(cfreq_txt, 1, 1, 1, 1)
+        bw_bt, bw_txt = self._bw_controls()
+        grid.addWidget(bw_bt, 0, 3, 1, 1)
+        grid.addWidget(bw_txt, 0, 4, 1, 1)
+        grid.addWidget(QtGui.QLabel('MHz'), 0, 5, 1, 1)
+
+        fstart_bt, fstart_txt = self._fstart_controls()
+        grid.addWidget(fstart_bt, 1, 0, 1, 1)
+        grid.addWidget(fstart_txt, 1, 1, 1, 1)
         grid.addWidget(QtGui.QLabel('MHz'), 1, 2, 1, 1)
 
-        bw_bt, bw_txt = self._bw_controls()
-        grid.addWidget(bw_bt, 2, 0, 1, 1)
-        grid.addWidget(bw_txt, 2, 1, 1, 1)
-        grid.addWidget(QtGui.QLabel('MHz'), 2, 2, 1, 1)
-
         fstop_bt, fstop_txt = self._fstop_controls()
-        grid.addWidget(fstop_bt, 3, 0, 1, 1)
-        grid.addWidget(fstop_txt, 3, 1, 1, 1)
-        grid.addWidget(QtGui.QLabel('MHz'), 3, 2, 1, 1)
+        grid.addWidget(fstop_bt, 1, 3, 1, 1)
+        grid.addWidget(fstop_txt, 1, 4, 1, 1)
+        grid.addWidget(QtGui.QLabel('MHz'), 1, 5, 1, 1)
 
         freq_inc_steps = self._freq_incr()
-        grid.addWidget(freq_inc_steps, 4, 1, 1, 1)
+        grid.addWidget(freq_inc_steps, 2, 1, 1, 4)
 
         self.setLayout(grid)
 
@@ -128,6 +130,7 @@ class FrequencyControls(QtGui.QGroupBox):
         cfreq = QtGui.QLabel('Center')
         self._cfreq = cfreq
         freq_edit = QtGui.QDoubleSpinBox()
+        freq_edit.setMinimumHeight(SPIN_BOX_HEIGHT)
         self._freq_edit = freq_edit
         def freq_change():
             self.update_freq()
@@ -140,6 +143,7 @@ class FrequencyControls(QtGui.QGroupBox):
         bw = QtGui.QLabel('Span')
         self._bw = bw
         bw_edit = QtGui.QDoubleSpinBox()
+        bw_edit.setMinimumHeight(SPIN_BOX_HEIGHT)
         def freq_change():
             self.update_freq()
             self.update_freq_edit()
@@ -151,6 +155,7 @@ class FrequencyControls(QtGui.QGroupBox):
         fstart = QtGui.QLabel('Start')
         self._fstart = fstart
         freq = QtGui.QDoubleSpinBox()
+        freq.setMinimumHeight(SPIN_BOX_HEIGHT)
         def freq_change():
             self.update_freq()
             self.update_freq_edit()
@@ -163,6 +168,7 @@ class FrequencyControls(QtGui.QGroupBox):
         fstop = QtGui.QLabel('Stop')
         self._fstop = fstop
         freq = QtGui.QDoubleSpinBox()
+        freq.setMinimumHeight(SPIN_BOX_HEIGHT)
         def freq_change():
             self.update_freq()
             self.update_freq_edit()
