@@ -309,11 +309,7 @@ def _change_min_level(layout):
     layout.plot_state.min_level = min
     _center_plot_view(layout)
 
-hotkey_dict = {'1': FrequencyControls.select_fstart,
-                '2': FrequencyControls.select_center,
-                '3': FrequencyControls.select_bw,
-                '4': FrequencyControls.select_fstop,
-                'UP KEY': _up_arrow_key,
+hotkey_dict = { 'UP KEY': _up_arrow_key,
                 'DOWN KEY': _down_arrow_key,
                 'RIGHT KEY': _right_arrow_key,
                 'LEFT KEY': _left_arrow_key,

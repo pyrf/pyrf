@@ -111,10 +111,8 @@ class FrequencyControls(QtGui.QGroupBox):
             self.update_freq()
 
     def _center_freq(self):
-        cfreq = QtGui.QPushButton('Center')
-        cfreq.setToolTip("[2]\nTune the center frequency") 
+        cfreq = QtGui.QLabel('Center')
         self._cfreq = cfreq
-        cfreq.clicked.connect(self.select_center)
         freq_edit = QtGui.QLineEdit()
         self._freq_edit = freq_edit
         def freq_change():
@@ -155,10 +153,8 @@ class FrequencyControls(QtGui.QGroupBox):
         return  steps, freq_plus, freq_minus
 
     def _bw_controls(self):
-        bw = QtGui.QPushButton('Span')
-        bw.setToolTip("[3]\nChange the bandwidth of the current plot")
+        bw = QtGui.QLabel('Span')
         self._bw = bw
-        bw.clicked.connect(self.select_bw)
         bw_edit = QtGui.QLineEdit()
         def freq_change():
             self.select_bw()
@@ -169,10 +165,8 @@ class FrequencyControls(QtGui.QGroupBox):
         return bw, bw_edit
 
     def _fstart_controls(self):
-        fstart = QtGui.QPushButton('Start')
-        fstart.setToolTip("[1]\nTune the start frequency")
+        fstart = QtGui.QLabel('Start')
         self._fstart = fstart
-        fstart.clicked.connect(self.select_fstart)
         freq = QtGui.QLineEdit()
         def freq_change():
             self.select_fstart()
@@ -184,10 +178,8 @@ class FrequencyControls(QtGui.QGroupBox):
         return fstart, freq
 
     def _fstop_controls(self):
-        fstop = QtGui.QPushButton('Stop')
-        fstop.setToolTip("[4]Tune the stop frequency")
+        fstop = QtGui.QLabel('Stop')
         self._fstop = fstop
-        fstop.clicked.connect(self.select_fstop)
         freq = QtGui.QLineEdit()
         def freq_change():
             self.select_fstop()
@@ -288,50 +280,6 @@ class FrequencyControls(QtGui.QGroupBox):
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
-
-    def select_fstart(self):
-        """
-        changes the color of the fstart button to orange and all others to default
-        """
-        self._fstart.setStyleSheet(
-            'background-color: %s; color: white;' % colors.ORANGE)
-        self._cfreq.setStyleSheet("")
-        self._fstop.setStyleSheet("")
-        self._bw.setStyleSheet("")
-        self.freq_sel = 'FSTART'
-
-    def select_center(self):
-        """
-        changes the color of the fcenter button to orange and all others to default
-        """
-        self._cfreq.setStyleSheet(
-            'background-color: %s; color: white;' % colors.ORANGE)
-        self._fstart.setStyleSheet("")
-        self._fstop.setStyleSheet("")
-        self._bw.setStyleSheet("")
-        self.freq_sel = 'CENT'
-
-    def select_bw(self):
-        """
-        changes the color of the span button to orange and all others to default
-        """
-        self._bw.setStyleSheet(
-            'background-color: %s; color: white;' % colors.ORANGE)
-        self._fstart.setStyleSheet("")
-        self._cfreq.setStyleSheet("")
-        self._fstop.setStyleSheet("")
-        self.freq_sel = 'BW'
-
-    def select_fstop(self):
-        """
-        changes the color of the fstop button to orange and all others to default
-        """
-        self._fstop.setStyleSheet(
-            'background-color: %s; color: white;' % colors.ORANGE)
-        self._fstart.setStyleSheet("")
-        self._cfreq.setStyleSheet("")
-        self._bw.setStyleSheet("")
-        self.freq_sel = 'FSTOP'
 
     def enable(self):
         self._bw.setEnabled(True)
