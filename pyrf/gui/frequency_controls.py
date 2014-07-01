@@ -17,50 +17,34 @@ class FrequencyControls(QtGui.QGroupBox):
 
         self.freq_sel = 'CENT'
 
-        freq_layout = QtGui.QVBoxLayout()
+        grid = QtGui.QGridLayout()
 
-        fstart_hbox = QtGui.QHBoxLayout()
         fstart_bt, fstart_txt = self._fstart_controls()
-        fstart_hbox.addWidget(fstart_bt)
-        fstart_hbox.addWidget(fstart_txt)
-        fstart_hbox.addWidget(QtGui.QLabel('MHz'))
-        self._fstart_hbox = fstart_hbox
+        grid.addWidget(fstart_bt, 0, 0, 1, 1)
+        grid.addWidget(fstart_txt, 0, 1, 1, 1)
+        grid.addWidget(QtGui.QLabel('MHz'), 0, 2, 1, 1)
 
-        cfreq_hbox = QtGui.QHBoxLayout()
         cfreq_bt, cfreq_txt = self._center_freq()
-        cfreq_hbox.addWidget(cfreq_bt)
-        cfreq_hbox.addWidget(cfreq_txt)
-        cfreq_hbox.addWidget(QtGui.QLabel('MHz'))
-        self._cfreq_hbox = cfreq_hbox
+        grid.addWidget(cfreq_bt, 1, 0, 1, 1)
+        grid.addWidget(cfreq_txt, 1, 1, 1, 1)
+        grid.addWidget(QtGui.QLabel('MHz'), 1, 2, 1, 1)
 
-        bw_hbox = QtGui.QHBoxLayout()
         bw_bt, bw_txt = self._bw_controls()
-        bw_hbox.addWidget(bw_bt)
-        bw_hbox.addWidget(bw_txt)
-        bw_hbox.addWidget(QtGui.QLabel('MHz'))
-        self._bw_hbox = bw_hbox
+        grid.addWidget(bw_bt, 2, 0, 1, 1)
+        grid.addWidget(bw_txt, 2, 1, 1, 1)
+        grid.addWidget(QtGui.QLabel('MHz'), 2, 2, 1, 1)
 
-        fstop_hbox = QtGui.QHBoxLayout()
         fstop_bt, fstop_txt = self._fstop_controls()
-        fstop_hbox.addWidget(fstop_bt)
-        fstop_hbox.addWidget(fstop_txt)
-        fstop_hbox.addWidget(QtGui.QLabel('MHz'))
-        self._fstop_hbox = fstop_hbox
+        grid.addWidget(fstop_bt, 3, 0, 1, 1)
+        grid.addWidget(fstop_txt, 3, 1, 1, 1)
+        grid.addWidget(QtGui.QLabel('MHz'), 3, 2, 1, 1)
 
-        freq_inc_hbox = QtGui.QHBoxLayout()
         freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
-        freq_inc_hbox.addWidget(freq_inc_minus)
-        freq_inc_hbox.addWidget(freq_inc_steps)
-        freq_inc_hbox.addWidget(freq_inc_plus)
-        self._freq_inc_hbox = freq_inc_hbox
+        grid.addWidget(freq_inc_minus, 4, 0, 1, 1)
+        grid.addWidget(freq_inc_steps, 4, 1, 1, 1)
+        grid.addWidget(freq_inc_plus, 4, 2, 1, 1)
 
-        freq_layout.addLayout(self._fstart_hbox)
-        freq_layout.addLayout(self._cfreq_hbox)
-        freq_layout.addLayout(self._bw_hbox)
-        freq_layout.addLayout(self._fstop_hbox)
-        freq_layout.addLayout(self._freq_inc_hbox)
-        self.setLayout(freq_layout)
-        self._freq_layout = freq_layout
+        self.setLayout(grid)
 
 
     def device_changed(self, dut):
