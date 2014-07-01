@@ -10,7 +10,8 @@ from pyrf.gui.state import SpecAState
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.playback import Playback
-from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop
+from pyrf.util import (compute_usable_bins, adjust_usable_fstart_fstop,
+    trim_to_usable_fstart_fstop)
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +193,11 @@ class SpecAController(QtCore.QObject):
             pkt,
             self._playback_context,
             **self._dsp_options)
+
+        if not self._developer_options.get('show_attenuated_edges'):
+            pow_data, usable_bins, fstart, fstop = (
+                trim_to_usable_fstart_fstop(
+                    pow_data, usable_bins, fstart, fstop))
 
         self.capture_receive.emit(
             self._state,
