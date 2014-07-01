@@ -300,6 +300,9 @@ class SpecAController(QtCore.QObject):
             else:
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
             state = SpecAState(state, span=span)
+            changed = [x for x in changed if x != 'span']
+            if span != self._state.span:
+                changed.append('span')
 
         self._state = state
         # start capture loop again when user switches output path
