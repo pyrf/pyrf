@@ -275,6 +275,9 @@ class SpecAController(QtCore.QObject):
             self.pow_data = data
         self.iq_data = None
 
+        if not self._developer_options.get('show_sweep_steps'):
+            sweep_segments = [len(self.pow_data)]
+
         self.capture_receive.emit(
             self._state,
             fstart,
