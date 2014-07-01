@@ -39,10 +39,8 @@ class FrequencyControls(QtGui.QGroupBox):
         grid.addWidget(fstop_txt, 3, 1, 1, 1)
         grid.addWidget(QtGui.QLabel('MHz'), 3, 2, 1, 1)
 
-        freq_inc_steps, freq_inc_plus, freq_inc_minus = self._freq_incr()
-        grid.addWidget(freq_inc_minus, 4, 0, 1, 1)
+        freq_inc_steps = self._freq_incr()
         grid.addWidget(freq_inc_steps, 4, 1, 1, 1)
-        grid.addWidget(freq_inc_plus, 4, 2, 1, 1)
 
         self.setLayout(grid)
 
@@ -54,15 +52,28 @@ class FrequencyControls(QtGui.QGroupBox):
     def state_changed(self, state, changed):
         self.gui_state = state
         if 'mode' in changed:
-            min_tunable = self.dut_prop.MIN_TUNABLE[state.rfe_mode()]
+            min_tunable = float(self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
+            max_tunable = float(self.dut_prop.MAX_TUNABLE[state.rfe_mode()])
+            tuning_res = float(self.dut_prop.TUNING_RESOLUTION)
+
+            # XXX tuning_res is used here as an approximation of
+            # "smallest reasonable span"
+            self._freq_edit.setMinimum(min_tunable / M)
+            self._freq_edit.setMaximum(max_tunable / M)
+            self._fstart_edit.setMinimum(min_tunable / M)
+            self._fstart_edit.setMaximum((max_tunable - tuning_res) / M)
+            self._fstop_edit.setMinimum((min_tunable + tuning_res) / M)
+            self._fstop_edit.setMaximum(max_tunable / M)
+            self._bw_edit.setMinimum(tuning_res / M)
+            self._bw_edit.setMaximum((max_tunable - min_tunable) / M)
 
             if state.mode in  ('IQIN', 'DD'):
                 self._freq_edit.setText(str(min_tunable / M))
                 self._freq_edit.setEnabled(False)
                 self.update_freq_edit()
             else:
-                self._bw_edit.setText(str(float(
-                    self.dut_prop.FULL_BW[state.rfe_mode()]) / M))
+                self._bw_edit.setValue(float(
+                    self.dut_prop.FULL_BW[state.rfe_mode()]) / M)
                 self.update_freq_set(
                     bw=self.dut_prop.FULL_BW[state.rfe_mode()])
                 self._freq_edit.setEnabled(True)
@@ -85,27 +96,14 @@ class FrequencyControls(QtGui.QGroupBox):
         if 'center' in changed or 'span' in changed:
 
             f = state.center - (state.span / 2)
-            self._fstart_edit.setText(str(f / float(M)))
+            self._fstart_edit.setValue(float(f) / M)
             f = state.center + (state.span / 2)
-            self._fstop_edit.setText(str(f / float(M)))
-            self._freq_edit.setText(str(state.center / float(M)))
-            self._bw_edit.setText(str(state.span / float(M)))
+            self._fstop_edit.setValue(float(f) / M)
+            self._freq_edit.setValue(float(state.center) / M)
+            self._bw_edit.setValue(float(state.span) / M)
 
         if 'decimation' in changed:
             self.update_freq()
-
-    def _center_freq(self):
-        cfreq = QtGui.QLabel('Center')
-        self._cfreq = cfreq
-        freq_edit = QtGui.QLineEdit()
-        self._freq_edit = freq_edit
-        def freq_change():
-            self.select_center()
-            self.update_freq()
-            self.update_freq_edit()
-
-        freq_edit.returnPressed.connect(freq_change)
-        return cfreq, freq_edit
 
     def _freq_incr(self):
         steps = QtGui.QComboBox(self)
@@ -128,48 +126,51 @@ class FrequencyControls(QtGui.QGroupBox):
             delta = float(steps.currentText().split()[1]) * factor
             self.update_freq(delta)
             self.update_freq_edit()   
-        freq_minus = QtGui.QPushButton('-')
-        freq_minus.clicked.connect(lambda: freq_step(-1))
-        self._freq_minus = freq_minus
-        freq_plus = QtGui.QPushButton('+')
-        freq_plus.clicked.connect(lambda: freq_step(1))
-        self._freq_plus = freq_plus
-        return  steps, freq_plus, freq_minus
+        return  steps
+
+    def _center_freq(self):
+        cfreq = QtGui.QLabel('Center')
+        self._cfreq = cfreq
+        freq_edit = QtGui.QDoubleSpinBox()
+        self._freq_edit = freq_edit
+        def freq_change():
+            self.update_freq()
+            self.update_freq_edit()
+
+        freq_edit.valueChanged.connect(freq_change)
+        return cfreq, freq_edit
 
     def _bw_controls(self):
         bw = QtGui.QLabel('Span')
         self._bw = bw
-        bw_edit = QtGui.QLineEdit()
+        bw_edit = QtGui.QDoubleSpinBox()
         def freq_change():
-            self.select_bw()
             self.update_freq()
             self.update_freq_edit()
-        bw_edit.returnPressed.connect(freq_change)
+        bw_edit.valueChanged.connect(freq_change)
         self._bw_edit = bw_edit
         return bw, bw_edit
 
     def _fstart_controls(self):
         fstart = QtGui.QLabel('Start')
         self._fstart = fstart
-        freq = QtGui.QLineEdit()
+        freq = QtGui.QDoubleSpinBox()
         def freq_change():
-            self.select_fstart()
             self.update_freq()
             self.update_freq_edit()
 
-        freq.returnPressed.connect(freq_change)
+        freq.valueChanged.connect(freq_change)
         self._fstart_edit = freq
         return fstart, freq
 
     def _fstop_controls(self):
         fstop = QtGui.QLabel('Stop')
         self._fstop = fstop
-        freq = QtGui.QLineEdit()
+        freq = QtGui.QDoubleSpinBox()
         def freq_change():
-            self.select_fstop()
             self.update_freq()
             self.update_freq_edit()
-        freq.returnPressed.connect(freq_change)
+        freq.valueChanged.connect(freq_change)
         self._fstop_edit = freq
         return fstop, freq
 
@@ -206,10 +207,10 @@ class FrequencyControls(QtGui.QGroupBox):
             return
 
     def update_freq_edit(self):
-        self._fstop_edit.setText("%0.2f" % (self.fstop/ M))
-        self._fstart_edit.setText("%0.2f" % (self.fstart/ M))
-        self._freq_edit.setText("%0.2f" % (self.gui_state.center / M))
-        self._bw_edit.setText("%0.2f" % (self.gui_state.span / M))
+        self._fstop_edit.setValue(self.fstop / M)
+        self._fstart_edit.setValue(self.fstart/ M)
+        self._freq_edit.setValue(self.gui_state.center / M)
+        self._bw_edit.setValue(self.gui_state.span / M)
 
     def update_freq_set(self,
                           fstart=None,
@@ -283,5 +284,5 @@ class FrequencyControls(QtGui.QGroupBox):
 
     def change_center_freq(self, freq):
         self._cfreq.click()
-        self._freq_edit.setText("%0.2f \n" % (freq / M))
+        self._freq_edit.setValue(freq / M)
         self.update_freq()
