@@ -1,5 +1,7 @@
 import pyqtgraph as pg
 import numpy as np
+from PySide import QtCore
+
 from pyrf.gui import colors
 from pyrf.gui import labels
 
@@ -143,20 +145,32 @@ class Marker(object):
                                     symbol = '+', 
                                     size = 20, pen = color, 
                                     brush = color)
-class Plot(object):
+class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
-    
+    user_xrange_change = QtCore.Signal(float, float)
+
     def __init__(self, controller, layout):
-    
+        super(Plot, self).__init__
+
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
+        self._code_changing_range = True
+
+        def widget_range_changed(widget, ranges):
+            if self._code_changing_range:
+                return
+            if not hasattr(ranges, '__getitem__'):
+                return  # we're not intereted in QRectF updates
+            self.user_range_changed.emit(ranges[0][0], ranges[0][1])
+        self.window.sigRangeChanged.connect(widget_range_changed)
+
         self.view_box = self.window.plotItem.getViewBox()
         self.view_box.setMouseEnabled(x = True, y = False)
-        
+
         # initialize the x-axis of the plot
         self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
 
@@ -210,6 +224,7 @@ class Plot(object):
             self.markers.append(Marker(self, marker_name))
 
         self.connect_plot_controls()
+        self._code_changing_range = False
 
     def connect_plot_controls(self):
         
@@ -246,9 +261,11 @@ class Plot(object):
         self.window.removeItem(self.freqtrig_lines)
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
+        self._code_changing_range = True
         self.window.setXRange(fstart, fstop)
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+        self._code_changing_range = False
 
     def grid(self,state):
         self.window.showGrid(state,state)
