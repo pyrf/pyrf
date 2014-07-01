@@ -21,5 +21,4 @@ class PlotState(object):
         self.freq_range = None
         self.ref_level = PLOT_YMAX
         self.min_level = PLOT_YMIN
-        self.alt_colors = False
         self.peak_threshold = 2
