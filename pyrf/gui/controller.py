@@ -30,6 +30,9 @@ class SpecAController(QtCore.QObject):
     _state = None
     _recording_file = None
     _playback_file = None
+    _user_xrange_control_enabled = True
+    _pending_user_xrange = None
+    _applying_user_xrange = False
 
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
@@ -128,6 +131,23 @@ class SpecAController(QtCore.QObject):
             self._state.rbw)
 
     def read_sweep(self):
+        """
+        Start the next sweep based on the current state or based
+        on a pending user xrange setting when xrange control is
+        enabled ("Auto" mode)
+        """
+        if self._pending_user_xrange:
+            self._applying_user_xrange = True
+            start, stop = self._pending_user_xrange
+            self._pending_user_xrange = None
+            self.apply_settings(
+                center=int((start + stop) / 2.0
+                    / self._dut.properties.TUNING_RESOLUTION)
+                    * self._dut.properties.TUNING_RESOLUTION,
+                span=stop - start)
+        else:
+            self._applying_user_xrange = False
+
         device_set = dict(self._state.device_settings)
         device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
@@ -384,3 +404,15 @@ class SpecAController(QtCore.QObject):
         self._developer_options.update(kwargs)
         self.developer_options_change.emit(self._developer_options,
             kwargs.keys())
+
+    def enable_user_xrange_control(self, enable):
+        self._user_xrange_control_enabled = enable
+        if not enable:
+            self._pending_user_xrange = None
+
+    def user_xrange_changed(self, start, stop):
+        if self._user_xrange_control_enabled:
+            self._pending_user_xrange = start, stop
+
+    def applying_user_xrange(self):
+        return self._applying_user_xrange

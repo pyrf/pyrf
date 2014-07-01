@@ -110,6 +110,8 @@ class DeviceControls(QtGui.QGroupBox):
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
+
+            self.controller.enable_user_xrange_control(input_mode == 'Auto')
             if input_mode == 'Auto':
                 input_mode = self.dut_prop.SPECA_MODES[0]
 

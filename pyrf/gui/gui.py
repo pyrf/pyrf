@@ -224,6 +224,8 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = None
         # plot window
         self._plot = Plot(controller, self)
+        self._plot.user_xrange_change.connect(controller.user_xrange_changed)
+
         self._marker_trace = None
         self._vrt_context = {}
         self.initUI()

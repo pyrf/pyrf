@@ -152,7 +152,7 @@ class Plot(QtCore.QObject):
     user_xrange_change = QtCore.Signal(float, float)
 
     def __init__(self, controller, layout):
-        super(Plot, self).__init__
+        super(Plot, self).__init__()
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
@@ -165,7 +165,7 @@ class Plot(QtCore.QObject):
                 return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
-            self.user_range_changed.emit(ranges[0][0], ranges[0][1])
+            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
         self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
@@ -261,6 +261,8 @@ class Plot(QtCore.QObject):
         self.window.removeItem(self.freqtrig_lines)
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
+        if self.controller.applying_user_xrange():
+            return  # don't recenter while a user is dragging
         self._code_changing_range = True
         self.window.setXRange(fstart, fstop)
         if min_level is not None:
