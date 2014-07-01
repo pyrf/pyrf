@@ -71,17 +71,11 @@ class FrequencyControls(QtGui.QGroupBox):
 
             if state.sweeping():
                 self._fstart_edit.setEnabled(True)
-                self._fstart.setEnabled(True)
-                self._fstop.setEnabled(True)
                 self._fstop_edit.setEnabled(True)
-                self._bw.setEnabled(True)
                 self._bw_edit.setEnabled(True)
             else:
                 self._fstart_edit.setEnabled(False)
-                self._fstart.setEnabled(False)
-                self._fstop.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
-                self._bw.setEnabled(False)
                 self._bw_edit.setEnabled(False)
 
         elif ('center' in changed or 'span' in changed or
