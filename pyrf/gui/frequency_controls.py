@@ -115,17 +115,13 @@ class FrequencyControls(QtGui.QGroupBox):
         self.fstep = float(steps.currentText().split()[1])
         def freq_step_change():
             self.fstep = float(steps.currentText().split()[1])
+            self._freq_edit.setSingleStep(self.fstep)
+            self._bw_edit.setSingleStep(self.fstep)
+            self._fstart_edit.setSingleStep(self.fstep)
+            self._fstop_edit.setSingleStep(self.fstep)
         steps.currentIndexChanged.connect(freq_step_change)
         steps.setCurrentIndex(2)
         self._fstep_box = steps
-        def freq_step(factor):
-            try:
-                f = float(self._freq_edit.text())
-            except ValueError:
-                return
-            delta = float(steps.currentText().split()[1]) * factor
-            self.update_freq(delta)
-            self.update_freq_edit()   
         return  steps
 
     def _center_freq(self):
