@@ -204,7 +204,7 @@ class DeviceControls(QtGui.QGroupBox):
                     state.mode in self.dut_prop.LEVEL_TRIGGER_RFE_MODES)
                 decimation_available = self.dut_prop.MIN_DECIMATION[
                     state.rfe_mode()] is not None
-                self._dec_box.setEnabled(decimaton_available)
+                self._dec_box.setEnabled(decimation_available)
                 self._freq_shift_edit.setEnabled(decimation_available)
 
         if 'center' in changed:
