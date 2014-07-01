@@ -67,20 +67,21 @@ class FrequencyControls(QtGui.QGroupBox):
             self._bw_edit.setMinimum(tuning_res / M)
             self._bw_edit.setMaximum((max_tunable - min_tunable) / M)
             self._updating_values = False
-            self._update_freq_edit()
 
             if state.sweeping():
-                self._fstart_edit.setEnabled(True)
-                self._fstop_edit.setEnabled(True)
-                self._bw_edit.setEnabled(True)
+                self._fstart_edit.setEnabled(not state.playback)
+                self._fstop_edit.setEnabled(not state.playback)
+                self._bw_edit.setEnabled(not state.playback)
             else:
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
 
-        elif ('center' in changed or 'span' in changed or
-                'decimation' in changed):
+        if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
+
+        if 'playback' in changed:
+            self._freq_edit.setEnabled(not state.playback)
 
 
     def _freq_incr(self):
