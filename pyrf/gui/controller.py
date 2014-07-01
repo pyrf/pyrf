@@ -250,6 +250,11 @@ class SpecAController(QtCore.QObject):
                 ref=self._ref_level,
                 **self._dsp_options)
 
+            if not self._developer_options.get('show_attenuated_edges'):
+                pow_data, usable_bins, fstart, fstop = (
+                    trim_to_usable_fstart_fstop(
+                        pow_data, usable_bins, fstart, fstop))
+
             self.capture_receive.emit(
                 self._state,
                 fstart,
