@@ -301,7 +301,7 @@ class SpecAController(QtCore.QObject):
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
             state = SpecAState(state, span=span)
             changed = [x for x in changed if x != 'span']
-            if span != self._state.span:
+            if not self._state or span != self._state.span:
                 changed.append('span')
 
         self._state = state
