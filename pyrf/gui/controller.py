@@ -292,6 +292,15 @@ class SpecAController(QtCore.QObject):
         Emit signal and handle special cases where extra work is needed in
         response to a state change.
         """
+        if not state.sweeping():
+            # force span to correct value for the mode given
+            if state.decimation > 1:
+                span = (float(self._dut.properties.FULL_BW[state.rfe_mode()])
+                    / state.decimation * self._dut.properties.DECIMATED_USABLE)
+            else:
+                span = self._dut.properties.USABLE_BW[state.rfe_mode()]
+            state = SpecAState(state, span=span)
+
         self._state = state
         # start capture loop again when user switches output path
         # back to the internal digitizer XXX: very WSA5000-specific

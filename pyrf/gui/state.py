@@ -1,3 +1,4 @@
+import json
 
 class SpecAState(object):
     """
@@ -81,4 +82,5 @@ class SpecAState(object):
             return self.mode[6:]
         return self.mode
 
-
+    def __repr__(self):
+        return '<SpecAState: %s>' % json.dumps(self.to_json_object(), indent=2)

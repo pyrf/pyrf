@@ -509,7 +509,8 @@ class MainPanel(QtGui.QWidget):
             marker = self._plot.markers[current_marker]
 
             if marker.enabled:
-                self._freq_group.change_center_freq(self.xdata[marker.data_index])
+                self.controller.apply_settings(center=
+                    self.xdata[marker.data_index])
                 marker.data_index = len(self.pow_data)/2
         cf_marker.clicked.connect(cf_marker_click)
 

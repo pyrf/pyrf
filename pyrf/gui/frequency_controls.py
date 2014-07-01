@@ -57,6 +57,7 @@ class FrequencyControls(QtGui.QGroupBox):
 
             # XXX tuning_res is used here as an approximation of
             # "smallest reasonable span"
+            self._updating_values = True
             self._freq_edit.setMinimum(min_tunable / M)
             self._freq_edit.setMaximum(max_tunable / M)
             self._fstart_edit.setMinimum(min_tunable / M)
@@ -65,15 +66,8 @@ class FrequencyControls(QtGui.QGroupBox):
             self._fstop_edit.setMaximum(max_tunable / M)
             self._bw_edit.setMinimum(tuning_res / M)
             self._bw_edit.setMaximum((max_tunable - min_tunable) / M)
-
-            if state.mode in  ('IQIN', 'DD'):
-                self._freq_edit.setText(str(min_tunable / M))
-                self._freq_edit.setEnabled(False)
-                self.update_freq_edit()
-            else:
-                self._bw_edit.setValue(float(
-                    self.dut_prop.FULL_BW[state.rfe_mode()]) / M)
-                self._freq_edit.setEnabled(True)
+            self._updating_values = False
+            self._update_freq_edit()
 
             if state.sweeping():
                 self._fstart_edit.setEnabled(True)
@@ -90,7 +84,8 @@ class FrequencyControls(QtGui.QGroupBox):
                 self._bw.setEnabled(False)
                 self._bw_edit.setEnabled(False)
 
-        if 'center' in changed or 'span' in changed:
+        elif ('center' in changed or 'span' in changed or
+                'decimation' in changed):
             self._update_freq_edit()
 
 
@@ -150,7 +145,7 @@ class FrequencyControls(QtGui.QGroupBox):
         def freq_change():
             if self._updating_values:
                 return
-            fstart = freq.value()
+            fstart = freq.value() * M
             fstop = self.gui_state.center + self.gui_state.span / 2.0
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0 * M,
@@ -170,7 +165,7 @@ class FrequencyControls(QtGui.QGroupBox):
             if self._updating_values:
                 return
             fstart = self.gui_state.center - self.gui_state.span / 2.0
-            fstop = freq.value()
+            fstop = freq.value() * M
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0 * M,
                 span = (fstop - fstart) * M,
@@ -214,7 +209,3 @@ class FrequencyControls(QtGui.QGroupBox):
         self._fstop.setEnabled(False)
         self._fstop_edit.setEnabled(False)
 
-    def change_center_freq(self, freq):
-        self._cfreq.click()
-        self._freq_edit.setValue(freq / M)
-        self.update_freq()
