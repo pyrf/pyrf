@@ -24,25 +24,23 @@ class FrequencyControls(QtGui.QGroupBox):
         cfreq_bt, cfreq_txt = self._center_freq()
         grid.addWidget(cfreq_bt, 0, 0, 1, 1)
         grid.addWidget(cfreq_txt, 0, 1, 1, 1)
-        grid.addWidget(QtGui.QLabel('MHz'), 0, 2, 1, 1)
 
         bw_bt, bw_txt = self._bw_controls()
-        grid.addWidget(bw_bt, 0, 3, 1, 1)
-        grid.addWidget(bw_txt, 0, 4, 1, 1)
-        grid.addWidget(QtGui.QLabel('MHz'), 0, 5, 1, 1)
+        grid.addWidget(bw_bt, 1, 0, 1, 1)
+        grid.addWidget(bw_txt, 1, 1, 1, 1)
 
         fstart_bt, fstart_txt = self._fstart_controls()
-        grid.addWidget(fstart_bt, 1, 0, 1, 1)
-        grid.addWidget(fstart_txt, 1, 1, 1, 1)
-        grid.addWidget(QtGui.QLabel('MHz'), 1, 2, 1, 1)
+        grid.addWidget(fstart_bt, 0, 3, 1, 1)
+        grid.addWidget(fstart_txt, 0, 4, 1, 1)
 
         fstop_bt, fstop_txt = self._fstop_controls()
         grid.addWidget(fstop_bt, 1, 3, 1, 1)
         grid.addWidget(fstop_txt, 1, 4, 1, 1)
-        grid.addWidget(QtGui.QLabel('MHz'), 1, 5, 1, 1)
 
         freq_inc_steps = self._freq_incr()
         grid.addWidget(freq_inc_steps, 2, 1, 1, 4)
+
+        grid.setColumnMinimumWidth(2, 10)
 
         self.setLayout(grid)
 
@@ -127,10 +125,11 @@ class FrequencyControls(QtGui.QGroupBox):
         return  steps
 
     def _center_freq(self):
-        cfreq = QtGui.QLabel('Center')
+        cfreq = QtGui.QLabel('Center:')
         self._cfreq = cfreq
         freq_edit = QtGui.QDoubleSpinBox()
         freq_edit.setMinimumHeight(SPIN_BOX_HEIGHT)
+        freq_edit.setSuffix(' MHz')
         self._freq_edit = freq_edit
         def freq_change():
             self.update_freq()
@@ -140,10 +139,11 @@ class FrequencyControls(QtGui.QGroupBox):
         return cfreq, freq_edit
 
     def _bw_controls(self):
-        bw = QtGui.QLabel('Span')
+        bw = QtGui.QLabel('Span:')
         self._bw = bw
         bw_edit = QtGui.QDoubleSpinBox()
         bw_edit.setMinimumHeight(SPIN_BOX_HEIGHT)
+        bw_edit.setSuffix(' MHz')
         def freq_change():
             self.update_freq()
             self.update_freq_edit()
@@ -152,10 +152,11 @@ class FrequencyControls(QtGui.QGroupBox):
         return bw, bw_edit
 
     def _fstart_controls(self):
-        fstart = QtGui.QLabel('Start')
+        fstart = QtGui.QLabel('Start:')
         self._fstart = fstart
         freq = QtGui.QDoubleSpinBox()
         freq.setMinimumHeight(SPIN_BOX_HEIGHT)
+        freq.setSuffix(' MHz')
         def freq_change():
             self.update_freq()
             self.update_freq_edit()
@@ -165,10 +166,11 @@ class FrequencyControls(QtGui.QGroupBox):
         return fstart, freq
 
     def _fstop_controls(self):
-        fstop = QtGui.QLabel('Stop')
+        fstop = QtGui.QLabel('Stop:')
         self._fstop = fstop
         freq = QtGui.QDoubleSpinBox()
         freq.setMinimumHeight(SPIN_BOX_HEIGHT)
+        freq.setSuffix(' MHz')
         def freq_change():
             self.update_freq()
             self.update_freq_edit()
@@ -181,19 +183,19 @@ class FrequencyControls(QtGui.QGroupBox):
         max_tunable = self.dut_prop.MAX_TUNABLE[self.gui_state.rfe_mode()]
         try:
             if self.freq_sel == 'CENT':
-                f = (float(self._freq_edit.text()) + delta) * M
+                f = (float(self._freq_edit.value()) + delta) * M
                 if f > max_tunable or f < min_tunable:
                     return
                 self.update_freq_set(fcenter = f)
             elif self.freq_sel == 'FSTART':
-                f = (float(self._fstart_edit.text()) + delta) * M
+                f = (float(self._fstart_edit.value()) + delta) * M
                 if f > max_tunable or f <min_tunable or f > self.fstop:
                     return
                 self.update_freq_set(fstart = f)
 
             elif self.freq_sel == 'FSTOP':
 
-                f = (float(self._fstop_edit.text()) + delta) * M
+                f = (float(self._fstop_edit.value()) + delta) * M
 
                 if f > max_tunable or f < min_tunable or f < self.fstart:
                     print f, self._fstart, max_tunable, min_tunable
@@ -201,7 +203,7 @@ class FrequencyControls(QtGui.QGroupBox):
                 self.update_freq_set(fstop = f)
 
             elif self.freq_sel == 'BW':
-                f = (float(self._bw_edit.text()) + delta) * M
+                f = (float(self._bw_edit.value()) + delta) * M
                 if self.gui_state.center - (f / 2) < min_tunable or self.gui_state.center + (f / 2) > max_tunable:
                     return
                 self.update_freq_set(bw = f)
