@@ -140,8 +140,8 @@ class FrequencyControls(QtGui.QGroupBox):
             fstart = freq.value() * M
             fstop = self.gui_state.center + self.gui_state.span / 2.0
             self.controller.apply_settings(
-                center = (fstop + fstart) / 2.0 * M,
-                span = (fstop - fstart) * M,
+                center = (fstop + fstart) / 2.0,
+                span = (fstop - fstart),
                 )
         freq.valueChanged.connect(freq_change)
         self._fstart_edit = freq
@@ -158,8 +158,8 @@ class FrequencyControls(QtGui.QGroupBox):
             fstart = self.gui_state.center - self.gui_state.span / 2.0
             fstop = freq.value() * M
             self.controller.apply_settings(
-                center = (fstop + fstart) / 2.0 * M,
-                span = (fstop - fstart) * M,
+                center = (fstop + fstart) / 2.0,
+                span = (fstop - fstart),
                 )
         freq.valueChanged.connect(freq_change)
         self._fstop_edit = freq
