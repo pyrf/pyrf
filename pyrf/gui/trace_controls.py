@@ -8,7 +8,7 @@ class TraceControls(QtGui.QGroupBox):
     can be used to control the FFT plot's traces
     :param name: The name of the groupBox
     """
-    def __init__(self, name="Trace Controls"):
+    def __init__(self, name="Trace Control"):
         super(TraceControls, self).__init__()
 
         self.setTitle(name)
