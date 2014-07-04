@@ -34,8 +34,9 @@ class FrequencyControls(QtGui.QGroupBox):
         grid.addWidget(fstop_bt, 1, 3, 1, 1)
         grid.addWidget(fstop_txt, 1, 4, 1, 1)
 
-        freq_inc_steps = self._freq_incr()
-        grid.addWidget(freq_inc_steps, 2, 1, 1, 4)
+        freq_inc_label, freq_inc_steps = self._freq_incr()
+        grid.addWidget(freq_inc_label, 2, 0, 1, 1)
+        grid.addWidget(freq_inc_steps, 2, 1, 1, 1)
 
         grid.setColumnMinimumWidth(2, 10)
 
@@ -83,15 +84,16 @@ class FrequencyControls(QtGui.QGroupBox):
 
 
     def _freq_incr(self):
+        steps_label = QtGui.QLabel("Adjust:")
         steps = QtGui.QComboBox(self)
-        steps.addItem("Adjust: 1 MHz")
-        steps.addItem("Adjust: 2.5 MHz")
-        steps.addItem("Adjust: 10 MHz")
-        steps.addItem("Adjust: 25 MHz")
-        steps.addItem("Adjust: 100 MHz")
-        self.fstep = float(steps.currentText().split()[1])
+        steps.addItem("1 MHz")
+        steps.addItem("2.5 MHz")
+        steps.addItem("10 MHz")
+        steps.addItem("25 MHz")
+        steps.addItem("100 MHz")
+        self.fstep = float(steps.currentText().split()[0])
         def freq_step_change():
-            self.fstep = float(steps.currentText().split()[1])
+            self.fstep = float(steps.currentText().split()[0])
             self._freq_edit.setSingleStep(self.fstep)
             self._bw_edit.setSingleStep(self.fstep)
             self._fstart_edit.setSingleStep(self.fstep)
@@ -99,7 +101,7 @@ class FrequencyControls(QtGui.QGroupBox):
         steps.currentIndexChanged.connect(freq_step_change)
         steps.setCurrentIndex(2)
         self._fstep_box = steps
-        return  steps
+        return steps_label, steps
 
     def _center_freq(self):
         cfreq = QtGui.QLabel('Center:')
