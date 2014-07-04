@@ -3,8 +3,6 @@ from PySide import QtGui
 from pyrf.units import M
 from pyrf.gui import colors
 
-SPIN_BOX_HEIGHT = 40
-
 
 class FrequencyControls(QtGui.QGroupBox):
 
@@ -107,7 +105,6 @@ class FrequencyControls(QtGui.QGroupBox):
         cfreq = QtGui.QLabel('Center:')
         self._cfreq = cfreq
         freq_edit = QtGui.QDoubleSpinBox()
-        freq_edit.setMinimumHeight(SPIN_BOX_HEIGHT)
         freq_edit.setSuffix(' MHz')
         self._freq_edit = freq_edit
         def freq_change():
@@ -121,7 +118,6 @@ class FrequencyControls(QtGui.QGroupBox):
         bw = QtGui.QLabel('Span:')
         self._bw = bw
         bw_edit = QtGui.QDoubleSpinBox()
-        bw_edit.setMinimumHeight(SPIN_BOX_HEIGHT)
         bw_edit.setSuffix(' MHz')
         def freq_change():
             if self._updating_values:
@@ -135,7 +131,6 @@ class FrequencyControls(QtGui.QGroupBox):
         fstart = QtGui.QLabel('Start:')
         self._fstart = fstart
         freq = QtGui.QDoubleSpinBox()
-        freq.setMinimumHeight(SPIN_BOX_HEIGHT)
         freq.setSuffix(' MHz')
         def freq_change():
             if self._updating_values:
@@ -154,7 +149,6 @@ class FrequencyControls(QtGui.QGroupBox):
         fstop = QtGui.QLabel('Stop:')
         self._fstop = fstop
         freq = QtGui.QDoubleSpinBox()
-        freq.setMinimumHeight(SPIN_BOX_HEIGHT)
         freq.setSuffix(' MHz')
         def freq_change():
             if self._updating_values:
