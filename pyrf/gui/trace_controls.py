@@ -1,7 +1,7 @@
 from PySide import QtGui
 from pyrf.gui import labels
 from pyrf.gui import colors
-import control_util as cu
+
 class TraceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that

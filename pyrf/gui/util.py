@@ -1,6 +1,5 @@
 import numpy as np
 from PySide import QtGui, QtCore
-import  control_util 
 from pyrf.gui import colors
 
 def frequency_text(hz):
@@ -19,6 +18,7 @@ def hotkey_util(layout,event):
     """
     modify elements in the gui layout based on which key was pressed
     """
+    from pyrf.gui import control_util
     if control_util.arrow_dict.has_key(str(event.key())):
         hotkey =  control_util.arrow_dict[str(event.key())]
     else:
