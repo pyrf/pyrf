@@ -14,31 +14,6 @@ def frequency_text(hz):
         return "%.3f MHz" % (hz / 1e6)
     return "%.3f GHz" % (hz / 1e9)
 
-def hotkey_util(layout,event):
-    """
-    modify elements in the gui layout based on which key was pressed
-    """
-    from pyrf.gui.gui import MainPanel
-    hotkey_dict = {
-        'M': MainPanel._marker_control,
-        'P': MainPanel._find_peak,
-        }
-
-    arrow_dict = {
-        '32': 'SPACE',
-        '16777235': 'UP KEY',
-        '16777237': 'DOWN KEY',
-        '16777234': 'LEFT KEY',
-        '16777236': 'RIGHT KEY',
-        }
-
-    if str(event.key()) in arrow_dict:
-        hotkey = arrow_dict[str(event.key())]
-    else:
-        hotkey = str(event.text()).upper()
-    if hotkey_dict.has_key(hotkey):
-        hotkey_dict[hotkey](layout)
-
 def find_max_index(array):
     """
     returns the maximum index of an array         

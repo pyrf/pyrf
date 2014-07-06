@@ -29,7 +29,7 @@ from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 from util import find_max_index, find_nearest_index
-from util import hotkey_util, update_marker_traces
+from util import update_marker_traces
 from plot_widget import Plot
 from device_controls import DeviceControls
 from frequency_controls import FrequencyControls
@@ -310,8 +310,29 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumHeight(screen.height() * 0.6)
 
     def keyPressEvent(self, event):
-        if self.dut_prop:
-            hotkey_util(self, event)
+        if not self.dut_prop:
+            return
+
+        hotkey_dict = {
+            'M': self._marker_control,
+            'P': self._find_peak,
+            }
+
+        arrow_dict = {
+            '32': 'SPACE',
+            '16777235': 'UP KEY',
+            '16777237': 'DOWN KEY',
+            '16777234': 'LEFT KEY',
+            '16777236': 'RIGHT KEY',
+            }
+
+        if str(event.key()) in arrow_dict:
+            hotkey = arrow_dict[str(event.key())]
+        else:
+            hotkey = str(event.text()).upper()
+        if hotkey in hotkey_dict:
+            hotkey_dict[hotkey]()
+
 
     def mousePressEvent(self, event):
             if self.controller._dut:
