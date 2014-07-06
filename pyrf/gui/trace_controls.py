@@ -10,6 +10,8 @@ import numpy as np
 PLOT_YMIN = -140
 PLOT_YMAX = 0
 
+REMOVE_BUTTON_WIDTH = 15
+
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     label
@@ -88,7 +90,7 @@ class TraceControls(QtGui.QGroupBox):
         r, g, b = colors.TRACE_COLORS[num]
         color = QtGui.QColor()
         color.setRgb(r, g, b)
-        pixmap = QtGui.QPixmap(10,10)
+        pixmap = QtGui.QPixmap(22, 6)
         pixmap.fill(color)
         #icon = QtGui.QIcon(pixmap)
         icon = QtGui.QLabel()
@@ -117,7 +119,8 @@ class TraceControls(QtGui.QGroupBox):
             print 'add trace', num
         add_trace.clicked.connect(add_trace_clicked)
 
-        remove_trace = QtGui.QPushButton("- Trace")
+        remove_trace = QtGui.QPushButton("-")
+        remove_trace.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_trace.setToolTip("Disable this trace")
         def remove_trace_clicked():
             print 'remove trace', num
@@ -170,7 +173,8 @@ class TraceControls(QtGui.QGroupBox):
             print 'peak right', num
         peak_right.clicked.connect(peak_right_clicked)
 
-        remove_marker = QtGui.QPushButton("- Marker")
+        remove_marker = QtGui.QPushButton("-")
+        remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
             print 'remove marker', num
@@ -188,19 +192,21 @@ class TraceControls(QtGui.QGroupBox):
 
         def add_trace_widgets(trace_widgets, row):
             grid.addWidget(trace_widgets.icon, row, 0, 1, 1)
-            grid.addWidget(trace_widgets.label, row, 1, 1, 1)
-            grid.addWidget(trace_widgets.draw, row, 2, 1, 1)
-            grid.addWidget(trace_widgets.hold, row, 3, 1, 1)
-            grid.addWidget(trace_widgets.remove, row, 3, 1, 1)
+            layout = QtGui.QHBoxLayout()
+            layout.addWidget(trace_widgets.label)
+            layout.addWidget(trace_widgets.draw)
+            layout.addWidget(trace_widgets.hold)
+            grid.addLayout(layout, row, 1, 1, 3)
+            grid.addWidget(trace_widgets.remove, row, 4, 1, 1)
             return row + 1
 
         def add_marker_widgets(marker_widgets, row):
             grid.addWidget(marker_widgets.marker, row, 0, 1, 2)
-            grid.addWidget(marker_widgets.center, row, 2, 1, 1)
-            grid.addWidget(marker_widgets.remove, row, 3, 1, 1)
-            row = row + 1
-            grid.addWidget(marker_widgets.peak_left, row, 1, 1, 1)
             grid.addWidget(marker_widgets.peak, row, 2, 1, 1)
+            grid.addWidget(marker_widgets.center, row, 3, 1, 1)
+            grid.addWidget(marker_widgets.remove, row, 4, 1, 1)
+            row = row + 1
+            grid.addWidget(marker_widgets.peak_left, row, 2, 1, 1)
             grid.addWidget(marker_widgets.peak_right, row, 3, 1, 1)
             return row + 1
 
@@ -212,9 +218,10 @@ class TraceControls(QtGui.QGroupBox):
         row = add_trace_widgets(self._traces[2], row)
 
         grid.setColumnStretch(0, 1)
-        grid.setColumnStretch(1, 5)
+        grid.setColumnStretch(1, 3)
         grid.setColumnStretch(2, 5)
         grid.setColumnStretch(3, 5)
+        grid.setColumnStretch(4, 2)
 
 
     def state_changed(self, state, changed):
