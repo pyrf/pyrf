@@ -173,14 +173,15 @@ class DeviceControls(QtGui.QGroupBox):
             self.controller.apply_device_settings(attenuator = self._attenuator_box.isChecked())
 
         def new_pll_reference():
-            if 'INTERNAL' in str(self._pll_box.currentText()):
+            if self._pll_box.currentText() == 'Internal':
                 src = 'INT'
             else:
                 src = 'EXT'
             self.controller.apply_device_settings(pll_reference=src)
 
         def new_iq_path():
-            self.controller.apply_device_settings(iq_output_path = str(self._iq_output_box.currentText().split()[-1]))
+            self.controller.apply_device_settings(
+                iq_output_path=self._iq_output_box.currentText().upper())
 
         def new_input_mode():
             if not self.connected:
