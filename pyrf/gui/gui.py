@@ -56,6 +56,10 @@ CONST_POINTS = 512
 IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': -1, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
 IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
 
+
+MINIMUM_WIDTH = 600
+MINIMUM_HEIGHT = 400
+
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
@@ -214,8 +218,8 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets = []
         super(MainPanel, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
-        self.setMinimumWidth(screen.width() * 0.7)
-        self.setMinimumHeight(screen.height() * 0.6)
+        self.setMinimumWidth(MINIMUM_WIDTH)
+        self.setMinimumHeight(MINIMUM_HEIGHT)
         self.plot_state = None
         # plot window
         self._plot = Plot(controller, self)
@@ -298,8 +302,11 @@ class MainPanel(QtGui.QWidget):
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
                 screen = QtGui.QDesktopWidget().screenGeometry()
-                self.setMinimumWidth(screen.width() * 0.7)
-                self.setMinimumHeight(screen.height() * 0.6)
+                self.setMinimumWidth(MINIMUM_WIDTH)
+                self.setMinimumHeight(MINIMUM_HEIGHT)
+                WINDOW_WIDTH = screen.width() * 0.7
+                WINDOW_HEIGHT = screen.height() * 0.6
+                self._main_window.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
 
     def keyPressEvent(self, event):
         if not self.dut_prop:
