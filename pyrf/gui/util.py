@@ -82,3 +82,19 @@ def update_marker_traces(combo_box, traces):
             
     combo_box.setCurrentIndex(index)
 
+
+def clear_layout(layout):
+    """
+    Clear all the widgets from a layout
+    """
+    if layout is None:
+        return
+    while layout.count():
+        layout.removeItem(layout.takeAt(0))
+        continue
+
+        widget = item.widget()
+        if widget is None:
+            clear_layout(item.layout())
+        else:
+            widget.deleteLater

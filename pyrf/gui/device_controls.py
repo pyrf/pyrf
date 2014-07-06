@@ -1,5 +1,8 @@
 from PySide import QtGui
 from pyrf.units import M
+
+from pyrf.gui.util import clear_layout
+
 # FIXME: calculate choices from device properties instead
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
@@ -21,45 +24,120 @@ class DeviceControls(QtGui.QGroupBox):
 
         self.setTitle(name)
 
-        dev_layout = QtGui.QVBoxLayout(self)
-
-        row = QtGui.QHBoxLayout()
-        row.addWidget(self._mode_control())
-        row.addWidget(self._antenna_control())
-        row.addWidget(self._iq_output_control())
-        dev_layout.addLayout(row)
-
-        row = QtGui.QHBoxLayout()
-        row.addWidget(self._attenuator_control())
-        row.addWidget(self._pll_reference_control())
-        dev_layout.addLayout(row)
-
-        row = QtGui.QHBoxLayout()
-        row.addWidget(self._decimation_control())
-
-        fshift_label, fshift_edit, fshift_unit = self._freq_shift_control()
-        row.addWidget(fshift_label)
-        row.addWidget(fshift_edit)
-        row.addWidget(fshift_unit)
-
-        row.addWidget(self._gain_control())
-        row.addWidget(self._ifgain_control())
-        dev_layout.addLayout(row)
-
-        row = QtGui.QHBoxLayout()
-        rbw_label, rbw_box = self._rbw_controls()
-        row.addWidget(rbw_label)
-        row.addWidget(rbw_box)
-        dev_layout.addLayout(row)
-
-        row = QtGui.QHBoxLayout()
-        row.addWidget(self._level_trigger_control())
-        dev_layout.addLayout(row)
-
-        self.setLayout(dev_layout)
-        self.layout = dev_layout
-
+        self._create_controls()
+        self.setLayout(QtGui.QGridLayout())
+        self._build_layout()
         self._connect_device_controls()
+
+    def _create_controls(self):
+        self._mode_label = QtGui.QLabel('Mode:')
+        self._mode = QtGui.QComboBox()
+        self._mode.setToolTip("Change the device input mode")
+
+        self._rbw_label = QtGui.QLabel('RBW:')
+        self._rbw_box = QtGui.QComboBox()
+        self._rbw_box.setToolTip("Change the RBW of the FFT plot")
+        self._rbw_values = None
+        self._rbw_use_normal_values()
+
+        self._dec_label = QtGui.QLabel('DDC Factor:')
+        self._dec_box = QtGui.QComboBox()
+        self._dec_box.setToolTip("Choose Decimation Rate")
+        # FIXME: use values from device properties
+        dec_values = ['1', '4', '8', '16', '32', '64', '128', '256', '512', '1024']
+        for d in dec_values:
+            self._dec_box.addItem(d)
+        self._dec_values = dec_values
+
+        self._fshift_label = QtGui.QLabel("Freq Shift:")
+        self._fshift_edit = QtGui.QLineEdit("0")
+        self._fshift_edit.setToolTip("Frequency Shift")
+
+        self._antenna_label = QtGui.QLabel('Antenna:')
+        self._antenna_box = QtGui.QComboBox()
+        self._antenna_box.setToolTip("Choose Antenna")
+        self._antenna_box.addItem("Antenna 1")
+        self._antenna_box.addItem("Antenna 2")
+
+        self._iq_output_label = QtGui.QLabel("IQ Path:")
+        self._iq_output_box = QtGui.QComboBox()
+        self._iq_output_box.setToolTip("Choose IQ Path")
+        self._iq_output_box.addItem("Digitizer")
+        self._iq_output_box.addItem("Connector")
+
+        self._gain_label = QtGui.QLabel("RF Gain:")
+        self._gain_box = QtGui.QComboBox()
+        self._gain_box.setToolTip("Choose RF Gain setting")
+        gain_values = ['VLow', 'Low', 'Med', 'High']
+        for g in gain_values:
+            self._gain_box.addItem(g)
+        self._gain_values = [g.lower() for g in gain_values]
+
+        self._ifgain_label = QtGui.QLabel("IF Gain:")
+        self._ifgain_box = QtGui.QSpinBox()
+        self._ifgain_box.setToolTip("Choose IF Gain setting")
+        self._ifgain_box.setRange(-10, 25)
+        self._ifgain_box.setSuffix(" dB")
+
+        self._attenuator_box = QtGui.QCheckBox("Attenuator")
+        self._attenuator_box.setChecked(True)
+
+        self._pll_label = QtGui.QLabel("PLL Ref:")
+        self._pll_box = QtGui.QComboBox()
+        self._pll_box.setToolTip("Choose PLL Reference")
+        self._pll_box.addItem("Internal")
+        self._pll_box.addItem("External")
+
+        self._level_trigger = QtGui.QCheckBox("Level Trigger")
+        self._level_trigger.setToolTip("Enable Frequency Level Triggers")
+
+    def _build_layout(self, dut_prop=None):
+        features = dut_prop.SWEEP_SETTINGS if dut_prop else []
+
+        grid = self.layout()
+        clear_layout(grid)
+
+        grid.addWidget(self._mode_label, 0, 0, 1, 1)
+        grid.addWidget(self._mode, 0, 1, 1, 1)
+        grid.addWidget(self._rbw_label, 0, 3, 1, 1)
+        grid.addWidget(self._rbw_box, 0, 4, 1, 1)
+
+        grid.addWidget(self._dec_label, 1, 0, 1, 1)
+        grid.addWidget(self._dec_box, 1, 1, 1, 1)
+        grid.addWidget(self._fshift_label, 1, 3, 1, 1)
+        grid.addWidget(self._fshift_edit, 1, 4, 1, 1)
+
+        grid.addWidget(self._level_trigger, 2, 0, 1, 2)
+
+        # 4k features
+        if 'antenna' in features:
+            grid.addWidget(self._antenna_label, 2, 3, 1, 1)
+            grid.addWidget(self._antenna_box, 2, 4, 1, 1)
+
+        if 'gain' in features:
+            grid.addWidget(self._gain_label, 3, 0, 1, 1)
+            grid.addWidget(self._gain_box, 3, 1, 1, 1)
+
+            # FIXME: 'ifgain' appears in 5k list too
+            grid.addWidget(self._ifgain_label, 3, 3, 1, 1)
+            grid.addWidget(self._ifgain_box, 3, 4, 1, 1)
+
+        # 5k features
+        if 'attenuator' in features:
+            grid.addWidget(self._attenuator_box, 2, 3, 1, 2)
+
+            # FIXME: 'pll_reference' isn't in device properties yet
+            grid.addWidget(self._pll_label, 3, 0, 1, 1)
+            grid.addWidget(self._pll_box, 3, 1, 1, 1)
+
+            # FIXME: 'iq_output' isn't in device properties yet
+            grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
+            grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
+
+        grid.setColumnMinimumWidth(2, 10)
+
+        self.setLayout(grid)
+
 
     def _connect_device_controls(self):
         def new_antenna():
@@ -68,19 +146,19 @@ class DeviceControls(QtGui.QGroupBox):
 
         def new_dec():
             self.controller.apply_settings(decimation=int(
-                self._dec_box.currentText().split(' ')[-1]))
+                self._dec_box.currentText()))
 
         def new_freq_shift():
             rfe_mode = 'ZIF'
             prop = self.dut_prop
             max_fshift = prop.MAX_FSHIFT[rfe_mode]
             try:
-                if float(self._freq_shift_edit.text()) * M < max_fshift:
-                    self.controller.apply_settings(fshift = float(self._freq_shift_edit.text()) * M)
+                if float(self._fshift_edit.text()) * M < max_fshift:
+                    self.controller.apply_settings(fshift = float(self._fshift_edit.text()) * M)
                 else:
-                    self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+                    self._fshift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
             except ValueError:
-                self._freq_shift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+                self._fshift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
                 return
 
         def new_gain():
@@ -137,7 +215,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
-        self._freq_shift_edit.returnPressed.connect(new_freq_shift)
+        self._fshift_edit.returnPressed.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
         self._attenuator_box.clicked.connect(new_attenuator)
         self._mode.currentIndexChanged.connect(new_input_mode)
@@ -147,22 +225,7 @@ class DeviceControls(QtGui.QGroupBox):
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
-
-        # FIXME: remove device-specific code, use device properties instead
-        if self.dut_prop.model.startswith('WSA5000'):
-            self._antenna_box.hide()
-            self._gain_box.hide()
-            self._ifgain_box.hide()
-            self._iq_output_box.show()
-            self._pll_box.show()
-
-        else:
-            self._antenna_box.show()
-            self._gain_box.show()
-            self._attenuator_box.hide()
-            self._iq_output_box.hide()
-            self._pll_box.hide()
-
+        self._build_layout(self.dut_prop)
         self._update_modes()
 
 
@@ -199,7 +262,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._update_modes(state.mode)
                 self._level_trigger.setEnabled(False)
                 self._dec_box.setEnabled(False)
-                self._freq_shift_edit.setEnabled(False)
+                self._fshift_edit.setEnabled(False)
             else:
                 self._update_modes()
                 self._level_trigger.setEnabled(
@@ -207,7 +270,7 @@ class DeviceControls(QtGui.QGroupBox):
                 decimation_available = self.dut_prop.MIN_DECIMATION[
                     state.rfe_mode()] is not None
                 self._dec_box.setEnabled(decimation_available)
-                self._freq_shift_edit.setEnabled(decimation_available)
+                self._fshift_edit.setEnabled(decimation_available)
 
         if 'center' in changed:
             if self._level_trigger.isChecked():
@@ -222,11 +285,11 @@ class DeviceControls(QtGui.QGroupBox):
 
             if state.sweeping():
                 self._dec_box.setEnabled(False)
-                self._freq_shift_edit.setEnabled(False)
+                self._fshift_edit.setEnabled(False)
             decimation_available = self.dut_prop.MIN_DECIMATION[
                 state.rfe_mode()] is not None
             self._dec_box.setEnabled(decimation_available)
-            self._freq_shift_edit.setEnabled(decimation_available)
+            self._fshift_edit.setEnabled(decimation_available)
 
             # FIXME: calculate values from FULL_BW[rfe_mode] instead
             if state.rfe_mode() == 'HDR':
@@ -247,9 +310,8 @@ class DeviceControls(QtGui.QGroupBox):
                 self._mode.setCurrentIndex(0)
                 # remove all digitizer controls
                 self._dec_box.hide()
-                self._freq_shift_edit.hide()
+                self._fshift_edit.hide()
                 self._fshift_label.hide()
-                self._fshift_unit.hide()
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # add sweep SH mode
@@ -258,92 +320,8 @@ class DeviceControls(QtGui.QGroupBox):
 
                 # show digitizer controls
                 self._dec_box.show()
-                self._freq_shift_edit.show()
+                self._fshift_edit.show()
                 self._fshift_label.show()
-                self._fshift_unit.show()
-
-    def _antenna_control(self):
-        antenna = QtGui.QComboBox(self)
-        antenna.setToolTip("Choose Antenna") 
-        antenna.addItem("Antenna 1")
-        antenna.addItem("Antenna 2")
-        self._antenna_box = antenna
-        return antenna
-
-    def _iq_output_control(self):
-        iq_output = QtGui.QComboBox(self)
-        iq_output.setToolTip("Choose IQ Path")
-        iq_output.addItem("IQ Path: DIGITIZER")
-        iq_output.addItem("IQ Path: CONNECTOR")
-        self._iq_output_box = iq_output
-        return iq_output
-
-    def _decimation_control(self):
-        dec = QtGui.QComboBox(self)
-        dec.setToolTip("Choose Decimation Rate") 
-        dec_values = ['1', '4', '8', '16', '32', '64', '128', '256', '512', '1024']
-        for d in dec_values:
-            dec.addItem("Decimation Rate: %s" % d)
-        self._dec_values = dec_values
-        self._dec_box = dec
-        return dec
-
-    def _freq_shift_control(self):
-        fshift_label = QtGui.QLabel("Frequency Shift")
-        self._fshift_label = fshift_label
-
-        fshift_unit = QtGui.QLabel("MHz")
-        self._fshift_unit = fshift_unit
-
-        fshift = QtGui.QLineEdit("0")
-        fshift.setToolTip("Frequency Shift") 
-        self._freq_shift_edit = fshift
-
-        return fshift_label, fshift, fshift_unit
-
-    def _gain_control(self):
-        gain = QtGui.QComboBox(self)
-        gain.setToolTip("Choose RF Gain setting") 
-        gain_values = ['VLow', 'Low', 'Med', 'High']
-        for g in gain_values:
-            gain.addItem("RF Gain: %s" % g)
-        self._gain_values = [g.lower() for g in gain_values]
-        self._gain_box = gain
-        return gain
-
-    def _ifgain_control(self):
-        ifgain = QtGui.QSpinBox(self)
-        ifgain.setToolTip("Choose IF Gain setting")
-        ifgain.setRange(-10, 25)
-        ifgain.setSuffix(" dB")
-        self._ifgain_box = ifgain
-        return ifgain
-
-    def _mode_control(self):
-        mode = QtGui.QComboBox()
-        mode.setToolTip("Change the Input mode of the WSA")
-        self._mode = mode
-        return mode
-
-    def _attenuator_control(self):
-        attenuator = QtGui.QCheckBox("Attenuator")
-        attenuator.setChecked(True)
-        self._attenuator_box = attenuator
-        return attenuator
-
-    def _pll_reference_control(self):
-        pll = QtGui.QComboBox(self)
-        pll.setToolTip("Choose PLL Reference")
-        pll.addItem("PLL Reference: INTERNAL")
-        pll.addItem("PLL Reference: EXTERNAL")
-        self._pll_box = pll
-        return pll
-
-    def _level_trigger_control(self):
-        level_trigg = QtGui.QCheckBox("Level Triggers")
-        level_trigg.setToolTip("Enable Frequency Level Triggers")
-        self._level_trigger = level_trigg
-        return level_trigg
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
@@ -363,15 +341,6 @@ class DeviceControls(QtGui.QGroupBox):
             return
         self._rbw_values = values
         self._rbw_replace_items([str(p) + ' Hz' for p in HDR_RBW_VALUES])
-
-    def _rbw_controls(self):
-        rbw_label = QtGui.QLabel('Resolution Bandwidth:')
-
-        rbw = QtGui.QComboBox(self)
-        rbw.setToolTip("Change the RBW of the FFT plot")
-        self._rbw_box = rbw
-        self._rbw_values = None
-        self._rbw_use_normal_values()
 
         def new_rbw():
             self.controller.apply_settings(rbw=self._rbw_values[
