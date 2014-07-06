@@ -14,26 +14,6 @@ def frequency_text(hz):
         return "%.3f MHz" % (hz / 1e6)
     return "%.3f GHz" % (hz / 1e9)
 
-def find_max_index(array):
-    """
-    returns the maximum index of an array         
-    """
-    # keep track of max index
-    index = 0
-    
-    array_size = len(array)
-    
-    max_value = 0
-    for i in range(array_size):
-        
-        if i == 0:
-            max_value = array[i]
-            index = i
-        elif array[i] > max_value:
-            max_value = array[i]
-            index = i
-    return index
-
 def find_nearest_index(value, array):
     """
     returns the index in the array of the nearest value      
