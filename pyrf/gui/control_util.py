@@ -2,50 +2,9 @@ from PySide import QtGui, QtCore
 import numpy as np
 import util
 from pyrf.units import M
-import pyqtgraph as pg
-from pyrf.config import TriggerSettings
-from frequency_controls import FrequencyControls
 
 AXIS_OFFSET = 7
 
-def _up_arrow_key(layout):
-    """
-    increase the step size of the +/- buttons
-    """
-    step = layout._fstep_box.currentIndex() + 1
-    max_step = layout._fstep_box.count()
-    if step > max_step - 1:
-        step = max_step -1
-    elif step < 0:
-        step = 0
-        layout._fstep_box.setCurrentIndex(step)
-    layout._fstep_box.setCurrentIndex(step)
-
-def _down_arrow_key(layout):
-    """
-    decrease the step size of the +/- buttons
-    """
-    step = layout._fstep_box.currentIndex() - 1
-    max_step = layout._fstep_box.count()
-    if step > max_step - 1:
-        step = max_step -1
-    elif step < 0:
-        step = 0
-        layout._fstep_box.setCurrentIndex(step)
-    layout._fstep_box.setCurrentIndex(step)
-
-def _right_arrow_key(layout):
-    """
-    handle arrow key right action
-    """
-    layout._freq_group._freq_plus.click()
-
-def _left_arrow_key(layout):
-    """
-    handle left arrow key action
-    """
-    layout._freq_group._freq_minus.click()
-        
 def _trace_tab_change(layout):
     """
     change the selected trace
@@ -309,11 +268,7 @@ def _change_min_level(layout):
     layout.plot_state.min_level = min
     _center_plot_view(layout)
 
-hotkey_dict = { 'UP KEY': _up_arrow_key,
-                'DOWN KEY': _down_arrow_key,
-                'RIGHT KEY': _right_arrow_key,
-                'LEFT KEY': _left_arrow_key,
-                'M': _marker_control,
+hotkey_dict = { 'M': _marker_control,
                 'P': _find_peak,
                 } 
                 
