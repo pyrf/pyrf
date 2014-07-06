@@ -327,19 +327,21 @@ class MainPanel(QtGui.QWidget):
 
 
     def mousePressEvent(self, event):
-            if self.controller._dut:
-                marker = self._plot.markers[self.trace_group._marker_tab.currentIndex()]
-                trace = self._plot.traces[marker.trace_index]
-                if event.button() == QtCore.Qt.MouseButton.LeftButton:
-                    click_pos =  event.pos().x() - 68
-                    plot_window_width = self._plot.window.width() - 68
+        if not self.controller._dut:
+            return
 
-                    if click_pos < plot_window_width and click_pos > 0:
-                        window_freq = self._plot.view_box.viewRange()[0]
-                        window_bw =  (window_freq[1] - window_freq[0])
-                        click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
-                        index = find_nearest_index(click_freq, trace.freq_range)
-                        self._plot.markers[self.trace_group._marker_tab.currentIndex()].data_index = index
+        marker = self._plot.markers[self.trace_group._marker_tab.currentIndex()]
+        trace = self._plot.traces[marker.trace_index]
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            click_pos =  event.pos().x() - 68  # FIXME: declare this as a constant?
+            plot_window_width = self._plot.window.width() - 68
+
+            if click_pos < plot_window_width and click_pos > 0:
+                window_freq = self._plot.view_box.viewRange()[0]
+                window_bw =  (window_freq[1] - window_freq[0])
+                click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
+                index = find_nearest_index(click_freq, trace.freq_range)
+                self._plot.markers[self.trace_group._marker_tab.currentIndex()].data_index = index
 
     def initUI(self):
         grid = QtGui.QGridLayout()
