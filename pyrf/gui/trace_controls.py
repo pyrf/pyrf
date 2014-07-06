@@ -14,9 +14,12 @@ class TraceControls(QtGui.QGroupBox):
     can be used to control the FFT plot's traces
     :param name: The name of the groupBox
     """
-    def __init__(self, plot, name="Trace Control"):
+    def __init__(self, controller, plot, name="Trace Control"):
         super(TraceControls, self).__init__()
 
+        self.controller = controller
+        controller.state_change.connect(self.state_changed)
+        controller.capture_receive.connect(self.capture_received)
         self._plot = plot
         self.setTitle(name)
         self._marker_trace = None
@@ -60,6 +63,20 @@ class TraceControls(QtGui.QGroupBox):
         self.trace_attr['write'].clicked.connect(self.trace_write)
         self.trace_attr['blank'].clicked.connect(self.blank_trace)
         self.trace_tab.currentChanged.connect(self._trace_tab_change)
+
+    def state_changed(self, state, changed):
+        if 'mode' in changed:
+            self.cf_marker.setEnabled(state.sweeping())
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self.hide()
+            else:
+                self.show()
+
+    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
+        # save x,y data for marker adjustments
+        self.pow_data = power
+        self.xdata = np.linspace(fstart, fstop, len(power))
 
     def _trace_tab_change(self):
         """

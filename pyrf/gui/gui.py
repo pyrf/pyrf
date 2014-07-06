@@ -249,13 +249,11 @@ class MainPanel(QtGui.QWidget):
         if 'mode' in changed:
             self.rfe_mode = state.rfe_mode()  # used by recentering code
             if state.sweeping():
-                self.trace_group.cf_marker.setEnabled(True)
                 self._plot.const_window.hide()
                 self._plot.iq_window.hide()
-                return
-            self.trace_group.cf_marker.setEnabled(False)
-            self._plot.const_window.show()
-            self._plot.iq_window.show()
+            else:
+                self._plot.const_window.show()
+                self._plot.iq_window.show()
 
             if self.rfe_mode in ('DD', 'IQIN'):
                 freq = self.dut_prop.MIN_TUNABLE[self.rfe_mode]
@@ -272,10 +270,9 @@ class MainPanel(QtGui.QWidget):
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
                                         IQ_PLOT_YMAX[self.rfe_mode])
         if 'device_settings.iq_output_path' in changed:
-            if 'CONNECTOR' in state.device_settings['iq_output_path']:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
                 self._plot_group.hide()
-                self.trace_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -292,10 +289,9 @@ class MainPanel(QtGui.QWidget):
                 self.resize(0,0)
                 self._main_window.resize(0,0)
 
-            elif 'DIGITIZER' in state.device_settings['iq_output_path']:
+            else:
                 # show plots
                 self._plot_group.show()
-                self.trace_group.show()
                 self._plot_layout.show()
 
                 # resize window
@@ -395,7 +391,7 @@ class MainPanel(QtGui.QWidget):
         return self._plot_layout
 
     def _trace_controls(self):
-        self.trace_group = TraceControls(self._plot)
+        self.trace_group = TraceControls(self.controller, self._plot)
         self.control_widgets.append(self.trace_group)
         return self.trace_group
 
@@ -455,8 +451,6 @@ class MainPanel(QtGui.QWidget):
         self.update_diff()
 
     def update_trace(self):
-        self.trace_group.xdata = self.xdata
-        self.trace_group.pow_data = self.pow_data
         for trace in self._plot.traces:
             trace.update_curve(
                 self.xdata,
