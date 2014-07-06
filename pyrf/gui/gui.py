@@ -471,7 +471,7 @@ class MainPanel(QtGui.QWidget):
                     self._marker_check.click()
                     self._marker_tab.setCurrentIndex(0)
             count += 1
-        util.update_marker_traces(self._marker_trace, self._plot.traces) 
+        util.update_marker_traces(self._marker_trace, self._plot.traces)
 
     def _store_trace(self):
         """
@@ -495,7 +495,7 @@ class MainPanel(QtGui.QWidget):
             marker.trace_index = int(self._marker_trace.currentText()) - 1
             marker.enable(self._plot)
         else:
-            self._marker_trace.setEnabled(False)  
+            self._marker_trace.setEnabled(False)
             self._plot.markers[self._marker_tab.currentIndex()].disable(self._plot)
 
             self.marker_labels[self._marker_tab.currentIndex()].setText('')
@@ -525,9 +525,9 @@ class MainPanel(QtGui.QWidget):
                     index = 1
                 else:
                     index = 2
-                self._marker_trace.setCurrentIndex(index) 
+                self._marker_trace.setCurrentIndex(index)
             else:
-                self._marker_trace.setCurrentIndex(marker.trace_index) 
+                self._marker_trace.setCurrentIndex(marker.trace_index)
             self._marker_trace.setEnabled(True)
             self._marker_check.setCheckState(QtCore.Qt.CheckState.Checked)
         else:
