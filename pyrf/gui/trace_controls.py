@@ -1,12 +1,52 @@
+from collections import namedtuple
+
 from PySide import QtGui, QtCore
 from pyrf.gui import labels
 from pyrf.gui import colors
-from pyrf.gui.util import update_marker_traces
+from pyrf.gui.util import update_marker_traces, clear_layout
 
 import numpy as np
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
+
+class TraceWidgets(namedtuple('TraceWidgets', """
+    icon
+    label
+    draw
+    hold
+    add
+    remove
+    add_marker
+    """)):
+    """
+    :param icon: color icon
+    :param label: trace name label
+    :param draw: draw combobox, including 'Live', 'Max', 'Min' options
+    :param hold: hold checkbox
+    :param add: "+ trace" button
+    :param remove: "- trace" button
+    :param add_marker: "+ marker" button for adding a marker to this trace
+    """
+    __slots__ = []
+
+class MarkerWidgets(namedtuple('MarkerWidgets', """
+    marker
+    center
+    peak_left
+    peak
+    peak_right
+    remove
+    """)):
+    """
+    :param marker: marker name radio button assigned to button_group
+    :param center: "center" button
+    :param peak_left: "peak left" button
+    :param peak: "peak" button
+    :param peak_right: "peak right" button
+    :param remove: "- marker" button
+    """
+    __slots = []
 
 class TraceControls(QtGui.QGroupBox):
     """
@@ -24,45 +64,158 @@ class TraceControls(QtGui.QGroupBox):
         self.setTitle(name)
         self._marker_trace = None
 
-        layout = QtGui.QVBoxLayout(self)
+        self.setLayout(QtGui.QGridLayout())
+        self._create_controls()
+        self._build_layout()
 
-        # first row will contain the tabs
-        first_row = QtGui.QHBoxLayout()
+    def _create_controls(self):
+        self._traces = []
+        for num in range(len(colors.TRACE_COLORS)):
+            self._traces.append(self._create_trace_widgets(num))
 
-        # add tabs for each trace
-        trace_tab = QtGui.QTabBar()
-        count = 0
-        for (trace,(r,g,b)) in zip(labels.TRACES, colors.TRACE_COLORS):
-            trace_tab.addTab(trace)
-            color = QtGui.QColor()
-            color.setRgb(r,g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            trace_tab.setTabIcon(count,icon)
-            count += 1
+        self._markers = []
+        self._marker_group = QtGui.QButtonGroup()
+        for num in (0, 1):
+            self._markers.append(self._create_marker_widgets(num,
+                self._marker_group))
 
-        self.trace_tab = trace_tab
-        first_row.addWidget(trace_tab)
+    def _create_trace_widgets(self, num):
+        """
+        :param num: index of this set of trace controls from 0 - 2
 
-        # second row contains the tab attributes
-        second_row = QtGui.QHBoxLayout()
-        max_hold, min_hold, write, store, blank  = self._trace_items()
-        second_row.addWidget(max_hold)
-        second_row.addWidget(min_hold)
-        second_row.addWidget(write)
-        second_row.addWidget(blank)
-        second_row.addWidget(store)
-        layout.addLayout(first_row)
-        layout.addLayout(second_row)
-        self.setLayout(layout)
+        :returns: a TraceWidgets namedtuple
+        """
+        r, g, b = colors.TRACE_COLORS[num]
+        color = QtGui.QColor()
+        color.setRgb(r, g, b)
+        pixmap = QtGui.QPixmap(10,10)
+        pixmap.fill(color)
+        #icon = QtGui.QIcon(pixmap)
+        icon = QtGui.QLabel()
+        icon.setPixmap(pixmap)
 
-        self.trace_attr['store'].clicked.connect(self._store_trace)
-        self.trace_attr['max_hold'].clicked.connect(self.max_hold)
-        self.trace_attr['min_hold'].clicked.connect(self.min_hold)
-        self.trace_attr['write'].clicked.connect(self.trace_write)
-        self.trace_attr['blank'].clicked.connect(self.blank_trace)
-        self.trace_tab.currentChanged.connect(self._trace_tab_change)
+        label = QtGui.QLabel("Trace %d:" % (num + 1))
+
+        draw = QtGui.QComboBox()
+        draw.setToolTip("Select data source")
+        for i, val in enumerate(['Live', 'Max', 'Min']):
+            draw.addItem(val)
+        draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
+        def draw_changed(index):
+            print 'draw', num, 'new index', index
+        draw.currentIndexChanged.connect(draw_changed)
+
+        hold = QtGui.QCheckBox("Hold")
+        hold.setToolTip("Pause trace updating")
+        def hold_clicked(value):
+            print 'hold', num, 'value', value
+        hold.clicked.connect(hold_clicked)
+
+        add_trace = QtGui.QPushButton("+ Trace")
+        add_trace.setToolTip("Enable this trace")
+        def add_trace_clicked():
+            print 'add trace', num
+        add_trace.clicked.connect(add_trace_clicked)
+
+        remove_trace = QtGui.QPushButton("- Trace")
+        remove_trace.setToolTip("Disable this trace")
+        def remove_trace_clicked():
+            print 'remove trace', num
+        remove_trace.clicked.connect(remove_trace_clicked)
+
+        add_marker = QtGui.QPushButton("+ Marker")
+        add_marker.setToolTip("Add a marker to this trace")
+        def add_marker_clicked():
+            print 'add marker', num
+        add_marker.clicked.connect(add_marker_clicked)
+
+        return TraceWidgets(icon, label, draw, hold, add_trace, remove_trace,
+            add_marker)
+
+    def _create_marker_widgets(self, num, button_group):
+        """
+        :param num: index of this marker (currently 0 or 1)
+        :param button_group: QButtonGroup for the marker radio buttons
+
+        :returns: a MarkerWidgets namedtuple
+
+        """
+        radio = QtGui.QRadioButton("Marker %d:" % (num + 1))
+        button_group.addButton(radio)
+        def marker_select():
+            print 'marker select', num
+        radio.clicked.connect(marker_select)
+
+        center = QtGui.QPushButton("Center")
+        center.setToolTip("Center the frequency on this marker")
+        def center_clicked():
+            print 'center on', num
+        center.clicked.connect(center_clicked)
+
+        peak_left = QtGui.QPushButton("Peak Left")
+        peak_left.setToolTip("Find peak left of the marker")
+        def peak_left_clicked():
+            print 'peak left', num
+        peak_left.clicked.connect(peak_left_clicked)
+
+        peak = QtGui.QPushButton("Peak")
+        peak.setToolTip("Find the peak of the selected spectrum")
+        def peak_clicked():
+            print 'peak', num
+        peak.clicked.connect(peak_clicked)
+
+        peak_right = QtGui.QPushButton("Peak Right")
+        peak_right.setToolTip("Find peak right of the marker")
+        def peak_right_clicked():
+            print 'peak right', num
+        peak_right.clicked.connect(peak_right_clicked)
+
+        remove_marker = QtGui.QPushButton("- Marker")
+        remove_marker.setToolTip("Remove this marker")
+        def remove_marker_clicked():
+            print 'remove marker', num
+        remove_marker.clicked.connect(remove_marker_clicked)
+
+        return MarkerWidgets(radio, center, peak_left, peak, peak_right,
+            remove_marker)
+
+    def _build_layout(self):
+        """
+        rebuild grid layout based on marker and trace states
+        """
+        grid = self.layout()
+        clear_layout(grid)
+
+        def add_trace_widgets(trace_widgets, row):
+            grid.addWidget(trace_widgets.icon, row, 0, 1, 1)
+            grid.addWidget(trace_widgets.label, row, 1, 1, 1)
+            grid.addWidget(trace_widgets.draw, row, 2, 1, 1)
+            grid.addWidget(trace_widgets.hold, row, 3, 1, 1)
+            grid.addWidget(trace_widgets.remove, row, 3, 1, 1)
+            return row + 1
+
+        def add_marker_widgets(marker_widgets, row):
+            grid.addWidget(marker_widgets.marker, row, 0, 1, 2)
+            grid.addWidget(marker_widgets.center, row, 2, 1, 1)
+            grid.addWidget(marker_widgets.remove, row, 3, 1, 1)
+            row = row + 1
+            grid.addWidget(marker_widgets.peak_left, row, 1, 1, 1)
+            grid.addWidget(marker_widgets.peak, row, 2, 1, 1)
+            grid.addWidget(marker_widgets.peak_right, row, 3, 1, 1)
+            return row + 1
+
+        row = 0
+        row = add_trace_widgets(self._traces[0], row)
+        row = add_marker_widgets(self._markers[0], row)
+        row = add_marker_widgets(self._markers[1], row)
+        row = add_trace_widgets(self._traces[1], row)
+        row = add_trace_widgets(self._traces[2], row)
+
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 5)
+        grid.setColumnStretch(2, 5)
+        grid.setColumnStretch(3, 5)
+
 
     def state_changed(self, state, changed):
         if 'mode' in changed:
@@ -374,25 +527,8 @@ class TraceControls(QtGui.QGroupBox):
 
         plot_controls_layout = QtGui.QVBoxLayout()
 
-        first_row = QtGui.QHBoxLayout()
-        marker_tab = QtGui.QTabBar()
-        for marker in labels.MARKERS:
-            marker_tab.addTab(marker)
-        marker_tab.currentChanged.connect(self._marker_tab_change)
-        first_row.addWidget(marker_tab)
-
-        self._marker_tab = marker_tab
-        self.control_widgets = [self._marker_tab]
+        self.control_widgets = []
         marker_check, marker_trace = self._make_marker_control()
-
-        second_row = QtGui.QHBoxLayout()
-        second_row.addWidget(marker_trace)
-        second_row.addWidget(marker_check)
-
-        third_row = QtGui.QHBoxLayout()
-        third_row.addWidget(self._peak_left())
-        third_row.addWidget(self._peak_control())
-        third_row.addWidget(self._peak_right())
 
         fourth_row = QtGui.QHBoxLayout()
         ref_level, ref_label, min_level, min_label = self._ref_controls()
@@ -402,15 +538,7 @@ class TraceControls(QtGui.QGroupBox):
         fourth_row.addWidget(min_label)
         fourth_row.addWidget(min_level)
 
-        fifth_row = QtGui.QHBoxLayout()
-        fifth_row.addWidget(self._cf_marker())
-        fifth_row.addWidget(self._center_control())
-
-        plot_controls_layout.addLayout(first_row)
-        plot_controls_layout.addLayout(second_row)
-        plot_controls_layout.addLayout(third_row)
         plot_controls_layout.addLayout(fourth_row)
-        plot_controls_layout.addLayout(fifth_row)
         plot_group.setLayout(plot_controls_layout)
 
         return plot_group

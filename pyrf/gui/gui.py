@@ -471,7 +471,7 @@ class MainPanel(QtGui.QWidget):
 
         if not self.raw_data:
                 return
-        trace = self._plot.traces[self.trace_group.trace_tab.currentIndex()]
+        trace = self._plot.traces[0]
 
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return
@@ -553,14 +553,7 @@ class MainPanel(QtGui.QWidget):
         for item in self.control_widgets:
             item.setEnabled(True)
 
-        for key in self.trace_group.trace_attr:
-            self.trace_group.trace_attr[key].setEnabled(True)
-        
     def disable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(False)
 
-        for key in self.trace_group.trace_attr:
-            self.trace_group.trace_attr[key].setEnabled(False)
-
-        
