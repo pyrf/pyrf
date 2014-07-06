@@ -91,10 +91,3 @@ def clear_layout(layout):
         return
     while layout.count():
         layout.removeItem(layout.takeAt(0))
-        continue
-
-        widget = item.widget()
-        if widget is None:
-            clear_layout(item.layout())
-        else:
-            widget.deleteLater
