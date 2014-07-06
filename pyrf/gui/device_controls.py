@@ -40,7 +40,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._rbw_values = None
         self._rbw_use_normal_values()
 
-        self._dec_label = QtGui.QLabel('DDC Factor:')
+        self._dec_label = QtGui.QLabel('Decimation:')
         self._dec_box = QtGui.QComboBox()
         self._dec_box.setToolTip("Choose Decimation Rate")
         # FIXME: use values from device properties
@@ -49,7 +49,7 @@ class DeviceControls(QtGui.QGroupBox):
             self._dec_box.addItem(d)
         self._dec_values = dec_values
 
-        self._fshift_label = QtGui.QLabel("Freq Shift:")
+        self._fshift_label = QtGui.QLabel("FShift:")
         self._fshift_edit = QtGui.QLineEdit("0")
         self._fshift_edit.setToolTip("Frequency Shift")
 
@@ -134,9 +134,11 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
             grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
 
-        grid.setColumnMinimumWidth(2, 10)
-
-        self.setLayout(grid)
+        grid.setColumnStretch(0, 5)
+        grid.setColumnStretch(1, 7)
+        grid.setColumnStretch(2, 1)
+        grid.setColumnStretch(3, 4)
+        grid.setColumnStretch(4, 8)
 
 
     def _connect_device_controls(self):

@@ -38,7 +38,11 @@ class FrequencyControls(QtGui.QGroupBox):
         grid.addWidget(freq_inc_label, 2, 0, 1, 1)
         grid.addWidget(freq_inc_steps, 2, 1, 1, 1)
 
-        grid.setColumnMinimumWidth(2, 10)
+        grid.setColumnStretch(0, 4)
+        grid.setColumnStretch(1, 9)
+        grid.setColumnStretch(2, 1)
+        grid.setColumnStretch(3, 3)
+        grid.setColumnStretch(4, 9)
 
         self.setLayout(grid)
 
