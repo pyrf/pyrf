@@ -191,6 +191,11 @@ class TraceControls(QtGui.QGroupBox):
         remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
+            if self._markers[num].marker.isChecked():
+                for m in self._markers:
+                    if not m.marker.isChecked():
+                        break
+                m.marker.click()  # select other marker
             self._plot.markers[num].disable(self._plot)
             self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
