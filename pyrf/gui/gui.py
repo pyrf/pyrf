@@ -28,7 +28,7 @@ from pyrf.devices.thinkrf import WSA
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
-from pyrf.gui.util import find_nearest_index, update_marker_traces
+from pyrf.gui.util import find_nearest_index
 from pyrf.gui.plot_widget import Plot
 from pyrf.gui.device_controls import DeviceControls
 from pyrf.gui.frequency_controls import FrequencyControls

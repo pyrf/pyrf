@@ -27,29 +27,6 @@ def change_item_color(item, textColor, backgroundColor):
     """
     item.setStyleSheet("QPushButton{Background-color: %s; color: %s; } QToolButton{color: Black}" % (textColor, backgroundColor)) 
 
-def update_marker_traces(combo_box, traces):
-    """
-    update the available traces in a combo box   
-    """
-
-    index = combo_box.currentIndex()
-    if index < 0:
-        index = 0
-    combo_box.clear()
-    count = 0
-    for (trace,(r,g,b)) in zip(traces, colors.TRACE_COLORS):
-        if not trace.blank:
-            combo_box.addItem(trace.name)
-            color = QtGui.QColor()
-            color.setRgb(r, g,b)
-            pixmap = QtGui.QPixmap(10,10)
-            pixmap.fill(color)
-            icon = QtGui.QIcon(pixmap)
-            combo_box.setItemIcon(count,icon)
-            count += 1
-            
-    combo_box.setCurrentIndex(index)
-
 
 def clear_layout(layout):
     """

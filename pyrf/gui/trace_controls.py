@@ -3,7 +3,7 @@ from collections import namedtuple
 from PySide import QtGui, QtCore
 from pyrf.gui import labels
 from pyrf.gui import colors
-from pyrf.gui.util import update_marker_traces, hide_layout
+from pyrf.gui.util import hide_layout
 
 import numpy as np
 
@@ -133,7 +133,12 @@ class TraceControls(QtGui.QGroupBox):
         add_marker = QtGui.QPushButton("+ Marker")
         add_marker.setToolTip("Add a marker to this trace")
         def add_marker_clicked():
-            print 'add marker', num
+            m = 0 if not self._plot.markers[0].enabled else 1
+            self._plot.markers[m].enabled = True
+            self._plot.markers[m].trace_index = num
+            if not self._markers[m].marker.isChecked():
+                self._markers[m].marker.click()  # select markers when adding
+            self._build_layout()
         add_marker.clicked.connect(add_marker_clicked)
 
         return TraceWidgets(icon, label, draw, hold, add_trace, remove_trace,
@@ -150,38 +155,43 @@ class TraceControls(QtGui.QGroupBox):
         radio = QtGui.QRadioButton("Marker %d:" % (num + 1))
         button_group.addButton(radio)
         def marker_select():
-            print 'marker select', num
+            self._marker_selected = num
         radio.clicked.connect(marker_select)
 
         center = QtGui.QPushButton("Center")
         center.setToolTip("Center the frequency on this marker")
         def center_clicked():
-            print 'center on', num
+            marker = self._plot.markers[num]
+            if marker.enabled:
+                self.controller.apply_settings(center=
+                    self.xdata[marker.data_index])
+                marker.data_index = len(self.pow_data)/2
         center.clicked.connect(center_clicked)
 
         peak_left = QtGui.QPushButton("Peak Left")
         peak_left.setToolTip("Find peak left of the marker")
         def peak_left_clicked():
-            print 'peak left', num
+            self._find_peak_left(num)
         peak_left.clicked.connect(peak_left_clicked)
 
         peak = QtGui.QPushButton("Peak")
         peak.setToolTip("Find the peak of the selected spectrum")
         def peak_clicked():
-            print 'peak', num
+            self._find_peak(num)
         peak.clicked.connect(peak_clicked)
 
         peak_right = QtGui.QPushButton("Peak Right")
         peak_right.setToolTip("Find peak right of the marker")
         def peak_right_clicked():
-            print 'peak right', num
+            self._find_peak_right(num)
         peak_right.clicked.connect(peak_right_clicked)
 
         remove_marker = QtGui.QPushButton("-")
         remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
-            print 'remove marker', num
+            self._plot.markers[num].enabled = False
+            self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
 
         return MarkerWidgets(radio, center, peak_left, peak, peak_right,
@@ -197,23 +207,18 @@ class TraceControls(QtGui.QGroupBox):
             grid.addWidget(widget, y, x, h, w)
             widget.show()
 
-        def add_trace_widgets(trace_widgets, row):
+        def add_trace_widgets(trace_widgets, row, extra=False):
             show(trace_widgets.icon, row, 0, 1, 1)
-            show(trace_widgets.label, row, 1, 1, 1)
-            show(trace_widgets.draw, row, 2, 1, 1)
-            show(trace_widgets.hold, row, 3, 1, 1)
+            show(trace_widgets.draw, row, 1, 1, 1)
+            show(trace_widgets.hold, row, 2, 1, 1)
+            if extra:
+                show(trace_widgets.add_marker, row, 3, 1, 1)
             show(trace_widgets.remove, row, 4, 1, 1)
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
             show(trace_widgets.icon, row, 0, 1, 1)
             show(trace_widgets.add, row, 1, 1, 1)
-            return row + 1
-
-        def add_marker_extra_widgets(trace_widgets, row):
-            layout = QtGui.QHBoxLayout()
-            layout.addWidget(trace_widgets.add_marker)
-            grid.addLayout(layout, row, 0, 1, 2)
             return row + 1
 
         def add_marker_widgets(marker_widgets, row):
@@ -226,12 +231,22 @@ class TraceControls(QtGui.QGroupBox):
             show(marker_widgets.peak_right, row, 3, 1, 1)
             return row + 1
 
+        extra_markers = any(not m.enabled for m in self._plot.markers)
+
         row = 0
-        for trace, widgets in zip(self._plot.traces, self._traces):
+        for trace_index, (trace, widgets) in enumerate(
+                zip(self._plot.traces, self._traces)):
             if trace.blank:
                 row = add_trace_off_widgets(widgets, row)
                 continue
-            row = add_trace_widgets(widgets, row)
+            row = add_trace_widgets(widgets, row, extra_markers)
+
+            trace_markers = [
+                i for (i, marker) in enumerate(self._plot.markers)
+                if marker.enabled and marker.trace_index == trace_index]
+            if trace_markers:
+                for tm in trace_markers:
+                    row = add_marker_widgets(self._markers[tm], row)
 
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 5)
@@ -282,7 +297,6 @@ class TraceControls(QtGui.QGroupBox):
         trace.max_hold = True
         trace.min_hold = False
         trace.blank = False
-        update_marker_traces(self._marker_trace, self._plot.traces)
 
     def min_hold(self, num):
         """
@@ -293,7 +307,6 @@ class TraceControls(QtGui.QGroupBox):
         trace.max_hold = False
         trace.min_hold = True
         trace.blank = False
-        update_marker_traces(self._marker_trace, self._plot.traces)
 
     def trace_write(self, num):
         """
@@ -305,12 +318,9 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = False
         trace.blank = False
 
-        if self._marker_trace is not None:
-            update_marker_traces(self._marker_trace, self._plot.traces)
-
     def blank_trace(self, num):
         """
-        disable/enable the selected trace
+        disable the selected trace
         """
         trace = self._plot.traces[num]
         trace.write = False
@@ -319,16 +329,6 @@ class TraceControls(QtGui.QGroupBox):
         trace.blank = True
         trace.clear()
         trace.data = None
-
-        count = 0
-        for marker in self._plot.markers:
-            if marker.enabled and marker.trace_index == num:
-                marker.disable(self._plot)
-                if count == num:
-                    self._marker_check.click()
-                    self._marker_tab.setCurrentIndex(0)
-            count += 1
-        update_marker_traces(self._marker_trace, self._plot.traces)
 
     def _store_trace(self, num, store):
         """
@@ -391,15 +391,11 @@ class TraceControls(QtGui.QGroupBox):
             self._marker_check.setCheckState(QtCore.Qt.CheckState.Unchecked)
         marker.selected = True
 
-    def _find_peak(self):
+    def _find_peak(self, num):
         """
         move the selected marker to the maximum point of the spectrum
         """
-        marker = self._plot.markers[self._marker_tab.currentIndex()]
-
-        # enable the marker if it is not already enabled
-        if not marker.enabled:
-            self._marker_check.click()
+        marker = self._plot.markers[num]
 
         # retrieve the min/max x-axis of the current window
         window_freq = self._plot.view_box.viewRange()[0]
@@ -413,16 +409,13 @@ class TraceControls(QtGui.QGroupBox):
         peak_value = np.max(trace.data[min_index:max_index])
         marker.data_index = np.where(trace.data==peak_value)[0]
 
-    def _find_right_peak(self):
+    def _find_right_peak(self, num):
         """
         move the selected marker to the next peak on the right
         """
-        marker = self._plot.markers[self._marker_tab.currentIndex()]
+        marker = self._plot.markers[num]
         trace = self._plot.traces[marker.trace_index]
         pow_data = trace.data
-        # enable the marker if it is not already enabled
-        if not marker.enabled:
-            self._marker_check.click()
 
         # retrieve the min/max x-axis of the current window
         window_freq = self._plot.view_box.viewRange()[0]
@@ -447,11 +440,11 @@ class TraceControls(QtGui.QGroupBox):
             return
         marker.data_index = np.where(pow_data==(peak_values[1 if len(peak_values) > 1 else 0]))[0]
 
-    def _find_left_peak(self):
+    def _find_left_peak(self, num):
         """
         move the selected marker to the next peak on the left
         """
-        marker = self._plot.markers[self._marker_tab.currentIndex()]
+        marker = self._plot.markers[num]
         trace = self._plot.traces[marker.trace_index]
         pow_data = trace.data
         # enable the marker if it is not already enabled
@@ -539,7 +532,6 @@ class TraceControls(QtGui.QGroupBox):
         plot_controls_layout = QtGui.QVBoxLayout()
 
         self.control_widgets = []
-        marker_check, marker_trace = self._make_marker_control()
 
         fourth_row = QtGui.QHBoxLayout()
         ref_level, ref_label, min_level, min_label = self._ref_controls()
@@ -554,45 +546,6 @@ class TraceControls(QtGui.QGroupBox):
 
         return plot_group
 
-    def _make_marker_control(self):
-        marker_trace = QtGui.QComboBox()
-        marker_trace.setEnabled(False)
-        marker_trace.setMaximumWidth(50)
-        marker_trace.currentIndexChanged.connect(self._marker_trace_control)
-        update_marker_traces(marker_trace, self._plot.traces)
-
-        self._marker_trace = marker_trace
-        marker_check = QtGui.QCheckBox('Enabled')
-        marker_check.clicked.connect(self._marker_control)
-        self._marker_check = marker_check
-
-        self.control_widgets.append(self._marker_check)
-        return marker_check,marker_trace
-
-    def _peak_control(self):
-        peak = QtGui.QPushButton('Peak')
-        peak.setToolTip("[P]\nFind peak of the selected spectrum")
-        peak.clicked.connect(self._find_peak)
-        self._peak = peak
-        self.control_widgets.append(self._peak)
-        return peak
-
-    def _peak_right(self):
-        peak = QtGui.QPushButton('Peak Right')
-        peak.setToolTip("Find peak right of current peak")
-        peak.clicked.connect(self._find_right_peak)
-        self._peak = peak
-        self.control_widgets.append(self._peak)
-        return peak
-
-    def _peak_left(self):
-        peak = QtGui.QPushButton('Peak Left')
-        peak.setToolTip("Find peak left of current peak")
-        peak.clicked.connect(self._find_left_peak)
-        self._peak = peak
-        self.control_widgets.append(self._peak)
-        return peak
-
     def _center_control(self):
         center = QtGui.QPushButton('Recenter')
         center.setToolTip("[C]\nCenter the Plot View around the available spectrum")
@@ -603,24 +556,6 @@ class TraceControls(QtGui.QGroupBox):
         self._center_bt = center
         self.control_widgets.append(self._center_bt)
         return center
-
-    def _cf_marker(self):
-        cf_marker = QtGui.QPushButton('Marker to Center Frequency')
-        cf_marker.setToolTip("Center the frequency on the current marker")
-
-        def cf_marker_click():
-            current_marker = self._marker_tab.currentIndex()
-            marker = self._plot.markers[current_marker]
-
-            if marker.enabled:
-                self.controller.apply_settings(center=
-                    self.xdata[marker.data_index])
-                marker.data_index = len(self.pow_data)/2
-        cf_marker.clicked.connect(cf_marker_click)
-
-        self.cf_marker = cf_marker
-        self.control_widgets.append(self.cf_marker)
-        return cf_marker
 
     def _ref_controls(self):
         ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
