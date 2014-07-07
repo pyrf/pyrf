@@ -330,6 +330,10 @@ class TraceControls(QtGui.QGroupBox):
         trace.clear()
         trace.data = None
 
+        for marker in self._plot.markers:
+            if marker.trace_index == num:
+                marker.enabled = False
+
     def _store_trace(self, num, store):
         """
         store the current trace's data
