@@ -120,6 +120,7 @@ class Marker(object):
         plot.window.removeItem(self.marker_plot)
         self.data_index = None
         self.trace_index = 0
+
     def update_pos(self, xdata, ydata):
     
         self.marker_plot.clear()

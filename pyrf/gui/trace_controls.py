@@ -65,6 +65,7 @@ class TraceControls(QtGui.QGroupBox):
         self._plot = plot
         self.setTitle(name)
         self._marker_trace = None
+        self.marker_selected = 0
 
         self.setLayout(QtGui.QGridLayout())
         self._create_controls()
@@ -107,7 +108,7 @@ class TraceControls(QtGui.QGroupBox):
             [self.trace_write, self.max_hold, self.min_hold][index](num)
         draw.currentIndexChanged.connect(draw_changed)
 
-        hold = QtGui.QCheckBox("Hold")
+        hold = QtGui.QCheckBox("Pause")
         hold.setToolTip("Pause trace updating")
         def hold_clicked():
             self._store_trace(num, hold.isChecked())
@@ -134,7 +135,7 @@ class TraceControls(QtGui.QGroupBox):
         add_marker.setToolTip("Add a marker to this trace")
         def add_marker_clicked():
             m = 0 if not self._plot.markers[0].enabled else 1
-            self._plot.markers[m].enabled = True
+            self._plot.markers[m].enable(self._plot)
             self._plot.markers[m].trace_index = num
             if not self._markers[m].marker.isChecked():
                 self._markers[m].marker.click()  # select markers when adding
@@ -155,7 +156,7 @@ class TraceControls(QtGui.QGroupBox):
         radio = QtGui.QRadioButton("Marker %d:" % (num + 1))
         button_group.addButton(radio)
         def marker_select():
-            self._marker_selected = num
+            self.marker_selected = num
         radio.clicked.connect(marker_select)
 
         center = QtGui.QPushButton("Center")
@@ -171,7 +172,7 @@ class TraceControls(QtGui.QGroupBox):
         peak_left = QtGui.QPushButton("Peak Left")
         peak_left.setToolTip("Find peak left of the marker")
         def peak_left_clicked():
-            self._find_peak_left(num)
+            self._find_left_peak(num)
         peak_left.clicked.connect(peak_left_clicked)
 
         peak = QtGui.QPushButton("Peak")
@@ -183,14 +184,14 @@ class TraceControls(QtGui.QGroupBox):
         peak_right = QtGui.QPushButton("Peak Right")
         peak_right.setToolTip("Find peak right of the marker")
         def peak_right_clicked():
-            self._find_peak_right(num)
+            self._find_right_peak(num)
         peak_right.clicked.connect(peak_right_clicked)
 
         remove_marker = QtGui.QPushButton("-")
         remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
-            self._plot.markers[num].enabled = False
+            self._plot.markers[num].disable(self._plot)
             self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
 
@@ -332,7 +333,7 @@ class TraceControls(QtGui.QGroupBox):
 
         for marker in self._plot.markers:
             if marker.trace_index == num:
-                marker.enabled = False
+                marker.disable(self._plot)
 
     def _store_trace(self, num, store):
         """
