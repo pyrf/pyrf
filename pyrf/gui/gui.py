@@ -337,7 +337,12 @@ class MainPanel(QtGui.QWidget):
         if not self.controller._dut:
             return
 
-        marker = self._plot.markers[self.trace_group.marker_selected]
+        for marker in self._plot.markers:
+            if marker.selected:
+                break
+        else:
+            return
+
         trace = self._plot.traces[marker.trace_index]
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             click_pos =  event.pos().x() - 68  # FIXME: declare this as a constant?
@@ -348,7 +353,7 @@ class MainPanel(QtGui.QWidget):
                 window_bw =  (window_freq[1] - window_freq[0])
                 click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
                 index = find_nearest_index(click_freq, trace.freq_range)
-                self._plot.markers[self.trace_group.marker_selected].data_index = index
+                marker.data_index = index
 
     def initUI(self):
         grid = QtGui.QGridLayout()

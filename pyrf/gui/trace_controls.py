@@ -65,7 +65,6 @@ class TraceControls(QtGui.QGroupBox):
         self._plot = plot
         self.setTitle(name)
         self._marker_trace = None
-        self.marker_selected = 0
 
         self.setLayout(QtGui.QGridLayout())
         self._create_controls()
@@ -156,7 +155,8 @@ class TraceControls(QtGui.QGroupBox):
         radio = QtGui.QRadioButton("Marker %d:" % (num + 1))
         button_group.addButton(radio)
         def marker_select():
-            self.marker_selected = num
+            for i, marker in enumerate(self._plot.markers):
+                marker.selected = i == num
         radio.clicked.connect(marker_select)
 
         center = QtGui.QPushButton("Center")
