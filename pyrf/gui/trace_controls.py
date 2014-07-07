@@ -3,14 +3,14 @@ from collections import namedtuple
 from PySide import QtGui, QtCore
 from pyrf.gui import labels
 from pyrf.gui import colors
-from pyrf.gui.util import update_marker_traces, clear_layout
+from pyrf.gui.util import update_marker_traces, hide_layout
 
 import numpy as np
 
 PLOT_YMIN = -140
 PLOT_YMAX = 0
 
-REMOVE_BUTTON_WIDTH = 15
+REMOVE_BUTTON_WIDTH = 10
 
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
@@ -104,26 +104,30 @@ class TraceControls(QtGui.QGroupBox):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
-            print 'draw', num, 'new index', index
+            [self.trace_write, self.max_hold, self.min_hold][index](num)
         draw.currentIndexChanged.connect(draw_changed)
 
         hold = QtGui.QCheckBox("Hold")
         hold.setToolTip("Pause trace updating")
-        def hold_clicked(value):
-            print 'hold', num, 'value', value
+        def hold_clicked():
+            self._store_trace(num, hold.isChecked())
         hold.clicked.connect(hold_clicked)
 
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
         def add_trace_clicked():
-            print 'add trace', num
+            draw_changed(draw.currentIndex())
+            if hold.isChecked():  # force hold off
+                hold.click()
+            self._build_layout()
         add_trace.clicked.connect(add_trace_clicked)
 
         remove_trace = QtGui.QPushButton("-")
         remove_trace.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_trace.setToolTip("Disable this trace")
         def remove_trace_clicked():
-            print 'remove trace', num
+            self.blank_trace(num)
+            self._build_layout()
         remove_trace.clicked.connect(remove_trace_clicked)
 
         add_marker = QtGui.QPushButton("+ Marker")
@@ -188,45 +192,55 @@ class TraceControls(QtGui.QGroupBox):
         rebuild grid layout based on marker and trace states
         """
         grid = self.layout()
-        clear_layout(grid)
+        hide_layout(grid)
+        def show(widget, y, x, h, w):
+            grid.addWidget(widget, y, x, h, w)
+            widget.show()
 
         def add_trace_widgets(trace_widgets, row):
-            grid.addWidget(trace_widgets.icon, row, 0, 1, 1)
+            show(trace_widgets.icon, row, 0, 1, 1)
+            show(trace_widgets.label, row, 1, 1, 1)
+            show(trace_widgets.draw, row, 2, 1, 1)
+            show(trace_widgets.hold, row, 3, 1, 1)
+            show(trace_widgets.remove, row, 4, 1, 1)
+            return row + 1
+
+        def add_trace_off_widgets(trace_widgets, row):
+            show(trace_widgets.icon, row, 0, 1, 1)
+            show(trace_widgets.add, row, 1, 1, 1)
+            return row + 1
+
+        def add_marker_extra_widgets(trace_widgets, row):
             layout = QtGui.QHBoxLayout()
-            layout.addWidget(trace_widgets.label)
-            layout.addWidget(trace_widgets.draw)
-            layout.addWidget(trace_widgets.hold)
-            grid.addLayout(layout, row, 1, 1, 3)
-            grid.addWidget(trace_widgets.remove, row, 4, 1, 1)
+            layout.addWidget(trace_widgets.add_marker)
+            grid.addLayout(layout, row, 0, 1, 2)
             return row + 1
 
         def add_marker_widgets(marker_widgets, row):
-            grid.addWidget(marker_widgets.marker, row, 0, 1, 2)
-            grid.addWidget(marker_widgets.peak, row, 2, 1, 1)
-            grid.addWidget(marker_widgets.center, row, 3, 1, 1)
-            grid.addWidget(marker_widgets.remove, row, 4, 1, 1)
+            show(marker_widgets.marker, row, 0, 1, 2)
+            show(marker_widgets.peak, row, 2, 1, 1)
+            show(marker_widgets.center, row, 3, 1, 1)
+            show(marker_widgets.remove, row, 4, 1, 1)
             row = row + 1
-            grid.addWidget(marker_widgets.peak_left, row, 2, 1, 1)
-            grid.addWidget(marker_widgets.peak_right, row, 3, 1, 1)
+            show(marker_widgets.peak_left, row, 2, 1, 1)
+            show(marker_widgets.peak_right, row, 3, 1, 1)
             return row + 1
 
         row = 0
-        row = add_trace_widgets(self._traces[0], row)
-        row = add_marker_widgets(self._markers[0], row)
-        row = add_marker_widgets(self._markers[1], row)
-        row = add_trace_widgets(self._traces[1], row)
-        row = add_trace_widgets(self._traces[2], row)
+        for trace, widgets in zip(self._plot.traces, self._traces):
+            if trace.blank:
+                row = add_trace_off_widgets(widgets, row)
+                continue
+            row = add_trace_widgets(widgets, row)
 
         grid.setColumnStretch(0, 1)
-        grid.setColumnStretch(1, 3)
+        grid.setColumnStretch(1, 5)
         grid.setColumnStretch(2, 5)
         grid.setColumnStretch(3, 5)
         grid.setColumnStretch(4, 2)
 
 
     def state_changed(self, state, changed):
-        if 'mode' in changed:
-            self.cf_marker.setEnabled(state.sweeping())
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self.hide()
@@ -259,53 +273,46 @@ class TraceControls(QtGui.QGroupBox):
             state =  QtCore.Qt.CheckState.Unchecked
         self.trace_attr['store'].setCheckState(state)
 
-    def max_hold(self):
+    def max_hold(self, num):
         """
         disable/enable max hold on a trace
         """
-        trace = self._plot.traces[self.trace_tab.currentIndex()]
+        trace = self._plot.traces[num]
         trace.write = False
         trace.max_hold = True
         trace.min_hold = False
         trace.blank = False
-        self.trace_attr['store'].setEnabled(True)
         update_marker_traces(self._marker_trace, self._plot.traces)
 
-    def min_hold(self):
+    def min_hold(self, num):
         """
         disable/enable min hold on a trace
         """
-        trace = self._plot.traces[self.trace_tab.currentIndex()]
+        trace = self._plot.traces[num]
         trace.write = False
         trace.max_hold = False
         trace.min_hold = True
         trace.blank = False
-        self.trace_attr['store'].setEnabled(True)
         update_marker_traces(self._marker_trace, self._plot.traces)
 
-    def trace_write(self):
+    def trace_write(self, num):
         """
         disable/enable running FFT mode the selected trace
         """
-        trace = self._plot.traces[self.trace_tab.currentIndex()]
+        trace = self._plot.traces[num]
         trace.write = True
         trace.max_hold = False
         trace.min_hold = False
         trace.blank = False
-        self.trace_attr['store'].setEnabled(True)
 
         if self._marker_trace is not None:
             update_marker_traces(self._marker_trace, self._plot.traces)
 
-    def blank_trace(self):
+    def blank_trace(self, num):
         """
         disable/enable the selected trace
         """
-        if self.trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
-            self.trace_attr['store'].click()
-
-        self.trace_attr['store'].setEnabled(False)
-        trace = self._plot.traces[self.trace_tab.currentIndex()]
+        trace = self._plot.traces[num]
         trace.write = False
         trace.max_hold = False
         trace.min_hold = False
@@ -315,22 +322,19 @@ class TraceControls(QtGui.QGroupBox):
 
         count = 0
         for marker in self._plot.markers:
-            if marker.enabled and marker.trace_index ==  self.trace_tab.currentIndex():
+            if marker.enabled and marker.trace_index == num:
                 marker.disable(self._plot)
-                if count == self._marker_tab.currentIndex():
+                if count == num:
                     self._marker_check.click()
                     self._marker_tab.setCurrentIndex(0)
             count += 1
         update_marker_traces(self._marker_trace, self._plot.traces)
 
-    def _store_trace(self):
+    def _store_trace(self, num, store):
         """
         store the current trace's data
         """
-        if self.trace_attr['store'].checkState() is QtCore.Qt.CheckState.Checked:
-            self._plot.traces[self.trace_tab.currentIndex()].store = True
-        else:
-            self._plot.traces[self.trace_tab.currentIndex()].store = False
+        self._plot.traces[num].store = bool(store)
 
     def _marker_control(self):
         """
@@ -356,7 +360,7 @@ class TraceControls(QtGui.QGroupBox):
         """
 
         if self._marker_trace is not None:
-            marker = self._plot.markers[self._marker_tab.currentIndex()]
+            marker = self._plot.markers[0]  # XXX
             if not self._marker_trace.currentText() == '':
                 marker.trace_index = int(self._marker_trace.currentText()) - 1
 

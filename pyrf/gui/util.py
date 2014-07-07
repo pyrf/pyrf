@@ -59,3 +59,12 @@ def clear_layout(layout):
         return
     while layout.count():
         layout.removeItem(layout.takeAt(0))
+
+def hide_layout(layout):
+    """
+    Hide all widgets in a layout
+    """
+    while layout.count():
+        w = layout.takeAt(0).widget()
+        if w:
+            w.hide()
