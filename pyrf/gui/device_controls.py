@@ -214,6 +214,9 @@ class DeviceControls(QtGui.QGroupBox):
                                                                 'fstop': trigger_settings['fstop'],
                                                                 'amplitude': trigger_settings['amplitude']})
 
+        def new_rbw():
+            self.controller.apply_settings(rbw=self._rbw_values[
+                self._rbw_box.currentIndex()])
 
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
@@ -225,6 +228,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
         self._level_trigger.clicked.connect(new_trigger)
+        self._rbw_box.currentIndexChanged.connect(new_rbw)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
