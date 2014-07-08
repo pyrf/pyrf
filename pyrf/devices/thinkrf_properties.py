@@ -1,3 +1,5 @@
+from distutils.version import StrictVersion
+
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
 
@@ -12,10 +14,11 @@ def wsa_properties(device_id):
         return WSA4000Properties
 
     # revision numbers jumped backwards when switching to major.minor
+    rev = rev.lstrip('v')
     if '.' in rev:
-        old_v2 = rev < 'v1.2'
+        old_v2 = StrictVersion(rev) < StrictVersion('1.2')
     else:
-        old_v2 = rev < 'v3'
+        old_v2 = int(rev) < 3
 
     if model == 'WSA5000-220' and old_v2:
         return WSA5000_220_v2Properties
