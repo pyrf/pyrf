@@ -126,7 +126,7 @@ def get_network_interfaces():
     retval = get_network_list()
     return retval.values()
 
-def get_bc_addresses():
+def get_broadcast_addresses():
     retval = []
     list = get_network_list()
     for i in list:

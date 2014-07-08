@@ -2,8 +2,8 @@ from pyrf.config import SweepEntry, TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER
 from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
-from pyrf.windows_util import get_broadcast_addresses
-from pyrf.linux_util import get_bc_addresses
+from pyrf import windows_util
+from pyrf import linux_util
 from pyrf.devices.thinkrf_properties import wsa_properties
 
 import struct
@@ -737,9 +737,9 @@ def discover_wsa(wait_time=0.125):
     wsa_list = []
 
     if platform.system() == 'Windows':
-        destinations = get_broadcast_addresses()
+        destinations = widows_util.get_broadcast_addresses()
     elif platform.system() == 'Linux':
-        destinations = get_bc_addresses()
+        destinations = linux_util.get_broadcast_addresses()
     else:
         destinations = ['<broadcast>']
 
