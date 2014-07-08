@@ -50,7 +50,8 @@ class DeviceControls(QtGui.QGroupBox):
         self._dec_values = dec_values
 
         self._fshift_label = QtGui.QLabel("FShift:")
-        self._fshift_edit = QtGui.QLineEdit("0")
+        self._fshift_edit = QtGui.QDoubleSpinBox()
+        self._fshift_edit.setSuffix(' MHz')
         self._fshift_edit.setToolTip("Frequency Shift")
 
         self._antenna_label = QtGui.QLabel('Antenna:')
@@ -151,16 +152,8 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.currentText()))
 
         def new_freq_shift():
-            rfe_mode = 'ZIF'
-            prop = self.dut_prop
-            max_fshift = prop.MAX_FSHIFT[rfe_mode]
-            try:
-                if float(self._fshift_edit.text()) * M < max_fshift:
-                    self.controller.apply_settings(
-                        fshift=float(self._fshift_edit.text()) * M)
-            except ValueError:
-                pass
-            self._fshift_edit.setText(str(self.gui_state.fshift / M))
+            self.controller.apply_settings(
+                fshift=self._fshift_edit.value() * M)
 
         def new_gain():
             self.plot_state.dev_set['gain'] = self._gain_box.currentText().split()[-1].lower().encode('ascii')
@@ -220,7 +213,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
-        self._fshift_edit.returnPressed.connect(new_freq_shift)
+        self._fshift_edit.valueChanged.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
         self._attenuator_box.clicked.connect(new_attenuator)
         self._mode.currentIndexChanged.connect(new_input_mode)
@@ -296,6 +289,9 @@ class DeviceControls(QtGui.QGroupBox):
                 state.rfe_mode()] is not None
             self._dec_box.setEnabled(decimation_available)
             self._fshift_edit.setEnabled(decimation_available)
+            fshift_max = self.dut_prop.FULL_BW[state.mode] / M
+            self._fshift_edit.setMaximum(fshift_max)
+            self._fshift_edit.setMinimum(-fshift_max)
 
             # FIXME: calculate values from FULL_BW[rfe_mode] instead
             if state.rfe_mode() == 'HDR':

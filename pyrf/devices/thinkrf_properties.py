@@ -149,7 +149,6 @@ class WSA5000_220Properties(object):
         'IQIN': True,
         'DD': True,
         }
-    MAX_FSHIFT = {'ZIF': 62.5*M}
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
