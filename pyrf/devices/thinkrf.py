@@ -3,6 +3,7 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 from pyrf.windows_util import get_broadcast_addresses
+from pyrf.linux_util import get_bc_addresses
 from pyrf.devices.thinkrf_properties import wsa_properties
 
 import struct
@@ -737,6 +738,8 @@ def discover_wsa(wait_time=0.125):
 
     if platform.system() == 'Windows':
         destinations = get_broadcast_addresses()
+    elif platform.system() == 'Linux':
+        destinations = get_bc_addresses()
     else:
         destinations = ['<broadcast>']
 
