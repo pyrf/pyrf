@@ -2,6 +2,7 @@ from PySide import QtGui
 from pyrf.units import M
 
 from pyrf.gui.util import clear_layout
+from pyrf.gui.widgets import QComboBoxPlus
 
 # FIXME: calculate choices from device properties instead
 RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
@@ -20,7 +21,6 @@ class DeviceControls(QtGui.QGroupBox):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-        self.connected = False
 
         self.setTitle(name)
 
@@ -31,7 +31,7 @@ class DeviceControls(QtGui.QGroupBox):
 
     def _create_controls(self):
         self._mode_label = QtGui.QLabel('Mode:')
-        self._mode = QtGui.QComboBox()
+        self._mode = QComboBoxPlus()
         self._mode.setToolTip("Change the device input mode")
 
         self._rbw_label = QtGui.QLabel('RBW:')
@@ -178,8 +178,6 @@ class DeviceControls(QtGui.QGroupBox):
                 iq_output_path=self._iq_output_box.currentText().upper())
 
         def new_input_mode():
-            if not self.connected:
-                return
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
@@ -228,29 +226,11 @@ class DeviceControls(QtGui.QGroupBox):
         self._update_modes()
 
 
-    def _update_modes(self, single_mode=None):
-        """
-        :param single_mode: if set remove all modes except this one
-            and disable the dropdown (used for playback)
-        """
-        # prevent mode list changes from sending updates
-        self.connected = False
-
-        while self._mode.count():
-            self._mode.removeItem(0)
-
-        if single_mode:
-            self._mode.addItem(single_mode)
-            self._mode.setEnabled(False)
-        else:
-            self._mode.addItem("Auto")
-            for m in self.dut_prop.SPECA_MODES:
-                self._mode.addItem(m)
-            for m in self.dut_prop.RFE_MODES:
-                self._mode.addItem(m)
-            self._mode.setEnabled(True)
-
-        self.connected = True
+    def _update_modes(self):
+        modes = ["Auto"]
+        modes.extend(self.dut_prop.SPECA_MODES)
+        modes.extend(self.dut_prop.RFE_MODES)
+        self._mode.update_items_no_signal(modes)
 
 
     def state_changed(self, state, changed):
@@ -258,7 +238,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         if 'playback' in changed:
             if state.playback:
-                self._update_modes(state.mode)
+                self._mode.playback_value(state.mode)
                 self._level_trigger.setEnabled(False)
                 self._dec_box.setEnabled(False)
                 self._fshift_edit.setEnabled(False)
