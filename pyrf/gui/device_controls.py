@@ -156,12 +156,11 @@ class DeviceControls(QtGui.QGroupBox):
             max_fshift = prop.MAX_FSHIFT[rfe_mode]
             try:
                 if float(self._fshift_edit.text()) * M < max_fshift:
-                    self.controller.apply_settings(fshift = float(self._fshift_edit.text()) * M)
-                else:
-                    self._fshift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
+                    self.controller.apply_settings(
+                        fshift=float(self._fshift_edit.text()) * M)
             except ValueError:
-                self._fshift_edit.setText(str(self.plot_state.dev_set['fshift'] / M))
-                return
+                pass
+            self._fshift_edit.setText(str(self.gui_state.fshift / M))
 
         def new_gain():
             self.plot_state.dev_set['gain'] = self._gain_box.currentText().split()[-1].lower().encode('ascii')
