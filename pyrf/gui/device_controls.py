@@ -40,7 +40,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._rbw_box.setToolTip("Change the RBW of the FFT plot")
         self._update_rbw_options()
 
-        self._dec_label = QtGui.QLabel('Decimation:')
+        self._dec_label = QtGui.QLabel('DDC:')
         self._dec_box = QComboBoxPlayback()
         self._dec_box.setToolTip("Choose Decimation Rate")
         # FIXME: use values from device properties
@@ -132,8 +132,8 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
             grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
 
-        grid.setColumnStretch(0, 5)
-        grid.setColumnStretch(1, 7)
+        grid.setColumnStretch(0, 4)
+        grid.setColumnStretch(1, 8)
         grid.setColumnStretch(2, 1)
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 8)
