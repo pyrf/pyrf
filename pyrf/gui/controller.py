@@ -117,7 +117,21 @@ class SpecAController(QtCore.QObject):
         self._recording_file.close()
         self._recording_file = None
 
+    def _apply_pending_user_xrange(self):
+        if self._pending_user_xrange:
+            self._applying_user_xrange = True
+            start, stop = self._pending_user_xrange
+            self._pending_user_xrange = None
+            self.apply_settings(
+                center=int((start + stop) / 2.0
+                    / self._dut.properties.TUNING_RESOLUTION)
+                    * self._dut.properties.TUNING_RESOLUTION,
+                span=stop - start)
+        else:
+            self._applying_user_xrange = False
+
     def read_block(self):
+        self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
         device_set['decimation'] = self._state.decimation
         device_set['fshift'] = self._state.fshift
@@ -131,23 +145,7 @@ class SpecAController(QtCore.QObject):
             self._state.rbw)
 
     def read_sweep(self):
-        """
-        Start the next sweep based on the current state or based
-        on a pending user xrange setting when xrange control is
-        enabled ("Auto" mode)
-        """
-        if self._pending_user_xrange:
-            self._applying_user_xrange = True
-            start, stop = self._pending_user_xrange
-            self._pending_user_xrange = None
-            self.apply_settings(
-                center=int((start + stop) / 2.0
-                    / self._dut.properties.TUNING_RESOLUTION)
-                    * self._dut.properties.TUNING_RESOLUTION,
-                span=stop - start)
-        else:
-            self._applying_user_xrange = False
-
+        self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
         device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
@@ -404,6 +402,10 @@ class SpecAController(QtCore.QObject):
         self._developer_options.update(kwargs)
         self.developer_options_change.emit(self._developer_options,
             kwargs.keys())
+
+        if 'free_plot_adjustment' in kwargs:
+            self.enable_user_xrange_control(
+                not kwargs['free_plot_adjustment'])
 
     def enable_user_xrange_control(self, enable):
         self._user_xrange_control_enabled = enable

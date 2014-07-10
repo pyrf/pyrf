@@ -63,7 +63,7 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
     """
     QSpinBox with playback features
     """
-    def quiet_update(self, minimum, maximum, value=None):
+    def quiet_update(self, minimum=None, maximum=None, value=None):
         """
         Set the spinbox range and value without sending signals
 
@@ -72,7 +72,10 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         :param value: float to set or None to leave unchanged
         """
         b = self.blockSignals(True)
-        self.setRange(minimum, maximum)
+        if minimum is not None:
+            self.setMinimum(minimum)
+        if maximum is not None:
+            self.setMaximum(maximum)
         if value is not None:
             self.setValue(value)
         self.blockSignals(False)

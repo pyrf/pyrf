@@ -2,6 +2,7 @@ from PySide import QtGui
 
 from pyrf.units import M
 from pyrf.gui import colors
+from pyrf.gui.widgets import QDoubleSpinBoxPlayback
 
 
 class FrequencyControls(QtGui.QGroupBox):
@@ -9,7 +10,6 @@ class FrequencyControls(QtGui.QGroupBox):
     def __init__(self, controller, name="Frequency Control"):
         super(FrequencyControls, self).__init__()
 
-        self._updating_values = False
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
@@ -60,16 +60,13 @@ class FrequencyControls(QtGui.QGroupBox):
 
             # XXX tuning_res is used here as an approximation of
             # "smallest reasonable span"
-            self._updating_values = True
-            self._freq_edit.setMinimum(min_tunable / M)
-            self._freq_edit.setMaximum(max_tunable / M)
-            self._fstart_edit.setMinimum(min_tunable / M)
-            self._fstart_edit.setMaximum((max_tunable - tuning_res) / M)
-            self._fstop_edit.setMinimum((min_tunable + tuning_res) / M)
-            self._fstop_edit.setMaximum(max_tunable / M)
-            self._bw_edit.setMinimum(tuning_res / M)
-            self._bw_edit.setMaximum((max_tunable - min_tunable) / M)
-            self._updating_values = False
+            self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
+            self._fstart_edit.quiet_update(
+                min_tunable / M, (max_tunable - tuning_res) / M)
+            self._fstop_edit.quiet_update(
+                (min_tunable + tuning_res) / M, max_tunable / M)
+            self._bw_edit.quiet_update(
+                tuning_res / M, (max_tunable - min_tunable) / M)
 
             if state.sweeping():
                 self._fstart_edit.setEnabled(not state.playback)
@@ -110,12 +107,10 @@ class FrequencyControls(QtGui.QGroupBox):
     def _center_freq(self):
         cfreq = QtGui.QLabel('Center:')
         self._cfreq = cfreq
-        freq_edit = QtGui.QDoubleSpinBox()
+        freq_edit = QDoubleSpinBoxPlayback()
         freq_edit.setSuffix(' MHz')
         self._freq_edit = freq_edit
         def freq_change():
-            if self._updating_values:
-                return
             self.controller.apply_settings(center=freq_edit.value() * M)
         freq_edit.valueChanged.connect(freq_change)
         return cfreq, freq_edit
@@ -123,11 +118,9 @@ class FrequencyControls(QtGui.QGroupBox):
     def _bw_controls(self):
         bw = QtGui.QLabel('Span:')
         self._bw = bw
-        bw_edit = QtGui.QDoubleSpinBox()
+        bw_edit = QDoubleSpinBoxPlayback()
         bw_edit.setSuffix(' MHz')
         def freq_change():
-            if self._updating_values:
-                return
             self.controller.apply_settings(span=bw_edit.value() * M)
         bw_edit.valueChanged.connect(freq_change)
         self._bw_edit = bw_edit
@@ -136,11 +129,9 @@ class FrequencyControls(QtGui.QGroupBox):
     def _fstart_controls(self):
         fstart = QtGui.QLabel('Start:')
         self._fstart = fstart
-        freq = QtGui.QDoubleSpinBox()
+        freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' MHz')
         def freq_change():
-            if self._updating_values:
-                return
             fstart = freq.value() * M
             fstop = self.gui_state.center + self.gui_state.span / 2.0
             self.controller.apply_settings(
@@ -154,11 +145,9 @@ class FrequencyControls(QtGui.QGroupBox):
     def _fstop_controls(self):
         fstop = QtGui.QLabel('Stop:')
         self._fstop = fstop
-        freq = QtGui.QDoubleSpinBox()
+        freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' MHz')
         def freq_change():
-            if self._updating_values:
-                return
             fstart = self.gui_state.center - self.gui_state.span / 2.0
             fstop = freq.value() * M
             self.controller.apply_settings(
@@ -173,14 +162,12 @@ class FrequencyControls(QtGui.QGroupBox):
         """
         update the spin boxes from self.gui_state
         """
-        self._updating_values = True
-
         center = float(self.gui_state.center) / M
         span = float(self.gui_state.span) / M
-        self._fstop_edit.setValue(center + span / 2)
-        self._fstart_edit.setValue(center - span / 2)
-        self._freq_edit.setValue(center)
-        self._bw_edit.setValue(span)
+        self._fstop_edit.quiet_update(value=center + span / 2)
+        self._fstart_edit.quiet_update(value=center - span / 2)
+        self._freq_edit.quiet_update(value=center)
+        self._bw_edit.quiet_update(value=span)
 
         self._updating_values = False
 

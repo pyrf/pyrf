@@ -179,10 +179,6 @@ class DeviceControls(QtGui.QGroupBox):
             if not input_mode:
                 return
 
-            self.controller.enable_user_xrange_control(input_mode == 'Auto')
-            if input_mode == 'Auto':
-                input_mode = self.dut_prop.SPECA_MODES[0]
-
             self.controller.apply_settings(mode=input_mode)
 
         def new_trigger():
@@ -224,7 +220,7 @@ class DeviceControls(QtGui.QGroupBox):
 
 
     def _update_modes(self):
-        modes = ["Auto"]
+        modes = []
         modes.extend(self.dut_prop.SPECA_MODES)
         modes.extend(self.dut_prop.RFE_MODES)
         self._mode.quiet_update(modes)
@@ -309,10 +305,6 @@ class DeviceControls(QtGui.QGroupBox):
                 self._fshift_label.hide()
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
-                # add sweep SH mode
-                if not self._mode.itemText(0) == 'Auto':
-                    self._mode.insertItem(0, 'Auto')
-
                 # show digitizer controls
                 self._rbw_label.show()
                 self._rbw_box.show()
