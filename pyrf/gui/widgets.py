@@ -3,11 +3,11 @@ General-purpose widgets
 """
 from PySide import QtGui
 
-class QComboBoxPlus(QtGui.QComboBox):
+class QComboBoxPlayback(QtGui.QComboBox):
     """
-    QComboBox with some extra features
+    QComboBox with playback features
     """
-    def update_items_no_signal(self, items, select_item=None):
+    def quiet_update(self, items, select_item=None):
         """
         Update all the items and select a new item in the combo box
         without sending any signals
@@ -25,12 +25,61 @@ class QComboBoxPlus(QtGui.QComboBox):
             self.addItem(item)
             if item == select_item:
                 self.setCurrentIndex(i)
-        self.setEnabled(True)
         self.blockSignals(b)
 
     def playback_value(self, value):
         """
         Remove all items but value and disable the control
         """
-        self.update_items_no_signal([value])
+        self.quiet_update([value])
+        self.setEnabled(False)
+
+
+class QCheckBoxPlayback(QtGui.QCheckBox):
+    """
+    QCheckBox with playback features
+    """
+    def quiet_update(self, value):
+        """
+        Set the checkbox state without sending signals
+
+        :param value: True/False
+        """
+        b = self.blockSignals(True)
+        self.setChecked(value)
+        self.blockSignals(b)
+
+    def playback_value(self, value):
+        """
+        display value with checkbox disabled
+
+        :param value: True/False
+        """
+        self.quiet_update(value)
+        self.setEnabled(False)
+
+
+class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
+    """
+    QSpinBox with playback features
+    """
+    def quiet_update(self, minimum, maximum, value=None):
+        """
+        Set the spinbox range and value without sending signals
+
+        :param minimum: float
+        :param maximum: float
+        :param value: float to set or None to leave unchanged
+        """
+        b = self.blockSignals(True)
+        self.setRange(minimum, maximum)
+        if value is not None:
+            self.setValue(value)
+        self.blockSignals(False)
+
+    def playback_value(self, value):
+        """
+        display value and disable widget
+        """
+        self.quiet_update(value, value, value)
         self.setEnabled(False)
