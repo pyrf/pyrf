@@ -59,7 +59,7 @@ IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
 
 
 MINIMUM_WIDTH = 600
-MINIMUM_HEIGHT = 400
+MINIMUM_HEIGHT = 600
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -75,8 +75,8 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, dut_address=None, playback_filename=None):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
-        WINDOW_WIDTH = screen.width() * 0.7
-        WINDOW_HEIGHT = screen.height() * 0.6
+        WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
+        WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         self.controller = SpecAController()
@@ -305,9 +305,9 @@ class MainPanel(QtGui.QWidget):
                 screen = QtGui.QDesktopWidget().screenGeometry()
                 self.setMinimumWidth(MINIMUM_WIDTH)
                 self.setMinimumHeight(MINIMUM_HEIGHT)
-                WINDOW_WIDTH = screen.width() * 0.7
-                WINDOW_HEIGHT = screen.height() * 0.6
-                self._main_window.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+                WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
+                WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
+                self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
     def keyPressEvent(self, event):
         if not self.dut_prop:
