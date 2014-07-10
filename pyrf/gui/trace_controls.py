@@ -7,8 +7,11 @@ from pyrf.gui.util import hide_layout
 
 import numpy as np
 
-PLOT_YMIN = -140
-PLOT_YMAX = 0
+PLOT_YMAX = 20
+PLOT_TOP = 0
+PLOT_BOTTOM = -140
+PLOT_YMIN = -160
+PLOT_STEP = 5
 
 REMOVE_BUTTON_WIDTH = 10
 
@@ -65,7 +68,6 @@ class TraceControls(QtGui.QGroupBox):
         self._plot = plot
         self.setTitle(name)
         self._marker_trace = None
-        self.marker_selected = 0
 
         self.setLayout(QtGui.QGridLayout())
         self._create_controls()
@@ -101,10 +103,12 @@ class TraceControls(QtGui.QGroupBox):
 
         draw = QtGui.QComboBox()
         draw.setToolTip("Select data source")
-        for i, val in enumerate(['Live', 'Max', 'Min']):
+        for i, val in enumerate(['Live', 'Max', 'Min', 'Off']):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
+            if index == 3:
+                return remove_trace_clicked()
             [self.trace_write, self.max_hold, self.min_hold][index](num)
         draw.currentIndexChanged.connect(draw_changed)
 
@@ -117,7 +121,8 @@ class TraceControls(QtGui.QGroupBox):
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
         def add_trace_clicked():
-            draw_changed(draw.currentIndex())
+            draw.setCurrentIndex(num)
+            draw_changed(num)
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -156,7 +161,8 @@ class TraceControls(QtGui.QGroupBox):
         radio = QtGui.QRadioButton("Marker %d:" % (num + 1))
         button_group.addButton(radio)
         def marker_select():
-            self.marker_selected = num
+            for i, marker in enumerate(self._plot.markers):
+                marker.selected = i == num
         radio.clicked.connect(marker_select)
 
         center = QtGui.QPushButton("Center")
@@ -191,6 +197,11 @@ class TraceControls(QtGui.QGroupBox):
         remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
+            if self._markers[num].marker.isChecked():
+                for m in self._markers:
+                    if not m.marker.isChecked():
+                        break
+                m.marker.click()  # select other marker
             self._plot.markers[num].disable(self._plot)
             self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
@@ -214,7 +225,6 @@ class TraceControls(QtGui.QGroupBox):
             show(trace_widgets.hold, row, 2, 1, 1)
             if extra:
                 show(trace_widgets.add_marker, row, 3, 1, 1)
-            show(trace_widgets.remove, row, 4, 1, 1)
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
@@ -504,50 +514,29 @@ class TraceControls(QtGui.QGroupBox):
         _center_plot_view(self)
 
 
-
-    def _trace_items(self):
-
-        trace_attr = {}
-        store = QtGui.QCheckBox('Store')
-        store.setEnabled(False)
-        trace_attr['store'] = store
-
-        max_hold = QtGui.QRadioButton('Max Hold')
-        trace_attr['max_hold'] = max_hold
-
-        min_hold = QtGui.QRadioButton('Min Hold')
-        trace_attr['min_hold'] = min_hold
-
-        write = QtGui.QRadioButton('Write')
-        trace_attr['write'] = write
-
-        blank = QtGui.QRadioButton('Blank')
-        trace_attr['blank'] = blank
-
-        self.trace_attr = trace_attr
-        self.trace_attr['write'].click()
-        return max_hold, min_hold, write, store, blank
-
-
     def plot_controls(self):
 
         plot_group = QtGui.QGroupBox("Plot Control")
         self._plot_group = plot_group
 
-        plot_controls_layout = QtGui.QVBoxLayout()
+        grid = QtGui.QGridLayout()
 
         self.control_widgets = []
 
-        fourth_row = QtGui.QHBoxLayout()
         ref_level, ref_label, min_level, min_label = self._ref_controls()
 
-        fourth_row.addWidget(ref_label)
-        fourth_row.addWidget(ref_level)
-        fourth_row.addWidget(min_label)
-        fourth_row.addWidget(min_level)
+        grid.addWidget(ref_label, 0, 0, 1, 1)
+        grid.addWidget(ref_level, 0, 1, 1, 1)
+        grid.addWidget(min_label, 0, 3, 1, 1)
+        grid.addWidget(min_level, 0, 4, 1, 1)
 
-        plot_controls_layout.addLayout(fourth_row)
-        plot_group.setLayout(plot_controls_layout)
+        grid.setColumnStretch(0, 3)
+        grid.setColumnStretch(1, 6)
+        grid.setColumnStretch(2, 1)
+        grid.setColumnStretch(3, 4)
+        grid.setColumnStretch(4, 6)
+
+        plot_group.setLayout(grid)
 
         return plot_group
 
@@ -562,22 +551,31 @@ class TraceControls(QtGui.QGroupBox):
         self.control_widgets.append(self._center_bt)
         return center
 
+
+    def _update_plot_y_axis(self):
+        self._plot.center_view(
+            self.xdata[0], self.xdata[-1],
+            min_level = self._min_level.value(),
+            ref_level = self._ref_level.value())
+
     def _ref_controls(self):
-        ref_level = QtGui.QLineEdit(str(PLOT_YMAX))
-        ref_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata),
-                                                                        max(self.xdata),
-                                                                        min_level = int(self._min_level.text()),
-                                                                        ref_level = int(self._ref_level.text())))
+        ref_level = QtGui.QSpinBox()
+        ref_level.setRange(PLOT_YMIN, PLOT_YMAX)
+        ref_level.setValue(PLOT_TOP)
+        ref_level.setSuffix(" dBm")
+        ref_level.setSingleStep(PLOT_STEP)
+        ref_level.valueChanged.connect(self._update_plot_y_axis)
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Maximum Level: ')
+        ref_label = QtGui.QLabel('Top: ')
 
-        min_level = QtGui.QLineEdit(str(PLOT_YMIN))
-        min_level.returnPressed.connect(lambda: self._plot.center_view(min(self.xdata),
-                                                                        max(self.xdata),
-                                                                        min_level = int(self._min_level.text()),
-                                                                        ref_level = int(self._ref_level.text())))
-        min_label = QtGui.QLabel('Minimum Level: ')
+        min_level = QtGui.QSpinBox()
+        min_level.setRange(PLOT_YMIN, PLOT_YMAX)
+        min_level.setValue(PLOT_BOTTOM)
+        min_level.setSuffix(" dBm")
+        min_level.setSingleStep(PLOT_STEP)
+        min_level.valueChanged.connect(self._update_plot_y_axis)
+        min_label = QtGui.QLabel('Bottom: ')
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label

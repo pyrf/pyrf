@@ -46,6 +46,7 @@ DSP_OPTIONS = [
 DEVELOPER_OPTIONS = [
     ('Show &Attenuated Edges', 'show_attenuated_edges', False),
     ('Show &Sweep Steps', 'show_sweep_steps', False),
+    ('&Free Plot Adjustment', 'free_plot_adjustment', False),
     ]
 
 # FIXME: we shouldn't be calculating fft in this module
@@ -58,7 +59,7 @@ IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
 
 
 MINIMUM_WIDTH = 600
-MINIMUM_HEIGHT = 400
+MINIMUM_HEIGHT = 600
 
 try:
     from twisted.internet.defer import inlineCallbacks
@@ -74,8 +75,8 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, dut_address=None, playback_filename=None):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
-        WINDOW_WIDTH = screen.width() * 0.7
-        WINDOW_HEIGHT = screen.height() * 0.6
+        WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
+        WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         self.controller = SpecAController()
@@ -304,9 +305,9 @@ class MainPanel(QtGui.QWidget):
                 screen = QtGui.QDesktopWidget().screenGeometry()
                 self.setMinimumWidth(MINIMUM_WIDTH)
                 self.setMinimumHeight(MINIMUM_HEIGHT)
-                WINDOW_WIDTH = screen.width() * 0.7
-                WINDOW_HEIGHT = screen.height() * 0.6
-                self._main_window.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+                WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
+                WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
+                self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
     def keyPressEvent(self, event):
         if not self.dut_prop:
@@ -337,7 +338,12 @@ class MainPanel(QtGui.QWidget):
         if not self.controller._dut:
             return
 
-        marker = self._plot.markers[self.trace_group.marker_selected]
+        for marker in self._plot.markers:
+            if marker.selected:
+                break
+        else:
+            return
+
         trace = self._plot.traces[marker.trace_index]
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             click_pos =  event.pos().x() - 68  # FIXME: declare this as a constant?
@@ -348,7 +354,7 @@ class MainPanel(QtGui.QWidget):
                 window_bw =  (window_freq[1] - window_freq[0])
                 click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
                 index = find_nearest_index(click_freq, trace.freq_range)
-                self._plot.markers[self.trace_group.marker_selected].data_index = index
+                marker.data_index = index
 
     def initUI(self):
         grid = QtGui.QGridLayout()
