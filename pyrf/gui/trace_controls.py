@@ -103,10 +103,12 @@ class TraceControls(QtGui.QGroupBox):
 
         draw = QtGui.QComboBox()
         draw.setToolTip("Select data source")
-        for i, val in enumerate(['Live', 'Max', 'Min']):
+        for i, val in enumerate(['Live', 'Max', 'Min', 'Off']):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
+            if index == 3:
+                return remove_trace_clicked()
             [self.trace_write, self.max_hold, self.min_hold][index](num)
         draw.currentIndexChanged.connect(draw_changed)
 
@@ -119,7 +121,8 @@ class TraceControls(QtGui.QGroupBox):
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
         def add_trace_clicked():
-            draw_changed(draw.currentIndex())
+            draw.setCurrentIndex(num)
+            draw_changed(num)
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -222,7 +225,6 @@ class TraceControls(QtGui.QGroupBox):
             show(trace_widgets.hold, row, 2, 1, 1)
             if extra:
                 show(trace_widgets.add_marker, row, 3, 1, 1)
-            show(trace_widgets.remove, row, 4, 1, 1)
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
