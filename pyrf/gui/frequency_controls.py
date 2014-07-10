@@ -134,6 +134,7 @@ class FrequencyControls(QtGui.QGroupBox):
         def freq_change():
             fstart = freq.value() * M
             fstop = self.gui_state.center + self.gui_state.span / 2.0
+            fstop = max(fstop, fstart + self.dut_prop.TUNING_RESOLUTION)
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
@@ -150,6 +151,7 @@ class FrequencyControls(QtGui.QGroupBox):
         def freq_change():
             fstart = self.gui_state.center - self.gui_state.span / 2.0
             fstop = freq.value() * M
+            fstart = min(fstart, fstop - self.dut_prop.TUNING_RESOLUTION)
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
