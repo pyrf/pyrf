@@ -1,3 +1,5 @@
+from distutils.version import StrictVersion
+
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
 
@@ -6,18 +8,28 @@ def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
     """
-    if device_id.startswith('ThinkRF,WSA4000'):
+    parts = device_id.split(',')
+    model, _space, rev = parts[1].partition(' ')
+    if model == 'WSA4000':
         return WSA4000Properties
-    elif device_id.startswith('ThinkRF,WSA5000-220 v2'):
-        return WSA5000_220_v2Properties
-    elif device_id.startswith('ThinkRF,WSA5000-208 v2'):
-        return WSA5000_208_v2Properties
-    elif device_id.startswith('ThinkRF,WSA5000-208'):
-        return WSA5000_208Properties
-    elif device_id.startswith('ThinkRF,WSA5000-108'):
-        return WSA5000_108Properties
+
+    # revision numbers jumped backwards when switching to major.minor
+    rev = rev.lstrip('v')
+    if '.' in rev:
+        old_v2 = StrictVersion(rev) < StrictVersion('1.2')
     else:
-        return WSA5000_220Properties
+        old_v2 = int(rev) < 3
+
+    if model == 'WSA5000-220' and old_v2:
+        return WSA5000_220_v2Properties
+    if model == 'WSA5000-208' and old_v2:
+        return WSA5000_208_v2Properties
+    if model == 'WSA5000-208':
+        return WSA5000_208Properties
+    if model == 'WSA5000-108':
+        return WSA5000_108Properties
+
+    return WSA5000_220Properties
 
 
 class WSA4000Properties(object):
