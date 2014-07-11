@@ -6,7 +6,7 @@ import ctypes
 import Queue
 
 # import required libraries
-from pyqtgraph.Qt import QtGui, QtCore
+from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import pyqtgraph.functions as pgfuncs
 import sys

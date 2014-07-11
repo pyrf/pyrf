@@ -8,7 +8,7 @@ import ctypes
 import Queue
 
 # import required libraries
-from pyqtgraph.Qt import QtGui, QtCore
+from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import pyqtgraph.functions as pgfuncs
 import sys
@@ -225,7 +225,7 @@ class MyWifiWSA(object):
         #be driven from that directly.
         self.acquire_single_power_spectrum()
 
-STAIRS_MODE = True
+STAIRS_MODE = False
 
 app = QtGui.QApplication(sys.argv)
 app.setGraphicsSystem("native") #hmm... experimenting
