@@ -458,8 +458,7 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
 
         self.update_trace()
-        if self.freq_range != (fstart, fstop):
-            self.freq_range = (fstart, fstop)
+        if not self.controller.applying_user_xrange():
             self._plot.center_view(fstart, fstop)
         self.update_iq()
         self.update_marker()

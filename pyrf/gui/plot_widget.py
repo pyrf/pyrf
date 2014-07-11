@@ -159,11 +159,8 @@ class Plot(QtCore.QObject):
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
-        self._code_changing_range = True
 
         def widget_range_changed(widget, ranges):
-            if self._code_changing_range:
-                return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
@@ -205,27 +202,22 @@ class Plot(QtCore.QObject):
         self.traces = []
         first_trace = labels.TRACES[0]
 
-        count = 0
         for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
-            if count == 0:
-                blank_state = False
-                write_state = True
-            else:
-                blank_state = True
-                write_state = False
-            self.traces.append(Trace(self,
-                                    trace_name,
-                                    trace_color, 
-                                    blank = blank_state,
-                                    write = write_state))
-            count += 1
+            trace = Trace(
+                self,
+                trace_name,
+                trace_color,
+                blank=True,
+                write=False)
+            self.traces.append(trace)
+        self.traces[0].blank = False
+        self.traces[0].write = True
 
         self.markers = []
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
 
         self.connect_plot_controls()
-        self._code_changing_range = False
 
     def connect_plot_controls(self):
         
@@ -262,13 +254,11 @@ class Plot(QtCore.QObject):
         self.window.removeItem(self.freqtrig_lines)
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
-        if self.controller.applying_user_xrange():
-            return  # don't recenter while a user is dragging
-        self._code_changing_range = True
-        self.window.setXRange(fstart, fstop)
+        b = self.window.blockSignals(True)
+        self.window.setXRange(fstart, fstop, padding=0)
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
-        self._code_changing_range = False
+        self.window.blockSignals(b)
 
     def grid(self,state):
         self.window.showGrid(state,state)
