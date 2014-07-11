@@ -262,13 +262,13 @@ class TraceControls(QtGui.QGroupBox):
                 for tm in trace_markers:
                     row = add_marker_widgets(self._markers[tm], row)
 
-        grid.setColumnStretch(0, 3)
-        grid.setColumnStretch(1, 6)
-        grid.setColumnStretch(2, 6)
-        grid.setColumnStretch(3, 6)
-        grid.setColumnStretch(4, 6)
-        grid.setColumnStretch(5, 6)
-        grid.setColumnStretch(6, 6)
+        grid.setColumnStretch(0, 4)
+        grid.setColumnStretch(1, 4)
+        grid.setColumnStretch(2, 8)
+        grid.setColumnStretch(3, 4)
+        grid.setColumnStretch(4, 8)
+        grid.setColumnStretch(5, 4)
+        grid.setColumnStretch(6, 8)
 
 
     def state_changed(self, state, changed):
