@@ -67,6 +67,9 @@ class SpecAController(QtCore.QObject):
             self._playback_context = {}
             vrt_packet = self._playback_vrt(auto_rewind=False)
             state_json = vrt_packet.fields['speca']
+            # support old playback files
+            if state_json['device_identifier'] == 'unknown':
+                state_json['device_identifier'] = 'ThinkRF,WSA5000 v3,'
             dut = Playback(state_json['device_class'],
                 state_json['device_identifier'])
             self._sweep_device = SweepDevice(dut)
