@@ -35,12 +35,17 @@ from pyrf.gui.frequency_controls import FrequencyControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 
+VIEW_OPTIONS = [
+    ('&IQ Plots', 'iq_plots', False),
+    ('&Waterfall Plot', 'waterfall_plot', False),
+    ]
+
 DSP_OPTIONS = [
-    ('&IQ Offset Correction', 'correct_phase', True),
-    ('&DC Offset', 'hide_differential_dc_offset', True),
-    ('&Convert to dBm', 'convert_to_dbm', True),
-    ('Apply &Spectral Inversion', 'apply_spec_inv', True),
-    ('Apply &Hanning Window', 'apply_window', True),
+    ('&IQ Offset Correction', 'dsp.correct_phase', True),
+    ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
+    ('&Convert to dBm', 'dsp.convert_to_dbm', True),
+    ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
+    ('Apply &Hanning Window', 'dsp.apply_window', True),
     ]
 
 DEVELOPER_OPTIONS = [
@@ -128,19 +133,24 @@ class MainWindow(QtGui.QMainWindow):
                 apply_fn(**{option: action.isChecked()}))
             return action
 
+        self.view_menu = menubar.addMenu('&View')
+        for text, option, default in VIEW_OPTIONS:
+            self.view_menu.addAction(checkbox_action(
+                self.controller.apply_options, text, option, default))
+
         self.dsp_menu = menubar.addMenu('&DSP Options')
         for text, option, default in DSP_OPTIONS:
             self.dsp_menu.addAction(checkbox_action(
-                self.controller.apply_dsp_options, text, option, default))
-        self.controller.apply_dsp_options(**dict((option, default)
-            for text, option, default in DSP_OPTIONS))
+                self.controller.apply_options, text, option, default))
 
         self.developer_menu = menubar.addMenu('D&eveloper Options')
         for text, option, default in DEVELOPER_OPTIONS:
             self.developer_menu.addAction(checkbox_action(
-                self.controller.apply_developer_options, text, option, default))
-        self.controller.apply_developer_options(**dict((option, default)
-            for text, option, default in DEVELOPER_OPTIONS))
+                self.controller.apply_options, text, option, default))
+
+        self.controller.apply_options(
+            **dict((option, default) for text, option, default
+            in VIEW_OPTIONS + DSP_OPTIONS + DEVELOPER_OPTIONS))
 
     def start_recording(self):
         self.stop_action.setDisabled(False)

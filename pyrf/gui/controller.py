@@ -37,12 +37,12 @@ class SpecAController(QtCore.QObject):
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
-    developer_options_change = QtCore.Signal(dict, list)
+    options_change = QtCore.Signal(dict, list)
 
     def __init__(self):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
-        self._developer_options = {}
+        self._options = {}
 
 
     def set_device(self, dut=None, playback_filename=None):
@@ -215,7 +215,7 @@ class SpecAController(QtCore.QObject):
             self._playback_context,
             **self._dsp_options)
 
-        if not self._developer_options.get('show_attenuated_edges'):
+        if not self._options.get('show_attenuated_edges'):
             pow_data, usable_bins, fstart, fstop = (
                 trim_to_usable_fstart_fstop(
                     pow_data, usable_bins, fstart, fstop))
@@ -271,7 +271,7 @@ class SpecAController(QtCore.QObject):
                 ref=self._ref_level,
                 **self._dsp_options)
 
-            if not self._developer_options.get('show_attenuated_edges'):
+            if not self._options.get('show_attenuated_edges'):
                 pow_data, usable_bins, fstart, fstop = (
                     trim_to_usable_fstart_fstop(
                         pow_data, usable_bins, fstart, fstop))
@@ -296,7 +296,7 @@ class SpecAController(QtCore.QObject):
             self.pow_data = data
         self.iq_data = None
 
-        if not self._developer_options.get('show_sweep_steps'):
+        if not self._options.get('show_sweep_steps'):
             sweep_segments = [len(self.pow_data)]
 
         self.capture_receive.emit(
@@ -390,21 +390,19 @@ class SpecAController(QtCore.QObject):
         state = SpecAState.from_json_object(state_json, playback)
         self._state_changed(state, changed)
 
-    def apply_dsp_options(self, **kwargs):
+    def apply_options(self, **kwargs):
         """
-        Apply the dsp options which are passed to compute the FFT.
+        Apply menu options and signal the change
 
         :param kwargs: keyword arguments of the dsp options
         """
-        self._dsp_options.update(kwargs)
-
-    def apply_developer_options(self, **kwargs):
-        """
-
-        """
-        self._developer_options.update(kwargs)
-        self.developer_options_change.emit(self._developer_options,
+        self._options.update(kwargs)
+        self.options_change.emit(self._options,
             kwargs.keys())
+
+        for key, value in kwargs.iteritems():
+            if key.startswith('dsp.'):
+                self._dsp_options[key[4:]] = value
 
         if 'free_plot_adjustment' in kwargs:
             self.enable_user_xrange_control(
