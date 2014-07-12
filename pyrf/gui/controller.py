@@ -397,7 +397,7 @@ class SpecAController(QtCore.QObject):
         :param kwargs: keyword arguments of the dsp options
         """
         self._options.update(kwargs)
-        self.options_change.emit(self._options,
+        self.options_change.emit(dict(self._options),
             kwargs.keys())
 
         for key, value in kwargs.iteritems():
@@ -407,6 +407,9 @@ class SpecAController(QtCore.QObject):
         if 'free_plot_adjustment' in kwargs:
             self.enable_user_xrange_control(
                 not kwargs['free_plot_adjustment'])
+
+    def get_options(self):
+        return dict(self._options)
 
     def enable_user_xrange_control(self, enable):
         self._user_xrange_control_enabled = enable

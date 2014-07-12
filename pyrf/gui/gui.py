@@ -13,7 +13,6 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 
-from contextlib import contextmanager
 from pkg_resources import parse_version
 
 from pyrf.gui import colors
@@ -221,6 +220,9 @@ class MainPanel(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+        controller.options_change.connect(self.options_changed)
+
+        self.options_changed(controller.get_options(), ['iq_plots'])
 
         self._main_window = main_window
 
@@ -468,11 +470,16 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
 
         self.update_trace()
-        if not self.controller.applying_user_xrange():
-            self._plot.center_view(fstart, fstop)
-        self.update_iq()
         self.update_marker()
         self.update_diff()
+        if not self.controller.applying_user_xrange():
+            self._plot.center_view(fstart, fstop)
+
+        if self.iq_plots_enabled:
+            self.update_iq()
+
+    def options_changed(self, options, changed):
+        self.iq_plots_enabled = options['iq_plots']
 
     def update_trace(self):
         for trace in self._plot.traces:
