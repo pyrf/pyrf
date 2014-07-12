@@ -222,8 +222,6 @@ class MainPanel(QtGui.QWidget):
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
 
-        self.options_changed(controller.get_options(), ['iq_plots'])
-
         self._main_window = main_window
 
         self.ref_level = 0
@@ -234,6 +232,7 @@ class MainPanel(QtGui.QWidget):
         self.setMinimumWidth(MINIMUM_WIDTH)
         self.setMinimumHeight(MINIMUM_HEIGHT)
         self.plot_state = None
+        self.gui_state = None
         # plot window
         self._plot = Plot(controller, self)
         self._plot.user_xrange_change.connect(controller.user_xrange_changed)
@@ -246,14 +245,14 @@ class MainPanel(QtGui.QWidget):
 
         self.freq_range = None, None
 
+        self.options_changed(controller.get_options(), ['iq_plots'])
+
     def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
 
         self.enable_controls()
-        self._plot.const_window.show()
-        self._plot.iq_window.show()
 
     def state_changed(self, state, changed):
         """
@@ -264,28 +263,23 @@ class MainPanel(QtGui.QWidget):
         self.gui_state = state
 
         if 'mode' in changed:
-            self.rfe_mode = state.rfe_mode()  # used by recentering code
-            if state.sweeping():
-                self._plot.const_window.hide()
-                self._plot.iq_window.hide()
-            else:
-                self._plot.const_window.show()
-                self._plot.iq_window.show()
+            rfe_mode = state.rfe_mode()
+            self._update_plot_visibility()
 
-            if self.rfe_mode in ('DD', 'IQIN'):
-                freq = self.dut_prop.MIN_TUNABLE[self.rfe_mode]
-                full_bw = self.dut_prop.FULL_BW[self.rfe_mode]
+            if rfe_mode in ('DD', 'IQIN'):
+                freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
+                full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
                 self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
-                                        IQ_PLOT_YMAX[self.rfe_mode])
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                        IQ_PLOT_YMAX[rfe_mode])
             else:
                 freq = state.center
                 full_bw = state.span
 
                 self._plot.center_view(freq - full_bw/2, freq + full_bw/2, self.plot_state.min_level, self.plot_state.ref_level)
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
-                                        IQ_PLOT_YMAX[self.rfe_mode])
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                        IQ_PLOT_YMAX[rfe_mode])
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
@@ -480,6 +474,19 @@ class MainPanel(QtGui.QWidget):
 
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
+
+        if 'iq_plots' in changed:
+            self._update_plot_visibility()
+
+    def _update_plot_visibility(self):
+        if not self.gui_state:
+            return
+        if self.gui_state.sweeping() or not self.iq_plots_enabled:
+            self._plot.const_window.hide()
+            self._plot.iq_window.hide()
+        else:
+            self._plot.const_window.show()
+            self._plot.iq_window.show()
 
     def update_trace(self):
         for trace in self._plot.traces:
