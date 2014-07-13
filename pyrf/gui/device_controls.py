@@ -184,8 +184,8 @@ class DeviceControls(QtGui.QGroupBox):
         def new_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
             if self._level_trigger.isChecked():
-                start = self.gui_state.center - (self.gui_state.span / 2) + 20e6
-                stop = self.gui_state.center + (self.gui_state.span / 2) - 20e6
+                start = self.gui_state.center - (self.gui_state.span / 4)
+                stop = self.gui_state.center + (self.gui_state.span / 4)
                 level = trigger_settings['amplitude']
                 self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                                                                 'fstart': start,
