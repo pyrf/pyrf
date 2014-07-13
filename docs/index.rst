@@ -39,14 +39,14 @@ Links
 * `Documentation for this API <http://www.pyrf.org>`_
 * `WSA4000/WSA5000 Documentation <http://www.thinkrf.com/resources>`_
 
-Spectrum Analyzer GUI
----------------------
+PyRF RTSA
+---------
 
 .. image:: speca-gui.png
-   :alt: speca-gui screen shot
+   :alt: rtsa-gui screen shot
 
 .. image:: speca-gui-2.png
-   :alt: speca-gui screen shot
+   :alt: rtsa-gui screen shot
 
 Indices and tables
 ==================
