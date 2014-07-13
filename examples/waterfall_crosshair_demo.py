@@ -17,7 +17,8 @@ import pyrf
 from pyrf.devices.thinkrf import WSA
 from pyrf.util import read_data_and_context, collect_data_and_context
 from pyrf.numpy_util import compute_fft
-from pyrf.gui.waterfall_widget import WaterfallPlotWidget, WaterfallModel
+from pyrf.gui.waterfall_widget import (ThreadedWaterfallPlotWidget,
+    WaterfallModel)
 
 
 class WaterfallCrosshairDemoApp(QtGui.QMainWindow):
@@ -38,11 +39,12 @@ class WaterfallCrosshairDemoApp(QtGui.QMainWindow):
     def DoCreateWidgets(self):
         self._main_wid = QtGui.QWidget()
         
-        self._waterfall = WaterfallPlotWidget(self.wsa.capture_history,
-                                              scale_limits=(-140, -50),
-                                              max_frame_rate_fps=40,
-                                              parent=self._main_wid,
-                                              )
+        self._waterfall = ThreadedWaterfallPlotWidget(
+            self.wsa.capture_history,
+            scale_limits=(-140, -50),
+            max_frame_rate_fps=40,
+            parent=self._main_wid,
+            )
         
         self._live_plot = pg.PlotWidget(self._main_wid)
         self._live_plot.setLabel('bottom', text = 'Frequency', units = 'Hz')

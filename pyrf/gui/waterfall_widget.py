@@ -821,16 +821,6 @@ class WaterfallPlotWidget(QtGui.QWidget):
         """
         #dlog("onImageRendered fired!")
         pass
-    
-    
-    def paintEvent(self, event):
-        #we will only ever run this once and then pass back to the
-        #superclass event handler. Now is a safe time to start the rendering
-        #thread...
-        dlog("Starting rendering thread...")
-        self._renderer.start()
-        self.paintEvent = super(WaterfallPlotWidget, self).paintEvent
-        self.paintEvent(event)
 
     
     def _connect_signals(self):
@@ -925,3 +915,15 @@ class WaterfallPlotWidget(QtGui.QWidget):
         self._renderer.add_image_row(data_row)
 
 
+class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
+    """
+    Automatically start renderer thread on first paintEvent
+    """
+    def paintEvent(self, event):
+        #we will only ever run this once and then pass back to the
+        #superclass event handler. Now is a safe time to start the rendering
+        #thread...
+        dlog("Starting rendering thread...")
+        self._renderer.start()
+        self.paintEvent = super(WaterfallPlotWidget, self).paintEvent
+        self.paintEvent(event)
