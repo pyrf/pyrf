@@ -4,6 +4,8 @@ from PySide import QtCore
 
 from pyrf.gui import colors
 from pyrf.gui import labels
+from pyrf.gui.waterfall_widget import (WaterfallModel,
+    ThreadedWaterfallPlotWidget)
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -216,6 +218,12 @@ class Plot(QtCore.QObject):
         self.markers = []
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
+
+        self.waterfall_data = WaterfallModel()
+        self.waterfall_window = ThreadedWaterfallPlotWidget(
+            self.waterfall_data,
+            scale_limits=(PLOT_YMIN, PLOT_YMAX),
+            max_frame_rate_fps=30)
 
         self.connect_plot_controls()
 
