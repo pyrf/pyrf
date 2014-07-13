@@ -254,7 +254,7 @@ class _WaterfallImageRenderer(QtCore.QObject):
         self._fps_timer.start(self._frame_period_ms)
 
 
-    def start(self):
+    def start_thread(self):
         """Kicks off the rendering thread that actually does all the work."""
         self._render_thread_name = "WFRenderer-%d" % self._instance_count
         self._instance_count += 1
@@ -379,26 +379,37 @@ class _WaterfallImageRenderer(QtCore.QObject):
         new_data = self._drain_queue()
         #render new data to self._raw_image...
         self._update_image_with_new_data(new_data)
-    
-    
+
+
+    def rebuild_output_image(self):
+        """
+        Process all pending items in the rendering pipeline and signal
+        new generated output image if one is available.
+        """
+        self._process_rendering_pipeline()
+
+        if self._raw_image is None:
+            return
+
+        output_image = self._raw_image.scaled(self._output_image_width,
+                                              self._output_image_height)
+        self.sigNewImageReady.emit(output_image)
+
+
     def _thread_master(self):
         """The master function that is run on the rendering thread."""
         # This IS the rendering thread.
         while self._active:
-            self._process_rendering_pipeline()
-            
+            self.rebuild_output_image()
+
             if self._raw_image is None:
                 continue
-            
-            output_image = self._raw_image.scaled(self._output_image_width,
-                                                  self._output_image_height)
-            
+
             #emit signals...
             # - note that the sigImageRendered emit statement will block due
             #    to the way we connected it.  This is intentional and is a
             #    cheap way for us to do nothing on this thread until the main
             #    Qt event loop has rendered the image.
-            self.sigNewImageReady.emit(output_image)
             self.sigImageRendered.emit() #blocking emit
             self._wait_for_frame_ok()
     
@@ -924,6 +935,6 @@ class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
         #superclass event handler. Now is a safe time to start the rendering
         #thread...
         dlog("Starting rendering thread...")
-        self._renderer.start()
+        self._renderer.start_thread()
         self.paintEvent = super(WaterfallPlotWidget, self).paintEvent
         self.paintEvent(event)
