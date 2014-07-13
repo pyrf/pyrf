@@ -35,7 +35,7 @@ class WaterfallModel(QtCore.QObject):
     #Assumption is that it will be a FIFO, scope-style. ie: fast data
     #arrivals going on for a long time, with old data dropping away.
     
-    def __init__(self, x_data, max_len):
+    def __init__(self, x_data = None, max_len = 2048):
         self._start_time_s = 0.0
         self._x_data = x_data
         self._min_x = None
@@ -52,13 +52,23 @@ class WaterfallModel(QtCore.QObject):
         super(WaterfallModel, self).__init__()
     
     def _set_x_data_stats(self):
-        self._min_x = np.min(self._x_data)
-        self._max_x = np.max(self._x_data)
-        self._x_len = len(self._x_data)
+        if self._x_data is None:
+            self._min_x = None
+            self._max_x = None
+            self._x_len = None
+        else:
+            self._min_x = np.min(self._x_data)
+            self._max_x = np.max(self._x_data)
+            self._x_len = len(self._x_data)
         
     def add_row(self, data, metadata = None, timestamp_s = None):
         assert len(data) == self._x_len
         assert data.ndim == 1
+        
+        if self._x_data is None:
+            self._x_data = np.arange(len(data))
+            self._set_x_data_stats()
+        
         if timestamp_s is None:
             timestamp_s = time.time()
         
@@ -125,6 +135,9 @@ class WaterfallModel(QtCore.QObject):
         The returned slice is a two-tuple: (x_data, y_data).
         
         """
+        if self._x_data is None:
+            return (np.empty(0), np.empty(0))
+        
         with self._mutex:
             #for now just find the index of the first one >=
             for i, val in enumerate(self._x_data):
@@ -585,8 +598,11 @@ class _WaterfallImageRenderer(QtCore.QObject):
             #over an area with no data.
             return None
         
-        xdata = self._data_model._x_data
-        ydata = self._src_data[row_num]
+        if self._data_model._x_data is None:
+            xdata = ydata = np.empty(0)
+        else:
+            xdata = self._data_model._x_data
+            ydata = self._src_data[row_num]
         return (xdata, ydata)
     
     def get_vslice(self, col_num):
@@ -607,7 +623,6 @@ class _WaterfallImageRenderer(QtCore.QObject):
             xdata = np.arange(npts)
             ydata = np.empty(npts)
             for i, val in enumerate(self._src_data):
-                
                 ydata[i] = val[col_num]
         return (xdata, ydata)
     
