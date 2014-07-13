@@ -30,35 +30,20 @@ def dlog(msg):
 
 class WaterfallModel(QtCore.QObject):
     sigNewDataRow = QtCore.Signal(tuple) #(time_s, data_row, metadata)
-    
-    #Could also be a playback history model?
-    
-    #This is screaming for dataframes.
+    sigReset = QtCore.Signal(tuple) # (x_data, all_rows)
     
     #Assumption is that it will be a FIFO, scope-style. ie: fast data
     #arrivals going on for a long time, with old data dropping away.
     
-    #for SpectralLog:
-    # - abscissa = frequency array
-    # - data = spectra
-    #this is crying for pandas
-    
-    #If willing to pre-allocate the full potential FIFO history, some
-    #(minor?) performance improvement might be obtainable by rotating a row
-    #pointer (FIFO-style) through a big numpy array. This could be a future
-    #option (deques are easy for now, and were quick to get going initially).
-    
-    #Also may consider having the double-buffered circular buffer down at the
-    #model level, but it is probably better to allow massive amounts of model
-    #data without 2x the memory. If profiling really shows that copy memory
-    #from the deque is the limiter (unlikely), this could be changed.
     def __init__(self, x_data, max_len):
         self._start_time_s = 0.0
         self._x_data = x_data
-        self._min_x = np.min(x_data)
-        self._max_x = np.max(x_data)
-        self._x_len = len(x_data)
+        self._min_x = None
+        self._max_x = None
+        self._x_len = None
         self._max_len = max_len
+        
+        self._set_x_data_stats()
         
         self._history = collections.deque() #of (timestamp_s, data, metadata)
         
@@ -66,6 +51,11 @@ class WaterfallModel(QtCore.QObject):
         
         super(WaterfallModel, self).__init__()
     
+    def _set_x_data_stats(self):
+        self._min_x = np.min(self._x_data)
+        self._max_x = np.max(self._x_data)
+        self._x_len = len(self._x_data)
+        
     def add_row(self, data, metadata = None, timestamp_s = None):
         assert len(data) == self._x_len
         assert data.ndim == 1
@@ -155,6 +145,15 @@ class WaterfallModel(QtCore.QObject):
             self._max_len = max_len
             for i in xrange(len(self._history) - max_len):
                 self._history.popleft()
+
+    def reset(self, new_x_data = None):
+        with self._mutex:
+            self._history = collections.deque()
+            if new_x_data is not None:
+                self._x_data = new_x_data
+                self._set_x_data_stats()
+            sig_data = (self._x_data, self._history)
+            self.sigReset.emit(sig_data)
 
 
 class _WaterfallImageRenderer(QtCore.QObject):
@@ -374,12 +373,6 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 #dlog("FRAME OK!")
                 break
     
-    def _process_rendering_pipeline(self):
-        #wait for data in the queue...
-        new_data = self._drain_queue()
-        #render new data to self._raw_image...
-        self._update_image_with_new_data(new_data)
-    
     
     def _thread_master(self):
         """The master function that is run on the rendering thread."""
@@ -431,7 +424,7 @@ class _WaterfallImageRenderer(QtCore.QObject):
             self._raw_image_height, self._raw_image_width = img_data.shape
             
             #only keep a record of those rows that have data...
-            # - soemthign is backwards here... we shoudl be able to have the
+            # - soemthing is backwards here... we should be able to have the
             #    real data instead of going backwards from img data.
             # - FIXME
             populated_row_filter = img_data[:, 0] != np.NINF
@@ -617,6 +610,17 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 
                 ydata[i] = val[col_num]
         return (xdata, ydata)
+    
+    def set_new_data_model(self, data_model):
+        """Cleanly changes the data model the renderer uses."""
+        #This call is thread safe.
+        assert isinstance(data_model, WaterfallModel)
+        def _reset_data_model():
+            self._data_model = data_model
+            self._raw_image_width = self._data_model._x_len
+        #Get the new data to plot, and 
+        new_data = self._get_data_from_model(self._raw_image_height)
+        self.set_image_data(new_data, _reset_data_model)
 
 
 class _WaterfallImageWidget(QtGui.QWidget):
@@ -831,12 +835,19 @@ class WaterfallPlotWidget(QtGui.QWidget):
         self._renderer.start()
         self.paintEvent = super(WaterfallPlotWidget, self).paintEvent
         self.paintEvent(event)
-
+    
+    def _toggle_model_slots(self, enable):
+        if enable:
+            self._data_model.sigNewDataRow.connect(self._onNewDataRow)
+            self._data_model.sigReset.connect(self._onModelReset)
+        else:
+            self._data_model.sigNewDataRow.disconnect(self._onNewDataRow)
+            self._data_model.sigReset.disconnect(self._onModelReset)
     
     def _connect_signals(self):
         
         #deal with new data rows when they arrive...
-        self._data_model.sigNewDataRow.connect(self._onNewDataRow)
+        self._toggle_model_slots(True)
         
         #Let the image renderer know what size images to render (when the
         #target image is resized)...
@@ -923,5 +934,39 @@ class WaterfallPlotWidget(QtGui.QWidget):
     def _onNewDataRow(self, data_row_tuple):
         timestamp_s, data_row, metadata = data_row_tuple
         self._renderer.add_image_row(data_row)
+    
+    def _onModelReset(self, reset_tuple):
+        #it is easiest to handle this as if we have a brand new model...
+        self.set_new_model(self._data_model)
 
+    def set_new_model(self, data_model):
+        assert isinstance(data_model, WaterfallModel)
+        #Changing the model is independent from the image sizing, so we just
+        #need to set the new model, grab data from it, and set the new image
+        #data. One touchy point is that, since we can't be 100% sure when
+        #we're being called, it is probably not a good idea to change the
+        #model immediately, so we will serialie it in our rendering pipeline.
+        
+        #Disconnect old model slots (this prevents new data from being sent
+        #to the renderer, as well as removing any connection references to an
+        #old model object)...
+        self._toggle_model_slots(False)
+        #Change the model the renderer uses...
+        self._renderer.set_new_data_model(data_model)
+        #NOTE: the waterfall will get all current data from the data model,
+        #BUT THE NEW DATA SIGNAL IS NOT CURRENTLY CONNECTED (it happens
+        #next). This means that the waterfall may miss some rows during this
+        #comment area.
+        #FIXME: avoid chance for missed data rows.  Regenerating all data from
+        #the new model after the slot connection would be a decent/klugey fix,
+        #assuming no model changes happen during us (could lock to prevent this).
+        
+        #Also note that we don't want to move set_new_data_model to *after*
+        #the slot reconnection since new data dimensions may not natch old
+        #ones, and this would mess the renderer up.
+        self._data_model = data_model
+        self._toggle_model_slots(True)
+        
+        #HACK (to avoid lost row potential)...
+        #self._renderer.set_new_data_model(data_model)
 
