@@ -338,7 +338,3 @@ class DeviceControls(QtGui.QGroupBox):
         self._rbw_values = values
         self._rbw_box.quiet_update(
             [str(p) + ' Hz' for p in HDR_RBW_VALUES])
-
-        return rbw_label, rbw
-
-

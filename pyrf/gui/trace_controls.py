@@ -9,8 +9,8 @@ import numpy as np
 
 PLOT_YMAX = 20
 PLOT_TOP = 0
-PLOT_BOTTOM = -140
-PLOT_YMIN = -160
+PLOT_BOTTOM = -160
+PLOT_YMIN = -240
 PLOT_STEP = 5
 
 REMOVE_BUTTON_WIDTH = 10
@@ -487,31 +487,6 @@ class TraceControls(QtGui.QGroupBox):
         if len(peak_values) == 0:
             return
         marker.data_index = np.where(pow_data==(peak_values[-2 if len(peak_values) > 1 else -1]))[0]
-
-    def _change_ref_level(self):
-        """
-        change the ref level (maximum of the y-axis) of the fft plot
-        """
-        try:
-            ref = float(self._ref_level.text())
-        except ValueError:
-            self.ref_level.setText(str(self.plot_state.ref_level))
-            return
-        self.plot_state.ref_level = ref
-
-        _center_plot_view(self)
-
-    def _change_min_level(self):
-        """
-        change the min level of the fft plot
-        """
-        try:
-            min = float(self._min_level.text())
-        except ValueError:
-            self.min_level.setText(str(self.plot_state.min_level))
-            return
-        self.plot_state.min_level = min
-        _center_plot_view(self)
 
 
     def plot_controls(self):

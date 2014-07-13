@@ -33,8 +33,8 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
 
     data = data_pkt.data.numpy_array()
     if data_pkt.stream_id == VRT_IFDATA_I14Q14:
-        i_data = np.array(data[:,0], dtype=float)
-        q_data = np.array(data[:,1], dtype=float)
+        i_data = np.array(data[:,0], dtype=float) / 2 ** 13
+        q_data = np.array(data[:,1], dtype=float) / 2 ** 13
 
         # special handling of WSA4k "only I data is valid here" range
         if 'rffreq' in context:
@@ -46,13 +46,14 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
             if valid_data == I_ONLY:
                 power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
         power_spectrum = _compute_fft(i_data, q_data, correct_phase,
-                                        hide_differential_dc_offset, convert_to_dbm, apply_window)
+            hide_differential_dc_offset, convert_to_dbm, apply_window)
 
-    if data_pkt.stream_id in (VRT_IFDATA_I14, VRT_IFDATA_I24):
-        i_data = np.array(data, dtype=float)
-        if hide_differential_dc_offset:
-            if data_pkt.stream_id == VRT_IFDATA_I24:
-                i_data = i_data - np.mean(i_data)
+    if data_pkt.stream_id == VRT_IFDATA_I14:
+        i_data = np.array(data, dtype=float) / 2 ** 13
+        power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
+
+    if data_pkt.stream_id == VRT_IFDATA_I24:
+        i_data = np.array(data, dtype=float) / 2 ** 23
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
 
     if data_pkt.stream_id == VRT_IFDATA_PSD8:
@@ -64,8 +65,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
             power_spectrum = np.flipud(power_spectrum)
 
     if apply_reference:
-        noiselevel_offset = (
-            reference_level - prop.NOISEFLOOR_CALIBRATION - prop.ADC_DYNAMIC_RANGE)
+        noiselevel_offset = reference_level + prop.REFLEVEL_ERROR
         return power_spectrum + noiselevel_offset
     return power_spectrum
 

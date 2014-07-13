@@ -71,8 +71,8 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
         # we're getting only 1/2 the bins
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
-    # XXX usable bins for HDR aren't correct yet, so remove them
-    if rfe_mode == 'HDR':
+    # XXX usable bins for SH + fshift aren't correct yet, so show everything
+    if rfe_mode in ('SH', 'SHN') and fshift:
         usable_bins = [(0, points)]
 
     return usable_bins

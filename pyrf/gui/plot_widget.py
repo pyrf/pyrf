@@ -4,9 +4,7 @@ from PySide import QtCore
 
 from pyrf.gui import colors
 from pyrf.gui import labels
-
-PLOT_YMIN = -160
-PLOT_YMAX = 20
+from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 
 IQ_PLOT_YMIN = -1
 IQ_PLOT_YMAX = 1
@@ -173,7 +171,7 @@ class Plot(QtCore.QObject):
         self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
-        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         self.window.setLabel('left', text = 'Power', units = 'dBm')
 
         # initialize fft curve
