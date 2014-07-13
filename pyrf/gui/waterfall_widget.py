@@ -1,31 +1,22 @@
+import sys
 import collections
 import threading
 import time
 import itertools
 import ctypes
 import Queue
+import logging
 
-# import required libraries
 from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import pyqtgraph.functions as pgfuncs
-import sys
 import numpy as np
-
 
 FRAME_WAIT_TIMEOUT_s = 0.2
 CROSSHAIR_FPS = 10.0
 
-DLOG_ENABLED = True and __debug__
-
-DLOG_start_time = None
-def dlog(msg):
-    """Simple debug logging function."""
-    if DLOG_ENABLED:
-        global DLOG_start_time
-        if DLOG_start_time is None:
-            DLOG_start_time = time.time()
-        print "%5.3f - %s" % (time.time() - DLOG_start_time, msg)
+logger = logging.getLogger(__name__)
+dlog = logger.debug
 
 
 class WaterfallModel(QtCore.QObject):
