@@ -219,7 +219,7 @@ class Plot(QtCore.QObject):
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
 
-        self.waterfall_data = WaterfallModel()
+        self.waterfall_data = WaterfallModel(max_len=600)
         self.waterfall_window = ThreadedWaterfallPlotWidget(
             self.waterfall_data,
             scale_limits=(PLOT_YMIN, PLOT_YMAX),
