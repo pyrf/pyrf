@@ -114,7 +114,10 @@ class WaterfallModel(QtCore.QObject):
                 all_data = np.ndarray((0, self._x_len))
         else:
             #make the 2D array with vstack...
-            all_data = np.vstack(data_arrays)
+            if data_arrays:
+                all_data = np.vstack(data_arrays)
+            else:
+                all_data = np.ndarray((0, self._x_len))
             if pad_black and (num_rows > len(data_arrays)):
                 #make just enough 'black' rows to pad to the provided number
                 #of rows...
@@ -639,6 +642,8 @@ class _WaterfallImageRenderer(QtCore.QObject):
         """Cleanly changes the data model the renderer uses."""
         #This call is thread safe.
         assert isinstance(data_model, WaterfallModel)
+        if not self._raw_image_height:
+            return
         def _reset_data_model():
             self._data_model = data_model
             self._raw_image_width = self._data_model._x_len
