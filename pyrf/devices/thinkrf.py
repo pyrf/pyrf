@@ -436,7 +436,7 @@ class WSA(object):
     @sync_async
     def request_read_perm(self):
         """
-        Aquire exclusive permission to read data from the WSA.
+        Acquire exclusive permission to read data from the WSA.
 
         :returns: True if allowed to read, False if not
         """

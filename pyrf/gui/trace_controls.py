@@ -93,13 +93,12 @@ class TraceControls(QtGui.QGroupBox):
         r, g, b = colors.TRACE_COLORS[num]
         color = QtGui.QColor()
         color.setRgb(r, g, b)
-        pixmap = QtGui.QPixmap(22, 6)
+        pixmap = QtGui.QPixmap(320, 2)
         pixmap.fill(color)
-        #icon = QtGui.QIcon(pixmap)
         icon = QtGui.QLabel()
         icon.setPixmap(pixmap)
 
-        label = QtGui.QLabel("Trace %d:" % (num + 1))
+        label = QtGui.QLabel("T%d:" % (num + 1))
 
         draw = QtGui.QComboBox()
         draw.setToolTip("Select data source")
@@ -107,7 +106,7 @@ class TraceControls(QtGui.QGroupBox):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
-            if index == 3:
+            if index == 3:  # 'Off'
                 return remove_trace_clicked()
             [self.trace_write, self.max_hold, self.min_hold][index](num)
         draw.currentIndexChanged.connect(draw_changed)
@@ -158,7 +157,7 @@ class TraceControls(QtGui.QGroupBox):
         :returns: a MarkerWidgets namedtuple
 
         """
-        radio = QtGui.QRadioButton("Marker %d:" % (num + 1))
+        radio = QtGui.QRadioButton("M%d:" % (num + 1))
         button_group.addButton(radio)
         def marker_select():
             for i, marker in enumerate(self._plot.markers):
@@ -220,26 +219,30 @@ class TraceControls(QtGui.QGroupBox):
             widget.show()
 
         def add_trace_widgets(trace_widgets, row, extra=False):
-            show(trace_widgets.icon, row, 0, 1, 1)
-            show(trace_widgets.draw, row, 1, 1, 1)
-            show(trace_widgets.hold, row, 2, 1, 1)
+            show(trace_widgets.icon, row, 0, 1, 7)
+            row = row + 1
+            show(trace_widgets.label, row, 0, 1, 1)
+            show(trace_widgets.draw, row, 1, 1, 2)
+            show(trace_widgets.hold, row, 3, 1, 2)
             if extra:
-                show(trace_widgets.add_marker, row, 3, 1, 1)
+                show(trace_widgets.add_marker, row, 5, 1, 2)
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
-            show(trace_widgets.icon, row, 0, 1, 1)
-            show(trace_widgets.add, row, 1, 1, 1)
+            show(trace_widgets.icon, row, 0, 1, 7)
+            row = row + 1
+            show(trace_widgets.label, row, 0, 1, 1)
+            show(trace_widgets.add, row, 1, 1, 2)
             return row + 1
 
         def add_marker_widgets(marker_widgets, row):
             show(marker_widgets.marker, row, 0, 1, 2)
-            show(marker_widgets.peak, row, 2, 1, 1)
-            show(marker_widgets.center, row, 3, 1, 1)
-            show(marker_widgets.remove, row, 4, 1, 1)
+            show(marker_widgets.peak, row, 2, 1, 2)
+            show(marker_widgets.center, row, 4, 1, 2)
+            show(marker_widgets.remove, row, 6, 1, 1)
             row = row + 1
-            show(marker_widgets.peak_left, row, 2, 1, 1)
-            show(marker_widgets.peak_right, row, 3, 1, 1)
+            show(marker_widgets.peak_left, row, 2, 1, 2)
+            show(marker_widgets.peak_right, row, 4, 1, 2)
             return row + 1
 
         extra_markers = any(not m.enabled for m in self._plot.markers)
@@ -259,11 +262,13 @@ class TraceControls(QtGui.QGroupBox):
                 for tm in trace_markers:
                     row = add_marker_widgets(self._markers[tm], row)
 
-        grid.setColumnStretch(0, 1)
-        grid.setColumnStretch(1, 5)
-        grid.setColumnStretch(2, 5)
-        grid.setColumnStretch(3, 5)
-        grid.setColumnStretch(4, 2)
+        grid.setColumnStretch(0, 4)
+        grid.setColumnStretch(1, 4)
+        grid.setColumnStretch(2, 8)
+        grid.setColumnStretch(3, 4)
+        grid.setColumnStretch(4, 8)
+        grid.setColumnStretch(5, 4)
+        grid.setColumnStretch(6, 8)
 
 
     def state_changed(self, state, changed):

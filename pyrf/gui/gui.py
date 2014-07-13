@@ -13,7 +13,6 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 
-from contextlib import contextmanager
 from pkg_resources import parse_version
 
 from pyrf.gui import colors
@@ -35,12 +34,17 @@ from pyrf.gui.frequency_controls import FrequencyControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 
+VIEW_OPTIONS = [
+    ('&IQ Plots', 'iq_plots', False),
+    ('&Waterfall Plot', 'waterfall_plot', False),
+    ]
+
 DSP_OPTIONS = [
-    ('&IQ Offset Correction', 'correct_phase', True),
-    ('&DC Offset', 'hide_differential_dc_offset', True),
-    ('&Convert to dBm', 'convert_to_dbm', True),
-    ('Apply &Spectral Inversion', 'apply_spec_inv', True),
-    ('Apply &Hanning Window', 'apply_window', True),
+    ('&IQ Offset Correction', 'dsp.correct_phase', True),
+    ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
+    ('&Convert to dBm', 'dsp.convert_to_dbm', True),
+    ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
+    ('Apply &Hanning Window', 'dsp.apply_window', True),
     ]
 
 DEVELOPER_OPTIONS = [
@@ -56,7 +60,6 @@ CONST_POINTS = 512
 # FIXME: calculate from device properties instead
 IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': -1, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
 IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
-
 
 MINIMUM_WIDTH = 600
 MINIMUM_HEIGHT = 600
@@ -128,19 +131,24 @@ class MainWindow(QtGui.QMainWindow):
                 apply_fn(**{option: action.isChecked()}))
             return action
 
+        self.view_menu = menubar.addMenu('&View')
+        for text, option, default in VIEW_OPTIONS:
+            self.view_menu.addAction(checkbox_action(
+                self.controller.apply_options, text, option, default))
+
         self.dsp_menu = menubar.addMenu('&DSP Options')
         for text, option, default in DSP_OPTIONS:
             self.dsp_menu.addAction(checkbox_action(
-                self.controller.apply_dsp_options, text, option, default))
-        self.controller.apply_dsp_options(**dict((option, default)
-            for text, option, default in DSP_OPTIONS))
+                self.controller.apply_options, text, option, default))
 
         self.developer_menu = menubar.addMenu('D&eveloper Options')
         for text, option, default in DEVELOPER_OPTIONS:
             self.developer_menu.addAction(checkbox_action(
-                self.controller.apply_developer_options, text, option, default))
-        self.controller.apply_developer_options(**dict((option, default)
-            for text, option, default in DEVELOPER_OPTIONS))
+                self.controller.apply_options, text, option, default))
+
+        self.controller.apply_options(
+            **dict((option, default) for text, option, default
+            in VIEW_OPTIONS + DSP_OPTIONS + DEVELOPER_OPTIONS))
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
@@ -211,6 +219,7 @@ class MainPanel(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+        controller.options_change.connect(self.options_changed)
 
         self._main_window = main_window
 
@@ -222,6 +231,7 @@ class MainPanel(QtGui.QWidget):
         self.setMinimumWidth(MINIMUM_WIDTH)
         self.setMinimumHeight(MINIMUM_HEIGHT)
         self.plot_state = None
+        self.gui_state = None
         # plot window
         self._plot = Plot(controller, self)
         self._plot.user_xrange_change.connect(controller.user_xrange_changed)
@@ -232,7 +242,10 @@ class MainPanel(QtGui.QWidget):
         self.ref_level = 0
         self.plot_state = None
 
-        self.freq_range = None, None
+        self._waterfall_range = None, None, None
+
+        self.options_changed(controller.get_options(),
+            ['iq_plots', 'waterfall_plot'])
 
     def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
@@ -240,8 +253,6 @@ class MainPanel(QtGui.QWidget):
         self.dut_prop = dut.properties
 
         self.enable_controls()
-        self._plot.const_window.show()
-        self._plot.iq_window.show()
 
     def state_changed(self, state, changed):
         """
@@ -252,28 +263,23 @@ class MainPanel(QtGui.QWidget):
         self.gui_state = state
 
         if 'mode' in changed:
-            self.rfe_mode = state.rfe_mode()  # used by recentering code
-            if state.sweeping():
-                self._plot.const_window.hide()
-                self._plot.iq_window.hide()
-            else:
-                self._plot.const_window.show()
-                self._plot.iq_window.show()
+            rfe_mode = state.rfe_mode()
+            self._update_iq_plot_visibility()
 
-            if self.rfe_mode in ('DD', 'IQIN'):
-                freq = self.dut_prop.MIN_TUNABLE[self.rfe_mode]
-                full_bw = self.dut_prop.FULL_BW[self.rfe_mode]
+            if rfe_mode in ('DD', 'IQIN'):
+                freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
+                full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
                 self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
-                                        IQ_PLOT_YMAX[self.rfe_mode])
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                        IQ_PLOT_YMAX[rfe_mode])
             else:
                 freq = state.center
                 full_bw = state.span
 
                 self._plot.center_view(freq - full_bw/2, freq + full_bw/2)
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[self.rfe_mode],
-                                        IQ_PLOT_YMAX[self.rfe_mode])
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                        IQ_PLOT_YMAX[rfe_mode])
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
@@ -308,6 +314,7 @@ class MainPanel(QtGui.QWidget):
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
                 WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
                 self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+
 
     def keyPressEvent(self, event):
         if not self.dut_prop:
@@ -393,11 +400,11 @@ class MainPanel(QtGui.QWidget):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
         vsplit.addWidget(self._plot.window)
+        vsplit.addWidget(self._plot.waterfall_window)
 
         hsplit = QtGui.QSplitter()
         hsplit.addWidget(self._plot.const_window)
         hsplit.addWidget(self._plot.iq_window)
-        self._plot.const_window.heightForWidth(1)
         self._plot.const_window.hide()
         self._plot.iq_window.hide()
         vsplit.addWidget(hsplit)
@@ -458,11 +465,47 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
 
         self.update_trace()
-        if not self.controller.applying_user_xrange():
-            self._plot.center_view(fstart, fstop)
-        self.update_iq()
         self.update_marker()
         self.update_diff()
+        if not self.controller.applying_user_xrange():
+            self._plot.center_view(fstart, fstop)
+
+        if self.iq_plots_enabled:
+            self.update_iq()
+
+        if (fstart, fstop, len(power)) != self._waterfall_range:
+            self._plot.waterfall_data.reset(self.xdata)
+            self._waterfall_range = (fstart, fstop, len(power))
+        self._plot.waterfall_data.add_row(power)
+
+
+    def options_changed(self, options, changed):
+        self.iq_plots_enabled = options['iq_plots']
+        self.waterfall_plot_enabled = options['waterfall_plot']
+
+        if 'iq_plots' in changed:
+            self._update_iq_plot_visibility()
+
+        if 'waterfall_plot' in changed:
+            if options['waterfall_plot']:
+                self._plot.waterfall_window.show()
+            else:
+                self._plot.waterfall_window.hide()
+
+    def _update_iq_plot_visibility(self):
+        if not self.gui_state:
+            return
+        if self.gui_state.sweeping() or not self.iq_plots_enabled:
+            self._plot.const_window.hide()
+            self._plot.iq_window.hide()
+        else:
+            self._plot.const_window.show()
+            self._plot.iq_window.show()
+
+        if self.waterfall_plot_enabled:
+            self._plot.waterfall_window.show()
+        else:
+            self._plot.waterfall_window.hide()
 
     def update_trace(self):
         for trace in self._plot.traces:
