@@ -332,8 +332,7 @@ class _WaterfallImageRenderer(QtCore.QObject):
                     if new_data is None:
                         self._draw_no_data_image()
                     else:
-                        self.set_image_data(new_data) #thread safe
-                    
+                        self._create_image(new_data)
             
             #queue up the resize in the render pipeline...
             #if refresh_image_data:
@@ -537,10 +536,9 @@ class _WaterfallImageRenderer(QtCore.QObject):
         argb, alpha = pg.functions.makeARGB(row_data.reshape((1, img_cols)),
                                             lut=lut,
                                             levels=lut_levels)
-        #argb, alpha = fn.makeARGB(image.transpose((1, 0, 2)[:image.ndim]), lut=lut, levels=self.levels)
         new_img_row = pg.functions.makeQImage(argb, alpha, transpose=False)
         
-        #dlog("writing ring rows %d and %d.  num_rows = %d, buffer shape = %r" % (idx1, idx2, img_rows, self.__ring_buffer.shape))
+        dlog("writing ring rows %d and %d.  num_rows = %d, buffer shape = %r" % (idx1, idx2, img_rows, self.__ring_buffer.shape))
         self.__ring_buffer[idx1, :, :] = new_img_row.data
         self.__ring_buffer[idx2, :, :] = new_img_row.data
         
