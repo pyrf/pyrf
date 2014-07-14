@@ -62,13 +62,15 @@ class WaterfallModel(QtCore.QObject):
             self._x_len = len(self._x_data)
         
     def add_row(self, data, metadata = None, timestamp_s = None):
-        assert len(data) == self._x_len
-        assert data.ndim == 1
-        
         if self._x_data is None:
+            #we've never been given x data, but we need it! Generate some
+            #bogus x data that is just a 0-based range...
             self._x_data = np.arange(len(data))
             self._set_x_data_stats()
         
+        assert len(data) == self._x_len
+        assert data.ndim == 1
+            
         if timestamp_s is None:
             timestamp_s = time.time()
         
@@ -107,11 +109,16 @@ class WaterfallModel(QtCore.QObject):
                 no_data = True
         
         if no_data:
-            #no rows added yet!  We return an empty array of proper width...
-            if pad_black:
-                all_data = np.NINF * np.ones((num_rows, self._x_len))
+            #No data rows have been added yet! If we know how wide our data
+            #is *supposed* to be, we'll at least return an array of the
+            #correct width. Otherwise, we'll return None.
+            num_data_cols = self._x_len
+            if not num_data_cols:
+                ret = None
+            elif pad_black:
+                ret = np.NINF * np.ones((num_rows, num_data_cols))
             else:
-                all_data = np.ndarray((0, self._x_len))
+                ret = np.ndarray((0, num_data_cols))
         else:
             #make the 2D array with vstack...
             all_data = np.vstack(data_arrays)
@@ -123,10 +130,8 @@ class WaterfallModel(QtCore.QObject):
                 #black_padding = ones_padding * 0
                 #stack the black padding below the actual waterfall data
                 all_data = np.vstack((all_data, black_padding))
-        #data = np.rot90(all_data, 3)
-        data = all_data
-        #print time.time() - st
-        return data
+            ret = all_data
+        return ret
 
     
     def get_vslice(self, x):
@@ -295,13 +300,16 @@ class _WaterfallImageRenderer(QtCore.QObject):
         new_size_tuple = new_size.toTuple()
         old_size_tuple = old_size.toTuple()
         
-        if old_size_tuple == (-1, -1): #never had a size!
+        if old_size_tuple == (-1, -1):
+            #This is our first indication of what size the image widget we
+            #will be rendering to is.
             self._output_image_width = new_size_tuple[0]
             self._output_image_height = new_size_tuple[1]
-            self._raw_image_width = self._data_model._x_len
             self._raw_image_height = self._output_image_height
+            #self._raw_image_width comes from the data model... but it might
+            #not have any data yet! This has to be populated later.
         
-        if new_size_tuple != old_size_tuple:
+        if new_size_tuple != old_size_tuple: #we have a real resize event
             new_width, new_height = new_size_tuple
             old_width, old_height = old_size_tuple
             refresh_image_data = (new_height != old_height)
@@ -312,15 +320,20 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 dlog("resize_image() closure called")
                 self._output_image_width = new_width
                 self._output_image_height = new_height
-                #the raw image width never changes, but height does...
                 self._raw_image_height = new_height
+                #self._raw_image_width is the width of the current data model
+                #(if it *has* data).
                 
                 if refresh_image_data:
                     # Keep it simple for now and just re-fetch all the
                     # appropriate data and redraw. This could be smarter.
                     # Note that both calls are thread safe.
                     new_data = self._get_data_from_model(new_height)
-                    self.set_image_data(new_data) #thread safe
+                    if new_data is None:
+                        self._draw_no_data_image()
+                    else:
+                        self.set_image_data(new_data) #thread safe
+                    
             
             #queue up the resize in the render pipeline...
             #if refresh_image_data:
@@ -427,14 +440,35 @@ class _WaterfallImageRenderer(QtCore.QObject):
         self._raw_image = QtGui.QImage(ptr, raw_w, raw_h, fmt)
     
     
+    def _draw_no_data_image(self):
+        """Draws the waterfall how it should be drawn when there is no data."""
+        #currently we'll just paint it all "black", but in a way that doesn't
+        #mess with any img data tracking. For good measure we'll also make
+        #sure to serialize in the pipeline...
+        def _draw_ndi():
+            img_data = np.NINF * np.ones((2, 2))
+            argb, alpha = pgfuncs.makeARGB(img_data,
+                                           lut=self._lut,
+                                           levels=self._lut_levels,
+                                           )
+            self._raw_image = pgfuncs.makeQImage(argb, alpha, transpose=False)
+        self._render_pipeline.put(_draw_ndi)
+    
+    
     def _create_image(self, img_data):
-        """Regenerates a completely new image, given the new img_data."""
+        """This is the new image handler in the render pipeline.
+        
+        Regenerates a completely new image, given the new img_data.
+        
+        """
         assert threading.current_thread().name == self._render_thread_name
         assert img_data.ndim == 2
         
         dlog("_create_image called and re-assigning raw image dimensions")
         with self._mutex:
-            self._raw_image_height, self._raw_image_width = img_data.shape
+            #self._raw_image_height is dictated by the widget height, but the
+            #raw img width comes from the underlying data model...
+            self._raw_image_width = img_data.shape[1]
             
             #only keep a record of those rows that have data...
             # - soemthing is backwards here... we should be able to have the
@@ -465,9 +499,7 @@ class _WaterfallImageRenderer(QtCore.QObject):
     
     
     def _add_image_row(self, row_data):
-        assert threading.current_thread().name == self._render_thread_name
-        assert row_data.shape == (self._raw_image_width, )
-        
+        """This is the new row handler in the render pipeline."""
         if self._image_ready == False:
             return
         
@@ -475,6 +507,15 @@ class _WaterfallImageRenderer(QtCore.QObject):
         with self._mutex:
             #get (potentially) shared memory access out of the way...
             # - all are (must be) immutable
+            if self._raw_image_width is None:
+                #This is the first time we've been able to figure out the
+                #data width! This happens when a data model initially did not
+                #even have the x data specified.
+                self._raw_image_width = self._data_model._x_len
+            
+            assert threading.current_thread().name == self._render_thread_name
+            assert row_data.shape == (self._raw_image_width, )
+                
             img_cols = self._raw_image_width
             img_rows = self._raw_image_height
             
@@ -537,8 +578,11 @@ class _WaterfallImageRenderer(QtCore.QObject):
     def _do_full_image_refresh(self):
         """Triggers a complete redraw with new data."""
         dlog("Full image refresh triggered!")
-        data = self._get_data_from_model(self._raw_image_height)
-        self._render_pipeline.put(data)
+        img_data = self._get_data_from_model(self._raw_image_height)
+        if img_data is None:
+            self._draw_no_data_image()
+        else:
+            self._render_pipeline.put(img_data)
 
 
     def _get_data_from_model(self, num_rows):
@@ -560,7 +604,10 @@ class _WaterfallImageRenderer(QtCore.QObject):
     def add_image_row(self, data_row):
         assert data_row.ndim == 1
         #Note that the data queue handles both new rows and full data sets.
-        self._render_pipeline.put(data_row)
+        if len(self._data_model._history) == 1:
+            self.set_new_data_model(self._data_model)
+        else:
+            self._render_pipeline.put(data_row)
     
     def set_image_data(self, data, pre_render_call = None):
         #This call is thread safe.
@@ -635,7 +682,10 @@ class _WaterfallImageRenderer(QtCore.QObject):
             self._raw_image_width = self._data_model._x_len
         #Get the new data to plot, and 
         new_data = self._get_data_from_model(self._raw_image_height)
-        self.set_image_data(new_data, _reset_data_model)
+        if new_data is None:
+            self._draw_no_data_image()
+        else:
+            self.set_image_data(new_data, _reset_data_model)
 
 
 class _WaterfallImageWidget(QtGui.QWidget):
@@ -643,24 +693,41 @@ class _WaterfallImageWidget(QtGui.QWidget):
     
     sigResized = QtCore.Signal(QtCore.QSize, QtCore.QSize)
     sigMouseMoved = QtCore.Signal(int, int) #(x, y) in pixels
+    sigMouseClicked = QtCore.Signal(int, int) #(x, y) in pixels
     
-    def __init__(self, parent = None, track_mouse = True):
+    def __init__(self,
+                 parent = None,
+                 mouse_move_crosshair = True,
+                 mouse_click_crosshair = True,
+                 ):
         super(_WaterfallImageWidget, self).__init__(parent)
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,
                            QtGui.QSizePolicy.Expanding)
 
         #self.setAttribute(Qt.WA_StaticContents)
         self._qimage = QtGui.QImage()
-        self._crosshair_xy = (None, None)
-        self._last_crosshair_xy = self._crosshair_xy
         
-        if track_mouse:
+        self._mouse_move_crosshair = mouse_move_crosshair
+        self._mouse_click_crosshair = mouse_click_crosshair
+        
+        if self._mouse_click_crosshair:
+            self._click_ch_h = QtGui.QRubberBand(QtGui.QRubberBand.Line, self)
+            self._click_ch_v = QtGui.QRubberBand(QtGui.QRubberBand.Line, self)
+            
+            self._click_ch_h.show()
+            self._click_ch_v.show()
+            self._set_click_crosshair(-1, -1)
+        
+        if mouse_move_crosshair:
+            self._move_crosshair_xy = (None, None)
+            self._last_move_crosshair_xy = self._move_crosshair_xy
+            
             #Configure crosshair lines...
-            self._hline = QtGui.QRubberBand(QtGui.QRubberBand.Line, self)
-            self._vline = QtGui.QRubberBand(QtGui.QRubberBand.Line, self)
-            self._hline.show()
-            self._vline.show()
-            self._set_crosshair(-1, -1)
+            self._move_ch_h = QtGui.QRubberBand(QtGui.QRubberBand.Line, self)
+            self._move_ch_v = QtGui.QRubberBand(QtGui.QRubberBand.Line, self)
+            self._move_ch_h.show()
+            self._move_ch_v.show()
+            self._set_move_crosshair(-1, -1)
             
             #Tell Qt we actually want mouse events...
             self.setMouseTracking(True)
@@ -668,9 +735,9 @@ class _WaterfallImageWidget(QtGui.QWidget):
             #limit the crosshair painting speed...
             # - intended to help with massive slowdowns happening with mouse
             #    processing, but it didn't help (yet?).  See the slot, too.
-            self._crosshair_timer = QtCore.QTimer()
-            self._crosshair_timer.timeout.connect(self._onCrosshairTimer)
-            self._crosshair_timer.start(1.0 / CROSSHAIR_FPS)
+            self._move_crosshair_timer = QtCore.QTimer()
+            self._move_crosshair_timer.timeout.connect(self._onMoveCrosshairTimer)
+            self._move_crosshair_timer.start(1.0 / CROSSHAIR_FPS)
         
         #self.show()
     
@@ -719,46 +786,51 @@ class _WaterfallImageWidget(QtGui.QWidget):
         super(_WaterfallImageWidget, self).updateGeometry()
 
 
-    def _set_crosshair(self, x, y):
-        self._crosshair_xy = (x, y)
+    def _set_move_crosshair(self, x, y):
+        self._move_crosshair_xy = (x, y)
 
+    def _set_click_crosshair(self, x, y):
+        w, h = self.size().toTuple()
+        self._click_ch_h.setGeometry(0, y, w, 1)
+        self._click_ch_v.setGeometry(x, 0, 1, h)
+        if x >= 0: #mouse is in the window
+            self.sigMouseClicked.emit(x, y)
 
-    def _onCrosshairTimer(self):
+    def _onMoveCrosshairTimer(self):
         #dlog("crosshair update!")
         
         #this exists because moving the crosshair around on every mousemove
         #was inexplicably slow... BUT... this timer did not help much!
         #Something else is going on (tbd).
-        if self._crosshair_xy == self._last_crosshair_xy:
+        if self._move_crosshair_xy == self._last_move_crosshair_xy:
             return
         else:
             w, h = self.size().toTuple()
-            x, y = self._crosshair_xy
+            x, y = self._move_crosshair_xy
             
-            self._hline.setGeometry(0, y, w, 1)
-            self._vline.setGeometry(x, 0, 1, h)
+            self._move_ch_h.setGeometry(0, y, w, 1)
+            self._move_ch_v.setGeometry(x, 0, 1, h)
             
-            self._last_crosshair_xy = self._crosshair_xy
+            self._last_move_crosshair_xy = self._move_crosshair_xy
             
             if x >= 0: #mouse is in the window
                 self.sigMouseMoved.emit(x, y)
 
 
     def mouseMoveEvent(self, event):
-        #figure out where we are, get an hslice and vslice (as appropriate)
-        #and signal them up...
+        super(_WaterfallImageWidget, self).mouseMoveEvent(event)
+        if not self._mouse_move_crosshair:
+            return
         dlog("Mouse moved to (%d, %d)" % (event.x(), event.y()))
-        self._set_crosshair(*event.pos().toTuple())
+        self._set_move_crosshair(*event.pos().toTuple())
+    
+    def mousePressEvent(self, event):
+        super(_WaterfallImageWidget, self).mousePressEvent(event)
+        if not self._mouse_click_crosshair:
+            return
+        dlog("Mouse clicked at (%d, %d)" % (event.x(), event.y()))
+        self._set_click_crosshair(*event.pos().toTuple())
         
-        #if self._plot_widget.sceneBoundingRect().contains(pos):
-            #if self._pending_mouse_move_pos:
-                ##set the pending one to the new one!
-                #self._pending_mouse_move_pos = pos
-            #else:
-                #mousePoint = self._plot_widget.plotItem.vb.mapSceneToView(pos)
-                #index = int(mousePoint.x())
-                #v_line.setPos(mousePoint.x())
-                #self.sigMouseMoved.emit(mousePoint)    
 
 
 class WaterfallPlotWidget(QtGui.QWidget):
@@ -768,7 +840,8 @@ class WaterfallPlotWidget(QtGui.QWidget):
     
     """
     #sigMouseMoved = QtCore.Signal(object)
-    sigMouseMove = QtCore.Signal(float, float, object, object) #(xval, yval, hslice, vslice)
+    sigMouseMoved = QtCore.Signal(float, float, object, object) #(xval, yval, hslice, vslice)
+    sigMouseClicked = QtCore.Signal(float, float, object, object) #(xval, yval, hslice, vslice)
     
     def __init__(self,
                  data_model,
@@ -778,6 +851,10 @@ class WaterfallPlotWidget(QtGui.QWidget):
                  vertical_stretch = False,
                  max_frame_rate_fps = 60,
                  show_gradient_editor = True,
+                 mouse_move_crosshair = True,
+                 mouse_move_history_slicing = True,
+                 mouse_click_crosshair = True,
+                 mouse_click_history_slicing = True,
                  ):
         """
         
@@ -798,6 +875,10 @@ class WaterfallPlotWidget(QtGui.QWidget):
         self._show_ge = show_gradient_editor
         self._vertical_stretch = vertical_stretch
         self._data_model = data_model
+        self._mouse_move_crosshair = mouse_move_crosshair
+        self._mouse_move_history_slicing = mouse_move_history_slicing
+        self._mouse_click_crosshair = mouse_click_crosshair
+        self._mouse_click_history_slicing = mouse_click_history_slicing
         
         self._pending_mouse_move_pos = None
         
@@ -806,7 +887,10 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
         #create child widgets...
         #self._plot_widget = pg.PlotWidget(self)
-        self._wf_img = _WaterfallImageWidget()
+        self._wf_img = _WaterfallImageWidget(
+            mouse_move_crosshair = mouse_move_crosshair,
+            mouse_click_crosshair = mouse_click_crosshair,
+        )
         
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
@@ -877,6 +961,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
         #Hook up mouse movement handling...
         self._wf_img.sigMouseMoved.connect(self._onImageMouseMove)
+        self._wf_img.sigMouseClicked.connect(self._onImageMouseClick)
         
         #self._wf_img.scene().sigMouseMoved.connect(self._onPlotMouseMove)
         
@@ -891,11 +976,8 @@ class WaterfallPlotWidget(QtGui.QWidget):
             #type = QtCore.Qt.BlockingQueuedConnection
         )
 
-
-    def _onImageMouseMove(self, mouse_x, mouse_y):
-        if __debug__:
-            st = time.time()
-        
+    
+    def _get_crosshair_slice_data(self, mouse_x, mouse_y):
         #figure out the source coordinates that the mouse coordinates
         #correspond to...
         # - TODO: FIXME
@@ -910,7 +992,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         h_index = len(self._renderer._src_data) - mouse_y - 1
         hslice = self._renderer.get_hslice(h_index)
         if hslice is None:
-            return
+            return None
         
         #The horizontal cursor position we have for the vslice is in screen
         #coords (pixels from the left), while the backing data we are slicing
@@ -922,11 +1004,33 @@ class WaterfallPlotWidget(QtGui.QWidget):
         data_col = (float(mouse_x) / display_width_max) * max_src_index
         vslice = self._renderer.get_vslice(data_col)
         
-        self.sigMouseMove.emit(x, y, hslice, vslice)
+        return (x, y, hslice, vslice)
         
-        if __debug__:
-            dlog("mousemove handler took %f s" % (time.time() - st, ))
-
+        #if __debug__:
+            #dlog("mousemove handler took %f s" % (time.time() - st, ))
+        
+    def _onImageMouseMove(self, mouse_x, mouse_y):
+        if not self._mouse_move_history_slicing:
+            return
+        
+        #if __debug__:
+            #st = time.time()
+        
+        slice_data = self._get_crosshair_slice_data(mouse_x, mouse_y)
+        if slice_data is not None:
+            self.sigMouseMoved.emit(*slice_data)
+        
+        #if __debug__:
+            #dlog("mousemove handler took %f s" % (time.time() - st, ))
+    
+    def _onImageMouseClick(self, mouse_x, mouse_y):
+        if not self._mouse_click_history_slicing:
+            return
+        
+        slice_data = self._get_crosshair_slice_data(mouse_x, mouse_y)
+        if slice_data is not None:
+            self.sigMouseClicked.emit(*slice_data)
+        
 
     def _get_lut(self):
         lut = self._gradient_editor.getLookupTable(self._LUT_PTS)

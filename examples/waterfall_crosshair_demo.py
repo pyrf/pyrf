@@ -82,7 +82,7 @@ class WaterfallCrosshairDemoApp(QtGui.QMainWindow):
         #self._waterfall.sigMouseMoved.connect(self.onWaterfallMouseMove)
         self.wsa.capture_history.sigNewDataRow.connect(self.onNewDataRow)
         self._start_but.clicked.connect(self.onStartButton)
-        self._waterfall.sigMouseMove.connect(self.onWaterfallMouseMove)
+        self._waterfall.sigMouseMoved.connect(self.onWaterfallMouseMove)
     
     def onWaterfallMouseMove(self, x, y, hslice, vslice):
         hx, hy = hslice
