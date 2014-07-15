@@ -78,7 +78,9 @@ class SpecAController(QtCore.QObject):
             dut.reset()
             self._sweep_device = SweepDevice(dut, self.process_sweep)
             self._capture_device = CaptureDevice(dut, self.process_capture)
-            state_json = dut.properties.SPECA_DEFAULTS
+            state_json = dict(
+                dut.properties.SPECA_DEFAULTS,
+                device_identifier=dut.device_id)
 
         self._dut = dut
         if not dut:

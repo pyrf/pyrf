@@ -80,10 +80,10 @@ class WSA(object):
         :param host: the hostname or IP to connect to
         """
         yield self.connector.connect(host)
-        device_id = (yield self.scpiget(":*idn?"))
-        self.properties = wsa_properties(device_id)
+        self.device_id = (yield self.scpiget(":*idn?"))
+        self.properties = wsa_properties(self.device_id)
 
-        self.fw_version = device_id.split(',')[-1]
+        self.fw_version = self.device_id.split(',')[-1]
         self.device_state = {}
 
     def disconnect(self):
