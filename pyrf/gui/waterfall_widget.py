@@ -300,6 +300,9 @@ class _WaterfallImageRenderer(QtCore.QObject):
         new_size_tuple = new_size.toTuple()
         old_size_tuple = old_size.toTuple()
         
+        if min(new_size_tuple) <= 0:
+            return
+        
         if old_size_tuple == (-1, -1):
             #This is our first indication of what size the image widget we
             #will be rendering to is.
