@@ -89,7 +89,7 @@ class MainWindow(QtGui.QMainWindow):
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
 
-        self.setWindowTitle('Spectrum Analyzer')
+        self.setWindowTitle('PyRF RTSA')
         self.setCentralWidget(self.mainPanel)
         if dut_address:
             self.open_device(dut_address, True)
@@ -186,7 +186,7 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
-        self.setWindowTitle('Spectrum Analyzer Connected To: %s' %name)
+        self.setWindowTitle('PyRF RTSA Connected To: %s' %name)
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
