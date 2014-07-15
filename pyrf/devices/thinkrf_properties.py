@@ -1,3 +1,5 @@
+from distutils.version import StrictVersion
+
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
 
@@ -6,25 +8,34 @@ def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
     """
-    if device_id.startswith('ThinkRF,WSA4000'):
+    parts = device_id.split(',')
+    model, _space, rev = parts[1].partition(' ')
+    if model == 'WSA4000':
         return WSA4000Properties
-    elif device_id.startswith('ThinkRF,WSA5000-220 v2'):
-        return WSA5000_220_v2Properties
-    elif device_id.startswith('ThinkRF,WSA5000-208 v2'):
-        return WSA5000_208_v2Properties
-    elif device_id.startswith('ThinkRF,WSA5000-208'):
-        return WSA5000_208Properties
-    elif device_id.startswith('ThinkRF,WSA5000-108'):
-        return WSA5000_108Properties
+
+    # revision numbers jumped backwards when switching to major.minor
+    rev = rev.lstrip('v')
+    if '.' in rev:
+        old_v2 = StrictVersion(rev) < StrictVersion('1.2')
     else:
-        return WSA5000_220Properties
+        old_v2 = int(rev) < 3
+
+    if model == 'WSA5000-220' and old_v2:
+        return WSA5000_220_v2Properties
+    if model == 'WSA5000-208' and old_v2:
+        return WSA5000_208_v2Properties
+    if model == 'WSA5000-208':
+        return WSA5000_208Properties
+    if model == 'WSA5000-108':
+        return WSA5000_108Properties
+
+    return WSA5000_220Properties
 
 
 class WSA4000Properties(object):
     model = 'WSA4000'
 
-    ADC_DYNAMIC_RANGE = 72.5
-    NOISEFLOOR_CALIBRATION = -10
+    REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
 
@@ -61,14 +72,14 @@ class WSA4000Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
+    SPECA_MODES = ['Sweep ZIF']
 
 
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
 
-    ADC_DYNAMIC_RANGE = 72.5
-    NOISEFLOOR_CALIBRATION = -10
+    REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20
@@ -148,7 +159,6 @@ class WSA5000_220Properties(object):
         'IQIN': True,
         'DD': True,
         }
-    MAX_FSHIFT = {'ZIF': 62.5*M}
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
@@ -175,6 +185,7 @@ class WSA5000_220Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
+    SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
@@ -194,6 +205,7 @@ class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
+    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'

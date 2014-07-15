@@ -2,6 +2,9 @@ import math
 import random
 from collections import namedtuple
 import time
+
+import numpy as np
+
 from pyrf.numpy_util import compute_fft
 from pyrf.config import SweepEntry
 
@@ -189,7 +192,7 @@ class SweepDevice(object):
         self._vrt_context = {}
         self._ss_index = 0
         self._ss_received = 0
-        self.bins = []
+        self.bin_arrays = []
         self.real_device.sweep_iterations(0 if self.continuous else 1)
         self.real_device.sweep_start(self._sweep_id)
 
@@ -238,7 +241,7 @@ class SweepDevice(object):
                 offset = -offset
             start += offset
 
-        self.bins.extend(pow_data[start:start + take])
+        self.bin_arrays.append(pow_data[start:start + take])
         self._ss_received += take
         collect_stop_time = time.time()
 
@@ -261,6 +264,7 @@ class SweepDevice(object):
             self.real_device.abort()
             self.real_device.flush()
 
+        self.bins = np.concatenate(self.bin_arrays)
         if self.async_callback:
             self.real_device.vrt_callback = None
             self.async_callback(self.fstart, self.fstop, self.bins)

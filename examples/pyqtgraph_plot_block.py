@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # import required libraries
 from pyqtgraph.Qt import QtGui, QtCore

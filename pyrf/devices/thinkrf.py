@@ -2,7 +2,8 @@ from pyrf.config import SweepEntry, TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER
 from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
-from pyrf.windows_util import get_broadcast_addresses
+from pyrf import windows_util
+from pyrf import linux_util
 from pyrf.devices.thinkrf_properties import wsa_properties
 
 import struct
@@ -79,10 +80,10 @@ class WSA(object):
         :param host: the hostname or IP to connect to
         """
         yield self.connector.connect(host)
-        device_id = (yield self.scpiget(":*idn?"))
-        self.properties = wsa_properties(device_id)
+        self.device_id = (yield self.scpiget(":*idn?"))
+        self.properties = wsa_properties(self.device_id)
 
-        self.fw_version = device_id.split(',')[-1]
+        self.fw_version = self.device_id.split(',')[-1]
         self.device_state = {}
 
     def disconnect(self):
@@ -736,7 +737,9 @@ def discover_wsa(wait_time=0.125):
     wsa_list = []
 
     if platform.system() == 'Windows':
-        destinations = get_broadcast_addresses()
+        destinations = windows_util.get_broadcast_addresses()
+    elif platform.system() == 'Linux':
+        destinations = linux_util.get_broadcast_addresses()
     else:
         destinations = ['<broadcast>']
 

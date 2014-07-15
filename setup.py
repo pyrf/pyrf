@@ -11,7 +11,7 @@ extras = {}
 try:
     import py2exe
     extras.update({
-        'windows':['spectrumAnalyzerGUI.py'],
+        'windows':['rtsa-gui.py'],
         })
 except ImportError:
     pass
@@ -52,7 +52,7 @@ setup(
     test_suite='pyrf.tests',
     entry_points={
         'gui_scripts': [
-            "speca-gui = pyrf.gui.spectrum_analyzer:main",
+            "rtsa-gui = pyrf.gui.spectrum_analyzer:main",
             ],
         },
     **extras
