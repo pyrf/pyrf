@@ -18,6 +18,9 @@ CROSSHAIR_FPS = 10.0
 logger = logging.getLogger(__name__)
 dlog = logger.debug
 
+# workaround for pyqtgraph trying to compile external lib at runtime
+pg.setConfigOption('useWeave', False)
+
 
 class WaterfallModel(QtCore.QObject):
     sigNewDataRow = QtCore.Signal(tuple) #(time_s, data_row, metadata)
