@@ -737,7 +737,7 @@ def discover_wsa(wait_time=0.125):
     wsa_list = []
 
     if platform.system() == 'Windows':
-        destinations = widows_util.get_broadcast_addresses()
+        destinations = windows_util.get_broadcast_addresses()
     elif platform.system() == 'Linux':
         destinations = linux_util.get_broadcast_addresses()
     else:

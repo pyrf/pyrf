@@ -2,8 +2,11 @@
  
 # Based on getifaddrs.py from pydlnadms [http://code.google.com/p/pydlnadms/].
 # Only tested on Linux!
- 
-from socket import AF_INET, AF_INET6, inet_ntop, inet_pton
+
+try:
+    from socket import AF_INET, AF_INET6, inet_ntop, inet_pton
+except ImportError:
+    pass  # expected to fail on windows
 from ctypes import (
     Structure, Union, POINTER,
     pointer, get_errno, cast,
