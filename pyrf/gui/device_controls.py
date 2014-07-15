@@ -285,11 +285,6 @@ class DeviceControls(QtGui.QGroupBox):
 
             self._update_rbw_options()
 
-            # FIXME: way too much knowledge about rbw levels here
-            self._rbw_box.setCurrentIndex(
-                0 if state.sweeping() else
-                4 if state.mode in ['SH', 'SHN'] else 3)
-
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove sweep capture modes
