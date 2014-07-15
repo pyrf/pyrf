@@ -400,7 +400,8 @@ class MainPanel(QtGui.QWidget):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
         vsplit.addWidget(self._plot.window)
-        vsplit.addWidget(self._plot.waterfall_window)
+        if self._plot.waterfall_window:
+            vsplit.addWidget(self._plot.waterfall_window)
 
         hsplit = QtGui.QSplitter()
         hsplit.addWidget(self._plot.const_window)
@@ -486,11 +487,12 @@ class MainPanel(QtGui.QWidget):
         if 'iq_plots' in changed:
             self._update_iq_plot_visibility()
 
-        if 'waterfall_plot' in changed:
+        ww = self._plot.waterfall_window
+        if 'waterfall_plot' in changed and ww:
             if options['waterfall_plot']:
-                self._plot.waterfall_window.show()
+                ww.show()
             else:
-                self._plot.waterfall_window.hide()
+                ww.hide()
 
     def _update_iq_plot_visibility(self):
         if not self.gui_state:
@@ -502,10 +504,11 @@ class MainPanel(QtGui.QWidget):
             self._plot.const_window.show()
             self._plot.iq_window.show()
 
-        if self.waterfall_plot_enabled:
-            self._plot.waterfall_window.show()
+        ww = self._plot.waterfall_window
+        if self.waterfall_plot_enabled and ww:
+            ww.show()
         else:
-            self._plot.waterfall_window.hide()
+            ww.hide()
 
     def update_trace(self):
         for trace in self._plot.traces:

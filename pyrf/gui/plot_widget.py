@@ -1,3 +1,5 @@
+import platform
+
 import pyqtgraph as pg
 import numpy as np
 from PySide import QtCore
@@ -7,6 +9,8 @@ from pyrf.gui import labels
 from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
     ThreadedWaterfallPlotWidget)
+
+USE_WATERFALL = platform.system() != 'Windows'
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -221,10 +225,15 @@ class Plot(QtCore.QObject):
             self.markers.append(Marker(self, marker_name))
 
         self.waterfall_data = WaterfallModel(max_len=600)
-        self.waterfall_window = ThreadedWaterfallPlotWidget(
-            self.waterfall_data,
-            scale_limits=(PLOT_YMIN, PLOT_YMAX),
-            max_frame_rate_fps=30)
+        if USE_WATERFALL:
+            self.waterfall_window = ThreadedWaterfallPlotWidget(
+                self.waterfall_data,
+                scale_limits=(PLOT_YMIN, PLOT_YMAX),
+                max_frame_rate_fps=30,
+                mouse_move_crosshair=False,
+                )
+        else:
+            self.waterfall_window = None
 
         self.connect_plot_controls()
 
