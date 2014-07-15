@@ -903,7 +903,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
-                                                      orientation = "right")
+                                                      orientation = "left")
         
         #configure the widgets...
         #self._plot_widget.addItem(self._wf_img)
@@ -912,9 +912,9 @@ class WaterfallPlotWidget(QtGui.QWidget):
         #do layout...
         hbox = QtGui.QHBoxLayout(self)
         #hbox.addWidget(self._plot_widget)
-        hbox.addWidget(self._wf_img)
         if self._show_ge:
             hbox.addWidget(self._gradient_editor)
+        hbox.addWidget(self._wf_img)
         
         #Configure the background image renderer (but don't start it yet)...
         self._renderer = _WaterfallImageRenderer(data_model,
