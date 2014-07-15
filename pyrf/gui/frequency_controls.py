@@ -87,10 +87,15 @@ class FrequencyControls(QtGui.QGroupBox):
     def _freq_incr(self):
         steps_label = QtGui.QLabel("Adjust:")
         steps = QtGui.QComboBox(self)
+        steps.addItem("0.1 MHz")
+        steps.addItem("0.2 MHz")
+        steps.addItem("0.5 MHz")
         steps.addItem("1 MHz")
-        steps.addItem("2.5 MHz")
+        steps.addItem("2 MHz")
+        steps.addItem("5 MHz")
         steps.addItem("10 MHz")
-        steps.addItem("25 MHz")
+        steps.addItem("20 MHz")
+        steps.addItem("50 MHz")
         steps.addItem("100 MHz")
         self.fstep = float(steps.currentText().split()[0])
         def freq_step_change():
@@ -100,7 +105,7 @@ class FrequencyControls(QtGui.QGroupBox):
             self._fstart_edit.setSingleStep(self.fstep)
             self._fstop_edit.setSingleStep(self.fstep)
         steps.currentIndexChanged.connect(freq_step_change)
-        steps.setCurrentIndex(2)
+        steps.setCurrentIndex(6)
         self._fstep_box = steps
         return steps_label, steps
 
