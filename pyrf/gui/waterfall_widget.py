@@ -904,6 +904,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
                                                       orientation = "left")
+            self._gradient_editor.loadPreset('thermal')
         
         #configure the widgets...
         #self._plot_widget.addItem(self._wf_img)
