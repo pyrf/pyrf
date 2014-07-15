@@ -42,10 +42,10 @@ Links
 PyRF RTSA
 ---------
 
-.. image:: speca-gui.png
+.. image:: rtsa-gui.png
    :alt: rtsa-gui screen shot
 
-.. image:: speca-gui-2.png
+.. image:: rtsa-gui-2.png
    :alt: rtsa-gui screen shot
 
 Indices and tables

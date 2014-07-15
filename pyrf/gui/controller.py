@@ -19,7 +19,7 @@ PLAYBACK_STEP_MSEC = 100
 
 class SpecAController(QtCore.QObject):
     """
-    The controller for the speca-gui.
+    The controller for the rtsa-gui.
 
     Issues commands to device, stores and broadcasts changes to GUI state.
     """

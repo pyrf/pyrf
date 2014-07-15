@@ -20,9 +20,9 @@ Links
 PyRF RTSA
 ---------
 
-.. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui.png
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/rtsa-gui.png
    :alt: rtsa-gui screen shot
 
-.. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui-2.png
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/rtsa-gui-2.png
    :alt: rtsa-gui screen shot
 
