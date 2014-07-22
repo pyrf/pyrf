@@ -34,6 +34,7 @@ def collect_data_and_context(dut):
 # avoid breaking pyrf 0.2.x examples:
 read_data_and_reflevel = read_data_and_context
 
+
 def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     """
     Return a list of usable bin ranges for the given capture configuration
@@ -70,8 +71,8 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
         # we're getting only 1/2 the bins
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
-    # XXX usable bins for HDR aren't correct yet, so remove them
-    if rfe_mode == 'HDR':
+    # XXX usable bins for SH + fshift aren't correct yet, so show everything
+    if rfe_mode in ('SH', 'SHN') and fshift:
         usable_bins = [(0, points)]
 
     return usable_bins
@@ -100,3 +101,16 @@ def adjust_usable_fstart_fstop(dut_prop, rfe_mode, points, decimation,
 
     return usable_bins, fstart, fstop
 
+
+def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
+    """
+    Returns (trimmed bins, trimmed usable_bins,
+    adjusted fstart, adjusted fstop)
+    """
+    left_bin = usable_bins[0][0]
+    right_bin = usable_bins[-1][0] + usable_bins[-1][1]
+    span = fstop - fstart
+    adj_fstart = float(span) * left_bin / len(bins) + fstart
+    adj_fstop = float(span) * right_bin / len(bins) + fstart
+    trim_bins = [(s - left_bin, r) for (s, r) in usable_bins]
+    return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop

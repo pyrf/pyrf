@@ -1,7 +1,16 @@
+import platform
+
 import pyqtgraph as pg
 import numpy as np
+from PySide import QtCore
+
 from pyrf.gui import colors
 from pyrf.gui import labels
+from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
+from pyrf.gui.waterfall_widget import (WaterfallModel,
+    ThreadedWaterfallPlotWidget)
+
+USE_WATERFALL = platform.system() != 'Windows'
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -42,7 +51,7 @@ class Trace(object):
             self.plot_area.window.removeItem(c)
         self.curves = []
 
-    def update_curve(self, xdata, ydata, usable_bins, sweep_segments, alternate_colors):
+    def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
 
         if self.store or self.blank:
             return
@@ -90,8 +99,7 @@ class Trace(object):
                     pen=self.color if odd else self.alternate_color)
                 self.curves.append(c)
                 i = i + run
-                if alternate_colors:
-                    odd = not odd
+                odd = not odd
 
 class Marker(object):
     """
@@ -119,6 +127,7 @@ class Marker(object):
         plot.window.removeItem(self.marker_plot)
         self.data_index = None
         self.trace_index = 0
+
     def update_pos(self, xdata, ydata):
     
         self.marker_plot.clear()
@@ -144,25 +153,34 @@ class Marker(object):
                                     symbol = '+', 
                                     size = 20, pen = color, 
                                     brush = color)
-class Plot(object):
+class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
     """
-    
+    user_xrange_change = QtCore.Signal(float, float)
+
     def __init__(self, controller, layout):
-    
+        super(Plot, self).__init__()
+
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
+
+        def widget_range_changed(widget, ranges):
+            if not hasattr(ranges, '__getitem__'):
+                return  # we're not intereted in QRectF updates
+            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
+        self.window.sigRangeChanged.connect(widget_range_changed)
+
         self.view_box = self.window.plotItem.getViewBox()
         self.view_box.setMouseEnabled(x = True, y = False)
-        
+
         # initialize the x-axis of the plot
         self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
-        self.window.setYRange(PLOT_YMIN, PLOT_YMAX)
+        self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         self.window.setLabel('left', text = 'Power', units = 'dBm')
 
         # initialize fft curve
@@ -191,24 +209,31 @@ class Plot(object):
         self.traces = []
         first_trace = labels.TRACES[0]
 
-        count = 0
         for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
-            if count == 0:
-                blank_state = False
-                write_state = True
-            else:
-                blank_state = True
-                write_state = False
-            self.traces.append(Trace(self,
-                                    trace_name,
-                                    trace_color, 
-                                    blank = blank_state,
-                                    write = write_state))
-            count += 1
+            trace = Trace(
+                self,
+                trace_name,
+                trace_color,
+                blank=True,
+                write=False)
+            self.traces.append(trace)
+        self.traces[0].blank = False
+        self.traces[0].write = True
 
         self.markers = []
         for marker_name in labels.MARKERS:
             self.markers.append(Marker(self, marker_name))
+
+        self.waterfall_data = WaterfallModel(max_len=600)
+        if USE_WATERFALL:
+            self.waterfall_window = ThreadedWaterfallPlotWidget(
+                self.waterfall_data,
+                scale_limits=(PLOT_YMIN, PLOT_YMAX),
+                max_frame_rate_fps=30,
+                mouse_move_crosshair=False,
+                )
+        else:
+            self.waterfall_window = None
 
         self.connect_plot_controls()
 
@@ -247,9 +272,11 @@ class Plot(object):
         self.window.removeItem(self.freqtrig_lines)
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
-        self.window.setXRange(fstart, fstop)
+        b = self.window.blockSignals(True)
+        self.window.setXRange(float(fstart), float(fstop), padding=0)
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+        self.window.blockSignals(b)
 
     def grid(self,state):
         self.window.showGrid(state,state)

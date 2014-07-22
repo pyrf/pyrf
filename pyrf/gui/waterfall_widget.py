@@ -1,17 +1,17 @@
+import sys
 import collections
 import threading
 import time
 import itertools
 import ctypes
 import Queue
+import logging
 
 # import required libraries
 from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import pyqtgraph.functions as pgfuncs
-import sys
 import numpy as np
-
 
 FRAME_WAIT_TIMEOUT_s = 0.2
 CROSSHAIR_FPS = 10.0
@@ -908,7 +908,8 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
-                                                      orientation = "right")
+                                                      orientation = "left")
+            self._gradient_editor.loadPreset('thermal')
         
         #configure the widgets...
         #self._plot_widget.addItem(self._wf_img)
@@ -917,9 +918,9 @@ class WaterfallPlotWidget(QtGui.QWidget):
         #do layout...
         hbox = QtGui.QHBoxLayout(self)
         #hbox.addWidget(self._plot_widget)
-        hbox.addWidget(self._wf_img)
         if self._show_ge:
             hbox.addWidget(self._gradient_editor)
+        hbox.addWidget(self._wf_img)
         
         #Configure the background image renderer (but don't start it yet)...
         self._renderer = _WaterfallImageRenderer(data_model,
@@ -1093,7 +1094,6 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
         #HACK (to avoid lost row potential)...
         #self._renderer.set_new_data_model(data_model)
-
 
 class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
     """
