@@ -1,6 +1,8 @@
 import struct
 import array
 import sys
+import zlib
+import json
 
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
@@ -9,6 +11,7 @@ VRTDATA = 1
 VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
+VRTSPECA = 0x5370eca0
 VRT_IFDATA_I14Q14 = 0x90000003
 VRT_IFDATA_I14 = 0x90000005
 VRT_IFDATA_I24 = 0x90000006
@@ -46,11 +49,13 @@ def vrt_packet_reader(raw_read):
     packet_type = (word >> 28) & 0x0f
     count = (word >> 16) & 0x0f
     size = (word >> 0) & 0xffff
+    has_timestamp = bool((word >> 20) & 0x0f)
 
     if packet_type in (VRTCONTEXT, VRTCUSTOMCONTEXT):
         packet_size = (size - 1) * 4
         context_data = yield raw_read(packet_size)
-        yield ContextPacket(packet_type, count, size, context_data)
+        yield ContextPacket(packet_type, count, size, context_data,
+            has_timestamp)
 
     elif packet_type == VRTDATA:
         data_header = yield raw_read(16)
@@ -75,24 +80,35 @@ class ContextPacket(object):
        a dict containing field names and values from the packet
     """
 
-    def __init__(self, packet_type, count, size, tmpstr):
+    def __init__(self, packet_type, count, size, tmpstr, has_timestamp):
         self.ptype = packet_type
         self.count = count
         self.size = size
-        (self.stream_id, self.tsi, self.tsf,indicatorsField,
-            ) = struct.unpack(">IIQI", tmpstr[0:20])
+        if has_timestamp:
+            (self.stream_id, self.tsi, self.tsf, indicators,
+                ) = struct.unpack(">IIQI", tmpstr[0:20])
+            offset = 20
+        else:
+            (self.stream_id,) = struct.unpack(">I", tmpstr[:4])
+            self.tsi = None
+            self.tsf = None
+            indicators = None
+            offset = 4
+
         self.fields = {}
 
-        # now read all the indicators
-        if self.stream_id == VRTRECEIVER:
-            self._parseReceiverContext(indicatorsField, tmpstr[20:])
-        elif self.stream_id == VRTDIGITIZER:
-            self._parseDigitizerContext(indicatorsField, tmpstr[20:])
-        elif self.stream_id == VRTCUSTOM:
-            self._parseCustomContext(indicatorsField, tmpstr[20:])
+        parse = {
+            VRTRECEIVER: self._parse_receiver_context,
+            VRTDIGITIZER: self._parse_digitizer_context,
+            VRTCUSTOM: self._parse_custom_context,
+            VRTSPECA: self._parse_speca_context,
+        }.get(self.stream_id)
+
+        if parse:
+            parse(indicators, tmpstr[offset:])
 
 
-    def _parseReceiverContext(self, indicators, data):
+    def _parse_receiver_context(self, indicators, data):
         i = 0
 
         if indicators & CTX_REFERENCEPOINT:
@@ -123,7 +139,8 @@ class ContextPacket(object):
         else:
             self.fields['unknown'] = (indicators, data)
 
-    def _parseDigitizerContext(self, indicators, data):
+
+    def _parse_digitizer_context(self, indicators, data):
         i = 0
 
         if indicators & CTX_BANDWIDTH:
@@ -148,7 +165,7 @@ class ContextPacket(object):
             self.fields['unknown'] = (indicators, data)
 
 
-    def _parseCustomContext(self, indicators, data):
+    def _parse_custom_context(self, indicators, data):
         i = 0
 
         if indicators & CTX_SWEEPID:
@@ -167,6 +184,13 @@ class ContextPacket(object):
             self.fields['unknown'] = (indicators, data)
 
 
+    def _parse_speca_context(self, indicators, data):
+        try:
+            self.fields['speca'] = json.loads(zlib.decompress(data))
+        except ValueError:
+            self.fields['unknown'] = (indicators, data)
+
+
     def is_data_packet(self):
         """
         :returns: False
@@ -176,24 +200,24 @@ class ContextPacket(object):
 
     def is_context_packet(self, ptype=None):
         """
-        :param ptype: "Receiver", "Digitizer" or None for any packet type
+        :param ptype: "Receiver", "Digitizer" or None for any
+        packet type
 
         :returns: True if this packet matches the type passed
         """
         if ptype is None:
             return True
-
         elif ptype == "Receiver":
             return self.ptype == VRTRECEIVER
-
         elif ptype == "Digitizer":
             return self.ptype == VRTDIGITIZER
 
-        else:
-            return False
+        return False
 
 
     def __str__(self):
+        if self.tsf is None:
+            return "Context #%02d [" % self.count + str(self.fields) + "]"
         return ("Context #%02d [%d.%012d, 0x%08x " % (
             self.count, self.tsi, self.tsf, self.stream_id)
             ) + str(self.fields) + "]"
@@ -371,3 +395,22 @@ class DataPacket(object):
 
     def __str__(self):
         return ("Data #%02d [%d.%012d, %d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))
+
+
+def generate_speca_packet(data, count=0):
+    """
+    :param data: a python dict that can be serialized as JSON
+    :param count: int count for the header of this packet
+
+    :returns: (vrt packet bytes, next count int)
+    """
+    payload = zlib.compress(json.dumps(data, separators=(',', ':')))
+    padding = '\0' * ((-len(payload)) % 4)
+    size = 2 + (len(payload) + len(padding)) / 4
+    assert size < 2 ** 16, 'speca data is too large: %s' % data
+    header = struct.pack('>II',
+        (VRTCUSTOMCONTEXT << 28) | ((count & 0x0f) << 16) | size,
+        VRTSPECA,
+        )
+    return ''.join((header, payload, padding)), (count + 1) & 0x0f
+

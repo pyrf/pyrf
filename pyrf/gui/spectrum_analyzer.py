@@ -9,23 +9,23 @@ import qt4reactor
 import logging
 
 def main():
-    name = None
+    dut_address = None
+    playback_filename = None
     if '-v' in sys.argv:
         sys.argv.remove('-v')
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig()
-    if '-d' in sys.argv:
-        d_index = sys.argv.index('-d')
-        name = sys.argv[d_index + 1]
-        del sys.argv[d_index:d_index + 2]
+    if '-p' in sys.argv:
+        f_index = sys.argv.index('-p')
+        playback_filename = sys.argv[f_index + 1]
+        del sys.argv[f_index:f_index + 2]
+    if len(sys.argv) > 1:
+        dut_address = sys.argv[1]
     app = QtGui.QApplication(sys.argv)
     qt4reactor.install() # requires QApplication to exist
     # requires qt4reactor to be installed
-    if name:
-        ex = MainWindow(open(name, 'wb'))
-    else:
-        ex = MainWindow()
+    ex = MainWindow(dut_address, playback_filename)
     # late import because installReactor is being used
     from twisted.internet import reactor
     reactor.run()

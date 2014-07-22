@@ -17,12 +17,12 @@ Links
 * `PyRF Documentation <http://www.pyrf.org>`_
 * `WSA4000/WSA5000 Documentation <http://www.thinkrf.com/documentation/>`_
 
-Spectrum Analyzer GUI
----------------------
+PyRF RTSA
+---------
 
-.. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui.png
-   :alt: speca-gui screen shot
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/rtsa-gui.png
+   :alt: rtsa-gui screen shot
 
-.. image:: https://raw.github.com/pyrf/pyrf/master/docs/speca-gui-2.png
-   :alt: speca-gui screen shot
+.. image:: https://raw.github.com/pyrf/pyrf/master/docs/rtsa-gui-2.png
+   :alt: rtsa-gui screen shot
 

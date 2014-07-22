@@ -64,19 +64,6 @@ from the source directory::
    python setup.py install
 
 
-Building Standalone Spectrum Analyzer EXE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Find and install the
-`latest version of py2exe for 32-bit Python2.7 <http://sourceforge.net/projects/py2exe/files/py2exe/>`_
-e.g. "py2exe-0.6.9.win32-py2.7.exe".
-
-Then switch to your pyrf directory and run::
-
-  python setup.py py2exe
-
-
-
 API for WSA RF Receiver
 -----------------------
 
@@ -110,16 +97,16 @@ instance as the connector parameter, as in :ref:`twisted-show-i-q`
 
 .. _demo-gui:
 
-Spectrum Analyzer GUI
----------------------
+PyRF RTSA
+---------
 
-.. image:: speca-gui.png
-   :alt: speca-gui screen shot
+.. image:: rtsa-gui.png
+   :alt: rtsa-gui screen shot
 
-.. image:: speca-gui-2.png
-   :alt: speca-gui screen shot
+.. image:: rtsa-gui-2.png
+   :alt: rtsa-gui screen shot
 
-``speca-gui`` is a cross-platform GUI application built with the
+``rtsa-gui`` is a cross-platform GUI application built with the
 Qt_ toolkit and PySideProject_ bindings for Python.
 
 .. _Qt: http://qt.digia.com/
@@ -127,7 +114,7 @@ Qt_ toolkit and PySideProject_ bindings for Python.
 
 The GUI may be launched with the command::
 
-  speca-gui <hostname> [--reset]
+  rtsa-gui <hostname> [--reset]
 
 If *hostname* is not specified a dialog will appear asking you to enter one.
 If ``--reset`` is used the WSA will be reset to defaults before the GUI

@@ -2,6 +2,9 @@ import math
 import random
 from collections import namedtuple
 import time
+
+import numpy as np
+
 from pyrf.numpy_util import compute_fft
 from pyrf.config import SweepEntry
 
@@ -80,12 +83,12 @@ class SweepDevice(object):
     def __init__(self, real_device, async_callback=None):
         self.real_device = real_device
         self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-        if hasattr(self.connector, 'vrt_callback'):
+        if real_device.async_connector():
             if not async_callback:
                 raise SweepDeviceError(
                     "async_callback required for async operation")
             # disable receiving data until we are expecting it
-            self.connector.vrt_callback = None
+            real_device.set_async_callback(None)
         else:
             if async_callback:
                 raise SweepDeviceError(
@@ -100,8 +103,6 @@ class SweepDevice(object):
         self.past_end_bytes_discarded = 0
         self.fft_calculation_seconds = 0.0
         self.bin_collection_seconds = 0.0
-
-    connector = property(lambda self: self.real_device.connector)
 
     def capture_power_spectrum(self,
             fstart, fstop, rbw,
@@ -167,7 +168,7 @@ class SweepDevice(object):
             if not self.plan:
                 self.async_callback(self.fstart, self.fstop, [])
                 return
-            self.connector.vrt_callback = self._vrt_receive
+            self.real_device.set_async_callback(self._vrt_receive)
             self._start_sweep(entries)
             return
 
@@ -191,7 +192,7 @@ class SweepDevice(object):
         self._vrt_context = {}
         self._ss_index = 0
         self._ss_received = 0
-        self.bins = []
+        self.bin_arrays = []
         self.real_device.sweep_iterations(0 if self.continuous else 1)
         self.real_device.sweep_start(self._sweep_id)
 
@@ -240,7 +241,7 @@ class SweepDevice(object):
                 offset = -offset
             start += offset
 
-        self.bins.extend(pow_data[start:start + take])
+        self.bin_arrays.append(pow_data[start:start + take])
         self._ss_received += take
         collect_stop_time = time.time()
 
@@ -263,6 +264,7 @@ class SweepDevice(object):
             self.real_device.abort()
             self.real_device.flush()
 
+        self.bins = np.concatenate(self.bin_arrays)
         if self.async_callback:
             self.real_device.vrt_callback = None
             self.async_callback(self.fstart, self.fstop, self.bins)

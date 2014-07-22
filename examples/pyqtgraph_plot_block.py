@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # import required libraries
 from pyqtgraph.Qt import QtGui, QtCore
@@ -75,7 +75,6 @@ def update():
     # initialize the x-axis of the plot
     fft_plot.setXRange(plot_xmin,plot_xmax)
     fft_plot.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
-    
 
     curve.setData(freq_range,pow_data, pen = 'g')
 
