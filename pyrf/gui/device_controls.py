@@ -315,9 +315,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._fshift_label.show()
 
                 # insert all sweep modes only if no sweep mode is in the combo box
-                if not 'Sweep' in self._mode.itemText(0):
-                    for mode in self.dut_prop.SPECA_MODES:
-                        self._mode.insertItem(0, mode)
+                self._update_modes()
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
