@@ -172,7 +172,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         def new_iq_path():
             self.controller.apply_device_settings(
-                iq_output_path=self._iq_output_box.currentText().upper())
+                iq_output_path= str(self._iq_output_box.currentText().upper()))
 
         def new_input_mode():
             input_mode = self._mode.currentText()
@@ -290,9 +290,15 @@ class DeviceControls(QtGui.QGroupBox):
                 # remove sweep capture modes
                 self._update_modes()
                 c = self._mode.count()
-                self._mode.removeItem(0)
-                self._mode.removeItem(1)
-                self._mode.setCurrentIndex(0)
+
+                # remove all sweep modes while using IQ out
+                for i in range(c + 1):
+                    if 'Sweep' in self._mode.itemText(c - i):
+                        self._mode.removeItem(c - i)
+
+                if 'Sweep' in state.rfe_mode():
+                    self._mode.setCurrentIndex(0)
+
                 # remove all digitizer controls
                 self._rbw_label.hide()
                 self._rbw_box.hide()
@@ -307,6 +313,11 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
+
+                # insert all sweep modes only if no sweep mode is in the combo box
+                if not 'Sweep' in self._mode.itemText(0):
+                    for mode in self.dut_prop.SPECA_MODES:
+                        self._mode.insertItem(0, mode)
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
