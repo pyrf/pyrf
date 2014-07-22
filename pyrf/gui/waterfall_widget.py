@@ -613,6 +613,13 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 dlog("setLookupTable triggered a full image refresh!")
                 self._do_full_image_refresh()
     
+    def set_lookup_levels(self, color_lookup_min, color_lookup_max):
+        new_levels = (color_lookup_min, color_lookup_max)
+        dlog("set_lookup_levels(%s, %s) called" % new_levels)
+        if new_levels != self._lut_levels:
+            self._lut_levels = new_levels
+            self._do_full_image_refresh()
+    
     def add_image_row(self, data_row):
         assert data_row.ndim == 1
         #Note that the data queue handles both new rows and full data sets.
@@ -885,7 +892,8 @@ class WaterfallPlotWidget(QtGui.QWidget):
                 msg = ("If scale_limits is specified, it must be a tuple like "
                        "(black_level, white_level)")
                 raise ValueError(msg)
-            self._scale_limits = scale_limits
+        
+        self._scale_limits = scale_limits
         self._show_ge = show_gradient_editor
         self._vertical_stretch = vertical_stretch
         self._data_model = data_model
@@ -1094,6 +1102,10 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
         #HACK (to avoid lost row potential)...
         #self._renderer.set_new_data_model(data_model)
+    
+    def set_lookup_levels(self, color_lookup_min, color_lookup_max):
+        self._renderer.set_lookup_levels(color_lookup_min, color_lookup_max)
+
 
 class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
     """
