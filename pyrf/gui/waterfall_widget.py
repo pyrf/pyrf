@@ -7,7 +7,6 @@ import ctypes
 import Queue
 import logging
 
-# import required libraries
 from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import pyqtgraph.functions as pgfuncs
@@ -15,6 +14,9 @@ import numpy as np
 
 FRAME_WAIT_TIMEOUT_s = 0.2
 CROSSHAIR_FPS = 10.0
+
+# workaround for pyqtgraph trying to compile external lib at runtime
+pg.setConfigOption('useWeave', False)
 
 DLOG_ENABLED = False
 DLOG_start_time = None
