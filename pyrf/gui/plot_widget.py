@@ -10,7 +10,7 @@ from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
     ThreadedWaterfallPlotWidget)
 
-USE_WATERFALL = platform.system() != 'Windows'
+USE_WATERFALL = True #platform.system() != 'Windows'
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20

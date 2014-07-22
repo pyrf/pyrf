@@ -291,6 +291,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._update_modes()
                 c = self._mode.count()
                 self._mode.removeItem(0)
+                self._mode.removeItem(1)
                 self._mode.setCurrentIndex(0)
                 # remove all digitizer controls
                 self._rbw_label.hide()
