@@ -97,6 +97,8 @@ class WSA5000_220Properties(object):
         'HDR': 0.16276 * M,
         'SH': 62.5 * M,
         'SHN': 62.5 * M,
+        'DEC_SH': 125 * M,
+        'DEC_SHN': 125 * M,
         'IQIN': 125 * M,
         'DD': 62.5 * M,
         }
@@ -146,6 +148,8 @@ class WSA5000_220Properties(object):
         'HDR': 0.6,
         'SH': 0.56,
         'SHN': 0.56,
+        'DEC_SH': 0.5,
+        'DEC_SHN': 0.5,
         'IQIN': 0.5,
         'DD': 0.5,
         }
