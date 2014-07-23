@@ -34,6 +34,7 @@ class Trace(object):
         self.blank = blank
         self.write = write
         self.store = False
+        self.average = False
         self.data = None
         self.raw_packet = None
         self.freq_range = None
@@ -45,7 +46,8 @@ class Trace(object):
             min(255, trace_color[2] + 60),)
         self.curves = []
         self.plot_area = plot_area
-
+        self.average_list = []
+        self.average_factor = 5
     def clear(self):
         for c in self.curves:
             self.plot_area.window.removeItem(c)
@@ -70,6 +72,13 @@ class Trace(object):
 
         elif self.write:
             self.data = ydata
+
+        elif self.average:
+            if len(self.average_list) > self.average_factor:
+                self.average_list.pop(0)
+            self.average_list.append(ydata)
+            self.data = np.average(self.average_list, axis = 0)
+            
 
         self.clear()
         if usable_bins:
