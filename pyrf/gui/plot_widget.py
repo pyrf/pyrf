@@ -280,3 +280,7 @@ class Plot(QtCore.QObject):
 
     def grid(self,state):
         self.window.showGrid(state,state)
+        self.window.getAxis('bottom').setPen((255,255,255))
+        self.window.getAxis('bottom').setGrid(200)
+        self.window.getAxis('left').setPen('w')
+        self.window.getAxis('left').setGrid(200)
