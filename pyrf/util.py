@@ -85,7 +85,10 @@ def adjust_usable_fstart_fstop(dut_prop, rfe_mode, points, decimation,
     based on spectral inversion.
     """
     full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
-    pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
+    if rfe_mode in ('SH', 'SHN') and decimation > 1:
+        pass_band_center = 0.5
+    else:
+        pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
 
     offset = full_bw * (0.5 - pass_band_center)
     if spec_inv:
