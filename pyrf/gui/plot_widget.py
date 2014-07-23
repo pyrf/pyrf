@@ -80,6 +80,9 @@ class Trace(object):
         elif self.average:
             if len(self.average_list) >= self.average_factor:
                 self.average_list.pop(0)
+            if self.average_list:
+                if len(ydata) != len(self.data):
+                    self.average_list = []
             self.average_list.append(ydata)
             self.data = np.average(self.average_list, axis = 0)
 
