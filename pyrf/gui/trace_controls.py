@@ -560,3 +560,8 @@ class TraceControls(QtGui.QGroupBox):
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label
 
+    def get_ref_level(self):
+        return self._ref_level.value()
+    def get_min_level(self):
+
+        return self._min_level.value()
