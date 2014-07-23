@@ -53,6 +53,10 @@ class Trace(object):
             self.plot_area.window.removeItem(c)
         self.curves = []
 
+    def update_average_factor(self, factor):
+        self.average_factor = factor
+        self.average_list = []
+
     def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
 
         if self.store or self.blank:
@@ -74,11 +78,10 @@ class Trace(object):
             self.data = ydata
 
         elif self.average:
-            if len(self.average_list) > self.average_factor:
+            if len(self.average_list) >= self.average_factor:
                 self.average_list.pop(0)
             self.average_list.append(ydata)
             self.data = np.average(self.average_list, axis = 0)
-            
 
         self.clear()
         if usable_bins:

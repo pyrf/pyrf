@@ -119,11 +119,13 @@ class TraceControls(QtGui.QGroupBox):
         hold.clicked.connect(hold_clicked)
         
         average_edit = QtGui.QLineEdit('5')
+
         def average_changed():
-            num = draw.currentIndex()
             trace = self._plot.traces[num]
-            trace.average_factor = int(average_edit.text())
-            
+            trace.update_average_factor(int(average_edit.text()))
+        average_edit.returnPressed.connect(average_changed)
+        average_edit.hide()
+
         def hold_clicked():
             self._store_trace(num, hold.isChecked())
         hold.clicked.connect(hold_clicked)
@@ -236,6 +238,8 @@ class TraceControls(QtGui.QGroupBox):
             show(trace_widgets.average_edit, row, 3, 1, 1)
             show(trace_widgets.hold, row, 4, 1, 2)
 
+            if not trace_widgets.draw.currentIndex() == 3:
+                trace_widgets.average_edit.hide()
             if extra:
                 show(trace_widgets.add_marker, row, 6, 1, 2)
             return row + 1
@@ -326,7 +330,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = False
         trace.blank = False
         trace.average = False
-        self._traces[num].average_edit.hide()
+        # self._traces[num].average_edit.hide()
 
     def min_hold(self, num):
         """
@@ -350,7 +354,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.blank = False
         trace.average = False
         self._traces[num].average_edit.hide()
-        
+
     def trace_average(self, num):
         """
         disable/enable average FFT mode the selected trace
