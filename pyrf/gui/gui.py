@@ -567,7 +567,7 @@ class MainPanel(QtGui.QWidget):
                     trace = self._plot.traces[marker.trace_index]
 
                     if not trace.blank:
-                        marker_label.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
+                        marker_label.setStyleSheet('color: rgb(%s, %s, %s); font: bold 14px;' % (trace.color[0],
                                                                              trace.color[1],
                                                                             trace.color[2]))
 
@@ -595,7 +595,7 @@ class MainPanel(QtGui.QWidget):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            
+            self._diff_lab.setStyleSheet('color: rgb(255, 255, 255); font: bold 14px;')
             delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
