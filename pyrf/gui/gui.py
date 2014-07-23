@@ -383,13 +383,13 @@ class MainPanel(QtGui.QWidget):
 
         y = 0
         x = self.plot_width
-
         controls_layout = QtGui.QVBoxLayout()
-        controls_layout.addWidget(self._trace_controls())
+        self.trace_group = self._trace_controls()
+        controls_layout.addWidget(self._freq_controls())
         self._plot_group = self.trace_group.plot_controls()
         controls_layout.addWidget(self._plot_group)
         controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self._freq_controls())
+        controls_layout.addWidget(self.trace_group)
         controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 13, 5)
 
