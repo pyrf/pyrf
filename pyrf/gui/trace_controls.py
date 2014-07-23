@@ -330,7 +330,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = False
         trace.blank = False
         trace.average = False
-        # self._traces[num].average_edit.hide()
+        self._traces[num].average_edit.hide()
 
     def min_hold(self, num):
         """
