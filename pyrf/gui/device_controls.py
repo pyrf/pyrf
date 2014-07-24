@@ -22,7 +22,7 @@ class DeviceControls(QtGui.QGroupBox):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-
+        self.setStyleSheet('color: rgb(0, 0, 0); font: bold 14px;')
         self.setTitle(name)
 
         self._create_controls()

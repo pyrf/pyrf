@@ -15,7 +15,7 @@ class FrequencyControls(QtGui.QGroupBox):
         controller.state_change.connect(self.state_changed)
 
         self.setTitle(name)
-
+        self.setStyleSheet('color: rgb(0, 0, 0); font: bold 14px;')
         grid = QtGui.QGridLayout()
 
         cfreq_bt, cfreq_txt = self._center_freq()
