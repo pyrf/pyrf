@@ -117,6 +117,8 @@ class FrequencyControls(QtGui.QGroupBox):
         self._freq_edit = freq_edit
         def freq_change():
             self.controller.apply_settings(center=freq_edit.value() * M)
+            if 'CONNECTOR' in self.gui_state.device_settings['iq_output_path']:
+                self.controller.apply_device_settings(freq = freq_edit.value() * M)
         freq_edit.valueChanged.connect(freq_change)
         return cfreq, freq_edit
 
