@@ -10,8 +10,6 @@ from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
     ThreadedWaterfallPlotWidget)
 
-USE_WATERFALL = True #platform.system() != 'Windows'
-
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -225,15 +223,13 @@ class Plot(QtCore.QObject):
             self.markers.append(Marker(self, marker_name))
 
         self.waterfall_data = WaterfallModel(max_len=600)
-        if USE_WATERFALL:
-            self.waterfall_window = ThreadedWaterfallPlotWidget(
-                self.waterfall_data,
-                scale_limits=(PLOT_YMIN, PLOT_YMAX),
-                max_frame_rate_fps=30,
-                mouse_move_crosshair=False,
-                )
-        else:
-            self.waterfall_window = None
+
+        self.waterfall_window = ThreadedWaterfallPlotWidget(
+            self.waterfall_data,
+            scale_limits=(PLOT_YMIN, PLOT_YMAX),
+            max_frame_rate_fps=30,
+            mouse_move_crosshair=False,
+            )
 
         self.connect_plot_controls()
 
