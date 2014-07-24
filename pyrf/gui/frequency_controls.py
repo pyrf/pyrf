@@ -3,7 +3,7 @@ from PySide import QtGui
 from pyrf.units import M
 from pyrf.gui import colors
 from pyrf.gui.widgets import QDoubleSpinBoxPlayback
-
+from pyrf.gui.fonts import GROUP_BOX_FONT
 
 class FrequencyControls(QtGui.QGroupBox):
 
@@ -15,7 +15,7 @@ class FrequencyControls(QtGui.QGroupBox):
         controller.state_change.connect(self.state_changed)
 
         self.setTitle(name)
-        self.setStyleSheet('color: rgb(0, 0, 0); font: bold 14px;')
+        self.setStyleSheet(GROUP_BOX_FONT)
         grid = QtGui.QGridLayout()
 
         cfreq_bt, cfreq_txt = self._center_freq()

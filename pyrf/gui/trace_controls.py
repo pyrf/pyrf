@@ -4,6 +4,7 @@ from PySide import QtGui, QtCore
 from pyrf.gui import labels
 from pyrf.gui import colors
 from pyrf.gui.util import hide_layout
+from pyrf.gui.fonts import GROUP_BOX_FONT
 
 import numpy as np
 
@@ -67,7 +68,7 @@ class TraceControls(QtGui.QGroupBox):
         controller.capture_receive.connect(self.capture_received)
         self._plot = plot
         self.setTitle(name)
-        self.setStyleSheet('color: rgb(0, 0, 0); font: bold 14px;')
+        self.setStyleSheet(GROUP_BOX_FONT)
         self._marker_trace = None
 
         self.setLayout(QtGui.QGridLayout())
@@ -498,7 +499,7 @@ class TraceControls(QtGui.QGroupBox):
     def plot_controls(self):
 
         plot_group = QtGui.QGroupBox("Amplitude Control")
-        plot_group.setStyleSheet('color: rgb(0, 0, 0); font: bold 14px;')
+        plot_group.setStyleSheet(GROUP_BOX_FONT)
         self._plot_group = plot_group
 
         grid = QtGui.QGridLayout()

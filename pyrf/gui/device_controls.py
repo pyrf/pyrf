@@ -1,6 +1,6 @@
-from PySide import QtGui
+from PySide import QtGui, QtCore
 from pyrf.units import M
-
+from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
@@ -22,7 +22,7 @@ class DeviceControls(QtGui.QGroupBox):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-        self.setStyleSheet('color: rgb(0, 0, 0); font: bold 14px;')
+        self.setStyleSheet(GROUP_BOX_FONT)
         self.setTitle(name)
 
         self._create_controls()
