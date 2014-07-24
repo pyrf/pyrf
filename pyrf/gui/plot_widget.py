@@ -181,7 +181,9 @@ class Plot(QtCore.QObject):
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
-        self.window.setLabel('left', text = 'Power', units = 'dBm')
+        labelStyle = {'color': '#FFF', 'font-size': ' 16px', 'font-weight':'bold'}
+        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+        self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize fft curve
         self.fft_curve = self.window.plot(pen = colors.TEAL_NUM)
