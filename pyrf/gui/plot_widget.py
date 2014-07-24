@@ -263,7 +263,7 @@ class Plot(QtCore.QObject):
                                 state.device_settings['trigger']['fstop'])
 
     def add_trigger(self,fstart, fstop):
-        self.freqtrig_lines.setRegion([fstart,fstop])
+        self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
         self.window.addItem(self.amptrig_line)
         self.window.addItem(self.freqtrig_lines)
 
