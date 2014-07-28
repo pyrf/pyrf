@@ -476,10 +476,11 @@ class MainPanel(QtGui.QWidget):
         if self.iq_plots_enabled:
             self.update_iq()
 
-        if (fstart, fstop, len(power)) != self._waterfall_range:
-            self._plot.waterfall_data.reset(self.xdata)
-            self._waterfall_range = (fstart, fstop, len(power))
-        self._plot.waterfall_data.add_row(power)
+        if self.waterfall_plot_enabled:
+            if (fstart, fstop, len(power)) != self._waterfall_range:
+                self._plot.waterfall_data.reset(self.xdata)
+                self._waterfall_range = (fstart, fstop, len(power))
+            self._plot.waterfall_data.add_row(power)
 
 
     def options_changed(self, options, changed):

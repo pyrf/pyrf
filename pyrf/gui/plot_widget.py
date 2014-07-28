@@ -230,7 +230,6 @@ class Plot(QtCore.QObject):
             max_frame_rate_fps=30,
             mouse_move_crosshair=False,
             )
-
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
