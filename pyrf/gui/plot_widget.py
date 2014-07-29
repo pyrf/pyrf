@@ -34,6 +34,7 @@ class Trace(object):
         self.blank = blank
         self.write = write
         self.store = False
+        self.average = False
         self.data = None
         self.raw_packet = None
         self.freq_range = None
@@ -45,11 +46,16 @@ class Trace(object):
             min(255, trace_color[2] + 60),)
         self.curves = []
         self.plot_area = plot_area
-
+        self.average_list = []
+        self.average_factor = 5
     def clear(self):
         for c in self.curves:
             self.plot_area.window.removeItem(c)
         self.curves = []
+
+    def update_average_factor(self, factor):
+        self.average_factor = factor
+        self.average_list = []
 
     def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
 
@@ -70,6 +76,15 @@ class Trace(object):
 
         elif self.write:
             self.data = ydata
+
+        elif self.average:
+            if len(self.average_list) >= self.average_factor:
+                self.average_list.pop(0)
+            if self.average_list:
+                if len(ydata) != len(self.data):
+                    self.average_list = []
+            self.average_list.append(ydata)
+            self.data = np.average(self.average_list, axis = 0)
 
         self.clear()
         if usable_bins:
@@ -263,7 +278,7 @@ class Plot(QtCore.QObject):
                                 state.device_settings['trigger']['fstop'])
 
     def add_trigger(self,fstart, fstop):
-        self.freqtrig_lines.setRegion([fstart,fstop])
+        self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
         self.window.addItem(self.amptrig_line)
         self.window.addItem(self.freqtrig_lines)
 

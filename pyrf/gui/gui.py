@@ -505,10 +505,11 @@ class MainPanel(QtGui.QWidget):
             self._plot.iq_window.show()
 
         ww = self._plot.waterfall_window
-        if self.waterfall_plot_enabled and ww:
-            ww.show()
-        else:
-            ww.hide()
+        if ww:
+            if self.waterfall_plot_enabled:
+                ww.show()
+            else:
+                ww.hide()
 
     def update_trace(self):
         for trace in self._plot.traces:

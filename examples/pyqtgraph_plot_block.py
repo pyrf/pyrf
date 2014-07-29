@@ -17,20 +17,30 @@ ATTENUATOR = 1
 DECIMATION = 1
 RFE_MODE = 'ZIF'
 
-# create GUI instance
-app = QtGui.QApplication([])
-win = pg.GraphicsWindow(title="ThinkRF FFT Plot Example")
-win.resize(1000,600)
-win.setWindowTitle("PYRF FFT Plot Example")
 
 # connect to WSA device
 dut = WSA()
-if len(sys.argv) < 2:
-    ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
-                        'Enter a hostname or IP address:')
-else:
-    ip = sys.argv[1]
+ip = sys.argv[1]
 dut.connect(ip)
+
+class MainApplication(pg.GraphicsWindow):
+
+    def __init__(self, dut):
+        super(MainApplication, self).__init__()
+        self.dut = dut
+
+    def keyPressEvent(self, event):
+        if event.text() == ';':
+            cmd, ok = QtGui.QInputDialog.getText(win, 'Enter SCPI Command',
+                        'Enter SCPI Command:')
+            if ok:
+                if '?' not in cmd:
+                    dut.scpiset(cmd)
+
+win = MainApplication(dut)
+win.resize(1000,600)
+win.setWindowTitle("PYRF FFT Plot Example")
+
 
 # initialize WSA configurations
 dut.reset()
@@ -68,7 +78,7 @@ def update():
     data, context = read_data_and_context(dut, SAMPLE_SIZE)
     # compute the fft and plot the data
     pow_data = compute_fft(dut, data, context)
-    
+
     # update the frequency range (Hz)
     freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
     
