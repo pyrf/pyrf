@@ -9,6 +9,7 @@ from pyrf.gui import labels
 from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
     ThreadedWaterfallPlotWidget)
+from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 
 USE_WATERFALL = platform.system() != 'Windows'
 
@@ -180,7 +181,10 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
-        self.window = pg.PlotWidget(name = 'pyrf_plot')
+        self.freq_axis = RTSAFrequencyAxisItem()
+        self.window = pg.PlotWidget(name = 'pyrf_plot',
+                                    axisItems = dict(bottom = self.freq_axis),
+                                    )
 
         def widget_range_changed(widget, ranges):
             if not hasattr(ranges, '__getitem__'):
