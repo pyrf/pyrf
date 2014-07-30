@@ -254,6 +254,9 @@ class MainPanel(QtGui.QWidget):
 
         self.enable_controls()
 
+        if parse_version(dut.fw_version) < parse_version(dut.properties.TRIGGER_FW_VERSION):
+            self._dev_group.hide_level_trigger()
+    TRIGGER_FW_VERSION = '4.1.0'
     def state_changed(self, state, changed):
         """
         signal handler for speca state changes

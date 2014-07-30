@@ -78,7 +78,7 @@ class WSA4000Properties(object):
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
-
+    TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
