@@ -75,7 +75,7 @@ class RTSAFrequencyAxisItem(pg.AxisItem):
                 freq_txt = u"---"
             else:
                 scale, si_prefix = siScale(freq)
-                freq_txt = u"%.2f %sHz" % ((scale * freq), si_prefix)
+                freq_txt = u"%.4f %sHz" % ((scale * freq), si_prefix)
             txt = u"%s = %s" % (label, freq_txt)
             textSpecs.append((rect, textFlags, txt))
         
