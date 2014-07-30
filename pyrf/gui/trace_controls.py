@@ -119,8 +119,8 @@ class TraceControls(QtGui.QGroupBox):
         def hold_clicked():
             self._store_trace(num, hold.isChecked())
         hold.clicked.connect(hold_clicked)
-        average_edit = QtGui.QLineEdit('5')
 
+        average_edit = QtGui.QLineEdit('5')
         def average_changed():
             trace = self._plot.traces[num]
             if int(average_edit.text()) > MAX_AVERAGE_FACTOR:
@@ -130,8 +130,6 @@ class TraceControls(QtGui.QGroupBox):
         average_edit.returnPressed.connect(average_changed)
         average_edit.hide()
 
-        def hold_clicked():
-            self._store_trace(num, hold.isChecked())
         hold.clicked.connect(hold_clicked)
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
