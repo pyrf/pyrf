@@ -270,7 +270,7 @@ class Plot(QtCore.QObject):
         b = self.window.blockSignals(True)
         self.window.setXRange(float(fstart), float(fstop), padding=0)
         if min_level is not None:
-            self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+            self.window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
 
     def grid(self,state):
