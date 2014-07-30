@@ -717,7 +717,6 @@ def parse_discovery_response(response):
     version = struct.unpack(RESPONSE_HEADER_FORMAT, response[:8])[1]
     if version == WSA4000_DISCOVERY_VERSION:
         return ('WSA4000', response[8:].split('\0', 1)[0], None)
-    print 'derp',  response
     return tuple(v.rstrip('\0') for v in struct.unpack(WSA5000_FORMAT,
         response[8:]))
 
