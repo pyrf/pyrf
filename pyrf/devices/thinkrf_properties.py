@@ -35,7 +35,6 @@ def wsa_properties(device_id):
 class WSA4000Properties(object):
     model = 'WSA4000'
 
-    REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
 
@@ -79,7 +78,6 @@ class WSA5000_220Properties(object):
     model = 'WSA5000-220'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
 
-    REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20

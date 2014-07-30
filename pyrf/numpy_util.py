@@ -65,8 +65,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
             power_spectrum = np.flipud(power_spectrum)
 
     if apply_reference:
-        noiselevel_offset = reference_level + prop.REFLEVEL_ERROR
-        return power_spectrum + noiselevel_offset
+        return power_spectrum + reference_level
     return power_spectrum
 
 def _compute_fft(i_data, q_data, correct_phase,
