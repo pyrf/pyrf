@@ -6,6 +6,7 @@ from PySide import QtCore
 
 from pyrf.gui import colors
 from pyrf.gui import labels
+from pyrf.gui import fonts
 from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
     ThreadedWaterfallPlotWidget)
@@ -181,7 +182,7 @@ class Plot(QtCore.QObject):
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
-        labelStyle = {'color': '#FFF', 'font-size': ' 16px', 'font-weight':'bold'}
+        labelStyle = fonts.AXIS_LABEL_FONT
         self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
