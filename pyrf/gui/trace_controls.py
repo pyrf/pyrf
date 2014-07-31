@@ -580,10 +580,15 @@ class TraceControls(QtGui.QGroupBox):
 
 
     def _update_plot_y_axis(self):
+        min_level = self._min_level.value()
+        ref_level = self._ref_level.value()
+        
         self._plot.center_view(
             self.xdata[0], self.xdata[-1],
-            min_level = self._min_level.value(),
-            ref_level = self._ref_level.value())
+            min_level = min_level,
+            ref_level = ref_level)
+        
+        self._plot.update_waterfall_levels(min_level, ref_level)
 
     def _ref_controls(self):
         ref_level = QtGui.QSpinBox()

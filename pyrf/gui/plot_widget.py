@@ -8,7 +8,7 @@ from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
-    ThreadedWaterfallPlotWidget)
+                                       ThreadedWaterfallPlotWidget)
 
 USE_WATERFALL = platform.system() != 'Windows'
 
@@ -297,6 +297,10 @@ class Plot(QtCore.QObject):
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
         self.window.blockSignals(b)
+        
+    def update_waterfall_levels(self, min_level, ref_level):
+        if self.waterfall_window is not None:
+            self.waterfall_window.set_lookup_levels(min_level, ref_level)
 
     def grid(self,state):
         self.window.showGrid(state,state)
