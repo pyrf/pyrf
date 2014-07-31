@@ -52,7 +52,9 @@ class Trace(object):
         for c in self.curves:
             self.plot_area.window.removeItem(c)
         self.curves = []
-
+    def clear_data(self):
+        self.average_list = []
+        self.data = None
     def update_average_factor(self, factor):
         self.average_factor = factor
         self.average_list = []
@@ -276,6 +278,9 @@ class Plot(QtCore.QObject):
             elif 'LEVEL' in state.device_settings['trigger']['type']:
                 self.add_trigger(state.device_settings['trigger']['fstart'],
                                 state.device_settings['trigger']['fstop'])
+        if 'center' in changed:
+            for trace in self.traces:
+                trace.clear_data()
 
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
