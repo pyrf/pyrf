@@ -11,7 +11,7 @@ def wsa_properties(device_id):
     parts = device_id.split(',')
     model, _space, rev = parts[1].partition(' ')
     if model == 'WSA4000':
-        return WSA4000Properties
+        return WSA4000Properties()
 
     # revision numbers jumped backwards when switching to major.minor
     rev = rev.lstrip('v')
@@ -21,15 +21,20 @@ def wsa_properties(device_id):
         old_v2 = int(rev) < 3
 
     if model == 'WSA5000-220' and old_v2:
-        return WSA5000_220_v2Properties
-    if model == 'WSA5000-208' and old_v2:
-        return WSA5000_208_v2Properties
-    if model == 'WSA5000-208':
-        return WSA5000_208Properties
-    if model == 'WSA5000-108':
-        return WSA5000_108Properties
+        p = WSA5000_220_v2Properties()
+    elif model == 'WSA5000-208' and old_v2:
+        p = WSA5000_208_v2Properties()
+    elif model == 'WSA5000-208':
+        p = WSA5000_208Properties()
+    elif model == 'WSA5000-108':
+        p = WSA5000_108Properties()
+    else:
+        p = WSA5000_220Properties()
 
-    return WSA5000_220Properties
+    # correct for old reflevels
+    if '.' not in rev or StrictVersion(rev) < StrictVersion('4.2'):
+        p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
+    return p
 
 
 class WSA4000Properties(object):
@@ -192,7 +197,7 @@ class WSA5000_220Properties(object):
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
-    REFLEVEL_ERROR = 15.7678
+    REFLEVEL_ERROR = 0
     # v2 -> hardware revision without SHN mode
     RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
 
