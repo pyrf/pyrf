@@ -117,10 +117,22 @@ class TraceControls(QtGui.QGroupBox):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
+            trace = self._plot.traces[num]
+            # FIXME: why so many exclusive bools?
+            trace.write = index == 0
+            trace.max_hold = index == 1
+            trace.min_hold = index == 2
+            trace.average = index == 3
+            trace.blank = index == 4
+            if index == 3:
+                average_label.show()
+                average_edit.show()
+            else:
+                average_label.hide()
+                average_edit.hide()
+
             if index == 4:  # 'Off'
                 return remove_trace_clicked()
-            [self.trace_write, self.max_hold, self.min_hold,
-                self.trace_average][index](num)
         draw.currentIndexChanged.connect(draw_changed)
 
         hold = QtGui.QCheckBox("Pause")
@@ -321,95 +333,13 @@ class TraceControls(QtGui.QGroupBox):
         self.pow_data = power
         self.xdata = np.linspace(fstart, fstop, len(power))
 
-    def _trace_tab_change(self):
-        """
-        change the selected trace
-        """
-        trace = self._plot.traces[self.trace_tab.currentIndex()]
-
-        if trace.write:
-            self.trace_attr['write'].click()
-        elif trace.max_hold:
-            self.trace_attr['max_hold'].click()
-        elif trace.min_hold:
-            self.trace_attr['min_hold'].click()
-        elif trace.blank:
-            self.trace_attr['blank'].click()
-
-        if self._plot.traces[self.trace_tab.currentIndex()].store:
-            state =  QtCore.Qt.CheckState.Checked
-        else:
-            state =  QtCore.Qt.CheckState.Unchecked
-        self.trace_attr['store'].setCheckState(state)
-
-    def max_hold(self, num):
-        """
-        disable/enable max hold on a trace
-        """
-        trace = self._plot.traces[num]
-        trace.write = False
-        trace.max_hold = True
-        trace.min_hold = False
-        trace.blank = False
-        trace.average = False
-        self._traces[num].average_label.hide()
-        self._traces[num].average.hide()
-
-    def min_hold(self, num):
-        """
-        disable/enable min hold on a trace
-        """
-        trace = self._plot.traces[num]
-        trace.write = False
-        trace.max_hold = False
-        trace.min_hold = True
-        trace.blank = False
-        trace.average = False
-        self._traces[num].average_label.hide()
-        self._traces[num].average.hide()
-
-    def trace_write(self, num):
-        """
-        disable/enable running FFT mode the selected trace
-        """
-        trace = self._plot.traces[num]
-        trace.write = True
-        trace.max_hold = False
-        trace.min_hold = False
-        trace.blank = False
-        trace.average = False
-        self._traces[num].average_label.hide()
-        self._traces[num].average.hide()
-
-    def trace_average(self, num):
-        """
-        disable/enable average FFT mode the selected trace
-        """
-
-        trace = self._plot.traces[num]
-        trace.write = False
-        trace.max_hold = False
-        trace.min_hold = False
-        trace.blank = False
-        trace.average = True
-        self._traces[num].average_label.show()
-        self._traces[num].average.show()
-
     def blank_trace(self, num):
         """
         disable the selected trace
         """
         trace = self._plot.traces[num]
-        trace.write = False
-        trace.max_hold = False
-        trace.min_hold = False
-        trace.blank = True
-        trace.average = False
         trace.clear()
         trace.data = None
-        self._traces[num].average_label.hide()
-        self._traces[num].average.hide()
-
         for marker in self._plot.markers:
             if marker.trace_index == num:
                 marker.disable(self._plot)
