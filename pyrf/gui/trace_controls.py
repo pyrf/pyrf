@@ -17,6 +17,7 @@ PLOT_STEP = 5
 REMOVE_BUTTON_WIDTH = 10
 
 MAX_AVERAGE_FACTOR = 1000
+DEFAULT_AVERAGE_FACTOR = 5
 
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
@@ -132,14 +133,13 @@ class TraceControls(QtGui.QGroupBox):
             trace.clear_data()
         clear.clicked.connect(clear_clicked)
 
-        average_edit = QtGui.QLineEdit('5')
+        average_edit = QtGui.QSpinBox()
+        average_edit.setRange(2, MAX_AVERAGE_FACTOR)
+        average_edit.setValue(DEFAULT_AVERAGE_FACTOR)
         def average_changed():
             trace = self._plot.traces[num]
-            if int(average_edit.text()) > MAX_AVERAGE_FACTOR:
-                average_edit.setText(str(trace.average_factor))
-            else:
-                trace.update_average_factor(int(average_edit.text()))
-        average_edit.returnPressed.connect(average_changed)
+            trace.update_average_factor(average_edit.value())
+        average_edit.valueChanged.connect(average_changed)
         average_edit.hide()
 
         add_trace = QtGui.QPushButton("+ Trace")
