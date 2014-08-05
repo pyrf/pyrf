@@ -25,6 +25,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     draw
     hold
     clear
+    average_label
     average
     add
     remove
@@ -36,7 +37,8 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     :param draw: draw combobox, including 'Live', 'Max', 'Min' options
     :param hold: pause checkbox
     :param clear: clear trace button
-    :param average: average iterations textbox
+    :param average_label: average captures label
+    :param average: average captures spinbox
     :param add: "+ trace" button
     :param remove: "- trace" button
     :param add_marker: "+ marker" button for adding a marker to this trace
@@ -113,11 +115,12 @@ class TraceControls(QtGui.QGroupBox):
         draw.setToolTip("Select data source")
         for i, val in enumerate(['Live', 'Max', 'Min', 'Average', 'Off']):
             draw.addItem(val)
-        draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min, 3: average
+        draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
             if index == 4:  # 'Off'
                 return remove_trace_clicked()
-            [self.trace_write, self.max_hold, self.min_hold, self.trace_average][index](num)
+            [self.trace_write, self.max_hold, self.min_hold,
+                self.trace_average][index](num)
         draw.currentIndexChanged.connect(draw_changed)
 
         hold = QtGui.QCheckBox("Pause")
@@ -132,6 +135,8 @@ class TraceControls(QtGui.QGroupBox):
             trace = self._plot.traces[num]
             trace.clear_data()
         clear.clicked.connect(clear_clicked)
+
+        average_label = QtGui.QLabel("Captures:")
 
         average_edit = QtGui.QSpinBox()
         average_edit.setRange(2, MAX_AVERAGE_FACTOR)
@@ -171,7 +176,8 @@ class TraceControls(QtGui.QGroupBox):
             self._build_layout()
         add_marker.clicked.connect(add_marker_clicked)
 
-        return TraceWidgets(icon, label, draw, hold, clear, average_edit,
+        return TraceWidgets(icon, label, draw, hold, clear,
+                            average_label, average_edit,
                             add_trace, remove_trace, add_marker)
 
     def _create_marker_widgets(self, num, button_group):
@@ -248,13 +254,16 @@ class TraceControls(QtGui.QGroupBox):
             row = row + 1
             show(trace_widgets.label, row, 0, 1, 1)
             show(trace_widgets.draw, row, 1, 1, 2)
-            show(trace_widgets.average, row, 3, 1, 1)
-            show(trace_widgets.hold, row, 4, 1, 1)
-            show(trace_widgets.clear, row, 5, 1, 1)
-            if not trace_widgets.draw.currentIndex() == 3:
+            show(trace_widgets.hold, row, 3, 1, 2)
+            show(trace_widgets.clear, row, 5, 1, 2)
+            row = row + 1
+            show(trace_widgets.average_label, row, 1, 1, 2)
+            show(trace_widgets.average, row, 3, 1, 2)
+            if trace_widgets.draw.currentText() != 'Average':
+                trace_widgets.average_label.hide()
                 trace_widgets.average.hide()
             if extra:
-                show(trace_widgets.add_marker, row, 6, 1, 2)
+                show(trace_widgets.add_marker, row, 5, 1, 2)
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
@@ -343,6 +352,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = False
         trace.blank = False
         trace.average = False
+        self._traces[num].average_label.hide()
         self._traces[num].average.hide()
 
     def min_hold(self, num):
@@ -355,7 +365,9 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = True
         trace.blank = False
         trace.average = False
+        self._traces[num].average_label.hide()
         self._traces[num].average.hide()
+
     def trace_write(self, num):
         """
         disable/enable running FFT mode the selected trace
@@ -366,6 +378,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = False
         trace.blank = False
         trace.average = False
+        self._traces[num].average_label.hide()
         self._traces[num].average.hide()
 
     def trace_average(self, num):
@@ -379,6 +392,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.min_hold = False
         trace.blank = False
         trace.average = True
+        self._traces[num].average_label.show()
         self._traces[num].average.show()
 
     def blank_trace(self, num):
@@ -393,6 +407,7 @@ class TraceControls(QtGui.QGroupBox):
         trace.average = False
         trace.clear()
         trace.data = None
+        self._traces[num].average_label.hide()
         self._traces[num].average.hide()
 
         for marker in self._plot.markers:
@@ -602,7 +617,7 @@ class TraceControls(QtGui.QGroupBox):
         ref_level.valueChanged.connect(self._update_plot_y_axis)
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Reference Level: ')
+        ref_label = QtGui.QLabel('Ref Level: ')
 
         min_level = QtGui.QSpinBox()
         min_level.setRange(PLOT_YMIN, PLOT_YMAX)
@@ -610,7 +625,7 @@ class TraceControls(QtGui.QGroupBox):
         min_level.setSuffix(" dBm")
         min_level.setSingleStep(PLOT_STEP)
         min_level.valueChanged.connect(self._update_plot_y_axis)
-        min_label = QtGui.QLabel('Minimum Level: ')
+        min_label = QtGui.QLabel('Min Level: ')
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label
