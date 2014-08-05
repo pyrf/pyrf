@@ -16,6 +16,7 @@ import math
 from pkg_resources import parse_version
 
 from pyrf.gui import colors
+from pyrf.gui import fonts
 from pyrf.gui import labels
 from pyrf.gui import gui_config
 from pyrf.gui.controller import SpecAController
@@ -383,13 +384,13 @@ class MainPanel(QtGui.QWidget):
 
         y = 0
         x = self.plot_width
-
         controls_layout = QtGui.QVBoxLayout()
-        controls_layout.addWidget(self._trace_controls())
+        self.trace_group = self._trace_controls()
+        controls_layout.addWidget(self._freq_controls())
         self._plot_group = self.trace_group.plot_controls()
         controls_layout.addWidget(self._plot_group)
         controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self._freq_controls())
+        controls_layout.addWidget(self.trace_group)
         controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 13, 5)
 
@@ -567,7 +568,7 @@ class MainPanel(QtGui.QWidget):
                     trace = self._plot.traces[marker.trace_index]
 
                     if not trace.blank:
-                        marker_label.setStyleSheet('color: rgb(%s, %s, %s);' % (trace.color[0],
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (trace.color[0],
                                                                              trace.color[1],
                                                                             trace.color[2]))
 
@@ -595,7 +596,7 @@ class MainPanel(QtGui.QWidget):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            
+            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.WHITE_NUM))
             delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:

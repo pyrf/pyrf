@@ -4,6 +4,7 @@ from PySide import QtGui, QtCore
 from pyrf.gui import labels
 from pyrf.gui import colors
 from pyrf.gui.util import hide_layout
+from pyrf.gui.fonts import GROUP_BOX_FONT
 
 import numpy as np
 
@@ -73,6 +74,7 @@ class TraceControls(QtGui.QGroupBox):
         controller.capture_receive.connect(self.capture_received)
         self._plot = plot
         self.setTitle(name)
+        self.setStyleSheet(GROUP_BOX_FONT)
         self._marker_trace = None
 
         self.setLayout(QtGui.QGridLayout())
@@ -543,7 +545,8 @@ class TraceControls(QtGui.QGroupBox):
 
     def plot_controls(self):
 
-        plot_group = QtGui.QGroupBox("Plot Control")
+        plot_group = QtGui.QGroupBox("Amplitude Control")
+        plot_group.setStyleSheet(GROUP_BOX_FONT)
         self._plot_group = plot_group
 
         grid = QtGui.QGridLayout()
@@ -599,7 +602,7 @@ class TraceControls(QtGui.QGroupBox):
         ref_level.valueChanged.connect(self._update_plot_y_axis)
         self._ref_level = ref_level
         self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Top: ')
+        ref_label = QtGui.QLabel('Reference Level: ')
 
         min_level = QtGui.QSpinBox()
         min_level.setRange(PLOT_YMIN, PLOT_YMAX)
@@ -607,7 +610,7 @@ class TraceControls(QtGui.QGroupBox):
         min_level.setSuffix(" dBm")
         min_level.setSingleStep(PLOT_STEP)
         min_level.valueChanged.connect(self._update_plot_y_axis)
-        min_label = QtGui.QLabel('Bottom: ')
+        min_label = QtGui.QLabel('Minimum Level: ')
         self._min_level = min_level
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label
