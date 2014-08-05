@@ -258,8 +258,8 @@ class SpecAController(QtCore.QObject):
         else:
             last_center = self._playback_sweep_last_center
 
-        sweep_start = self._state.center - self._state.span / 2
-        sweep_stop = self._state.center + self._state.span / 2
+        sweep_start = float(self._state.center - self._state.span / 2)
+        sweep_stop = float(self._state.center + self._state.span / 2)
         step_center = self._playback_context['rffreq']
         updated_plot = False
         if last_center is not None and last_center >= step_center:
