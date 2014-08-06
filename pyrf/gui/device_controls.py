@@ -295,7 +295,7 @@ class DeviceControls(QtGui.QGroupBox):
                 # remove all sweep modes while using IQ out
                 self._update_modes(include_sweep=False)
 
-                if 'Sweep' in state.mode:
+                if state.sweeping():
                     self._mode.setCurrentIndex(0)
 
                 # remove all digitizer controls
