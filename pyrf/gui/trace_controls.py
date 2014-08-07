@@ -5,7 +5,7 @@ from pyrf.gui import labels
 from pyrf.gui import colors
 from pyrf.gui.util import hide_layout
 from pyrf.gui.fonts import GROUP_BOX_FONT
-
+from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback)
 import numpy as np
 
 PLOT_YMAX = 20
@@ -306,6 +306,13 @@ class TraceControls(QtGui.QGroupBox):
                 self.hide()
             else:
                 self.show()
+        if 'mode' in changed:
+            if state.mode == 'HDR':
+                self._hdr_gain_box.show()
+                self._hdr_gain_label.show()
+            else:
+                self._hdr_gain_box.hide()
+                self._hdr_gain_label.hide()
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments
@@ -560,6 +567,13 @@ class TraceControls(QtGui.QGroupBox):
         grid.addWidget(min_label, 0, 3, 1, 1)
         grid.addWidget(min_level, 0, 4, 1, 1)
 
+        atten_box = self._attenuation_controls()
+        grid.addWidget(atten_box, 1, 0, 1, 1)
+        
+        gain_spin, gain_label = self._hdr_gain_controls()
+        
+        grid.addWidget(gain_spin, 1, 3, 1, 1)
+        grid.addWidget(gain_label, 1, 4, 1, 1)
         grid.setColumnStretch(0, 3)
         grid.setColumnStretch(1, 6)
         grid.setColumnStretch(2, 1)
@@ -568,19 +582,25 @@ class TraceControls(QtGui.QGroupBox):
 
         plot_group.setLayout(grid)
 
+        if self.controller:
+            self._connect_device_controls()
         return plot_group
 
-    def _center_control(self):
-        center = QtGui.QPushButton('Recenter')
-        center.setToolTip("[C]\nCenter the Plot View around the available spectrum")
-        center.clicked.connect(lambda: self._plot.center_view(min(self.xdata),
-                                                            max(self.xdata),
-                                                            min_level = int(self._min_level.text()),
-                                                            ref_level = int(self._ref_level.text())))
-        self._center_bt = center
-        self.control_widgets.append(self._center_bt)
-        return center
+    def _attenuation_controls(self):
+        attenuator_box = QCheckBoxPlayback("Attenuator")
+        attenuator_box.setChecked(True)
+        self._attenuator_box = attenuator_box
+        return attenuator_box
 
+    def _hdr_gain_controls(self):
+        hdr_gain_label = QtGui.QLabel("HDR Gain:")
+        hdr_gain_box = QtGui.QSpinBox()
+        hdr_gain_box.setRange(-10, 0)
+        hdr_gain_box.setValue(-10)
+        hdr_gain_box.setSuffix(" dB")
+        self._hdr_gain_label = hdr_gain_label
+        self._hdr_gain_box = hdr_gain_box 
+        return hdr_gain_label, hdr_gain_box
 
     def _update_plot_y_axis(self):
         min_level = self._min_level.value()
@@ -615,3 +635,12 @@ class TraceControls(QtGui.QGroupBox):
         self.control_widgets.append(self._min_level)
         return ref_level, ref_label, min_level, min_label
 
+    def _connect_device_controls(self):
+        def new_hdr_gain():
+            self.controller.apply_device_settings(hdr_gain = self._hdr_gain_box.value())
+
+        def new_attenuator():
+            self.controller.apply_device_settings(attenuator = self._attenuator_box.isChecked())
+
+        self._hdr_gain_box.valueChanged.connect(new_hdr_gain)
+        self._attenuator_box.clicked.connect(new_attenuator)
