@@ -569,9 +569,9 @@ class TraceControls(QtGui.QGroupBox):
 
         atten_box = self._attenuation_controls()
         grid.addWidget(atten_box, 1, 0, 1, 1)
-        
+
         gain_spin, gain_label = self._hdr_gain_controls()
-        
+
         grid.addWidget(gain_spin, 1, 3, 1, 1)
         grid.addWidget(gain_label, 1, 4, 1, 1)
         grid.setColumnStretch(0, 3)
@@ -599,7 +599,7 @@ class TraceControls(QtGui.QGroupBox):
         hdr_gain_box.setValue(-10)
         hdr_gain_box.setSuffix(" dB")
         self._hdr_gain_label = hdr_gain_label
-        self._hdr_gain_box = hdr_gain_box 
+        self._hdr_gain_box = hdr_gain_box
         return hdr_gain_label, hdr_gain_box
 
     def _update_plot_y_axis(self):

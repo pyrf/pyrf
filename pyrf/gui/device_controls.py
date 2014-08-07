@@ -127,7 +127,7 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
             grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
 
-            
+
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 8)
         grid.setColumnStretch(2, 1)
