@@ -8,11 +8,7 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback)
 import numpy as np
 
-PLOT_YMAX = 20
-PLOT_TOP = 0
-PLOT_BOTTOM = -160
-PLOT_YMIN = -240
-PLOT_STEP = 5
+
 
 REMOVE_BUTTON_WIDTH = 10
 
@@ -299,20 +295,12 @@ class TraceControls(QtGui.QGroupBox):
         grid.setColumnStretch(5, 4)
         grid.setColumnStretch(6, 8)
 
-
     def state_changed(self, state, changed):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self.hide()
             else:
                 self.show()
-        if 'mode' in changed:
-            if state.mode == 'HDR':
-                self._hdr_gain_box.show()
-                self._hdr_gain_label.show()
-            else:
-                self._hdr_gain_box.hide()
-                self._hdr_gain_label.hide()
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments
@@ -440,7 +428,6 @@ class TraceControls(QtGui.QGroupBox):
             if not self._marker_trace.currentText() == '':
                 marker.trace_index = int(self._marker_trace.currentText()) - 1
 
-
     def _marker_tab_change(self):
         """
         change the current selected marker
@@ -548,99 +535,3 @@ class TraceControls(QtGui.QGroupBox):
         if len(peak_values) == 0:
             return
         marker.data_index = np.where(pow_data==(peak_values[-2 if len(peak_values) > 1 else -1]))[0]
-
-
-    def plot_controls(self):
-
-        plot_group = QtGui.QGroupBox("Amplitude Control")
-        plot_group.setStyleSheet(GROUP_BOX_FONT)
-        self._plot_group = plot_group
-
-        grid = QtGui.QGridLayout()
-
-        self.control_widgets = []
-
-        ref_level, ref_label, min_level, min_label = self._ref_controls()
-
-        grid.addWidget(ref_label, 0, 0, 1, 1)
-        grid.addWidget(ref_level, 0, 1, 1, 1)
-        grid.addWidget(min_label, 0, 3, 1, 1)
-        grid.addWidget(min_level, 0, 4, 1, 1)
-
-        atten_box = self._attenuation_controls()
-        grid.addWidget(atten_box, 1, 0, 1, 1)
-
-        gain_spin, gain_label = self._hdr_gain_controls()
-
-        grid.addWidget(gain_spin, 1, 3, 1, 1)
-        grid.addWidget(gain_label, 1, 4, 1, 1)
-        grid.setColumnStretch(0, 3)
-        grid.setColumnStretch(1, 6)
-        grid.setColumnStretch(2, 1)
-        grid.setColumnStretch(3, 4)
-        grid.setColumnStretch(4, 6)
-
-        plot_group.setLayout(grid)
-
-        if self.controller:
-            self._connect_device_controls()
-        return plot_group
-
-    def _attenuation_controls(self):
-        attenuator_box = QCheckBoxPlayback("Attenuator")
-        attenuator_box.setChecked(True)
-        self._attenuator_box = attenuator_box
-        return attenuator_box
-
-    def _hdr_gain_controls(self):
-        hdr_gain_label = QtGui.QLabel("HDR Gain:")
-        hdr_gain_box = QtGui.QSpinBox()
-        hdr_gain_box.setRange(-10, 0)
-        hdr_gain_box.setValue(-10)
-        hdr_gain_box.setSuffix(" dB")
-        self._hdr_gain_label = hdr_gain_label
-        self._hdr_gain_box = hdr_gain_box
-        return hdr_gain_label, hdr_gain_box
-
-    def _update_plot_y_axis(self):
-        min_level = self._min_level.value()
-        ref_level = self._ref_level.value()
-        
-        self._plot.center_view(
-            self.xdata[0], self.xdata[-1],
-            min_level = min_level,
-            ref_level = ref_level)
-        
-        self._plot.update_waterfall_levels(min_level, ref_level)
-
-    def _ref_controls(self):
-        ref_level = QtGui.QSpinBox()
-        ref_level.setRange(PLOT_YMIN, PLOT_YMAX)
-        ref_level.setValue(PLOT_TOP)
-        ref_level.setSuffix(" dBm")
-        ref_level.setSingleStep(PLOT_STEP)
-        ref_level.valueChanged.connect(self._update_plot_y_axis)
-        self._ref_level = ref_level
-        self.control_widgets.append(self._ref_level)
-        ref_label = QtGui.QLabel('Reference Level: ')
-
-        min_level = QtGui.QSpinBox()
-        min_level.setRange(PLOT_YMIN, PLOT_YMAX)
-        min_level.setValue(PLOT_BOTTOM)
-        min_level.setSuffix(" dBm")
-        min_level.setSingleStep(PLOT_STEP)
-        min_level.valueChanged.connect(self._update_plot_y_axis)
-        min_label = QtGui.QLabel('Minimum Level: ')
-        self._min_level = min_level
-        self.control_widgets.append(self._min_level)
-        return ref_level, ref_label, min_level, min_label
-
-    def _connect_device_controls(self):
-        def new_hdr_gain():
-            self.controller.apply_device_settings(hdr_gain = self._hdr_gain_box.value())
-
-        def new_attenuator():
-            self.controller.apply_device_settings(attenuator = self._attenuator_box.isChecked())
-
-        self._hdr_gain_box.valueChanged.connect(new_hdr_gain)
-        self._attenuator_box.clicked.connect(new_attenuator)

@@ -32,6 +32,7 @@ from pyrf.gui.util import find_nearest_index
 from pyrf.gui.plot_widget import Plot
 from pyrf.gui.device_controls import DeviceControls
 from pyrf.gui.frequency_controls import FrequencyControls
+from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 
@@ -303,7 +304,6 @@ class MainPanel(QtGui.QWidget):
 
             else:
                 # show plots
-                self._plot_group.show()
                 self._plot_layout.show()
 
                 # resize window
@@ -385,12 +385,11 @@ class MainPanel(QtGui.QWidget):
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
-        self.trace_group = self._trace_controls()
+
         controls_layout.addWidget(self._freq_controls())
-        self._plot_group = self.trace_group.plot_controls()
-        controls_layout.addWidget(self._plot_group)
+        controls_layout.addWidget(self._amplitude_controls())
         controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self.trace_group)
+        controls_layout.addWidget(self._trace_controls())
         controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 13, 5)
 
@@ -414,6 +413,16 @@ class MainPanel(QtGui.QWidget):
         self._plot_layout = vsplit
         return self._plot_layout
 
+    def _freq_controls(self):
+        self._freq_group = FrequencyControls(self.controller)
+        self.control_widgets.append(self._freq_group)
+        return self._freq_group
+    
+    def _amplitude_controls(self):
+        self._amplitude_group = AmplitudeControls(self.controller, self._plot)
+        self.control_widgets.append(self._amplitude_group)
+        return self._amplitude_group
+
     def _trace_controls(self):
         self.trace_group = TraceControls(self.controller, self._plot)
         self.control_widgets.append(self.trace_group)
@@ -429,10 +438,7 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._dev_group)
         return self._dev_group
 
-    def _freq_controls(self):
-        self._freq_group = FrequencyControls(self.controller)
-        self.control_widgets.append(self._freq_group)
-        return self._freq_group
+
 
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')

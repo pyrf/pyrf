@@ -7,7 +7,7 @@ from PySide import QtCore
 from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui import fonts
-from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
+from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 
