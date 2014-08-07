@@ -83,7 +83,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         self._hdr_gain_label = QtGui.QLabel("HDR Gain:")
         self._hdr_gain_box = QtGui.QSpinBox()
-        self._hdr_gain_box.setRange(-10, 30)
+        self._hdr_gain_box.setRange(-10, 0)
         self._hdr_gain_box.setValue(-10)
         self._hdr_gain_box.setSuffix(" dB")
 
