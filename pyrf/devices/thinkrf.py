@@ -288,6 +288,24 @@ class WSA(object):
         yield gain
 
     @sync_async
+    def hdr_gain(self, gain=None):
+        """
+        This command sets or queries the HDR gain of the receiver.
+        The gain has a range of -10 to 30 dB.
+
+        :param gain: float between -10 and 30 to set; None to query
+        :returns: the hdr gain in dB
+        """
+        if gain is None:
+            gain = yield self.scpiget(":INPut:GAIN:HDR?")
+            gain = gain.partition(" ")
+            gain = int(gain[0])
+        else:
+            self.scpiset(":INPut:GAIN:HDR %d\n" % gain)
+
+        yield gain
+
+    @sync_async
     def preselect_filter(self, enable=None):
         """
         This command sets or queries the RFE preselect filter selection.
@@ -680,6 +698,7 @@ class WSA(object):
             'freq': self.freq,
             'antenna': self.antenna,
             'gain': self.gain,
+            'hdr_gain': self.hdr_gain,
             'ifgain': self.ifgain,
             'fshift': self.fshift,
             'decimation': self.decimation,
