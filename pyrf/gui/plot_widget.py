@@ -6,10 +6,10 @@ from PySide import QtCore
 
 from pyrf.gui import colors
 from pyrf.gui import labels
+from pyrf.gui import fonts
 from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
-    ThreadedWaterfallPlotWidget)
-from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
+                                       ThreadedWaterfallPlotWidget)
 
 USE_WATERFALL = platform.system() != 'Windows'
 
@@ -53,7 +53,9 @@ class Trace(object):
         for c in self.curves:
             self.plot_area.window.removeItem(c)
         self.curves = []
-
+    def clear_data(self):
+        self.average_list = []
+        self.data = None
     def update_average_factor(self, factor):
         self.average_factor = factor
         self.average_list = []
@@ -195,16 +197,11 @@ class Plot(QtCore.QObject):
         self.view_box = self.window.plotItem.getViewBox()
         self.view_box.setMouseEnabled(x = True, y = False)
 
-        # initialize the x-axis of the plot
-        # - NO LONGER USING (the custom freq_axis_widget replaces this)
-        #self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
-
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
-        self.window.setLabel('left', text = 'Power', units = 'dBm')
-
-        # initialize fft curve
-        self.fft_curve = self.window.plot(pen = colors.TEAL_NUM)
+        labelStyle = fonts.AXIS_LABEL_FONT
+        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+        self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
@@ -281,6 +278,9 @@ class Plot(QtCore.QObject):
             elif 'LEVEL' in state.device_settings['trigger']['type']:
                 self.add_trigger(state.device_settings['trigger']['fstart'],
                                 state.device_settings['trigger']['fstop'])
+        if 'center' in changed:
+            for trace in self.traces:
+                trace.clear_data()
 
     def add_trigger(self,fstart, fstop):
         self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
@@ -297,6 +297,14 @@ class Plot(QtCore.QObject):
         if min_level is not None:
             self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
         self.window.blockSignals(b)
+        
+    def update_waterfall_levels(self, min_level, ref_level):
+        if self.waterfall_window is not None:
+            self.waterfall_window.set_lookup_levels(min_level, ref_level)
 
     def grid(self,state):
         self.window.showGrid(state,state)
+        self.window.getAxis('bottom').setPen(colors.GREY_NUM)
+        self.window.getAxis('bottom').setGrid(200)
+        self.window.getAxis('left').setPen(colors.GREY_NUM)
+        self.window.getAxis('left').setGrid(200)
