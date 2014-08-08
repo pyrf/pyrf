@@ -254,7 +254,7 @@ class DeviceControls(QtGui.QGroupBox):
         if 'center' in changed:
             if self._level_trigger.isChecked():
                 self._level_trigger.click()
-
+        if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self._level_trigger.setEnabled(False)
                 # forcibly disable triggers
