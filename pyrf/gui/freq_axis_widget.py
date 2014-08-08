@@ -99,3 +99,30 @@ class RTSAFrequencyAxisItem(pg.AxisItem):
         ret[2].extend(self._getFrequencyTextSpecs())
         
         return tuple(ret)
+    
+    def tickStrings(self, values, scale, spacing):
+        #This is a hack to add an extra decimal place to what pyqtgraph decides
+        #it shoudl be displaying (it is too conservative).
+        #tODO: test over a wide range of scale possibilities. It could get dense.
+        
+        #NOTE: the *only* code change from the supercalss implementations is
+        #the "1 +" added to the `places` assignment below (and the use of pg.np
+        #vs np to avoid an import). There was no way to cleanly subcalss that
+        #out, other than reproducing the function.
+        
+        if self.logMode:
+            return self.logTickStrings(values, scale, spacing)
+        
+        #THE HACK ------vvvvvvv---------vvv
+        places = max(0, 1 + pg.np.ceil(-pg.np.log10(spacing*scale)))
+        #THE HACK ------^^^^^^^---------^^^
+        
+        strings = []
+        for v in values:
+            vs = v * scale
+            if abs(vs) < .001 or abs(vs) >= 10000:
+                vstr = "%g" % vs
+            else:
+                vstr = ("%%0.%df" % places) % vs
+            strings.append(vstr)
+        return strings
