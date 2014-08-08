@@ -272,14 +272,20 @@ class MainPanel(QtGui.QWidget):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
-                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
+                self._plot.center_view(freq,
+                                       full_bw,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                        IQ_PLOT_YMAX[rfe_mode])
+                                               IQ_PLOT_YMAX[rfe_mode])
             else:
                 freq = state.center
                 full_bw = state.span
 
-                self._plot.center_view(freq - full_bw/2, freq + full_bw/2)
+                self._plot.center_view(freq - full_bw/2,
+                                        freq + full_bw/2,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
                                         IQ_PLOT_YMAX[rfe_mode])
         if 'device_settings.iq_output_path' in changed:
@@ -476,7 +482,10 @@ class MainPanel(QtGui.QWidget):
         self.update_marker()
         self.update_diff()
         if not self.controller.applying_user_xrange():
-            self._plot.center_view(fstart, fstop)
+            self._plot.center_view(fstart,
+                                   fstop,
+                                   self._amplitude_group.get_min_level(),
+                                   self._amplitude_group.get_ref_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
