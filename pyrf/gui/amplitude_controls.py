@@ -72,17 +72,18 @@ class AmplitudeControls(QtGui.QGroupBox):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
         grid = self.layout()
         hide_layout(grid)
-        print features
+
         grid.addWidget(self._ref_label, 0, 0, 1, 1)
         grid.addWidget(self._ref_level, 0, 1, 1, 1)
         grid.addWidget(self._min_label, 0, 3, 1, 1)
         grid.addWidget(self._min_level, 0, 4, 1, 1)
+
         if 'attenuator' in features:
             grid.addWidget(self._atten_box, 1, 0, 1, 1)
         if 'hdr_gain' in features:
-            print 'got here'
             grid.addWidget(self._hdr_gain_label, 1, 3, 1, 1)
             grid.addWidget(self._hdr_gain_box, 1, 4, 1, 1)
+
         grid.setColumnStretch(0, 3)
         grid.setColumnStretch(1, 6)
         grid.setColumnStretch(2, 1)
