@@ -33,7 +33,6 @@ class AmplitudeControls(QtGui.QGroupBox):
         self.setLayout(QtGui.QGridLayout())
 
         self._create_controls()
-        self._build_layout()
         self._connect_device_controls()
 
         self.setLayout(grid)
@@ -71,7 +70,6 @@ class AmplitudeControls(QtGui.QGroupBox):
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
         grid = self.layout()
-        hide_layout(grid)
 
         grid.addWidget(self._ref_label, 0, 0, 1, 1)
         grid.addWidget(self._ref_level, 0, 1, 1, 1)
