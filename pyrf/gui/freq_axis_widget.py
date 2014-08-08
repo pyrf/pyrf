@@ -26,12 +26,13 @@ class RTSAFrequencyAxisItem(pg.AxisItem):
 
     """
     def __init__(self, **kwargs):
-        kwargs["showValues"] = False #although we force space with setHeight
+        kwargs["showValues"] = True
+        self.labelUnits = "Hz"
         super(RTSAFrequencyAxisItem, self).__init__("bottom", **kwargs)
     
     def setHeight(self, h=None):
         #This is currently a hard coded hack to ensure that there is enough
-        #vertical space for our fixed axis labels. It should relaly scale
+        #vertical space for our fixed axis labels. It should really scale
         #according to text size (see super.setHeight for what it does,
         #although trying to modify it was finicky for some reason).
         self.setMaximumHeight(40)
@@ -51,7 +52,7 @@ class RTSAFrequencyAxisItem(pg.AxisItem):
         
         #baseline QRect values...
         # - note that we don't clip, and we do properly align, so (w,h) is meh
-        y = 2
+        y = 22
         w = 30
         h = 20
         
@@ -82,6 +83,19 @@ class RTSAFrequencyAxisItem(pg.AxisItem):
         return textSpecs
     
     def generateDrawSpecs(self, p):
+        #Force proper SI prefix usage...
+        # - this is normally done in self.updateAutoSIPrefix, but pyqtgraph
+        #    only enables tick label scaling when there is a genuine x axis
+        #    label (and we don't have one).
+        scale = self.scale
+        xmin, xmax = self.range
+        (scale, prefix) = siScale(max(abs(xmin * scale), abs(xmax * scale)))
+        self.autoSIPrefixScale = scale
+        
+        #Get the standard tick labels...
         ret = list(super(RTSAFrequencyAxisItem, self).generateDrawSpecs(p))
-        ret[2] = self._getFrequencyTextSpecs()
+        
+        #Add in our start/centre/stop labels...
+        ret[2].extend(self._getFrequencyTextSpecs())
+        
         return tuple(ret)

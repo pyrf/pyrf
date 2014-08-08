@@ -196,7 +196,8 @@ class Plot(QtCore.QObject):
         self.view_box.setMouseEnabled(x = True, y = False)
 
         # initialize the x-axis of the plot
-        self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
+        # - NO LONGER USING (the custom freq_axis_widget replaces this)
+        #self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
