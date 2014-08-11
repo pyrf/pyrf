@@ -92,16 +92,20 @@ class DeviceControls(QtGui.QGroupBox):
         # FIXME: use values from device properties
         self._trig_fstart.setRange(0, 20000)
         self._trig_fstart.setSuffix(" MHz")
+        self._trig_fstart.lineEdit().setReadOnly(True)
 
         self._trig_fstop_label = QtGui.QLabel("Stop:")
         self._trig_fstop = QtGui.QSpinBox()
         # FIXME: use values from device properties
         self._trig_fstop.setRange(0, 20000)
         self._trig_fstop.setSuffix(" MHz")
+        self._trig_fstop.lineEdit().setReadOnly(True)
 
-        self._trig_level_label = QtGui.QLabel("Level:")
-        self._trig_level = QtGui.QSpinBox()
-        self._trig_level.setSuffix(" dB")
+        self._trig_amp_label = QtGui.QLabel("Level:")
+        self._trig_amp = QtGui.QSpinBox()
+        self._trig_amp.setSuffix(" dB")
+        self._trig_amp.setRange(-2000, 2000)
+        self._trig_amp.lineEdit().setReadOnly(True)
 
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
@@ -143,8 +147,8 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
 
         grid.addWidget(self._level_trigger, 4, 0, 1, 1)
-        grid.addWidget(self._trig_level_label, 4, 3, 1, 1)
-        grid.addWidget(self._trig_level, 4, 4, 1, 1)
+        grid.addWidget(self._trig_amp_label, 4, 3, 1, 1)
+        grid.addWidget(self._trig_amp, 4, 4, 1, 1)
 
         grid.addWidget(self._trig_fstart_label, 5, 0, 1, 1)
         grid.addWidget(self._trig_fstart, 5, 1, 1, 1)
@@ -330,10 +334,9 @@ class DeviceControls(QtGui.QGroupBox):
                 self._fshift_label.show()
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
-                print state.device_settings['trigger']['fstart']
                 self._trig_fstart.setValue(state.device_settings['trigger']['fstart'] / M)
                 self._trig_fstop.setValue(state.device_settings['trigger']['fstop'] / M)
-                self._trig_level.setValue(state.device_settings['trigger']['amplitude'])
+                self._trig_amp.setValue(state.device_settings['trigger']['amplitude'])
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
@@ -364,5 +367,5 @@ class DeviceControls(QtGui.QGroupBox):
 
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
-        self._trig_level.setEnabled(state)
+        self._trig_amp.setEnabled(state)
         self._trig_fstop.setEnabled(state)
