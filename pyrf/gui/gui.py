@@ -291,7 +291,7 @@ class MainPanel(QtGui.QWidget):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
-                self._plot_group.hide()
+                self._amplitude_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
