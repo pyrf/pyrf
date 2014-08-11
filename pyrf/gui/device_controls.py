@@ -103,7 +103,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         self._trig_amp_label = QtGui.QLabel("Level:")
         self._trig_amp = QtGui.QSpinBox()
-        self._trig_amp.setSuffix(" dB")
+        self._trig_amp.setSuffix(" dBm")
         self._trig_amp.setRange(-2000, 2000)
         self._trig_amp.lineEdit().setReadOnly(True)
 
@@ -147,15 +147,15 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
 
         grid.addWidget(self._level_trigger, 4, 0, 1, 1)
-        grid.addWidget(self._trig_amp_label, 4, 3, 1, 1)
-        grid.addWidget(self._trig_amp, 4, 4, 1, 1)
 
         grid.addWidget(self._trig_fstart_label, 5, 0, 1, 1)
         grid.addWidget(self._trig_fstart, 5, 1, 1, 1)
 
         grid.addWidget(self._trig_fstop_label, 5, 3, 1, 1)
         grid.addWidget(self._trig_fstop, 5, 4, 1, 1)
-
+        
+        grid.addWidget(self._trig_amp_label, 6, 0, 1, 1)
+        grid.addWidget(self._trig_amp, 6, 1, 1, 1)
         self._trig_state(False)
 
         grid.setColumnStretch(0, 4)
