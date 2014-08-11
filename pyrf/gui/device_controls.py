@@ -75,6 +75,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._ifgain_label = QtGui.QLabel("IF Gain:")
         self._ifgain_box = QtGui.QSpinBox()
         self._ifgain_box.setToolTip("Choose IF Gain setting")
+        # FIXME: use values from device properties
         self._ifgain_box.setRange(-10, 25)
         self._ifgain_box.setSuffix(" dB")
 
@@ -88,10 +89,14 @@ class DeviceControls(QtGui.QGroupBox):
 
         self._trig_fstart_label = QtGui.QLabel("Start:")
         self._trig_fstart = QtGui.QSpinBox()
+        # FIXME: use values from device properties
+        self._trig_fstart.setRange(0, 20000)
         self._trig_fstart.setSuffix(" MHz")
 
         self._trig_fstop_label = QtGui.QLabel("Stop:")
         self._trig_fstop = QtGui.QSpinBox()
+        # FIXME: use values from device properties
+        self._trig_fstop.setRange(0, 20000)
         self._trig_fstop.setSuffix(" MHz")
 
         self._trig_level_label = QtGui.QLabel("Level:")
@@ -147,9 +152,7 @@ class DeviceControls(QtGui.QGroupBox):
         grid.addWidget(self._trig_fstop_label, 5, 3, 1, 1)
         grid.addWidget(self._trig_fstop, 5, 4, 1, 1)
 
-        self._trig_fstart.setEnabled(False)
-        self._trig_level.setEnabled(False)
-        self._trig_fstop.setEnabled(False)
+        self._trig_state(False)
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 8)
@@ -199,9 +202,8 @@ class DeviceControls(QtGui.QGroupBox):
         def new_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
             if self._level_trigger.isChecked():
-                self._trig_fstart.setEnabled(True)
-                self._trig_level.setEnabled(True)
-                self._trig_fstop.setEnabled(True)
+                self._trig_state(True)
+
                 start = self.gui_state.center - (self.gui_state.span / 4)
                 stop = self.gui_state.center + (self.gui_state.span / 4)
                 level = trigger_settings['amplitude']
@@ -214,9 +216,8 @@ class DeviceControls(QtGui.QGroupBox):
                                                                 'fstart': trigger_settings['fstart'],
                                                                 'fstop': trigger_settings['fstop'],
                                                                 'amplitude': trigger_settings['amplitude']})
-                self._trig_fstart.setEnabled(False)
-                self._trig_level.setEnabled(False)
-                self._trig_fstop.setEnabled(False)
+                self._trig_state(False)
+
         def new_rbw():
             self.controller.apply_settings(rbw=self._rbw_values[
                 self._rbw_box.currentIndex()])
@@ -288,9 +289,7 @@ class DeviceControls(QtGui.QGroupBox):
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
-                    self._trig_fstart.setEnabled(False)
-                    self._trig_level.setEnabled(False)
-                    self._trig_fstop.setEnabled(False)
+                    self.rig_state(False)
 
             else:
                 self._level_trigger.setEnabled(True)
@@ -329,6 +328,12 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
+        if 'device_settings.trigger' in changed:
+            if state.device_settings['trigger']['type'] == 'LEVEL':
+                print state.device_settings['trigger']['fstart']
+                self._trig_fstart.setValue(state.device_settings['trigger']['fstart'] / M)
+                self._trig_fstop.setValue(state.device_settings['trigger']['fstop'] / M)
+                self._trig_level.setValue(state.device_settings['trigger']['amplitude'])
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
@@ -356,3 +361,8 @@ class DeviceControls(QtGui.QGroupBox):
         self._rbw_values = values
         self._rbw_box.quiet_update(
             [str(p) + ' Hz' for p in HDR_RBW_VALUES])
+
+    def _trig_state(self, state):
+        self._trig_fstart.setEnabled(state)
+        self._trig_level.setEnabled(state)
+        self._trig_fstop.setEnabled(state)
