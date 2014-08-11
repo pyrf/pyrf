@@ -86,6 +86,18 @@ class DeviceControls(QtGui.QGroupBox):
         self._level_trigger = QCheckBoxPlayback("Level Trigger")
         self._level_trigger.setToolTip("Enable Frequency Level Triggers")
 
+        self._trig_fstart_label = QtGui.QLabel("Start:")
+        self._trig_fstart = QtGui.QSpinBox()
+        self._trig_fstart.setSuffix(" MHz")
+
+        self._trig_fstop_label = QtGui.QLabel("Stop:")
+        self._trig_fstop = QtGui.QSpinBox()
+        self._trig_fstop.setSuffix(" MHz")
+
+        self._trig_level_label = QtGui.QLabel("Level:")
+        self._trig_level = QtGui.QSpinBox()
+        self._trig_level.setSuffix(" dB")
+
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
 
@@ -102,8 +114,6 @@ class DeviceControls(QtGui.QGroupBox):
         grid.addWidget(self._fshift_label, 1, 3, 1, 1)
         grid.addWidget(self._fshift_edit, 1, 4, 1, 1)
 
-        grid.addWidget(self._level_trigger, 2, 0, 1, 2)
-
         # 4k features
         if 'antenna' in features:
             grid.addWidget(self._antenna_label, 2, 3, 1, 1)
@@ -119,21 +129,33 @@ class DeviceControls(QtGui.QGroupBox):
 
         # 5k features
         if 'attenuator' in features:
-            # FIXME: 'pll_reference' isn't in device properties yet
-            grid.addWidget(self._pll_label, 3, 0, 1, 1)
-            grid.addWidget(self._pll_box, 3, 1, 1, 1)
 
             # FIXME: 'iq_output' isn't in device properties yet
             grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
             grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
+            
+            grid.addWidget(self._pll_label, 3, 0, 1, 1)
+            grid.addWidget(self._pll_box, 3, 1, 1, 1)
 
+        grid.addWidget(self._level_trigger, 4, 0, 1, 1)
+        grid.addWidget(self._trig_level_label, 4, 3, 1, 1)
+        grid.addWidget(self._trig_level, 4, 4, 1, 1)
+
+        grid.addWidget(self._trig_fstart_label, 5, 0, 1, 1)
+        grid.addWidget(self._trig_fstart, 5, 1, 1, 1)
+
+        grid.addWidget(self._trig_fstop_label, 5, 3, 1, 1)
+        grid.addWidget(self._trig_fstop, 5, 4, 1, 1)
+
+        self._trig_fstart.setEnabled(False)
+        self._trig_level.setEnabled(False)
+        self._trig_fstop.setEnabled(False)
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 8)
         grid.setColumnStretch(2, 1)
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 8)
-
 
     def _connect_device_controls(self):
         def new_antenna():
@@ -177,6 +199,9 @@ class DeviceControls(QtGui.QGroupBox):
         def new_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
             if self._level_trigger.isChecked():
+                self._trig_fstart.setEnabled(True)
+                self._trig_level.setEnabled(True)
+                self._trig_fstop.setEnabled(True)
                 start = self.gui_state.center - (self.gui_state.span / 4)
                 stop = self.gui_state.center + (self.gui_state.span / 4)
                 level = trigger_settings['amplitude']
@@ -189,7 +214,9 @@ class DeviceControls(QtGui.QGroupBox):
                                                                 'fstart': trigger_settings['fstart'],
                                                                 'fstop': trigger_settings['fstop'],
                                                                 'amplitude': trigger_settings['amplitude']})
-
+                self._trig_fstart.setEnabled(False)
+                self._trig_level.setEnabled(False)
+                self._trig_fstop.setEnabled(False)
         def new_rbw():
             self.controller.apply_settings(rbw=self._rbw_values[
                 self._rbw_box.currentIndex()])
@@ -257,9 +284,14 @@ class DeviceControls(QtGui.QGroupBox):
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self._level_trigger.setEnabled(False)
+
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
+                    self._trig_fstart.setEnabled(False)
+                    self._trig_level.setEnabled(False)
+                    self._trig_fstop.setEnabled(False)
+
             else:
                 self._level_trigger.setEnabled(True)
 
