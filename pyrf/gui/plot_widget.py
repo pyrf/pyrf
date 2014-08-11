@@ -288,6 +288,7 @@ class Plot(QtCore.QObject):
             self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
             self.window.addItem(self.amptrig_line)
             self.window.addItem(self.freqtrig_lines)
+            self._trig_enable = True
         else:
             self.amptrig_line.setValue(amplitude)
             self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
