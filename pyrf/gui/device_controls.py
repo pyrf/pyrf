@@ -203,7 +203,7 @@ class DeviceControls(QtGui.QGroupBox):
 
             self.controller.apply_settings(mode=input_mode)
 
-        def new_trigger():
+        def enable_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
             if self._level_trigger.isChecked():
                 self._trig_state(True)
@@ -222,6 +222,11 @@ class DeviceControls(QtGui.QGroupBox):
                                                                 'amplitude': trigger_settings['amplitude']})
                 self._trig_state(False)
 
+        def new_trigger():
+            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                    'fstart': self._trig_fstart.value() * M,
+                                                    'fstop': self._trig_fstop.value() * M,
+                                                    'amplitude': self._trig_amp.value()})
         def new_rbw():
             self.controller.apply_settings(rbw=self._rbw_values[
                 self._rbw_box.currentIndex()])
@@ -234,7 +239,10 @@ class DeviceControls(QtGui.QGroupBox):
         self._mode.currentIndexChanged.connect(new_input_mode)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
-        self._level_trigger.clicked.connect(new_trigger)
+        self._level_trigger.clicked.connect(enable_trigger)
+        self._trig_fstart.valueChanged.connect(new_trigger)
+        self._trig_fstop.valueChanged.connect(new_trigger)
+        self._trig_amp.valueChanged.connect(new_trigger)
         self._rbw_box.currentIndexChanged.connect(new_rbw)
 
     def device_changed(self, dut):
@@ -334,9 +342,15 @@ class DeviceControls(QtGui.QGroupBox):
                 self._fshift_label.show()
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
-                self._trig_fstart.setValue(state.device_settings['trigger']['fstart'] / M)
-                self._trig_fstop.setValue(state.device_settings['trigger']['fstop'] / M)
-                self._trig_amp.setValue(state.device_settings['trigger']['amplitude'])
+                    self._trig_fstart.blockSignals(True)
+                    self._trig_fstop.blockSignals(True)
+                    self._trig_amp.blockSignals(True)
+                    self._trig_fstart.setValue(state.device_settings['trigger']['fstart'] / M)
+                    self._trig_fstop.setValue(state.device_settings['trigger']['fstop'] / M)
+                    self._trig_amp.setValue(state.device_settings['trigger']['amplitude'])
+                    self._trig_fstart.blockSignals(False)
+                    self._trig_fstop.blockSignals(False)
+                    self._trig_amp.blockSignals(False)
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
@@ -369,3 +383,4 @@ class DeviceControls(QtGui.QGroupBox):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
         self._trig_fstop.setEnabled(state)
+        self._trig = state

@@ -203,7 +203,7 @@ class Plot(QtCore.QObject):
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
-
+        self._trig_enable = False
         self.grid(True)
 
         # IQ constellation window
@@ -273,20 +273,32 @@ class Plot(QtCore.QObject):
             if 'NONE' in state.device_settings['trigger']['type']:
                 self.remove_trigger()
             elif 'LEVEL' in state.device_settings['trigger']['type']:
+
                 self.add_trigger(state.device_settings['trigger']['fstart'],
-                                state.device_settings['trigger']['fstop'])
+                                state.device_settings['trigger']['fstop'],
+                                state.device_settings['trigger']['amplitude'])
         if 'center' in changed:
             for trace in self.traces:
                 trace.clear_data()
 
-    def add_trigger(self,fstart, fstop):
-        self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
-        self.window.addItem(self.amptrig_line)
-        self.window.addItem(self.freqtrig_lines)
+    def add_trigger(self,fstart, fstop, amplitude):
+        self.amptrig_line.blockSignals(True)
+        self.freqtrig_lines.blockSignals(True)
+        if not self._trig_enable:
+            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
+            self.window.addItem(self.amptrig_line)
+            self.window.addItem(self.freqtrig_lines)
+        else:
+            self.amptrig_line.setValue(amplitude)
+            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
+
+        self.amptrig_line.blockSignals(False)
+        self.freqtrig_lines.blockSignals(False)
 
     def remove_trigger(self):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
+        self._trig_enable = False
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
         b = self.window.blockSignals(True)
