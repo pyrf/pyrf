@@ -32,7 +32,7 @@ def wsa_properties(device_id):
         p = WSA5000_220Properties()
 
     # correct for old reflevels
-    if '.' not in rev or StrictVersion(rev) < StrictVersion('4.2'):
+    if '.' not in rev or StrictVersion(parts[-1]) < StrictVersion('4.2'):
         p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
     return p
 
