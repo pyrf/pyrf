@@ -162,7 +162,7 @@ class Marker(object):
         
         ypos = ydata[self.data_index]
         if self.selected:
-            color = 'y'
+            color = colors.YELLOW_NUM
         else: 
             color = 'w'
             
