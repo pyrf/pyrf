@@ -240,7 +240,6 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-        self.ref_level = 0
         self.plot_state = None
 
         self._waterfall_range = None, None, None
@@ -271,9 +270,12 @@ class MainPanel(QtGui.QWidget):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
-                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                        IQ_PLOT_YMAX[rfe_mode])
+                self._plot.center_view(freq,
+                                       full_bw,
+                                       self.trace_group.get_min_level(),
+                                       self.trace_group.get_ref_level())
+
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode], IQ_PLOT_YMAX[rfe_mode])
             else:
                 freq = state.center
                 full_bw = state.span
@@ -475,10 +477,11 @@ class MainPanel(QtGui.QWidget):
         if self.iq_plots_enabled:
             self.update_iq()
 
-        if (fstart, fstop, len(power)) != self._waterfall_range:
-            self._plot.waterfall_data.reset(self.xdata)
-            self._waterfall_range = (fstart, fstop, len(power))
-        self._plot.waterfall_data.add_row(power)
+        if self.waterfall_plot_enabled:
+            if (fstart, fstop, len(power)) != self._waterfall_range:
+                self._plot.waterfall_data.reset(self.xdata)
+                self._waterfall_range = (fstart, fstop, len(power))
+            self._plot.waterfall_data.add_row(power)
 
 
     def options_changed(self, options, changed):
