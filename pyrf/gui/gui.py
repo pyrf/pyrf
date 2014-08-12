@@ -241,7 +241,6 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-        self.ref_level = 0
         self.plot_state = None
 
         self._waterfall_range = None, None, None
@@ -291,7 +290,7 @@ class MainPanel(QtGui.QWidget):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
-                self._plot_group.hide()
+                self._amplitude_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -490,10 +489,11 @@ class MainPanel(QtGui.QWidget):
         if self.iq_plots_enabled:
             self.update_iq()
 
-        if (fstart, fstop, len(power)) != self._waterfall_range:
-            self._plot.waterfall_data.reset(self.xdata)
-            self._waterfall_range = (fstart, fstop, len(power))
-        self._plot.waterfall_data.add_row(power)
+        if self.waterfall_plot_enabled:
+            if (fstart, fstop, len(power)) != self._waterfall_range:
+                self._plot.waterfall_data.reset(self.xdata)
+                self._waterfall_range = (fstart, fstop, len(power))
+            self._plot.waterfall_data.add_row(power)
 
 
     def options_changed(self, options, changed):

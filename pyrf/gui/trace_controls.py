@@ -535,3 +535,82 @@ class TraceControls(QtGui.QGroupBox):
         if len(peak_values) == 0:
             return
         marker.data_index = np.where(pow_data==(peak_values[-2 if len(peak_values) > 1 else -1]))[0]
+
+
+    def plot_controls(self):
+
+        plot_group = QtGui.QGroupBox("Amplitude Control")
+        plot_group.setStyleSheet(GROUP_BOX_FONT)
+        self._plot_group = plot_group
+
+        grid = QtGui.QGridLayout()
+
+        self.control_widgets = []
+
+        ref_level, ref_label, min_level, min_label = self._ref_controls()
+
+        grid.addWidget(ref_label, 0, 0, 1, 1)
+        grid.addWidget(ref_level, 0, 1, 1, 1)
+        grid.addWidget(min_label, 0, 3, 1, 1)
+        grid.addWidget(min_level, 0, 4, 1, 1)
+
+        grid.setColumnStretch(0, 3)
+        grid.setColumnStretch(1, 6)
+        grid.setColumnStretch(2, 1)
+        grid.setColumnStretch(3, 4)
+        grid.setColumnStretch(4, 6)
+
+        plot_group.setLayout(grid)
+
+        return plot_group
+
+    def _center_control(self):
+        center = QtGui.QPushButton('Recenter')
+        center.setToolTip("[C]\nCenter the Plot View around the available spectrum")
+        center.clicked.connect(lambda: self._plot.center_view(min(self.xdata),
+                                                            max(self.xdata),
+                                                            min_level = int(self._min_level.text()),
+                                                            ref_level = int(self._ref_level.text())))
+        self._center_bt = center
+        self.control_widgets.append(self._center_bt)
+        return center
+
+
+    def _update_plot_y_axis(self):
+        min_level = self._min_level.value()
+        ref_level = self._ref_level.value()
+        
+        self._plot.center_view(
+            self.xdata[0], self.xdata[-1],
+            min_level = min_level,
+            ref_level = ref_level)
+        
+        self._plot.update_waterfall_levels(min_level, ref_level)
+
+    def _ref_controls(self):
+        ref_level = QtGui.QSpinBox()
+        ref_level.setRange(PLOT_YMIN, PLOT_YMAX)
+        ref_level.setValue(PLOT_TOP)
+        ref_level.setSuffix(" dBm")
+        ref_level.setSingleStep(PLOT_STEP)
+        ref_level.valueChanged.connect(self._update_plot_y_axis)
+        self._ref_level = ref_level
+        self.control_widgets.append(self._ref_level)
+        ref_label = QtGui.QLabel('Reference Level: ')
+
+        min_level = QtGui.QSpinBox()
+        min_level.setRange(PLOT_YMIN, PLOT_YMAX)
+        min_level.setValue(PLOT_BOTTOM)
+        min_level.setSuffix(" dBm")
+        min_level.setSingleStep(PLOT_STEP)
+        min_level.valueChanged.connect(self._update_plot_y_axis)
+        min_label = QtGui.QLabel('Minimum Level: ')
+        self._min_level = min_level
+        self.control_widgets.append(self._min_level)
+        return ref_level, ref_label, min_level, min_label
+
+    def get_ref_level(self):
+        return self._ref_level.value()
+    def get_min_level(self):
+
+        return self._min_level.value()

@@ -194,14 +194,16 @@ class DeviceControls(QtGui.QGroupBox):
 
         def new_iq_path():
             self.controller.apply_device_settings(
-                iq_output_path=self._iq_output_box.currentText().upper())
+                iq_output_path= str(self._iq_output_box.currentText().upper()))
 
         def new_input_mode():
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
-
             self.controller.apply_settings(mode=input_mode)
+            #FIXME rfe_mode should not be in device settings dictionary
+            if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self.controller.apply_device_settings(rfe_mode = input_mode)
 
         def enable_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
@@ -251,9 +253,10 @@ class DeviceControls(QtGui.QGroupBox):
         self._update_modes()
 
 
-    def _update_modes(self):
+    def _update_modes(self, include_sweep=True):
         modes = []
-        modes.extend(self.dut_prop.SPECA_MODES)
+        if include_sweep:
+            modes.extend(self.dut_prop.SPECA_MODES)
         modes.extend(self.dut_prop.RFE_MODES)
         self._mode.quiet_update(modes)
 
@@ -268,8 +271,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
             self._rbw_box.playback_value(str(state.rbw))
-            self._attenuator_box.playback_value(
-                state.device_settings.get('attenuator', False))
             self._pll_box.playback_value('External'
                 if state.device_settings.get('pll_reference') == 'EXT' else
                 'Internal')
@@ -324,8 +325,13 @@ class DeviceControls(QtGui.QGroupBox):
                 # remove sweep capture modes
                 self._update_modes()
                 c = self._mode.count()
-                self._mode.removeItem(0)
-                self._mode.setCurrentIndex(0)
+
+                # remove all sweep modes while using IQ out
+                self._update_modes(include_sweep=False)
+
+                if state.sweeping():
+                    self._mode.setCurrentIndex(0)
+
                 # remove all digitizer controls
                 self._rbw_label.hide()
                 self._rbw_box.hide()
@@ -351,6 +357,9 @@ class DeviceControls(QtGui.QGroupBox):
                     self._trig_fstart.blockSignals(False)
                     self._trig_fstop.blockSignals(False)
                     self._trig_amp.blockSignals(False)
+
+                # insert all sweep modes only if no sweep mode is in the combo box
+                self._update_modes()
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
