@@ -56,7 +56,7 @@ class AmplitudeControls(QtGui.QGroupBox):
         self._ref_level.setSuffix(" dBm")
         self._ref_level.setSingleStep(PLOT_STEP)
         self._ref_level.valueChanged.connect(self._update_plot_y_axis)
-        self._ref_label = QtGui.QLabel('Reference Level: ')
+        self._ref_label = QtGui.QLabel('Reflevel: ')
 
         self._min_level = QtGui.QSpinBox()
         self._min_level.setRange(PLOT_YMIN, PLOT_YMAX)
@@ -64,7 +64,7 @@ class AmplitudeControls(QtGui.QGroupBox):
         self._min_level.setSuffix(" dBm")
         self._min_level.setSingleStep(PLOT_STEP)
         self._min_level.valueChanged.connect(self._update_plot_y_axis)
-        self._min_label = QtGui.QLabel('Minimum Level: ')
+        self._min_label = QtGui.QLabel('Minimum: ')
 
 
     def _build_layout(self, dut_prop=None):
@@ -77,7 +77,7 @@ class AmplitudeControls(QtGui.QGroupBox):
         grid.addWidget(self._min_level, 0, 4, 1, 1)
 
         if 'attenuator' in features:
-            grid.addWidget(self._atten_box, 1, 0, 1, 1)
+            grid.addWidget(self._atten_box, 1, 0, 1, 2)
         if 'hdr_gain' in features:
             grid.addWidget(self._hdr_gain_label, 1, 3, 1, 1)
             grid.addWidget(self._hdr_gain_box, 1, 4, 1, 1)
