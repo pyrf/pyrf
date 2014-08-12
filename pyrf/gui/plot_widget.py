@@ -111,6 +111,8 @@ class Trace(object):
         else:
             odd = True
             i = 0
+            if sweep_segments is None:
+                sweep_segments = [len(self.data)]
             for run in sweep_segments:
                 c = self.plot_area.window.plot(x=xdata[i:i + run],
                     y=self.data[i:i + run],
