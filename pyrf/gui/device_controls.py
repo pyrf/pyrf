@@ -346,6 +346,9 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
+                # insert all sweep modes only if no sweep mode is in the combo box
+                self._update_modes()
+
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
                     self._trig_fstart.blockSignals(True)
@@ -357,9 +360,6 @@ class DeviceControls(QtGui.QGroupBox):
                     self._trig_fstart.blockSignals(False)
                     self._trig_fstop.blockSignals(False)
                     self._trig_amp.blockSignals(False)
-
-                # insert all sweep modes only if no sweep mode is in the combo box
-                self._update_modes()
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
