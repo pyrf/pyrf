@@ -102,7 +102,7 @@ class DeviceControls(QtGui.QGroupBox):
         self._trig_fstop.lineEdit().setReadOnly(True)
 
         self._trig_amp_label = QtGui.QLabel("Level:")
-        self._trig_amp = QtGui.QSpinBox()
+        self._trig_amp = QDoubleSpinBoxPlayback()
         self._trig_amp.setSuffix(" dBm")
         self._trig_amp.setRange(-2000, 2000)
         self._trig_amp.lineEdit().setReadOnly(True)
@@ -351,15 +351,10 @@ class DeviceControls(QtGui.QGroupBox):
 
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
-                    self._trig_fstart.blockSignals(True)
-                    self._trig_fstop.blockSignals(True)
-                    self._trig_amp.blockSignals(True)
-                    self._trig_fstart.setValue(state.device_settings['trigger']['fstart'] / M)
-                    self._trig_fstop.setValue(state.device_settings['trigger']['fstop'] / M)
-                    self._trig_amp.setValue(state.device_settings['trigger']['amplitude'])
-                    self._trig_fstart.blockSignals(False)
-                    self._trig_fstop.blockSignals(False)
-                    self._trig_amp.blockSignals(False)
+                trigger = state.device_settings['trigger']
+                self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
+                self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
+                self._trig_amp.quiet_update(value=trigger['amplitude'])
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):
