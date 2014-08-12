@@ -228,8 +228,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
             self._rbw_box.playback_value(str(state.rbw))
-            self._attenuator_box.playback_value(
-                state.device_settings.get('attenuator', False))
             self._pll_box.playback_value('External'
                 if state.device_settings.get('pll_reference') == 'EXT' else
                 'Internal')
