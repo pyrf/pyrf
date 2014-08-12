@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from distutils.version import StrictVersion, LooseVersion
 
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
@@ -8,8 +8,8 @@ def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
     """
-    parts = device_id.split(',')
-    model, _space, rev = parts[1].partition(' ')
+    mfr, model_rev, serial, firmware = device_id.split(',')
+    model, _space, rev = model_rev.partition(' ')
     if model == 'WSA4000':
         return WSA4000Properties
 
@@ -21,16 +21,24 @@ def wsa_properties(device_id):
         old_v2 = int(rev) < 3
 
     if model == 'WSA5000-220' and old_v2:
-        return WSA5000_220_v2Properties
-    if model == 'WSA5000-208' and old_v2:
-        return WSA5000_208_v2Properties
-    if model == 'WSA5000-208':
-        return WSA5000_208Properties
-    if model == 'WSA5000-108':
-        return WSA5000_108Properties
+        p = WSA5000_220_v2Properties()
+    elif model == 'WSA5000-208' and old_v2:
+        p = WSA5000_208_v2Properties()
+    elif model == 'WSA5000-208':
+        p = WSA5000_208Properties()
+    elif model == 'WSA5000-108':
+        p = WSA5000_108Properties()
+    else:
+        p = WSA5000_220Properties()
 
-    return WSA5000_220Properties
+    firmware_rev = LooseVersion(firmware.replace('-', '.'))
 
+    if '.' not in rev or firmware_rev < LooseVersion('4.2'):
+        p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
+
+    if firmware_rev < LooseVersion(p.TRIGGER_FW_VERSION):
+        p.LEVEL_TRIGGER_RFE_MODES = []
+    return p
 
 class WSA4000Properties(object):
     model = 'WSA4000'
