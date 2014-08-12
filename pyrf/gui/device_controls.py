@@ -179,8 +179,10 @@ class DeviceControls(QtGui.QGroupBox):
             if not input_mode:
                 return
             self.controller.apply_settings(mode=input_mode)
+            #FIXME rfe_mode should not be in device settings dictionary
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self.controller.apply_device_settings(rfe_mode = input_mode)
+
         def new_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
             if self._level_trigger.isChecked():

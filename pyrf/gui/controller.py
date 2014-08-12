@@ -346,7 +346,8 @@ class SpecAController(QtCore.QObject):
         """
         device_settings = dict(self._state.device_settings, **kwargs)
         state = SpecAState(self._state, device_settings=device_settings)
-        if 'iq_output_path' in device_settings:
+
+        if device_settings.get('iq_output_path') == 'CONNECTOR':
             self._capture_device.configure_device(device_settings)
         changed = ['device_settings.%s' % s for s in kwargs]
         self._state_changed(state, changed)
