@@ -146,7 +146,7 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
 
-        grid.addWidget(self._level_trigger, 4, 0, 1, 1)
+        grid.addWidget(self._level_trigger, 4, 0, 1, 2)
 
         grid.addWidget(self._trig_fstart_label, 5, 0, 1, 1)
         grid.addWidget(self._trig_fstart, 5, 1, 1, 1)
