@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from distutils.version import StrictVersion, LooseVersion
 
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
@@ -8,8 +8,8 @@ def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
     """
-    parts = device_id.split(',')
-    model, _space, rev = parts[1].partition(' ')
+    mfr, model_rev, serial, firmware = device_id.split(',')
+    model, _space, rev = model_rev.partition(' ')
     if model == 'WSA4000':
         return WSA4000Properties()
 
@@ -31,8 +31,9 @@ def wsa_properties(device_id):
     else:
         p = WSA5000_220Properties()
 
+    firmware_rev = LooseVersion(firmware.replace('-', '.'))
     # correct for old reflevels
-    if '.' not in rev or StrictVersion(parts[-1]) < StrictVersion('4.2'):
+    if '.' not in rev or firmware_rev < LooseVersion('4.2'):
         p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
     return p
 
