@@ -170,7 +170,7 @@ class WSA5000_220Properties(object):
         'DD': True,
         }
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
+        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
@@ -186,6 +186,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
+            'hdr_gain': -10,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,

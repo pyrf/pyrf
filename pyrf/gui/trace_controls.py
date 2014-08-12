@@ -5,14 +5,10 @@ from pyrf.gui import labels
 from pyrf.gui import colors
 from pyrf.gui.util import hide_layout
 from pyrf.gui.fonts import GROUP_BOX_FONT
-
+from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback)
 import numpy as np
 
-PLOT_YMAX = 20
-PLOT_TOP = 0
-PLOT_BOTTOM = -160
-PLOT_YMIN = -240
-PLOT_STEP = 5
+
 
 REMOVE_BUTTON_WIDTH = 10
 
@@ -299,7 +295,6 @@ class TraceControls(QtGui.QGroupBox):
         grid.setColumnStretch(5, 4)
         grid.setColumnStretch(6, 8)
 
-
     def state_changed(self, state, changed):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -432,7 +427,6 @@ class TraceControls(QtGui.QGroupBox):
             marker = self._plot.markers[0]  # XXX
             if not self._marker_trace.currentText() == '':
                 marker.trace_index = int(self._marker_trace.currentText()) - 1
-
 
     def _marker_tab_change(self):
         """

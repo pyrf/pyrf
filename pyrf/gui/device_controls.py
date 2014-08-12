@@ -78,9 +78,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._ifgain_box.setRange(-10, 25)
         self._ifgain_box.setSuffix(" dB")
 
-        self._attenuator_box = QCheckBoxPlayback("Attenuator")
-        self._attenuator_box.setChecked(True)
-
         self._pll_label = QtGui.QLabel("PLL Ref:")
         self._pll_box = QComboBoxPlayback()
         self._pll_box.setToolTip("Choose PLL Reference")
@@ -122,8 +119,6 @@ class DeviceControls(QtGui.QGroupBox):
 
         # 5k features
         if 'attenuator' in features:
-            grid.addWidget(self._attenuator_box, 2, 3, 1, 2)
-
             # FIXME: 'pll_reference' isn't in device properties yet
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
@@ -131,6 +126,7 @@ class DeviceControls(QtGui.QGroupBox):
             # FIXME: 'iq_output' isn't in device properties yet
             grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
             grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
+
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 8)
@@ -159,9 +155,6 @@ class DeviceControls(QtGui.QGroupBox):
         def new_ifgain():
             self.plot_state.dev_set['ifgain'] = self._ifgain_box.value()
             self.cap_dut.configure_device(self.plot_state.dev_set)
-
-        def new_attenuator():
-            self.controller.apply_device_settings(attenuator = self._attenuator_box.isChecked())
 
         def new_pll_reference():
             if self._pll_box.currentText() == 'Internal':
@@ -208,7 +201,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._dec_box.currentIndexChanged.connect(new_dec)
         self._fshift_edit.valueChanged.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
-        self._attenuator_box.clicked.connect(new_attenuator)
         self._mode.currentIndexChanged.connect(new_input_mode)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
@@ -239,8 +231,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
             self._rbw_box.playback_value(str(state.rbw))
-            self._attenuator_box.playback_value(
-                state.device_settings.get('attenuator', False))
             self._pll_box.playback_value('External'
                 if state.device_settings.get('pll_reference') == 'EXT' else
                 'Internal')
@@ -257,7 +247,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._dec_box.setEnabled(decimation_available)
             self._fshift_edit.setEnabled(decimation_available)
             self._update_rbw_options()
-            self._attenuator_box.setEnabled(True)
             self._pll_box.quiet_update(["Internal", "External"])
             self._pll_box.setEnabled(True)
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
