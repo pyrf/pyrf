@@ -35,8 +35,10 @@ def wsa_properties(device_id):
     # correct for old reflevels
     if '.' not in rev or firmware_rev < LooseVersion('4.2'):
         p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
-    return p
 
+    if firmware_rev < LooseVersion(p.TRIGGER_FW_VERSION):
+        p.LEVEL_TRIGGER_RFE_MODES = []
+    return p
 
 class WSA4000Properties(object):
     model = 'WSA4000'
@@ -83,6 +85,7 @@ class WSA4000Properties(object):
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
+    TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 0
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
