@@ -88,14 +88,14 @@ class DeviceControls(QtGui.QGroupBox):
         self._level_trigger.setToolTip("Enable Frequency Level Triggers")
 
         self._trig_fstart_label = QtGui.QLabel("Start:")
-        self._trig_fstart = QtGui.QSpinBox()
+        self._trig_fstart = QDoubleSpinBoxPlayback()
         # FIXME: use values from device properties
         self._trig_fstart.setRange(0, 20000)
         self._trig_fstart.setSuffix(" MHz")
         self._trig_fstart.lineEdit().setReadOnly(True)
 
         self._trig_fstop_label = QtGui.QLabel("Stop:")
-        self._trig_fstop = QtGui.QSpinBox()
+        self._trig_fstop = QDoubleSpinBoxPlayback()
         # FIXME: use values from device properties
         self._trig_fstop.setRange(0, 20000)
         self._trig_fstop.setSuffix(" MHz")
