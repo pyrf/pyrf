@@ -88,21 +88,21 @@ class DeviceControls(QtGui.QGroupBox):
         self._level_trigger.setToolTip("Enable Frequency Level Triggers")
 
         self._trig_fstart_label = QtGui.QLabel("Start:")
-        self._trig_fstart = QtGui.QSpinBox()
+        self._trig_fstart = QDoubleSpinBoxPlayback()
         # FIXME: use values from device properties
         self._trig_fstart.setRange(0, 20000)
         self._trig_fstart.setSuffix(" MHz")
         self._trig_fstart.lineEdit().setReadOnly(True)
 
         self._trig_fstop_label = QtGui.QLabel("Stop:")
-        self._trig_fstop = QtGui.QSpinBox()
+        self._trig_fstop = QDoubleSpinBoxPlayback()
         # FIXME: use values from device properties
         self._trig_fstop.setRange(0, 20000)
         self._trig_fstop.setSuffix(" MHz")
         self._trig_fstop.lineEdit().setReadOnly(True)
 
         self._trig_amp_label = QtGui.QLabel("Level:")
-        self._trig_amp = QtGui.QSpinBox()
+        self._trig_amp = QDoubleSpinBoxPlayback()
         self._trig_amp.setSuffix(" dBm")
         self._trig_amp.setRange(-2000, 2000)
         self._trig_amp.lineEdit().setReadOnly(True)
@@ -146,7 +146,7 @@ class DeviceControls(QtGui.QGroupBox):
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
 
-        grid.addWidget(self._level_trigger, 4, 0, 1, 1)
+        grid.addWidget(self._level_trigger, 4, 0, 1, 2)
 
         grid.addWidget(self._trig_fstart_label, 5, 0, 1, 1)
         grid.addWidget(self._trig_fstart, 5, 1, 1, 1)
@@ -194,14 +194,16 @@ class DeviceControls(QtGui.QGroupBox):
 
         def new_iq_path():
             self.controller.apply_device_settings(
-                iq_output_path=self._iq_output_box.currentText().upper())
+                iq_output_path= str(self._iq_output_box.currentText().upper()))
 
         def new_input_mode():
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
-
             self.controller.apply_settings(mode=input_mode)
+            #FIXME rfe_mode should not be in device settings dictionary
+            if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self.controller.apply_device_settings(rfe_mode = input_mode)
 
         def enable_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
@@ -251,9 +253,10 @@ class DeviceControls(QtGui.QGroupBox):
         self._update_modes()
 
 
-    def _update_modes(self):
+    def _update_modes(self, include_sweep=True):
         modes = []
-        modes.extend(self.dut_prop.SPECA_MODES)
+        if include_sweep:
+            modes.extend(self.dut_prop.SPECA_MODES)
         modes.extend(self.dut_prop.RFE_MODES)
         self._mode.quiet_update(modes)
 
@@ -268,8 +271,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
             self._rbw_box.playback_value(str(state.rbw))
-            self._attenuator_box.playback_value(
-                state.device_settings.get('attenuator', False))
             self._pll_box.playback_value('External'
                 if state.device_settings.get('pll_reference') == 'EXT' else
                 'Internal')
@@ -324,8 +325,13 @@ class DeviceControls(QtGui.QGroupBox):
                 # remove sweep capture modes
                 self._update_modes()
                 c = self._mode.count()
-                self._mode.removeItem(0)
-                self._mode.setCurrentIndex(0)
+
+                # remove all sweep modes while using IQ out
+                self._update_modes(include_sweep=False)
+
+                if state.sweeping():
+                    self._mode.setCurrentIndex(0)
+
                 # remove all digitizer controls
                 self._rbw_label.hide()
                 self._rbw_box.hide()
@@ -340,17 +346,15 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
+                # insert all sweep modes only if no sweep mode is in the combo box
+                self._update_modes()
+
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
-                    self._trig_fstart.blockSignals(True)
-                    self._trig_fstop.blockSignals(True)
-                    self._trig_amp.blockSignals(True)
-                    self._trig_fstart.setValue(state.device_settings['trigger']['fstart'] / M)
-                    self._trig_fstop.setValue(state.device_settings['trigger']['fstop'] / M)
-                    self._trig_amp.setValue(state.device_settings['trigger']['amplitude'])
-                    self._trig_fstart.blockSignals(False)
-                    self._trig_fstop.blockSignals(False)
-                    self._trig_amp.blockSignals(False)
+                trigger = state.device_settings['trigger']
+                self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
+                self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
+                self._trig_amp.quiet_update(value=trigger['amplitude'])
 
     def _rbw_replace_items(self, items):
         for i in range(self._rbw_box.count()):

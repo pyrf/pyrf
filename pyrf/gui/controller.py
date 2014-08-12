@@ -2,6 +2,7 @@ import logging
 import glob
 
 from PySide import QtCore
+import numpy as np  # FIXME: move sweep playback out of here
 
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
@@ -30,6 +31,7 @@ class SpecAController(QtCore.QObject):
     _state = None
     _recording_file = None
     _playback_file = None
+    _playback_sweep_data = None
     _user_xrange_control_enabled = True
     _pending_user_xrange = None
     _applying_user_xrange = False
@@ -69,7 +71,7 @@ class SpecAController(QtCore.QObject):
             state_json = vrt_packet.fields['speca']
             # support old playback files
             if state_json['device_identifier'] == 'unknown':
-                state_json['device_identifier'] = 'ThinkRF,WSA5000 v3,'
+                state_json['device_identifier'] = 'ThinkRF,WSA5000 v3,,'
             dut = Playback(state_json['device_class'],
                 state_json['device_identifier'])
             self._sweep_device = SweepDevice(dut)
@@ -187,12 +189,17 @@ class SpecAController(QtCore.QObject):
 
             if pkt.is_context_packet():
                 if 'speca' in pkt.fields:
+                    self._playback_sweep_data = None
                     state_json = pkt.fields['speca']
                     self._apply_complete_settings(state_json, playback=True)
                 else:
                     self._playback_context.update(pkt.fields)
                 continue
 
+            if self._state.sweeping():
+                if not self._playback_sweep_step(pkt):
+                    continue
+                return
             break
 
         usable_bins = compute_usable_bins(
@@ -230,6 +237,88 @@ class SpecAController(QtCore.QObject):
             pow_data,
             usable_bins,
             None)
+
+    def _playback_sweep_start(self):
+        """
+        ready a new playback sweep data array
+        """
+        nans = np.ones(int(self._state.span / self._state.rbw)) * np.nan
+        self._playback_sweep_data = nans
+
+    def _playback_sweep_step(self, pkt):
+        """
+        process one data packet from a recorded sweep and
+        plot collected data after receiving complete sweep.
+
+        returns True if data was plotted on this step.
+        """
+        if self._playback_sweep_data is None:
+            self._playback_sweep_start()
+            last_center = None
+        else:
+            last_center = self._playback_sweep_last_center
+
+        sweep_start = float(self._state.center - self._state.span / 2)
+        sweep_stop = float(self._state.center + self._state.span / 2)
+        step_center = self._playback_context['rffreq']
+        updated_plot = False
+        if last_center is not None and last_center >= step_center:
+            # starting a new sweep, plot the data we have
+            self.capture_receive.emit(
+                self._state,
+                sweep_start,
+                sweep_stop,
+                None,
+                self._playback_sweep_data,
+                None,
+                None)
+            updated_plot = True
+            self._playback_sweep_start()
+        self._playback_sweep_last_center = step_center
+
+        usable_bins = compute_usable_bins(
+            self._dut.properties,
+            self._state.rfe_mode(),
+            len(pkt.data),
+            self._state.decimation,
+            self._state.fshift)
+
+        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            self._dut.properties,
+            self._state.rfe_mode(),
+            len(pkt.data),
+            self._state.decimation,
+            step_center,
+            pkt.spec_inv,
+            usable_bins)
+
+        pow_data = compute_fft(
+            self._dut,
+            pkt,
+            self._playback_context,
+            **self._dsp_options)
+
+        pow_data, usable_bins, fstart, fstop = (
+            trim_to_usable_fstart_fstop(
+                pow_data, usable_bins, fstart, fstop))
+
+        clip_left = max(sweep_start, fstart)
+        clip_right = min(sweep_stop, fstop)
+        sweep_points = len(self._playback_sweep_data)
+        point_left = int((clip_left - sweep_start) * sweep_points / (
+            sweep_stop - sweep_start))
+        point_right = int((clip_right - sweep_start) * sweep_points / (
+            sweep_stop - sweep_start))
+        xvalues = np.linspace(clip_left, clip_right, point_right - point_left)
+
+        if point_left >= point_right:
+            logger.info('received sweep step outside sweep: %r, %r' %
+                ((fstart, fstop), (sweep_start, sweep_stop)))
+        else:
+            self._playback_sweep_data[point_left:point_right] = np.interp(
+                xvalues, np.linspace(fstart, fstop, len(pow_data)), pow_data)
+
+        return updated_plot
 
 
     def _playback_vrt(self, auto_rewind=True):
@@ -299,7 +388,7 @@ class SpecAController(QtCore.QObject):
         self.iq_data = None
 
         if not self._options.get('show_sweep_steps'):
-            sweep_segments = [len(self.pow_data)]
+            sweep_segments = None
 
         self.capture_receive.emit(
             self._state,
@@ -346,7 +435,8 @@ class SpecAController(QtCore.QObject):
         """
         device_settings = dict(self._state.device_settings, **kwargs)
         state = SpecAState(self._state, device_settings=device_settings)
-        if 'trigger' in device_settings:
+
+        if device_settings.get('iq_output_path') == 'CONNECTOR':
             self._capture_device.configure_device(device_settings)
         changed = ['device_settings.%s' % s for s in kwargs]
         self._state_changed(state, changed)
