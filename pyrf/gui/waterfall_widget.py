@@ -15,11 +15,18 @@ import numpy as np
 FRAME_WAIT_TIMEOUT_s = 0.2
 CROSSHAIR_FPS = 10.0
 
-logger = logging.getLogger(__name__)
-dlog = logger.debug
-
 # workaround for pyqtgraph trying to compile external lib at runtime
 pg.setConfigOption('useWeave', False)
+
+DLOG_ENABLED = False
+DLOG_start_time = None
+def dlog(msg):
+    """Simple debug logging function."""
+    if DLOG_ENABLED:
+        global DLOG_start_time
+        if DLOG_start_time is None:
+            DLOG_start_time = time.time()
+        print "%5.3f - %s" % (time.time() - DLOG_start_time, msg)
 
 
 class WaterfallModel(QtCore.QObject):
@@ -608,6 +615,13 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 dlog("setLookupTable triggered a full image refresh!")
                 self._do_full_image_refresh()
     
+    def set_lookup_levels(self, color_lookup_min, color_lookup_max):
+        new_levels = (color_lookup_min, color_lookup_max)
+        dlog("set_lookup_levels(%s, %s) called" % new_levels)
+        if new_levels != self._lut_levels:
+            self._lut_levels = new_levels
+            self._do_full_image_refresh()
+    
     def add_image_row(self, data_row):
         assert data_row.ndim == 1
         #Note that the data queue handles both new rows and full data sets.
@@ -880,7 +894,8 @@ class WaterfallPlotWidget(QtGui.QWidget):
                 msg = ("If scale_limits is specified, it must be a tuple like "
                        "(black_level, white_level)")
                 raise ValueError(msg)
-            self._scale_limits = scale_limits
+        
+        self._scale_limits = scale_limits
         self._show_ge = show_gradient_editor
         self._vertical_stretch = vertical_stretch
         self._data_model = data_model
@@ -1082,13 +1097,17 @@ class WaterfallPlotWidget(QtGui.QWidget):
         #assuming no model changes happen during us (could lock to prevent this).
         
         #Also note that we don't want to move set_new_data_model to *after*
-        #the slot reconnection since new data dimensions may not natch old
+        #the slot reconnection since new data dimensions may not match old
         #ones, and this would mess the renderer up.
         self._data_model = data_model
         self._toggle_model_slots(True)
         
         #HACK (to avoid lost row potential)...
         #self._renderer.set_new_data_model(data_model)
+    
+    def set_lookup_levels(self, color_lookup_min, color_lookup_max):
+        self._renderer.set_lookup_levels(color_lookup_min, color_lookup_max)
+
 
 class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
     """

@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from distutils.version import StrictVersion, LooseVersion
 
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
@@ -8,10 +8,10 @@ def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
     """
-    parts = device_id.split(',')
-    model, _space, rev = parts[1].partition(' ')
+    mfr, model_rev, serial, firmware = device_id.split(',')
+    model, _space, rev = model_rev.partition(' ')
     if model == 'WSA4000':
-        return WSA4000Properties
+        return WSA4000Properties()
 
     # revision numbers jumped backwards when switching to major.minor
     rev = rev.lstrip('v')
@@ -21,20 +21,27 @@ def wsa_properties(device_id):
         old_v2 = int(rev) < 3
 
     if model == 'WSA5000-220' and old_v2:
-        return WSA5000_220_v2Properties
-    if model == 'WSA5000-208' and old_v2:
-        return WSA5000_208_v2Properties
-    if model == 'WSA5000-208':
-        return WSA5000_208Properties
-    if model == 'WSA5000-108':
-        return WSA5000_108Properties
+        p = WSA5000_220_v2Properties()
+    elif model == 'WSA5000-208' and old_v2:
+        p = WSA5000_208_v2Properties()
+    elif model == 'WSA5000-208':
+        p = WSA5000_208Properties()
+    elif model == 'WSA5000-108':
+        p = WSA5000_108Properties()
+    else:
+        p = WSA5000_220Properties()
 
-    return WSA5000_220Properties
+    firmware_rev = LooseVersion(firmware.replace('-', '.'))
+    # correct for old reflevels
+    if '.' not in rev or firmware_rev < LooseVersion('4.2'):
+        p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
 
+    if firmware_rev < LooseVersion(p.TRIGGER_FW_VERSION):
+        p.LEVEL_TRIGGER_RFE_MODES = []
+    return p
 
 class WSA4000Properties(object):
     model = 'WSA4000'
-
     REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
@@ -78,8 +85,8 @@ class WSA4000Properties(object):
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
-
-    REFLEVEL_ERROR = 15.7678
+    TRIGGER_FW_VERSION = '4.1.0'
+    REFLEVEL_ERROR = 0
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20
@@ -107,6 +114,8 @@ class WSA5000_220Properties(object):
         'HDR': 0.1 * M,
         'SH': 40 * M,
         'SHN': 10 * M,
+        'DEC_SH': 100 * M,
+        'DEC_SHN': 100 * M,
         'IQIN': 100 * M,
         'DD': 62.5 * M,
         }
@@ -164,7 +173,7 @@ class WSA5000_220Properties(object):
         'DD': True,
         }
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
+        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
@@ -180,6 +189,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
+            'hdr_gain': -10,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,
@@ -194,6 +204,7 @@ class WSA5000_220Properties(object):
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
+    REFLEVEL_ERROR = 0
     # v2 -> hardware revision without SHN mode
     RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
 

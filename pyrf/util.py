@@ -41,9 +41,14 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     in the form [(start, run), ...] where start is a bin offset from the
     left and run is a number of usable bins.
     """
-    full_bw = dut_prop.FULL_BW[rfe_mode]
-    usable_bw = dut_prop.USABLE_BW[rfe_mode]
-    pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
+    if rfe_mode in ('SH', 'SHN') and decimation > 1:
+        pass_band_center = dut_prop.PASS_BAND_CENTER['DEC_' + rfe_mode]
+        full_bw = (dut_prop.FULL_BW['DEC_' + rfe_mode] / decimation)
+        usable_bw = dut_prop.USABLE_BW['DEC_' + rfe_mode]
+    else:
+        pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
+        full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
+        usable_bw = dut_prop.USABLE_BW[rfe_mode]
 
     pass_band_center += fshift / full_bw
     start0 = int((pass_band_center - float(usable_bw) / full_bw / 2)

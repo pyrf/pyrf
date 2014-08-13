@@ -47,15 +47,17 @@ class CaptureDevice(object):
         :type dict:
         """
         self._configure_device_flag = True
+        iq_path = device_settings.get('iq_output_path') 
+        if self._device_set.get('iq_output_path') != iq_path or iq_path == 'CONNECTOR':
+            self.real_device.apply_device_settings(device_settings)
+
         for param in device_settings:
             self._device_set[param] = device_settings[param]
 
-        if 'iq_output_path' in self._device_set:
-            if self._device_set['iq_output_path'] == 'CONNECTOR':
-                self.real_device.apply_device_settings(self._device_set)
         if 'trigger' in self._device_set:
             if self._device_set['trigger']['type'] == 'LEVEL':
                 self.real_device.apply_device_settings(self._device_set)
+
     def capture_time_domain(self, rfe_mode, freq, rbw, device_settings=None,
             min_points=128):
         """
@@ -73,19 +75,11 @@ class CaptureDevice(object):
         :type min_points: int
         """
         prop = self.real_device.properties
-        
-        # FIXME: FIND BETTER WAY TO DO THIS
-        if 'rfe_mode' in self._device_set:
-            if not self._device_set['rfe_mode'] in rfe_mode or not freq == self._device_set['freq']:  
-                self.configure_device(dict(
-                    freq=freq,
-                    rfe_mode=rfe_mode,
-                    **(device_settings if device_settings else {})))
-        else:
-            self.configure_device(dict(
-                freq=freq,
-                rfe_mode=rfe_mode,
-                **(device_settings if device_settings else {}))) 
+
+        self.configure_device(dict(
+            freq=freq,
+            rfe_mode=rfe_mode,
+            **(device_settings if device_settings else {}))) 
 
         if self._configure_device_flag:
             self.real_device.apply_device_settings(self._device_set)

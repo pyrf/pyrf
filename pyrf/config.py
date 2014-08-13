@@ -40,6 +40,7 @@ class SweepEntry(object):
     :param antenna: the antenna (1 or 2)
     :param gain: the RF gain value ('high', 'medium', 'low' or 'vlow')
     :param ifgain: the IF gain in dB (-10 - 34)
+    :param hdr_gain: the HDR gain in dB (-10 - 30)
     :param spp: samples per packet
     :param ppb: packets per block
     :param dwell_s: dwell time seconds
@@ -60,6 +61,7 @@ class SweepEntry(object):
             antenna=1,
             gain="vlow",
             ifgain=0,
+            hdr_gain=-10,
             spp=1024,
             ppb=1,
             trigtype="none",

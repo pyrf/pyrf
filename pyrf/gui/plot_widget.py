@@ -6,11 +6,10 @@ from PySide import QtCore
 
 from pyrf.gui import colors
 from pyrf.gui import labels
-from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
+from pyrf.gui import fonts
+from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
-    ThreadedWaterfallPlotWidget)
-
-USE_WATERFALL = True #platform.system() != 'Windows'
+                                       ThreadedWaterfallPlotWidget)
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -52,7 +51,9 @@ class Trace(object):
         for c in self.curves:
             self.plot_area.window.removeItem(c)
         self.curves = []
-
+    def clear_data(self):
+        self.average_list = []
+        self.data = None
     def update_average_factor(self, factor):
         self.average_factor = factor
         self.average_list = []
@@ -80,6 +81,9 @@ class Trace(object):
         elif self.average:
             if len(self.average_list) >= self.average_factor:
                 self.average_list.pop(0)
+            if self.average_list:
+                if len(ydata) != len(self.data):
+                    self.average_list = []
             self.average_list.append(ydata)
             self.data = np.average(self.average_list, axis = 0)
 
@@ -105,6 +109,8 @@ class Trace(object):
         else:
             odd = True
             i = 0
+            if sweep_segments is None:
+                sweep_segments = [len(self.data)]
             for run in sweep_segments:
                 c = self.plot_area.window.plot(x=xdata[i:i + run],
                     y=self.data[i:i + run],
@@ -188,20 +194,16 @@ class Plot(QtCore.QObject):
         self.view_box = self.window.plotItem.getViewBox()
         self.view_box.setMouseEnabled(x = True, y = False)
 
-        # initialize the x-axis of the plot
-        self.window.setLabel('bottom', text = 'Frequency', units = 'Hz', unitPrefix=None)
-
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
-        self.window.setLabel('left', text = 'Power', units = 'dBm')
-
-        # initialize fft curve
-        self.fft_curve = self.window.plot(pen = colors.TEAL_NUM)
+        labelStyle = fonts.AXIS_LABEL_FONT
+        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+        self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
-
+        self._trig_enable = False
         self.grid(True)
 
         # IQ constellation window
@@ -237,16 +239,13 @@ class Plot(QtCore.QObject):
             self.markers.append(Marker(self, marker_name))
 
         self.waterfall_data = WaterfallModel(max_len=600)
-        if USE_WATERFALL:
-            self.waterfall_window = ThreadedWaterfallPlotWidget(
-                self.waterfall_data,
-                scale_limits=(PLOT_YMIN, PLOT_YMAX),
-                max_frame_rate_fps=30,
-                mouse_move_crosshair=False,
-                )
-        else:
-            self.waterfall_window = None
 
+        self.waterfall_window = ThreadedWaterfallPlotWidget(
+            self.waterfall_data,
+            scale_limits=(PLOT_YMIN, PLOT_YMAX),
+            max_frame_rate_fps=30,
+            mouse_move_crosshair=False,
+            )
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
@@ -271,28 +270,48 @@ class Plot(QtCore.QObject):
             if 'NONE' in state.device_settings['trigger']['type']:
                 self.remove_trigger()
             elif 'LEVEL' in state.device_settings['trigger']['type']:
-                self.add_trigger(state.device_settings['trigger']['fstart'],
-                                state.device_settings['trigger']['fstop'])
 
-    def add_trigger(self,fstart, fstop):
-        self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
-        self.window.addItem(self.amptrig_line)
-        self.window.addItem(self.freqtrig_lines)
+                self.add_trigger(state.device_settings['trigger']['fstart'],
+                                state.device_settings['trigger']['fstop'],
+                                state.device_settings['trigger']['amplitude'])
+        if 'center' in changed:
+            for trace in self.traces:
+                trace.clear_data()
+
+    def add_trigger(self,fstart, fstop, amplitude):
+        self.amptrig_line.blockSignals(True)
+        self.freqtrig_lines.blockSignals(True)
+        if not self._trig_enable:
+            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
+            self.window.addItem(self.amptrig_line)
+            self.window.addItem(self.freqtrig_lines)
+            self._trig_enable = True
+        else:
+            self.amptrig_line.setValue(amplitude)
+            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
+
+        self.amptrig_line.blockSignals(False)
+        self.freqtrig_lines.blockSignals(False)
 
     def remove_trigger(self):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
+        self._trig_enable = False
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
         b = self.window.blockSignals(True)
         self.window.setXRange(float(fstart), float(fstop), padding=0)
         if min_level is not None:
-            self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+            self.window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
+        
+    def update_waterfall_levels(self, min_level, ref_level):
+        if self.waterfall_window is not None:
+            self.waterfall_window.set_lookup_levels(min_level, ref_level)
 
     def grid(self,state):
         self.window.showGrid(state,state)
-        self.window.getAxis('bottom').setPen((255,255,255))
+        self.window.getAxis('bottom').setPen(colors.GREY_NUM)
         self.window.getAxis('bottom').setGrid(200)
-        self.window.getAxis('left').setPen('w')
+        self.window.getAxis('left').setPen(colors.GREY_NUM)
         self.window.getAxis('left').setGrid(200)

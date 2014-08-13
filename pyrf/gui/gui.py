@@ -16,6 +16,7 @@ import math
 from pkg_resources import parse_version
 
 from pyrf.gui import colors
+from pyrf.gui import fonts
 from pyrf.gui import labels
 from pyrf.gui import gui_config
 from pyrf.gui.controller import SpecAController
@@ -31,6 +32,7 @@ from pyrf.gui.util import find_nearest_index
 from pyrf.gui.plot_widget import Plot
 from pyrf.gui.device_controls import DeviceControls
 from pyrf.gui.frequency_controls import FrequencyControls
+from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 
@@ -271,21 +273,24 @@ class MainPanel(QtGui.QWidget):
 
                 self._plot.center_view(freq,
                                        full_bw,
-                                       self.trace_group.get_min_level(),
-                                       self.trace_group.get_ref_level())
-
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode], IQ_PLOT_YMAX[rfe_mode])
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                               IQ_PLOT_YMAX[rfe_mode])
             else:
                 freq = state.center
                 full_bw = state.span
 
-                self._plot.center_view(freq - full_bw/2, freq + full_bw/2)
+                self._plot.center_view(freq - full_bw/2,
+                                        freq + full_bw/2,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
                                         IQ_PLOT_YMAX[rfe_mode])
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
-                self._plot_group.hide()
+                self._amplitude_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -304,7 +309,6 @@ class MainPanel(QtGui.QWidget):
 
             else:
                 # show plots
-                self._plot_group.show()
                 self._plot_layout.show()
 
                 # resize window
@@ -386,12 +390,11 @@ class MainPanel(QtGui.QWidget):
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
-        self.trace_group = self._trace_controls()
+
         controls_layout.addWidget(self._freq_controls())
-        self._plot_group = self.trace_group.plot_controls()
-        controls_layout.addWidget(self._plot_group)
+        controls_layout.addWidget(self._amplitude_controls())
         controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self.trace_group)
+        controls_layout.addWidget(self._trace_controls())
         controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 13, 5)
 
@@ -415,6 +418,16 @@ class MainPanel(QtGui.QWidget):
         self._plot_layout = vsplit
         return self._plot_layout
 
+    def _freq_controls(self):
+        self._freq_group = FrequencyControls(self.controller)
+        self.control_widgets.append(self._freq_group)
+        return self._freq_group
+    
+    def _amplitude_controls(self):
+        self._amplitude_group = AmplitudeControls(self.controller, self._plot)
+        self.control_widgets.append(self._amplitude_group)
+        return self._amplitude_group
+
     def _trace_controls(self):
         self.trace_group = TraceControls(self.controller, self._plot)
         self.control_widgets.append(self.trace_group)
@@ -430,10 +443,7 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._dev_group)
         return self._dev_group
 
-    def _freq_controls(self):
-        self._freq_group = FrequencyControls(self.controller)
-        self.control_widgets.append(self._freq_group)
-        return self._freq_group
+
 
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
@@ -470,16 +480,21 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_diff()
-        if not self.controller.applying_user_xrange():
-            self._plot.center_view(fstart, fstop)
+        if (not self.controller.applying_user_xrange() and
+                not self.controller.get_options()['free_plot_adjustment']):
+            self._plot.center_view(fstart,
+                                   fstop,
+                                   self._amplitude_group.get_min_level(),
+                                   self._amplitude_group.get_ref_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
 
-        if (fstart, fstop, len(power)) != self._waterfall_range:
-            self._plot.waterfall_data.reset(self.xdata)
-            self._waterfall_range = (fstart, fstop, len(power))
-        self._plot.waterfall_data.add_row(power)
+        if self.waterfall_plot_enabled:
+            if (fstart, fstop, len(power)) != self._waterfall_range:
+                self._plot.waterfall_data.reset(self.xdata)
+                self._waterfall_range = (fstart, fstop, len(power))
+            self._plot.waterfall_data.add_row(power)
 
 
     def options_changed(self, options, changed):
@@ -569,7 +584,7 @@ class MainPanel(QtGui.QWidget):
                     trace = self._plot.traces[marker.trace_index]
 
                     if not trace.blank:
-                        marker_label.setStyleSheet('color: rgb(%s, %s, %s); font: bold 14px;' % (trace.color[0],
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (trace.color[0],
                                                                              trace.color[1],
                                                                             trace.color[2]))
 
@@ -597,7 +612,7 @@ class MainPanel(QtGui.QWidget):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_lab.setStyleSheet('color: rgb(255, 255, 255); font: bold 14px;')
+            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.WHITE_NUM))
             delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
