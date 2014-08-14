@@ -310,7 +310,7 @@ class MainPanel(QtGui.QWidget):
             else:
                 # show plots
                 self._plot_layout.show()
-
+                self._amplitude_group.show()
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
@@ -319,7 +319,7 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumHeight(MINIMUM_HEIGHT)
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
                 WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
-                self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+                self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
 
     def keyPressEvent(self, event):
