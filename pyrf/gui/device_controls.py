@@ -338,6 +338,13 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.hide()
                 self._fshift_edit.hide()
                 self._fshift_label.hide()
+                self._level_trigger.hide()
+                self._trig_fstart.hide()
+                self._trig_fstop.hide()
+                self._trig_amp.hide()
+                self._trig_fstart_label.hide()
+                self._trig_fstop_label.hide()
+                self._trig_amp_label.hide()
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show digitizer controls
@@ -346,6 +353,14 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
+                self._trig_fstart.show()
+                self._trig_fstop.show()
+                self._trig_amp.show()
+                self._level_trigger.show()
+                self._trig_fstart_label.show()
+                self._trig_fstop_label.show()
+                self._trig_amp_label.show()
+
                 # insert all sweep modes only if no sweep mode is in the combo box
                 self._update_modes()
 
