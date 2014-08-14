@@ -197,6 +197,7 @@ class DeviceControls(QtGui.QGroupBox):
                 iq_output_path= str(self._iq_output_box.currentText().upper()))
 
         def new_input_mode():
+
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
@@ -302,7 +303,7 @@ class DeviceControls(QtGui.QGroupBox):
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
-                    self.rig_state(False)
+                    self._trig_state(False)
 
             else:
                 self._level_trigger.setEnabled(True)
@@ -330,7 +331,7 @@ class DeviceControls(QtGui.QGroupBox):
                 self._update_modes(include_sweep=False)
 
                 if state.sweeping():
-                    self._mode.setCurrentIndex(0)
+                    self._mode.setCurrentIndex(1)
 
                 # remove all digitizer controls
                 self._rbw_label.hide()
