@@ -447,7 +447,7 @@ class MainPanel(QtGui.QWidget):
 
     def _marker_labels(self):
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s;' % colors.TEAL)
+        marker_label.setStyleSheet('color: %s; background-color: black' % colors.TEAL)
         marker_label.setMinimumHeight(25)
         
         delta_label = QtGui.QLabel('')
@@ -581,13 +581,13 @@ class MainPanel(QtGui.QWidget):
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
-
+                    marker_label.show()
                     if not trace.blank:
                         if marker.selected:
                             color = colors.YELLOW_NUM
                         else:
                             color = (trace.color[0], trace.color[1], trace.color[2])
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % color)
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
                         marker.update_pos(trace.freq_range, trace.data)
                         marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
@@ -595,7 +595,7 @@ class MainPanel(QtGui.QWidget):
                         marker_label.setText(marker_text)
 
                 else:
-                    marker_label.setText('')
+                    marker_label.hide()
 
     def update_diff(self):
 
@@ -613,7 +613,7 @@ class MainPanel(QtGui.QWidget):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.WHITE_NUM))
+            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
             delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
