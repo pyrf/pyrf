@@ -21,6 +21,8 @@ IQ_PLOT_XMIN = -1
 IQ_PLOT_XMAX = 1
 
 AXIS_OFFSET = 7
+
+TRIG_WIDTH = 4
 class Trace(object):
     """
     Class to represent a trace in the plot
@@ -201,8 +203,12 @@ class Plot(QtCore.QObject):
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize trigger lines
-        self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
+        trig_pen = pg.mkPen(colors.WHITE_NUM, width = TRIG_WIDTH)
+        hover_pen = pg.mkPen(colors.PURPLE_NUM, width = TRIG_WIDTH)
+        self.amptrig_line = pg.InfiniteLine(pen = trig_pen, pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
+        for l in self.freqtrig_lines.lines:
+            l.setPen(trig_pen)
         self._trig_enable = False
         self.grid(True)
 
