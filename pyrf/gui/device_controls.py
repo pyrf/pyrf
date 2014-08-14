@@ -92,20 +92,17 @@ class DeviceControls(QtGui.QGroupBox):
         # FIXME: use values from device properties
         self._trig_fstart.setRange(0, 20000)
         self._trig_fstart.setSuffix(" MHz")
-        self._trig_fstart.setKeyboardTracking(False)
 
         self._trig_fstop_label = QtGui.QLabel("Stop:")
         self._trig_fstop = QDoubleSpinBoxPlayback()
         # FIXME: use values from device properties
         self._trig_fstop.setRange(0, 20000)
         self._trig_fstop.setSuffix(" MHz")
-        self._trig_fstop.setKeyboardTracking(False)
 
         self._trig_amp_label = QtGui.QLabel("Level:")
         self._trig_amp = QDoubleSpinBoxPlayback()
         self._trig_amp.setSuffix(" dBm")
         self._trig_amp.setRange(-2000, 2000)
-        self._trig_amp.setKeyboardTracking(False)
 
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
@@ -242,9 +239,9 @@ class DeviceControls(QtGui.QGroupBox):
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
         self._level_trigger.clicked.connect(enable_trigger)
-        self._trig_fstart.valueChanged.connect(new_trigger)
-        self._trig_fstop.valueChanged.connect(new_trigger)
-        self._trig_amp.valueChanged.connect(new_trigger)
+        self._trig_fstart.editingFinished.connect(new_trigger)
+        self._trig_fstop.editingFinished.connect(new_trigger)
+        self._trig_amp.editingFinished.connect(new_trigger)
         self._rbw_box.currentIndexChanged.connect(new_rbw)
 
     def device_changed(self, dut):
