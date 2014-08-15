@@ -83,6 +83,11 @@ class FrequencyControls(QtGui.QGroupBox):
         if 'playback' in changed:
             self._freq_edit.setEnabled(not state.playback)
 
+        if 'device_settings.iq_output_path' in changed:
+            if 'CONNECTOR' in state.device_settings['iq_output_path']:
+                self._fstart_edit.setEnabled(False)
+                self._fstop_edit.setEnabled(False)
+                self._bw_edit.setEnabled(False)
 
     def _freq_incr(self):
         steps_label = QtGui.QLabel("Adjust:")
