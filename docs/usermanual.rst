@@ -33,7 +33,7 @@ Debian/Ubuntu Dependencies
 Use packaged requirements::
 
    apt-get install python-pyside python-twisted python-numpy \
-   	python-zope.interface python-pip python-scipy
+   	python-zope.interface python-pip python-scipy python-setuptools
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
    pip install -e git://github.com/pyrf/pyqtgraph.git#egg=pyqtgraph
 
