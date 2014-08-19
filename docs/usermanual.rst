@@ -23,8 +23,9 @@ Windows Dependencies
 10. Install twisted (Twisted-14.0.0.win32-py2.7)
 11. Install pywin32 (pywin32-219.win32-py2.7)
 12. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
-13. Obtain PyRF source code from https://github.com/pyrf/pyrf
-14. Go the pyrf directory and run 'setup.py install'
+13. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
+
+Continue from :ref:`pyrf-installation` below.
 
 Debian/Ubuntu Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,6 +49,7 @@ Or install GUI requirements from source::
 Continue from :ref:`pyrf-installation` below.
 
 .. _pyrf-installation:
+
 
 PyRF Installation
 ~~~~~~~~~~~~~~~~~
