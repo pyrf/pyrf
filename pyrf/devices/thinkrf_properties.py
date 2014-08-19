@@ -220,7 +220,9 @@ class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
+    SPECA_MODES = []
+    SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
+        mode='SHN')
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
