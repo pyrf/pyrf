@@ -187,9 +187,12 @@ class Plot(QtCore.QObject):
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.freq_axis = RTSAFrequencyAxisItem()
-        self.window = pg.PlotWidget(name = 'pyrf_plot',
-                                    axisItems = dict(bottom = self.freq_axis),
-                                    )
+        
+        from persistence_plot_widget import PersistencePlotWidget
+        self.window = PersistencePlotWidget(
+            name = 'pyrf_plot',
+            axisItems = dict(bottom = self.freq_axis),
+        )
 
         def widget_range_changed(widget, ranges):
             if not hasattr(ranges, '__getitem__'):

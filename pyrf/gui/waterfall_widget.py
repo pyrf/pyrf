@@ -176,7 +176,9 @@ class WaterfallModel(QtCore.QObject):
                 self._set_x_data_stats()
             sig_data = (self._x_data, self._history)
             self.sigReset.emit(sig_data)
-
+    
+    def get_x_data(self):
+        return self._x_data
 
 class _WaterfallImageRenderer(QtCore.QObject):
     
