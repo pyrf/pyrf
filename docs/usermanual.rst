@@ -44,7 +44,7 @@ Or install GUI requirements from source::
    export BLAS=/usr/lib/libblas/libblas.so
    export ATLAS=/usr/lib/atlas-base/libatlas.so
    export LAPACK=/usr/lib/lapack/liblapack.so
-   pip install -r gui-requirements.txt
+   pip install -r requirements.txt
 
 Continue from :ref:`pyrf-installation` below.
 
