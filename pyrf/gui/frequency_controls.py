@@ -84,7 +84,7 @@ class FrequencyControls(QtGui.QGroupBox):
             self._freq_edit.setEnabled(not state.playback)
 
         if 'device_settings.iq_output_path' in changed:
-            if 'CONNECTOR' in state.device_settings['iq_output_path']:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
