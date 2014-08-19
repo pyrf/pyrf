@@ -194,6 +194,7 @@ class DeviceControls(QtGui.QGroupBox):
                 iq_output_path= str(self._iq_output_box.currentText().upper()))
 
         def new_input_mode():
+
             input_mode = self._mode.currentText()
             if not input_mode:
                 return
@@ -299,7 +300,7 @@ class DeviceControls(QtGui.QGroupBox):
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
-                    self.rig_state(False)
+                    self._trig_state(False)
 
             else:
                 self._level_trigger.setEnabled(True)
@@ -326,15 +327,19 @@ class DeviceControls(QtGui.QGroupBox):
                 # remove all sweep modes while using IQ out
                 self._update_modes(include_sweep=False)
 
-                if state.sweeping():
-                    self._mode.setCurrentIndex(0)
-
                 # remove all digitizer controls
                 self._rbw_label.hide()
                 self._rbw_box.hide()
                 self._dec_box.hide()
                 self._fshift_edit.hide()
                 self._fshift_label.hide()
+                self._level_trigger.hide()
+                self._trig_fstart.hide()
+                self._trig_fstop.hide()
+                self._trig_amp.hide()
+                self._trig_fstart_label.hide()
+                self._trig_fstop_label.hide()
+                self._trig_amp_label.hide()
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show digitizer controls
@@ -343,6 +348,14 @@ class DeviceControls(QtGui.QGroupBox):
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
+                self._trig_fstart.show()
+                self._trig_fstop.show()
+                self._trig_amp.show()
+                self._level_trigger.show()
+                self._trig_fstart_label.show()
+                self._trig_fstop_label.show()
+                self._trig_amp_label.show()
+
                 # insert all sweep modes only if no sweep mode is in the combo box
                 self._update_modes()
 

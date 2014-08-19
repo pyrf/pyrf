@@ -290,7 +290,6 @@ class MainPanel(QtGui.QWidget):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
-                self._amplitude_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -310,7 +309,6 @@ class MainPanel(QtGui.QWidget):
             else:
                 # show plots
                 self._plot_layout.show()
-
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
@@ -319,7 +317,7 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumHeight(MINIMUM_HEIGHT)
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
                 WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
-                self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+                self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
 
     def keyPressEvent(self, event):

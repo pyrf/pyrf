@@ -419,9 +419,12 @@ class SpecAController(QtCore.QObject):
         self._state = state
         # start capture loop again when user switches output path
         # back to the internal digitizer XXX: very WSA5000-specific
-        if ('device_settings.iq_output_path' in changed and
-                state.device_settings.get('iq_output_path') == 'DIGITIZER'):
-            self.start_capture()
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings.get('iq_output_path') == 'DIGITIZER':
+                self.start_capture()
+            elif state.device_settings.get('iq_output_path') == 'CONNECTOR':
+                if state.sweeping():
+                    state.mode = self._dut.properties.RFE_MODES[0]
 
         if self._recording_file:
             self._dut.inject_recording_state(state.to_json_object())
