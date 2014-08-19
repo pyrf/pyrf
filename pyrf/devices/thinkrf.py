@@ -376,6 +376,7 @@ class WSA(object):
         :type settings: dictionary
         :returns: the trigger settings
         """
+        print settings
         if settings is None:
             # find out what kind of trigger is set
             trigstr = yield self.scpiget(":TRIGGER:TYPE?")

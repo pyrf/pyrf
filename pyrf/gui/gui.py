@@ -446,18 +446,23 @@ class MainPanel(QtGui.QWidget):
 
 
     def _marker_labels(self):
+        marker_alignment = QtCore.Qt.AlignHCenter
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s;' % colors.TEAL)
+        marker_label.setStyleSheet('color: %s; background-color: black' % colors.TEAL)
         marker_label.setMinimumHeight(25)
-        
+        marker_label.setAlignment(marker_alignment)
+
         delta_label = QtGui.QLabel('')
         delta_label.setStyleSheet('color: %s;' % colors.TEAL)
         delta_label.setMinimumHeight(25)
-        
+        delta_label.setAlignment(marker_alignment)
+
         diff_label = QtGui.QLabel('')
         diff_label.setStyleSheet('color: %s;' % colors.WHITE)
         diff_label.setMinimumHeight(25)
+        diff_label.setAlignment(marker_alignment)
         self._diff_lab = diff_label
+
         return marker_label,delta_label, diff_label
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
@@ -578,23 +583,26 @@ class MainPanel(QtGui.QWidget):
             self._plot.q_curve.clear()
 
     def update_marker(self):
-
+            num = 1
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
-
+                    marker_label.show()
                     if not trace.blank:
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (trace.color[0],
-                                                                             trace.color[1],
-                                                                            trace.color[2]))
+                        if marker.selected:
+                            color = colors.YELLOW_NUM
+                        else:
+                            color = colors.WHITE_NUM
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
+                        marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
+                        num += 1
                         marker_label.setText(marker_text)
 
                 else:
-                    marker_label.setText('')
+                    marker_label.hide()
 
     def update_diff(self):
 
@@ -612,8 +620,8 @@ class MainPanel(QtGui.QWidget):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.WHITE_NUM))
-            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
+            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+            delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
             self._diff_lab.setText('')
