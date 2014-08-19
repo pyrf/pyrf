@@ -446,18 +446,23 @@ class MainPanel(QtGui.QWidget):
 
 
     def _marker_labels(self):
+        marker_alignment = QtCore.Qt.AlignHCenter
         marker_label = QtGui.QLabel('')
         marker_label.setStyleSheet('color: %s; background-color: black' % colors.TEAL)
         marker_label.setMinimumHeight(25)
-        
+        marker_label.setAlignment(marker_alignment)
+
         delta_label = QtGui.QLabel('')
         delta_label.setStyleSheet('color: %s;' % colors.TEAL)
         delta_label.setMinimumHeight(25)
-        
+        delta_label.setAlignment(marker_alignment)
+
         diff_label = QtGui.QLabel('')
         diff_label.setStyleSheet('color: %s;' % colors.WHITE)
         diff_label.setMinimumHeight(25)
+        diff_label.setAlignment(marker_alignment)
         self._diff_lab = diff_label
+
         return marker_label,delta_label, diff_label
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
@@ -586,7 +591,7 @@ class MainPanel(QtGui.QWidget):
                         if marker.selected:
                             color = colors.YELLOW_NUM
                         else:
-                            color = (trace.color[0], trace.color[1], trace.color[2])
+                            color = colors.WHITE_NUM
                         marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
                         marker.update_pos(trace.freq_range, trace.data)
