@@ -310,8 +310,6 @@ class DeviceControls(QtGui.QGroupBox):
                 self._update_modes(include_sweep=False)
 
                 # remove all digitizer controls
-                self._rbw_label.hide()
-                self._rbw_box.hide()
                 self._dec_box.hide()
                 self._fshift_edit.hide()
                 self._fshift_label.hide()

@@ -45,7 +45,6 @@ class FrequencyControls(QtGui.QGroupBox):
         rbw_label, rbw_combo = self._rbw_controls()
         grid.addWidget(rbw_label, 2, 3, 1, 1)
         grid.addWidget(rbw_combo, 2, 4, 1, 1)
-        self._update_rbw_options()
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 9)
@@ -245,7 +244,10 @@ class FrequencyControls(QtGui.QGroupBox):
             self._rbw_use_hdr_values()
         else:
             self._rbw_use_normal_values()
-
+        if self.gui_state.sweeping():
+            self._rbw_box.setCurrentIndex(0)
+        else:
+            self._rbw_box.setCurrentIndex(-1)
     def _rbw_use_normal_values(self):
         values = [v * 1000 for v in RBW_VALUES]  # wat
         self._rbw_values = values
