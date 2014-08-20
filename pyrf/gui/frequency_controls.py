@@ -246,8 +246,10 @@ class FrequencyControls(QtGui.QGroupBox):
             self._rbw_use_normal_values()
         if self.gui_state.sweeping():
             self._rbw_box.setCurrentIndex(0)
+
         else:
-            self._rbw_box.setCurrentIndex(-1)
+            self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
+
     def _rbw_use_normal_values(self):
         values = [v * 1000 for v in RBW_VALUES]  # wat
         self._rbw_values = values
