@@ -101,6 +101,8 @@ class MainWindow(QtGui.QMainWindow):
             self.open_device_dialog()
 
     def init_menu_bar(self):
+
+
         open_action = QtGui.QAction('&Open Device', self)
         open_action.triggered.connect(self.open_device_dialog)
         play_action = QtGui.QAction('&Playback Recording', self)

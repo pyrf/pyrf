@@ -2,8 +2,12 @@ from PySide import QtGui
 
 from pyrf.units import M
 from pyrf.gui import colors
-from pyrf.gui.widgets import QDoubleSpinBoxPlayback
+from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
+
+# FIXME: calculate choices from device properties instead
+RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
+HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
 
 class FrequencyControls(QtGui.QGroupBox):
 
@@ -37,6 +41,11 @@ class FrequencyControls(QtGui.QGroupBox):
         freq_inc_label, freq_inc_steps = self._freq_incr()
         grid.addWidget(freq_inc_label, 2, 0, 1, 1)
         grid.addWidget(freq_inc_steps, 2, 1, 1, 1)
+
+        rbw_label, rbw_combo = self._rbw_controls()
+        grid.addWidget(rbw_label, 2, 3, 1, 1)
+        grid.addWidget(rbw_combo, 2, 4, 1, 1)
+        self._update_rbw_options()
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 9)
@@ -76,18 +85,23 @@ class FrequencyControls(QtGui.QGroupBox):
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
-
+            self._update_rbw_options()
         if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
 
         if 'playback' in changed:
             self._freq_edit.setEnabled(not state.playback)
+            self._rbw_box.playback_value(str(state.rbw))
+            self._update_rbw_options()
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
+                self._rbw_box.setEnabled(False)
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                self._rbw_box.setEnabled(True)
 
     def _freq_incr(self):
         steps_label = QtGui.QLabel("Adjust:")
@@ -172,6 +186,18 @@ class FrequencyControls(QtGui.QGroupBox):
         self._fstop_edit = freq
         return fstop, freq
 
+    def _rbw_controls(self):
+        rbw_label = QtGui.QLabel('RBW:')
+        rbw_box = QComboBoxPlayback()
+        rbw_box.setToolTip("Change the RBW of the FFT plot")
+        def new_rbw():
+            self.controller.apply_settings(rbw=self._rbw_values[
+                rbw_box.currentIndex()])
+        rbw_box.currentIndexChanged.connect(new_rbw)
+        self._rbw_box = rbw_box
+        return rbw_label, rbw_box
+
+
     def _update_freq_edit(self):
         """
         update the spin boxes from self.gui_state
@@ -205,3 +231,29 @@ class FrequencyControls(QtGui.QGroupBox):
         self._fstop.setEnabled(False)
         self._fstop_edit.setEnabled(False)
 
+    def _rbw_replace_items(self, items):
+        for i in range(self._rbw_box.count()):
+            self._rbw_box.removeItem(0)
+        self._rbw_box.addItems(items)
+
+    def _update_rbw_options(self):
+        """
+        populate RBW drop-down with reasonable values for the current mode
+        """
+        # FIXME: calculate values from FULL_BW[rfe_mode] instead
+        if hasattr(self, 'gui_state') and self.gui_state.rfe_mode() == 'HDR':
+            self._rbw_use_hdr_values()
+        else:
+            self._rbw_use_normal_values()
+
+    def _rbw_use_normal_values(self):
+        values = [v * 1000 for v in RBW_VALUES]  # wat
+        self._rbw_values = values
+        self._rbw_box.quiet_update(
+            [str(p) + ' KHz' for p in RBW_VALUES])
+
+    def _rbw_use_hdr_values(self):
+        values = HDR_RBW_VALUES
+        self._rbw_values = values
+        self._rbw_box.quiet_update(
+            [str(p) + ' Hz' for p in HDR_RBW_VALUES])
