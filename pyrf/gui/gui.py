@@ -593,6 +593,8 @@ class MainPanel(QtGui.QWidget):
                             color = colors.YELLOW_NUM
                         else:
                             color = colors.WHITE_NUM
+                        if len(trace.freq_range) == 0:
+                            return
                         marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
                         marker.update_pos(trace.freq_range, trace.data)
@@ -617,6 +619,8 @@ class MainPanel(QtGui.QWidget):
                 data_indices.append(marker.data_index)
 
         if num_markers == len(labels.MARKERS):
+            if len(traces[0].freq_range) == 0 or len(traces[1].freq_range) == 0:
+                return
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
 
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
