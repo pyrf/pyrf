@@ -5,10 +5,6 @@ from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 
-# FIXME: calculate choices from device properties instead
-RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
-HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
-
 class FrequencyControls(QtGui.QGroupBox):
 
     def __init__(self, controller, name="Frequency Control"):
@@ -239,25 +235,21 @@ class FrequencyControls(QtGui.QGroupBox):
         """
         populate RBW drop-down with reasonable values for the current mode
         """
-        # FIXME: calculate values from FULL_BW[rfe_mode] instead
-        if hasattr(self, 'gui_state') and self.gui_state.rfe_mode() == 'HDR':
-            self._rbw_use_hdr_values()
-        else:
-            self._rbw_use_normal_values()
-        if self.gui_state.sweeping():
-            self._rbw_box.setCurrentIndex(0)
+        if hasattr(self, 'gui_state'):
+            mode = self.gui_state.rfe_mode()
 
-        else:
-            self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
+            self._rbw_values = self.dut_prop.RBW_VALUES[mode]
+            if mode == 'HDR':
+                unit = 'Hz'
+                div = 1
+            else:
+                unit = 'KHz'
+                div = 1000
+            self._rbw_box.quiet_update(
+                ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
-    def _rbw_use_normal_values(self):
-        values = [v * 1000 for v in RBW_VALUES]  # wat
-        self._rbw_values = values
-        self._rbw_box.quiet_update(
-            [str(p) + ' KHz' for p in RBW_VALUES])
+            if self.gui_state.sweeping():
+                self._rbw_box.setCurrentIndex(0)
 
-    def _rbw_use_hdr_values(self):
-        values = HDR_RBW_VALUES
-        self._rbw_values = values
-        self._rbw_box.quiet_update(
-            [str(p) + ' Hz' for p in HDR_RBW_VALUES])
+            else:
+                self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
