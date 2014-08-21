@@ -425,28 +425,10 @@ class TraceControls(QtGui.QGroupBox):
         trace = self._plot.traces[marker.trace_index]
         pow_data = trace.data
 
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        if marker.data_index is None:
-            marker.data_index = len(pow_data) / 2
-        data_range = self.xdata[marker.data_index:-1]
-
-        if len(data_range) == 0:
+        if len(pow_data[marker.data_index:-1]) == 0:
             return
 
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1])) + marker.data_index
-
-        right_pow = pow_data[min_index:max_index]
-
-        # calculate noise floor level by averaging the maximum 80% of the fft
-        noise_floor = np.mean(np.sort(right_pow)[int(len(right_pow) * ( 0.8)):-1])
-
-        peak_values = np.ma.masked_less(right_pow, noise_floor + self.plot_state.peak_threshold).compressed()
-        if len(peak_values) == 0:
-            return
-        marker.data_index = np.where(pow_data==(peak_values[1 if len(peak_values) > 1 else 0]))[0]
+        marker.data_index = marker.data_index + np.where(pow_data[marker.data_index:-1] == max(pow_data[marker.data_index:-1]))[0]
 
     def _find_left_peak(self, num):
         """
@@ -455,32 +437,10 @@ class TraceControls(QtGui.QGroupBox):
         marker = self._plot.markers[num]
         trace = self._plot.traces[marker.trace_index]
         pow_data = trace.data
-        # enable the marker if it is not already enabled
-        if not marker.enabled:
-            self._marker_check.click()
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        if marker.data_index is None:
-            marker.data_index = len(pow_data) / 2
-        data_range = self.xdata[0:marker.data_index]
-
-        if len(data_range) == 0:
-            return
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
+        if len(pow_data[0:marker.data_index]) == 0:
             return
 
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
-        left_pow = pow_data[min_index:max_index]
-
-        # calculate noise floor level by averaging the maximum 80% of the fft
-        noise_floor = np.mean(np.sort(left_pow)[int(len(left_pow) * ( 0.8)):-1])
-
-        peak_values = np.ma.masked_less(left_pow, noise_floor + self.plot_state.peak_threshold).compressed()
-        if len(peak_values) == 0:
-            return
-        marker.data_index = np.where(pow_data==(peak_values[-2 if len(peak_values) > 1 else -1]))[0]
-
+        marker.data_index = np.where(pow_data[0:marker.data_index] == max(pow_data[0:marker.data_index]))[0]
 
     def plot_controls(self):
 
