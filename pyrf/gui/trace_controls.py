@@ -425,6 +425,9 @@ class TraceControls(QtGui.QGroupBox):
         trace = self._plot.traces[marker.trace_index]
         pow_data = trace.data
 
+        if len(pow_data[marker.data_index:-1]) == 0:
+            return
+
         marker.data_index = marker.data_index + np.where(pow_data[marker.data_index:-1] == max(pow_data[marker.data_index:-1]))[0]
 
     def _find_left_peak(self, num):
@@ -434,6 +437,8 @@ class TraceControls(QtGui.QGroupBox):
         marker = self._plot.markers[num]
         trace = self._plot.traces[marker.trace_index]
         pow_data = trace.data
+        if len(pow_data[0:marker.data_index]) == 0:
+            return
 
         marker.data_index = np.where(pow_data[0:marker.data_index] == max(pow_data[0:marker.data_index]))[0]
 
