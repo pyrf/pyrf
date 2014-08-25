@@ -177,6 +177,7 @@ class TraceControls(QtGui.QGroupBox):
         add_marker.setToolTip("Add a marker to this trace")
         def add_marker_clicked():
             m = 0 if not self._plot.markers[0].enabled else 1
+            self._plot.disable_mouse()
             self._plot.markers[m].enable(self._plot)
             self._plot.markers[m].trace_index = num
             if not self._markers[m].marker.isChecked():
@@ -235,11 +236,14 @@ class TraceControls(QtGui.QGroupBox):
         remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
+            alt_mark = not num
             if self._markers[num].marker.isChecked():
                 for m in self._markers:
                     if not m.marker.isChecked():
                         break
                 m.marker.click()  # select other marker
+            if not self._plot.markers[alt_mark].enabled:
+                self._plot.enable_mouse()
             self._plot.markers[num].disable(self._plot)
             self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
@@ -344,24 +348,6 @@ class TraceControls(QtGui.QGroupBox):
         store the current trace's data
         """
         self._plot.traces[num].store = bool(store)
-
-    def _marker_control(self):
-        """
-        disable/enable marker
-        """
-        marker = self._plot.markers[self._marker_tab.currentIndex()]
-        if self._marker_check.checkState() is QtCore.Qt.CheckState.Checked:
-
-            self._marker_trace.setEnabled(True)
-            if self._marker_trace.currentIndex() < 0:
-                self._marker_trace.setCurrentIndex(0)
-            marker.trace_index = int(self._marker_trace.currentText()) - 1
-            marker.enable(self._plot)
-        else:
-            self._marker_trace.setEnabled(False)
-            self._plot.markers[self._marker_tab.currentIndex()].disable(self._plot)
-
-            self.marker_labels[self._marker_tab.currentIndex()].setText('')
 
     def _find_peak(self, num):
         """

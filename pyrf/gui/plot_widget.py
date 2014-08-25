@@ -186,9 +186,14 @@ class Plot(QtCore.QObject):
         self.window = pg.PlotWidget(name = 'pyrf_plot')
 
         def widget_range_changed(widget, ranges):
+            if hasattr(self, 'markers'):
+                for m in self.markers:
+                    if m.enabled:
+                        return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
+
         self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
@@ -315,3 +320,10 @@ class Plot(QtCore.QObject):
         self.window.getAxis('bottom').setGrid(200)
         self.window.getAxis('left').setPen(colors.GREY_NUM)
         self.window.getAxis('left').setGrid(200)
+
+    def disable_mouse(self):
+
+        self.view_box.setMouseEnabled(x = False, y = False)
+
+    def enable_mouse(self):
+        self.view_box.setMouseEnabled(x = True, y = False)
