@@ -1,8 +1,24 @@
 import time
+import collections
 
 from PySide import QtGui
 import numpy as np
 import pyqtgraph as pg
+
+#inject a familiar color scheme into pyqtgraph...
+# - this makes it available in the stock gradient editor schemes.
+# - we also want it at the top of the gradient editors... there's no stock
+#    way in python to insert at the top of an ordereddict, so we rebuild it.
+newGradients = collections.OrderedDict()
+newGradients["rycb"] = {'ticks': [(0.00, (  0,   0, 255, 255)),
+                                  (0.33, (  0, 255, 255, 255)),
+                                  (0.66, (255, 255,   0, 255)),
+                                  (1.00, (255,   0,   0, 255))],
+                        'mode': 'rgb'}
+for k, v in pg.graphicsItems.GradientEditorItem.Gradients.iteritems():
+    newGradients[k] = v
+pg.graphicsItems.GradientEditorItem.Gradients = newGradients
+
 
 DECAY_TYPE_LINEAR_WITH_DATA = "linear_data_decay"
 
@@ -61,7 +77,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         self._img_array = None #the persistent data (same shape as image)
         
         #The value of self._prev_t doesn't matter for the first round since the
-        #first plot has nothign to decay...
+        #first plot has nothing to decay...
         self._prev_t = 0
         
         #We will always have a gradient editor for providing our LUT, but it
@@ -69,7 +85,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         #it after initializing the PersistencePlotWidget.
         self.gradient_editor = pg.GradientWidget(parent = self,
                                                  orientation = "left")
-        self.gradient_editor.loadPreset("spectrum")
+        self.gradient_editor.loadPreset("rycb") #we injected this scheme
         self.gradient_editor.sigGradientChanged.connect(self._onGradientChange)
         self._LUT_PTS = 256
         self._latest_lut = self._get_lut()
@@ -181,7 +197,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         width = (xmax - xmin)
         height = (ymax - ymin)
         #print "putting image at %r" % ((x, y, width, height), )
-        print "%r; avg img_array value = %f" % (self._img_array.shape, np.average(self._img_array))
+        #print "%r; avg img_array value = %f" % (self._img_array.shape, np.average(self._img_array))
         
         #we clear every time, so need to re-add the image every time...
         self.addItem(self._persistent_img)
