@@ -73,7 +73,8 @@ class MainWindow(QtGui.QMainWindow):
     """
     The main window and menus
     """
-    def __init__(self, dut_address=None, playback_filename=None):
+    def __init__(self, dut_address=None, playback_filename=None,
+            developer_menu=False):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
@@ -81,12 +82,11 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         self.controller = SpecAController()
-        self.init_menu_bar()
+        self.init_menu_bar(developer_menu)
         self.initUI(dut_address, playback_filename)
 
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
-
 
         self.setWindowTitle('PyRF RTSA ' + require('pyrf')[0].version)
         self.setCentralWidget(self.mainPanel)
@@ -97,8 +97,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.open_device_dialog()
 
-    def init_menu_bar(self):
-
+    def init_menu_bar(self, developer_menu=False):
 
         open_action = QtGui.QAction('&Open Device', self)
         open_action.triggered.connect(self.open_device_dialog)
@@ -137,10 +136,11 @@ class MainWindow(QtGui.QMainWindow):
             self.view_menu.addAction(checkbox_action(
                 self.controller.apply_options, text, option, default))
 
-        self.developer_menu = menubar.addMenu('D&eveloper Options')
-        for text, option, default in DEVELOPER_OPTIONS:
-            self.developer_menu.addAction(checkbox_action(
-                self.controller.apply_options, text, option, default))
+        if developer_menu:
+            self.developer_menu = menubar.addMenu('D&eveloper Options')
+            for text, option, default in DEVELOPER_OPTIONS:
+                self.developer_menu.addAction(checkbox_action(
+                    self.controller.apply_options, text, option, default))
 
         self.controller.apply_options(
             **dict((option, default) for text, option, default
