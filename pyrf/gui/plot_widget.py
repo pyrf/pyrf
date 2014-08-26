@@ -187,6 +187,7 @@ class Plot(QtCore.QObject):
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
         self.window = pg.PlotWidget(name = 'pyrf_plot')
+        self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
             if not hasattr(ranges, '__getitem__'):
