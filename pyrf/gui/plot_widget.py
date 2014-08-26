@@ -130,14 +130,27 @@ class Marker(object):
         self.enabled = False
         self.selected = False
         self.data_index = None
-        
+        self.xdata = 0
+        self.ydata = 0
+
+        self.coursor_dragged = False
+        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 90, movable = True)
+        def new_cursor():
+            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
+            # print np.where(self.xdata == (np.abs(self.xdata-self.cursor_line.value())).argmin())
+
+        self.cursor_line.sigPositionChangeFinished.connect(new_cursor)
+        def dragged():
+            self.coursor_dragged = True
+        self.cursor_line.sigDragged.connect(dragged)
         # index of trace associated with marker
         self.trace_index = 0
         
     def enable(self, plot):
-        
+
         self.enabled = True
-        plot.window.addItem(self.marker_plot)     
+        plot.window.addItem(self.marker_plot)
+        plot.window.addItem(self.cursor_line)
     
     def disable(self, plot):
         
@@ -147,7 +160,7 @@ class Marker(object):
         self.trace_index = 0
 
     def update_pos(self, xdata, ydata):
-    
+
         self.marker_plot.clear()
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
@@ -165,7 +178,10 @@ class Marker(object):
             color = colors.YELLOW_NUM
         else: 
             color = 'w'
-            
+        self.xdata = xdata
+        self.ydata = xdata
+        if not self.coursor_dragged:
+            self.cursor_line.setValue(xpos)
         self.marker_plot.addPoints(x = [xpos], 
                                    y = [ypos], 
                                     symbol = '+', 
