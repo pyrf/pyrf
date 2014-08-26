@@ -187,7 +187,10 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
-        self.window = pg.PlotWidget(name = 'pyrf_plot')
+        self.freq_axis = RTSAFrequencyAxisItem()
+        self.window = pg.PlotWidget(name = 'pyrf_plot',
+                                    axisItems = dict(bottom = self.freq_axis),
+                                    )
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):

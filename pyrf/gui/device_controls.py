@@ -236,12 +236,13 @@ class DeviceControls(QtGui.QGroupBox):
         self._update_modes()
 
 
-    def _update_modes(self, include_sweep=True):
+    def _update_modes(self, include_sweep=True, current_mode=None):
         modes = []
         if include_sweep:
             modes.extend(self.dut_prop.SPECA_MODES)
         modes.extend(self.dut_prop.RFE_MODES)
-        self._mode.quiet_update(modes)
+        self._mode.quiet_update(modes, current_mode)
+        self._mode.setEnabled(True)
 
 
     def state_changed(self, state, changed):
@@ -261,7 +262,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         if 'playback' in changed:
             # restore controls after playback is stopped
-            self._update_modes()
+            self._update_modes(current_mode=state.mode)
             self._level_trigger.setEnabled(
                 state.mode in self.dut_prop.LEVEL_TRIGGER_RFE_MODES)
             decimation_available = self.dut_prop.MIN_DECIMATION[
