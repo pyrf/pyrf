@@ -1,9 +1,13 @@
+#persistence_plot_widget.py
+
 import time
 import collections
 
 from PySide import QtGui
 import numpy as np
 import pyqtgraph as pg
+
+from waterfall_widget import WaterfallModel
 
 #inject a familiar color scheme into pyqtgraph...
 # - this makes it available in the stock gradient editor schemes.
@@ -91,7 +95,6 @@ class PersistencePlotWidget(pg.PlotWidget):
         self._latest_lut = self._get_lut()
         
         if self._data_model:
-            from waterfall_widget import WaterfallModel
             assert isinstance(data_model, WaterfallModel)
             try:
                 self._data_model.sigNewDataRow.connect(self.onNewModelData)
@@ -196,11 +199,9 @@ class PersistencePlotWidget(pg.PlotWidget):
         y = ymin #should be ymax (!? - see above)
         width = (xmax - xmin)
         height = (ymax - ymin)
-        #print "putting image at %r" % ((x, y, width, height), )
-        #print "%r; avg img_array value = %f" % (self._img_array.shape, np.average(self._img_array))
         
         #we clear every time, so need to re-add the image every time...
-        self.addItem(self._persistent_img)
+        self.addItem(self._persistent_img, ignoreBounds = True)
         self._persistent_img.setRect(pg.QtCore.QRectF(x, y, width, height))
     
     def plot(self, *args, **kwargs):

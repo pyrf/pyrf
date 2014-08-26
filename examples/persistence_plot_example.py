@@ -28,7 +28,6 @@ class MainWin(QtGui.QMainWindow):
         self.DoHandlers()
         
         self.StartDataCollection()
-        #self.wsa.capture_history.sigNewDataRow.connect
     
     def InitWSA(self):
         if len(sys.argv) > 1:
@@ -45,22 +44,22 @@ class MainWin(QtGui.QMainWindow):
         global data_model
         self._main_wid = QtGui.QWidget()
         data_model = self.wsa.capture_history
-        self._pltPersist = PersistencePlotWidget(self, data_model=data_model)
-        self._pltPersist.setXRange(self.wsa._start_MHz, self.wsa._stop_MHz, padding=0)
+        self._plt = PersistencePlotWidget(self, data_model=data_model)
+        self._plt.setXRange(self.wsa._start_MHz, self.wsa._stop_MHz, padding=0)
+        
+        self._plt.showGrid(True, True)
         
         if self._using_mock_wsa:
-            self._pltPersist.setYRange(-50, 0)
+            self._plt.setYRange(-50, 0)
         else:
-            self._pltPersist.setYRange(-120, -40)
+            self._plt.setYRange(-120, -40)
         
-        self._gradient_editor = self._pltPersist.gradient_editor
-        #self._gradient_editor = None
-    
+        self._gradient_editor = self._plt.gradient_editor
     
     def DoLayout(self):
         layout = QtGui.QHBoxLayout(self._main_wid)
         layout.addWidget(self._gradient_editor)
-        layout.addWidget(self._pltPersist)
+        layout.addWidget(self._plt)
         self.setCentralWidget(self._main_wid)
     
     def DoHandlers(self):
@@ -69,13 +68,9 @@ class MainWin(QtGui.QMainWindow):
         pass
 
 
-
-
 def calc_vrt_sample_time_s(vrt_data):
     return vrt_data.tsi + vrt_data.tsf * 1e-12
 
-
-# plot/config constants
 class MyWifiWSA(object):
     """A cheap/simple/incomplete WSA instrument abstraction.
     
@@ -193,10 +188,10 @@ class MockWSA(MyWifiWSA):
         self._SIGMA_WALK = self._step_MHz
         
     def _init_hardware(self, ip_address):
-        pass
+        pass #we're mocking
     
     def _reset_hardware(self):
-        pass
+        pass #we're mocking
     
     def acquire_single_power_spectrum(self):
         A = self._A
@@ -237,11 +232,4 @@ app = QtGui.QApplication(sys.argv)
 main_win = MainWin()
 main_win.show()
 
-#timer = QtCore.QTimer()
-#timer.timeout.connect(update)
-#timer.start(100)
-
-
 sys.exit(app.exec_())
-
-print "foooo!"
