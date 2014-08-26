@@ -71,7 +71,7 @@ class SpecAController(QtCore.QObject):
             state_json = vrt_packet.fields['speca']
             # support old playback files
             if state_json['device_identifier'] == 'unknown':
-                state_json['device_identifier'] = 'ThinkRF,WSA5000 v3,'
+                state_json['device_identifier'] = 'ThinkRF,WSA5000 v3,,'
             dut = Playback(state_json['device_class'],
                 state_json['device_identifier'])
             self._sweep_device = SweepDevice(dut)
@@ -419,9 +419,12 @@ class SpecAController(QtCore.QObject):
         self._state = state
         # start capture loop again when user switches output path
         # back to the internal digitizer XXX: very WSA5000-specific
-        if ('device_settings.iq_output_path' in changed and
-                state.device_settings.get('iq_output_path') == 'DIGITIZER'):
-            self.start_capture()
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings.get('iq_output_path') == 'DIGITIZER':
+                self.start_capture()
+            elif state.device_settings.get('iq_output_path') == 'CONNECTOR':
+                if state.sweeping():
+                    state.mode = self._dut.properties.RFE_MODES[0]
 
         if self._recording_file:
             self._dut.inject_recording_state(state.to_json_object())
@@ -435,8 +438,10 @@ class SpecAController(QtCore.QObject):
         """
         device_settings = dict(self._state.device_settings, **kwargs)
         state = SpecAState(self._state, device_settings=device_settings)
-        if 'trigger' in device_settings:
+
+        if device_settings.get('iq_output_path') == 'CONNECTOR' or 'trigger' in kwargs:
             self._capture_device.configure_device(device_settings)
+
         changed = ['device_settings.%s' % s for s in kwargs]
         self._state_changed(state, changed)
 

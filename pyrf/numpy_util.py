@@ -44,17 +44,17 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
                     break
 
             if valid_data == I_ONLY:
-                power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
+                power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
         power_spectrum = _compute_fft(i_data, q_data, correct_phase,
             hide_differential_dc_offset, convert_to_dbm, apply_window)
 
     if data_pkt.stream_id == VRT_IFDATA_I14:
         i_data = np.array(data, dtype=float) / 2 ** 13
-        power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
+        power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
 
     if data_pkt.stream_id == VRT_IFDATA_I24:
         i_data = np.array(data, dtype=float) / 2 ** 23
-        power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm)
+        power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
 
     if data_pkt.stream_id == VRT_IFDATA_PSD8:
         # TODO: handle convert_to_dbm option
@@ -95,12 +95,12 @@ def _compute_fft(i_data, q_data, correct_phase,
             + power_spectrum[median_index + 1]) / 2
     return power_spectrum
 
-def _compute_fft_i_only(i_data, convert_to_dbm):
+def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
     import numpy as np
+    if apply_window:
+        i_data = i_data * np.hanning(len(i_data))
 
-    windowed_i = i_data * np.hanning(len(i_data))
-
-    power_spectrum = np.abs(np.fft.rfft(windowed_i))/len(i_data)
+    power_spectrum = np.abs(np.fft.rfft(i_data))/len(i_data)
     if convert_to_dbm:
         power_spectrum = 20 * np.log10(power_spectrum)
     return power_spectrum
