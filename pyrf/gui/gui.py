@@ -222,6 +222,7 @@ class MainPanel(QtGui.QWidget):
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
+        controller.plot_change.connect(self.plot_changed)
 
         self._main_window = main_window
 
@@ -319,7 +320,12 @@ class MainPanel(QtGui.QWidget):
                 WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
-
+    def plot_changed(self, state, changed):
+        if 'marker' in changed:
+            if state['marker']:
+                self.mask_label.setVisible(True)
+            else:
+                self.mask_label.setVisible(False)
     def keyPressEvent(self, event):
         if not self.dut_prop:
             return
@@ -344,7 +350,6 @@ class MainPanel(QtGui.QWidget):
         if hotkey in hotkey_dict:
             hotkey_dict[hotkey]()
 
-
     def mousePressEvent(self, event):
         if not self.controller._dut:
             return
@@ -366,6 +371,27 @@ class MainPanel(QtGui.QWidget):
                 click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
                 index = find_nearest_index(click_freq, trace.freq_range)
                 marker.data_index = index
+                self.mouseMoveEvent(event)
+
+    def  mouseMoveEvent(self, event):
+        for marker in self._plot.markers:
+            if marker.selected:
+                break
+        else:
+            return
+
+        trace = self._plot.traces[marker.trace_index]
+
+        click_pos =  event.pos().x() - 68  # FIXME: declare this as a constant?
+        plot_window_width = self._plot.window.width() - 68
+
+        if click_pos < plot_window_width and click_pos > 0:
+
+            window_freq = self._plot.view_box.viewRange()[0]
+            window_bw =  (window_freq[1] - window_freq[0])
+            click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
+            index = find_nearest_index(click_freq, trace.freq_range)
+            marker.data_index = index
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -376,6 +402,10 @@ class MainPanel(QtGui.QWidget):
             grid.setColumnMinimumWidth(x, 300)
 
         grid.addWidget(self._plot_layout(),0,0,13,self.plot_width)
+
+        self.mask_label = QtGui.QLabel()
+        self.mask_label.setVisible(False)
+        grid.addWidget(self.mask_label,0,0,13,self.plot_width)
 
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()

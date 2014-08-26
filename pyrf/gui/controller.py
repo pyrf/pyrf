@@ -40,11 +40,12 @@ class SpecAController(QtCore.QObject):
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
-
+    plot_change = QtCore.Signal(dict, list)
     def __init__(self):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
+        self._plot_options = {}
 
 
     def set_device(self, dut=None, playback_filename=None):
@@ -504,6 +505,16 @@ class SpecAController(QtCore.QObject):
         if 'free_plot_adjustment' in kwargs:
             self.enable_user_xrange_control(
                 not kwargs['free_plot_adjustment'])
+
+    def apply_plot_options(self, **kwargs):
+        """
+        Apply plot option changes and signal the change
+
+        :param kwargs: keyword arguments of the plot options
+        """
+        self._plot_options.update(kwargs)
+        self.plot_change.emit(dict(self._plot_options),
+            kwargs.keys())
 
     def get_options(self):
         return dict(self._options)

@@ -171,6 +171,7 @@ class Marker(object):
                                     symbol = '+', 
                                     size = 20, pen = color, 
                                     brush = color)
+
 class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -183,7 +184,7 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
-        self.window = pg.PlotWidget(name = 'pyrf_plot')
+        self.window = pg.PlotWidget()
 
         def widget_range_changed(widget, ranges):
             if hasattr(self, 'markers'):
