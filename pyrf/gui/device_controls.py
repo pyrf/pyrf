@@ -242,6 +242,7 @@ class DeviceControls(QtGui.QGroupBox):
             modes.extend(self.dut_prop.SPECA_MODES)
         modes.extend(self.dut_prop.RFE_MODES)
         self._mode.quiet_update(modes)
+        self._mode.setEnabled(True)
 
 
     def state_changed(self, state, changed):
