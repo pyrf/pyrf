@@ -41,18 +41,15 @@ VIEW_OPTIONS = [
     ('&Waterfall Plot', 'waterfall_plot', False),
     ]
 
-DSP_OPTIONS = [
+DEVELOPER_OPTIONS = [
+    ('Show &Attenuated Edges', 'show_attenuated_edges', False),
+    ('Show &Sweep Steps', 'show_sweep_steps', False),
+    ('&Free Plot Adjustment', 'free_plot_adjustment', False),
     ('&IQ Offset Correction', 'dsp.correct_phase', True),
     ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
     ('&Convert to dBm', 'dsp.convert_to_dbm', True),
     ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
     ('Apply &Hanning Window', 'dsp.apply_window', True),
-    ]
-
-DEVELOPER_OPTIONS = [
-    ('Show &Attenuated Edges', 'show_attenuated_edges', False),
-    ('Show &Sweep Steps', 'show_sweep_steps', False),
-    ('&Free Plot Adjustment', 'free_plot_adjustment', False),
     ]
 
 # FIXME: we shouldn't be calculating fft in this module
@@ -141,11 +138,6 @@ class MainWindow(QtGui.QMainWindow):
             self.view_menu.addAction(checkbox_action(
                 self.controller.apply_options, text, option, default))
 
-        self.dsp_menu = menubar.addMenu('&DSP Options')
-        for text, option, default in DSP_OPTIONS:
-            self.dsp_menu.addAction(checkbox_action(
-                self.controller.apply_options, text, option, default))
-
         self.developer_menu = menubar.addMenu('D&eveloper Options')
         for text, option, default in DEVELOPER_OPTIONS:
             self.developer_menu.addAction(checkbox_action(
@@ -153,7 +145,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller.apply_options(
             **dict((option, default) for text, option, default
-            in VIEW_OPTIONS + DSP_OPTIONS + DEVELOPER_OPTIONS))
+            in VIEW_OPTIONS + DEVELOPER_OPTIONS))
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
