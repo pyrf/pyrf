@@ -57,6 +57,17 @@ class FrequencyControls(QtGui.QGroupBox):
 
     def state_changed(self, state, changed):
         self.gui_state = state
+
+        def enable_disable_edit_boxes():
+            if state.sweeping():
+                self._fstart_edit.setEnabled(not state.playback)
+                self._fstop_edit.setEnabled(not state.playback)
+                self._bw_edit.setEnabled(not state.playback)
+            else:
+                self._fstart_edit.setEnabled(False)
+                self._fstop_edit.setEnabled(False)
+                self._bw_edit.setEnabled(False)
+
         if 'mode' in changed:
             min_tunable = float(self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
             max_tunable = float(self.dut_prop.MAX_TUNABLE[state.rfe_mode()])
@@ -72,21 +83,18 @@ class FrequencyControls(QtGui.QGroupBox):
             self._bw_edit.quiet_update(
                 tuning_res / M, (max_tunable - min_tunable) / M)
 
-            if state.sweeping():
-                self._fstart_edit.setEnabled(not state.playback)
-                self._fstop_edit.setEnabled(not state.playback)
-                self._bw_edit.setEnabled(not state.playback)
-            else:
-                self._fstart_edit.setEnabled(False)
-                self._fstop_edit.setEnabled(False)
-                self._bw_edit.setEnabled(False)
+            enable_disable_edit_boxes()
             self._update_rbw_options()
         if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
 
         if 'playback' in changed:
             self._freq_edit.setEnabled(not state.playback)
-            self._rbw_box.playback_value(str(state.rbw))
+            if state.playback:
+                self._rbw_box.playback_value(str(state.rbw))
+            else:
+                self._rbw_box.setEnabled(True)
+            enable_disable_edit_boxes()
             self._update_rbw_options()
 
         if 'device_settings.iq_output_path' in changed:
