@@ -149,13 +149,16 @@ class Marker(object):
     def update_pos(self, xdata, ydata):
     
         self.marker_plot.clear()
+        if len(xdata) <= 0 or len(ydata) <= 0:
+            return
+
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
    
         if self.data_index < 0:
            self.data_index = 0
             
-        elif self.data_index >= len(ydata):
+        if self.data_index >= len(ydata):
             self.data_index = len(ydata) - 1
 
         xpos = xdata[self.data_index]

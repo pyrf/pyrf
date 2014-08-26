@@ -102,6 +102,8 @@ class MainWindow(QtGui.QMainWindow):
             self.open_device_dialog()
 
     def init_menu_bar(self):
+
+
         open_action = QtGui.QAction('&Open Device', self)
         open_action.triggered.connect(self.open_device_dialog)
         play_action = QtGui.QAction('&Playback Recording', self)
@@ -592,6 +594,8 @@ class MainPanel(QtGui.QWidget):
                             color = colors.YELLOW_NUM
                         else:
                             color = colors.WHITE_NUM
+                        if len(trace.freq_range) == 0:
+                            return
                         marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
                         marker.update_pos(trace.freq_range, trace.data)
@@ -614,13 +618,18 @@ class MainPanel(QtGui.QWidget):
                 num_markers += 1
                 traces.append(self._plot.traces[marker.trace_index])
                 data_indices.append(marker.data_index)
-                
+
         if num_markers == len(labels.MARKERS):
+            if len(traces[0].freq_range) == 0 or len(traces[1].freq_range) == 0:
+                return
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
-            
+
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
             self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
-            delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
+            if self.gui_state.rfe_mode() == 'HDR':
+                delta_text = 'Delta: %f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
+            else:
+                delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
             self._diff_lab.setText('')

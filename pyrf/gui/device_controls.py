@@ -5,10 +5,6 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
-# FIXME: calculate choices from device properties instead
-RBW_VALUES = [976.562, 488.281, 244.141, 122.070, 61.035, 30.518, 15.259, 7.62939, 3.815]
-HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
-
 class DeviceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -34,11 +30,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._mode_label = QtGui.QLabel('Mode:')
         self._mode = QComboBoxPlayback()
         self._mode.setToolTip("Change the device input mode")
-
-        self._rbw_label = QtGui.QLabel('RBW:')
-        self._rbw_box = QComboBoxPlayback()
-        self._rbw_box.setToolTip("Change the RBW of the FFT plot")
-        self._update_rbw_options()
 
         self._dec_label = QtGui.QLabel('DDC:')
         self._dec_box = QComboBoxPlayback()
@@ -112,8 +103,6 @@ class DeviceControls(QtGui.QGroupBox):
 
         grid.addWidget(self._mode_label, 0, 0, 1, 1)
         grid.addWidget(self._mode, 0, 1, 1, 1)
-        grid.addWidget(self._rbw_label, 0, 3, 1, 1)
-        grid.addWidget(self._rbw_box, 0, 4, 1, 1)
 
         grid.addWidget(self._dec_label, 1, 0, 1, 1)
         grid.addWidget(self._dec_box, 1, 1, 1, 1)
@@ -227,9 +216,6 @@ class DeviceControls(QtGui.QGroupBox):
                                                     'fstart': self._trig_fstart.value() * M,
                                                     'fstop': self._trig_fstop.value() * M,
                                                     'amplitude': self._trig_amp.value()})
-        def new_rbw():
-            self.controller.apply_settings(rbw=self._rbw_values[
-                self._rbw_box.currentIndex()])
 
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
@@ -243,7 +229,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._trig_fstart.editingFinished.connect(new_trigger)
         self._trig_fstop.editingFinished.connect(new_trigger)
         self._trig_amp.editingFinished.connect(new_trigger)
-        self._rbw_box.currentIndexChanged.connect(new_rbw)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -268,7 +253,6 @@ class DeviceControls(QtGui.QGroupBox):
             self._level_trigger.playback_value(False)
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
-            self._rbw_box.playback_value(str(state.rbw))
             self._pll_box.playback_value('External'
                 if state.device_settings.get('pll_reference') == 'EXT' else
                 'Internal')
@@ -284,7 +268,6 @@ class DeviceControls(QtGui.QGroupBox):
                 state.rfe_mode()] is not None
             self._dec_box.setEnabled(decimation_available)
             self._fshift_edit.setEnabled(decimation_available)
-            self._update_rbw_options()
             self._pll_box.quiet_update(["Internal", "External"])
             self._pll_box.setEnabled(True)
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
@@ -316,7 +299,6 @@ class DeviceControls(QtGui.QGroupBox):
             fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
             self._fshift_edit.setRange(-fshift_max, fshift_max)
 
-            self._update_rbw_options()
 
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
@@ -328,8 +310,6 @@ class DeviceControls(QtGui.QGroupBox):
                 self._update_modes(include_sweep=False)
 
                 # remove all digitizer controls
-                self._rbw_label.hide()
-                self._rbw_box.hide()
                 self._dec_box.hide()
                 self._fshift_edit.hide()
                 self._fshift_label.hide()
@@ -343,8 +323,6 @@ class DeviceControls(QtGui.QGroupBox):
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show digitizer controls
-                self._rbw_label.show()
-                self._rbw_box.show()
                 self._dec_box.show()
                 self._fshift_edit.show()
                 self._fshift_label.show()
@@ -365,33 +343,6 @@ class DeviceControls(QtGui.QGroupBox):
                 self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
                 self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
                 self._trig_amp.quiet_update(value=trigger['amplitude'])
-
-    def _rbw_replace_items(self, items):
-        for i in range(self._rbw_box.count()):
-            self._rbw_box.removeItem(0)
-        self._rbw_box.addItems(items)
-
-    def _update_rbw_options(self):
-        """
-        populate RBW drop-down with reasonable values for the current mode
-        """
-        # FIXME: calculate values from FULL_BW[rfe_mode] instead
-        if hasattr(self, 'gui_state') and self.gui_state.rfe_mode() == 'HDR':
-            self._rbw_use_hdr_values()
-        else:
-            self._rbw_use_normal_values()
-
-    def _rbw_use_normal_values(self):
-        values = [v * 1000 for v in RBW_VALUES]  # wat
-        self._rbw_values = values
-        self._rbw_box.quiet_update(
-            [str(p) + ' KHz' for p in RBW_VALUES])
-
-    def _rbw_use_hdr_values(self):
-        values = HDR_RBW_VALUES
-        self._rbw_values = values
-        self._rbw_box.quiet_update(
-            [str(p) + ' Hz' for p in HDR_RBW_VALUES])
 
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
