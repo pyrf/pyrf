@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import random
 
-from pyqtgraph.Qt import QtGui, QtCore
+from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 import pyrf
