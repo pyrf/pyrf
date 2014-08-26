@@ -47,7 +47,6 @@ DEVELOPER_OPTIONS = [
     ('&Free Plot Adjustment', 'free_plot_adjustment', False),
     ('&IQ Offset Correction', 'dsp.correct_phase', True),
     ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
-    ('&Convert to dBm', 'dsp.convert_to_dbm', True),
     ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
     ('Apply &Hanning Window', 'dsp.apply_window', True),
     ]
