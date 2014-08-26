@@ -35,8 +35,10 @@ def wsa_properties(device_id):
     # correct for old reflevels
     if '.' not in rev or firmware_rev < LooseVersion('4.2'):
         p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
-    return p
 
+    if firmware_rev < LooseVersion(p.TRIGGER_FW_VERSION):
+        p.LEVEL_TRIGGER_RFE_MODES = []
+    return p
 
 class WSA4000Properties(object):
     model = 'WSA4000'
@@ -83,6 +85,7 @@ class WSA4000Properties(object):
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
+    TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 0
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
@@ -170,7 +173,7 @@ class WSA5000_220Properties(object):
         'DD': True,
         }
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'ifgain', 'spp', 'ppb',
+        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
@@ -186,6 +189,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
+            'hdr_gain': -10,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,
@@ -197,6 +201,13 @@ class WSA5000_220Properties(object):
         }
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+    RBW_VALUES = {}
+    for mode in RFE_MODES:
+        rbw_vals = []
+        for s in SAMPLE_SIZES:
+            rbw_vals.append(FULL_BW[mode] / s)
+        RBW_VALUES[mode] = rbw_vals
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
@@ -216,7 +227,9 @@ class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
+    SPECA_MODES = []
+    SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
+        mode='SHN')
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'

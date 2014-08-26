@@ -7,12 +7,10 @@ from PySide import QtCore
 from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui import fonts
-from pyrf.gui.trace_controls import PLOT_TOP, PLOT_BOTTOM
+from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
-
-USE_WATERFALL = platform.system() != 'Windows'
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -152,20 +150,23 @@ class Marker(object):
     def update_pos(self, xdata, ydata):
     
         self.marker_plot.clear()
+        if len(xdata) <= 0 or len(ydata) <= 0:
+            return
+
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
    
         if self.data_index < 0:
            self.data_index = 0
             
-        elif self.data_index >= len(ydata):
+        if self.data_index >= len(ydata):
             self.data_index = len(ydata) - 1
 
         xpos = xdata[self.data_index]
         
         ypos = ydata[self.data_index]
         if self.selected:
-            color = 'y'
+            color = colors.YELLOW_NUM
         else: 
             color = 'w'
             
@@ -190,6 +191,7 @@ class Plot(QtCore.QObject):
         self.window = pg.PlotWidget(name = 'pyrf_plot',
                                     axisItems = dict(bottom = self.freq_axis),
                                     )
+        self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
             if not hasattr(ranges, '__getitem__'):
@@ -209,7 +211,7 @@ class Plot(QtCore.QObject):
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
-
+        self._trig_enable = False
         self.grid(True)
 
         # IQ constellation window
@@ -245,16 +247,13 @@ class Plot(QtCore.QObject):
             self.markers.append(Marker(self, marker_name))
 
         self.waterfall_data = WaterfallModel(max_len=600)
-        if USE_WATERFALL:
-            self.waterfall_window = ThreadedWaterfallPlotWidget(
-                self.waterfall_data,
-                scale_limits=(PLOT_YMIN, PLOT_YMAX),
-                max_frame_rate_fps=30,
-                mouse_move_crosshair=False,
-                )
-        else:
-            self.waterfall_window = None
 
+        self.waterfall_window = ThreadedWaterfallPlotWidget(
+            self.waterfall_data,
+            scale_limits=(PLOT_YMIN, PLOT_YMAX),
+            max_frame_rate_fps=30,
+            mouse_move_crosshair=False,
+            )
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
@@ -279,26 +278,39 @@ class Plot(QtCore.QObject):
             if 'NONE' in state.device_settings['trigger']['type']:
                 self.remove_trigger()
             elif 'LEVEL' in state.device_settings['trigger']['type']:
+
                 self.add_trigger(state.device_settings['trigger']['fstart'],
-                                state.device_settings['trigger']['fstop'])
+                                state.device_settings['trigger']['fstop'],
+                                state.device_settings['trigger']['amplitude'])
         if 'center' in changed:
             for trace in self.traces:
                 trace.clear_data()
 
-    def add_trigger(self,fstart, fstop):
-        self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
-        self.window.addItem(self.amptrig_line)
-        self.window.addItem(self.freqtrig_lines)
+    def add_trigger(self,fstart, fstop, amplitude):
+        self.amptrig_line.blockSignals(True)
+        self.freqtrig_lines.blockSignals(True)
+        if not self._trig_enable:
+            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
+            self.window.addItem(self.freqtrig_lines)
+            self.window.addItem(self.amptrig_line)
+            self._trig_enable = True
+        else:
+            self.amptrig_line.setValue(amplitude)
+            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
+
+        self.amptrig_line.blockSignals(False)
+        self.freqtrig_lines.blockSignals(False)
 
     def remove_trigger(self):
         self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
+        self._trig_enable = False
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
         b = self.window.blockSignals(True)
         self.window.setXRange(float(fstart), float(fstop), padding=0)
         if min_level is not None:
-            self.window.setYRange(min_level + AXIS_OFFSET, ref_level - AXIS_OFFSET)
+            self.window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
         
     def update_waterfall_levels(self, min_level, ref_level):

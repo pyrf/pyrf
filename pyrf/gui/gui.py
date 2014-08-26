@@ -13,7 +13,7 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 
-from pkg_resources import parse_version
+from pkg_resources import parse_version, require
 
 from pyrf.gui import colors
 from pyrf.gui import fonts
@@ -32,6 +32,7 @@ from pyrf.gui.util import find_nearest_index
 from pyrf.gui.plot_widget import Plot
 from pyrf.gui.device_controls import DeviceControls
 from pyrf.gui.frequency_controls import FrequencyControls
+from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 
@@ -40,18 +41,14 @@ VIEW_OPTIONS = [
     ('&Waterfall Plot', 'waterfall_plot', False),
     ]
 
-DSP_OPTIONS = [
-    ('&IQ Offset Correction', 'dsp.correct_phase', True),
-    ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
-    ('&Convert to dBm', 'dsp.convert_to_dbm', True),
-    ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
-    ('Apply &Hanning Window', 'dsp.apply_window', True),
-    ]
-
 DEVELOPER_OPTIONS = [
     ('Show &Attenuated Edges', 'show_attenuated_edges', False),
     ('Show &Sweep Steps', 'show_sweep_steps', False),
     ('&Free Plot Adjustment', 'free_plot_adjustment', False),
+    ('&IQ Offset Correction', 'dsp.correct_phase', True),
+    ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
+    ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
+    ('Apply &Hanning Window', 'dsp.apply_window', True),
     ]
 
 # FIXME: we shouldn't be calculating fft in this module
@@ -76,7 +73,8 @@ class MainWindow(QtGui.QMainWindow):
     """
     The main window and menus
     """
-    def __init__(self, dut_address=None, playback_filename=None):
+    def __init__(self, dut_address=None, playback_filename=None,
+            developer_menu=False):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
@@ -84,13 +82,13 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         self.controller = SpecAController()
-        self.init_menu_bar()
+        self.init_menu_bar(developer_menu)
         self.initUI(dut_address, playback_filename)
 
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
 
-        self.setWindowTitle('PyRF RTSA')
+        self.setWindowTitle('PyRF RTSA ' + require('pyrf')[0].version)
         self.setCentralWidget(self.mainPanel)
         if dut_address:
             self.open_device(dut_address, True)
@@ -99,7 +97,8 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.open_device_dialog()
 
-    def init_menu_bar(self):
+    def init_menu_bar(self, developer_menu=False):
+
         open_action = QtGui.QAction('&Open Device', self)
         open_action.triggered.connect(self.open_device_dialog)
         play_action = QtGui.QAction('&Playback Recording', self)
@@ -137,19 +136,15 @@ class MainWindow(QtGui.QMainWindow):
             self.view_menu.addAction(checkbox_action(
                 self.controller.apply_options, text, option, default))
 
-        self.dsp_menu = menubar.addMenu('&DSP Options')
-        for text, option, default in DSP_OPTIONS:
-            self.dsp_menu.addAction(checkbox_action(
-                self.controller.apply_options, text, option, default))
-
-        self.developer_menu = menubar.addMenu('D&eveloper Options')
-        for text, option, default in DEVELOPER_OPTIONS:
-            self.developer_menu.addAction(checkbox_action(
-                self.controller.apply_options, text, option, default))
+        if developer_menu:
+            self.developer_menu = menubar.addMenu('D&eveloper Options')
+            for text, option, default in DEVELOPER_OPTIONS:
+                self.developer_menu.addAction(checkbox_action(
+                    self.controller.apply_options, text, option, default))
 
         self.controller.apply_options(
             **dict((option, default) for text, option, default
-            in VIEW_OPTIONS + DSP_OPTIONS + DEVELOPER_OPTIONS))
+            in VIEW_OPTIONS + DEVELOPER_OPTIONS))
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
@@ -187,7 +182,7 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
-        self.setWindowTitle('PyRF RTSA Connected To: %s' %name)
+        self.setWindowTitle('PyRF RTSA %s Connected To: %s' % (require('pyrf')[0].version, name))
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
@@ -240,7 +235,6 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-        self.ref_level = 0
         self.plot_state = None
 
         self._waterfall_range = None, None, None
@@ -271,20 +265,25 @@ class MainPanel(QtGui.QWidget):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
-                self._plot.center_view(freq, full_bw, self.plot_state.min_level, self.plot_state.ref_level)
+                self._plot.center_view(freq,
+                                       full_bw,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                        IQ_PLOT_YMAX[rfe_mode])
+                                               IQ_PLOT_YMAX[rfe_mode])
             else:
                 freq = state.center
                 full_bw = state.span
 
-                self._plot.center_view(freq - full_bw/2, freq + full_bw/2)
+                self._plot.center_view(freq - full_bw/2,
+                                        freq + full_bw/2,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
                 self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
                                         IQ_PLOT_YMAX[rfe_mode])
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
-                self._plot_group.hide()
                 self._plot_layout.hide()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
@@ -303,9 +302,7 @@ class MainPanel(QtGui.QWidget):
 
             else:
                 # show plots
-                self._plot_group.show()
                 self._plot_layout.show()
-
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
@@ -314,7 +311,7 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumHeight(MINIMUM_HEIGHT)
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
                 WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
-                self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+                self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
 
     def keyPressEvent(self, event):
@@ -385,12 +382,11 @@ class MainPanel(QtGui.QWidget):
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
-        self.trace_group = self._trace_controls()
+
         controls_layout.addWidget(self._freq_controls())
-        self._plot_group = self.trace_group.plot_controls()
-        controls_layout.addWidget(self._plot_group)
+        controls_layout.addWidget(self._amplitude_controls())
         controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self.trace_group)
+        controls_layout.addWidget(self._trace_controls())
         controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 13, 5)
 
@@ -414,6 +410,16 @@ class MainPanel(QtGui.QWidget):
         self._plot_layout = vsplit
         return self._plot_layout
 
+    def _freq_controls(self):
+        self._freq_group = FrequencyControls(self.controller)
+        self.control_widgets.append(self._freq_group)
+        return self._freq_group
+    
+    def _amplitude_controls(self):
+        self._amplitude_group = AmplitudeControls(self.controller, self._plot)
+        self.control_widgets.append(self._amplitude_group)
+        return self._amplitude_group
+
     def _trace_controls(self):
         self.trace_group = TraceControls(self.controller, self._plot)
         self.control_widgets.append(self.trace_group)
@@ -429,24 +435,26 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._dev_group)
         return self._dev_group
 
-    def _freq_controls(self):
-        self._freq_group = FrequencyControls(self.controller)
-        self.control_widgets.append(self._freq_group)
-        return self._freq_group
+
 
     def _marker_labels(self):
+        marker_alignment = QtCore.Qt.AlignHCenter
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s;' % colors.TEAL)
+        marker_label.setStyleSheet('color: %s; background-color: black' % colors.TEAL)
         marker_label.setMinimumHeight(25)
-        
+        marker_label.setAlignment(marker_alignment)
+
         delta_label = QtGui.QLabel('')
         delta_label.setStyleSheet('color: %s;' % colors.TEAL)
         delta_label.setMinimumHeight(25)
-        
+        delta_label.setAlignment(marker_alignment)
+
         diff_label = QtGui.QLabel('')
         diff_label.setStyleSheet('color: %s;' % colors.WHITE)
         diff_label.setMinimumHeight(25)
+        diff_label.setAlignment(marker_alignment)
         self._diff_lab = diff_label
+
         return marker_label,delta_label, diff_label
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
@@ -469,16 +477,21 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_diff()
-        if not self.controller.applying_user_xrange():
-            self._plot.center_view(fstart, fstop)
+        if (not self.controller.applying_user_xrange() and
+                not self.controller.get_options()['free_plot_adjustment']):
+            self._plot.center_view(fstart,
+                                   fstop,
+                                   self._amplitude_group.get_min_level(),
+                                   self._amplitude_group.get_ref_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
 
-        if (fstart, fstop, len(power)) != self._waterfall_range:
-            self._plot.waterfall_data.reset(self.xdata)
-            self._waterfall_range = (fstart, fstop, len(power))
-        self._plot.waterfall_data.add_row(power)
+        if self.waterfall_plot_enabled:
+            if (fstart, fstop, len(power)) != self._waterfall_range:
+                self._plot.waterfall_data.reset(self.xdata)
+                self._waterfall_range = (fstart, fstop, len(power))
+            self._plot.waterfall_data.add_row(power)
 
 
     def options_changed(self, options, changed):
@@ -562,23 +575,28 @@ class MainPanel(QtGui.QWidget):
             self._plot.q_curve.clear()
 
     def update_marker(self):
-
+            num = 1
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
-
+                    marker_label.show()
                     if not trace.blank:
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (trace.color[0],
-                                                                             trace.color[1],
-                                                                            trace.color[2]))
+                        if marker.selected:
+                            color = colors.YELLOW_NUM
+                        else:
+                            color = colors.WHITE_NUM
+                        if len(trace.freq_range) == 0:
+                            return
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'Frequency: %0.2f MHz \n Power %0.2f dBm' % (trace.freq_range[marker.data_index]/1e6, 
+                        marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
+                        num += 1
                         marker_label.setText(marker_text)
 
                 else:
-                    marker_label.setText('')
+                    marker_label.hide()
 
     def update_diff(self):
 
@@ -591,13 +609,18 @@ class MainPanel(QtGui.QWidget):
                 num_markers += 1
                 traces.append(self._plot.traces[marker.trace_index])
                 data_indices.append(marker.data_index)
-                
+
         if num_markers == len(labels.MARKERS):
+            if len(traces[0].freq_range) == 0 or len(traces[1].freq_range) == 0:
+                return
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
-            
+
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.WHITE_NUM))
-            delta_text = 'Delta : %0.1f MHz \nDelta %0.2f dB' % (freq_diff, power_diff )
+            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+            if self.gui_state.rfe_mode() == 'HDR':
+                delta_text = 'Delta: %f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
+            else:
+                delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
             self._diff_lab.setText('')
