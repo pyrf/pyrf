@@ -130,7 +130,7 @@ class Marker(object):
         self.enabled = False
         self.selected = False
         self.data_index = None
-        self.xdata = 0
+        self.xdata = []
         self.ydata = 0
 
         self.coursor_dragged = False
@@ -166,22 +166,17 @@ class Marker(object):
         self.marker_plot.clear()
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
-   
-        if self.data_index < 0:
-           self.data_index = 0
-            
-        elif self.data_index >= len(ydata):
-            self.data_index = len(ydata) - 1
 
+        if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
+            self.data_index = int((self.data_index/len(self.xdata)) * len(xdata)) 
         xpos = xdata[self.data_index]
-        
         ypos = ydata[self.data_index]
         if self.selected:
             color = colors.YELLOW_NUM
         else: 
             color = 'w'
         self.xdata = xdata
-        self.ydata = xdata
+        self.ydata = ydata
         if not self.coursor_dragged:
             self.cursor_line.setValue(xpos)
         self.marker_plot.addPoints(x = [xpos], 
