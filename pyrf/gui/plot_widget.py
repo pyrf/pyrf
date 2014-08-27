@@ -132,20 +132,26 @@ class Marker(object):
         self.data_index = None
         self.xdata = []
         self.ydata = 0
+        self.trace_index = 0
 
         self.coursor_dragged = False
-        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 90, movable = True)
+        cursor_pen = pg.mkPen((255,0,0), width = 10)
+        self.cursor_line = pg.InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+
         def new_cursor():
             self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
             self.coursor_dragged = False
+            cursor_pen = pg.mkPen((0,0,0,0))
+            self.cursor_line.setPen(cursor_pen)
 
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor)
+
         def dragged():
+            cursor_pen = pg.mkPen((255,0,0))
+            self.cursor_line.setPen(cursor_pen)
             self.coursor_dragged = True
         self.cursor_line.sigDragged.connect(dragged)
-        # index of trace associated with marker
-        self.trace_index = 0
-        
+
     def enable(self, plot):
 
         self.enabled = True
@@ -267,7 +273,6 @@ class Plot(QtCore.QObject):
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
-        
         def new_trigger_freq():
             self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                                                             'fstart': min(self.freqtrig_lines.getRegion()),
