@@ -326,30 +326,6 @@ class MainPanel(QtGui.QWidget):
                 else:
                     self._show_markers()
 
-    def keyPressEvent(self, event):
-        if not self.dut_prop:
-            return
-
-        hotkey_dict = {
-            'M': self.trace_group._marker_control,
-            'P': self.trace_group._find_peak,
-            }
-
-        arrow_dict = {
-            '32': 'SPACE',
-            '16777235': 'UP KEY',
-            '16777237': 'DOWN KEY',
-            '16777234': 'LEFT KEY',
-            '16777236': 'RIGHT KEY',
-            }
-
-        if str(event.key()) in arrow_dict:
-            hotkey = arrow_dict[str(event.key())]
-        else:
-            hotkey = str(event.text()).upper()
-        if hotkey in hotkey_dict:
-            hotkey_dict[hotkey]()
-
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
