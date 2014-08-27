@@ -177,7 +177,6 @@ class TraceControls(QtGui.QGroupBox):
         add_marker.setToolTip("Add a marker to this trace")
         def add_marker_clicked():
             m = 0 if not self._plot.markers[0].enabled else 1
-            self._plot.disable_mouse()
             self._plot.markers[m].enable(self._plot)
             self._plot.markers[m].trace_index = num
             if m == 0:
@@ -246,8 +245,6 @@ class TraceControls(QtGui.QGroupBox):
                     if not m.marker.isChecked():
                         break
                 m.marker.click()  # select other marker
-            if not self._plot.markers[alt_mark].enabled:
-                self._plot.enable_mouse()
             if num == 0:
                 self.controller.apply_plot_options(marker0 = False)
             else:

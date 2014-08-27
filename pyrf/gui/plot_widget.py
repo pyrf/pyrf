@@ -137,7 +137,7 @@ class Marker(object):
         self.cursor_line = pg.InfiniteLine(pos = -100, angle = 90, movable = True)
         def new_cursor():
             self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
-            # print np.where(self.xdata == (np.abs(self.xdata-self.cursor_line.value())).argmin())
+            self.coursor_dragged = False
 
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor)
         def dragged():
@@ -168,7 +168,8 @@ class Marker(object):
            self.data_index = len(ydata) / 2 
 
         if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
-            self.data_index = int((self.data_index/len(self.xdata)) * len(xdata)) 
+            self.data_index = int((float(self.data_index)/float(len(self.xdata))) * len(xdata)) 
+
         xpos = xdata[self.data_index]
         ypos = ydata[self.data_index]
         if self.selected:
@@ -200,10 +201,7 @@ class Plot(QtCore.QObject):
         self.window = pg.PlotWidget()
 
         def widget_range_changed(widget, ranges):
-            if hasattr(self, 'markers'):
-                for m in self.markers:
-                    if m.enabled:
-                        return
+
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
@@ -347,12 +345,6 @@ class Plot(QtCore.QObject):
                                             ])
         self.window.getAxis('right').setPen(colors.GREY_NUM)
         self.window.getAxis('right').setGrid(200)
-
-    def disable_mouse(self):
-        self.view_box.setMouseEnabled(x = False, y = False)
-
-    def enable_mouse(self):
-        self.view_box.setMouseEnabled(x = True, y = False)
 
     def update_markers(self):
 
