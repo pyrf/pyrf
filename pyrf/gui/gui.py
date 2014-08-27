@@ -223,7 +223,6 @@ class MainPanel(QtGui.QWidget):
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
         controller.plot_change.connect(self.plot_changed)
-
         self._main_window = main_window
 
         self.ref_level = 0
@@ -317,15 +316,16 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumWidth(MINIMUM_WIDTH)
                 self.setMinimumHeight(MINIMUM_HEIGHT)
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
-                WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
+                WINDOW_HEIGHT = max(screen.height() * 0.7, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
     def plot_changed(self, state, changed):
-        if 'marker' in changed:
-            if state['marker']:
-                self.mask_label.setVisible(False)
-            else:
-                self.mask_label.setVisible(False)
+        if 'marker0' in changed or 'marker1' in changed:
+                if not state.get('marker0', False)  and not state.get('marker1', False):
+                    self._hide_markers()
+                else:
+                    self._show_markers()
+
     def keyPressEvent(self, event):
         if not self.dut_prop:
             return
@@ -358,16 +358,17 @@ class MainPanel(QtGui.QWidget):
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
 
-        grid.addWidget(self._plot_layout(),0,0,13,self.plot_width)
-
         self.mask_label = QtGui.QLabel()
-        self.mask_label.setVisible(False)
-        grid.addWidget(self.mask_label,0,0,13,self.plot_width)
+        self.mask_label.setStyleSheet('background-color: black')
+        self.mask_label.hide()
 
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
         self.marker_labels.append(marker_label)
         self.marker_labels.append(delta_label)
+
+        grid.addWidget(self._plot_layout(),0,0,14,self.plot_width)
+        grid.addWidget(self.mask_label,0,0,1,8)
         grid.addWidget(marker_label, 0, 1, 1, 2)
         grid.addWidget(delta_label, 0, 3, 1, 2)
         grid.addWidget(diff_label , 0, 5, 1, 2)
@@ -381,10 +382,17 @@ class MainPanel(QtGui.QWidget):
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._trace_controls())
         controls_layout.addStretch()
-        grid.addLayout(controls_layout, y, x, 13, 5)
+        grid.addLayout(controls_layout, y, x, 14, 5)
 
         self._grid = grid
         self.setLayout(grid)
+
+    def _show_markers(self):
+        self.mask_label.show()
+
+    def _hide_markers(self):
+        self.mask_label.hide()
+        self._diff_lab.hide()
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
@@ -433,17 +441,17 @@ class MainPanel(QtGui.QWidget):
     def _marker_labels(self):
         marker_alignment = QtCore.Qt.AlignHCenter
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s; background-color: black' % colors.TEAL)
+
         marker_label.setMinimumHeight(25)
         marker_label.setAlignment(marker_alignment)
 
         delta_label = QtGui.QLabel('')
-        delta_label.setStyleSheet('color: %s;' % colors.TEAL)
+
         delta_label.setMinimumHeight(25)
         delta_label.setAlignment(marker_alignment)
 
         diff_label = QtGui.QLabel('')
-        diff_label.setStyleSheet('color: %s;' % colors.WHITE)
+
         diff_label.setMinimumHeight(25)
         diff_label.setAlignment(marker_alignment)
         self._diff_lab = diff_label
@@ -586,7 +594,7 @@ class MainPanel(QtGui.QWidget):
                                                                                    trace.data[marker.data_index])
                         num += 1
                         marker_label.setText(marker_text)
-
+                        self.mask_label.show()
                 else:
                     marker_label.hide()
 
@@ -601,8 +609,9 @@ class MainPanel(QtGui.QWidget):
                 num_markers += 1
                 traces.append(self._plot.traces[marker.trace_index])
                 data_indices.append(marker.data_index)
-                
+
         if num_markers == len(labels.MARKERS):
+            self._diff_lab.show()
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
             
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
@@ -610,8 +619,7 @@ class MainPanel(QtGui.QWidget):
             delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
-            self._diff_lab.setText('')
-
+            self._diff_lab.hide()
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)

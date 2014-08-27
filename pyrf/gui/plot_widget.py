@@ -151,11 +151,13 @@ class Marker(object):
         self.enabled = True
         plot.window.addItem(self.marker_plot)
         plot.window.addItem(self.cursor_line)
+
     
     def disable(self, plot):
         
         self.enabled = False
         plot.window.removeItem(self.marker_plot)
+        plot.window.removeItem(self.cursor_line)
         self.data_index = None
         self.trace_index = 0
 
@@ -220,8 +222,9 @@ class Plot(QtCore.QObject):
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
         self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+        self.window.setLabel('top')
+        self.window.setLabel('right')
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
-
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
@@ -337,10 +340,28 @@ class Plot(QtCore.QObject):
         self.window.getAxis('bottom').setGrid(200)
         self.window.getAxis('left').setPen(colors.GREY_NUM)
         self.window.getAxis('left').setGrid(200)
+        self.window.getAxis('top').setPen(colors.GREY_NUM)
+        self.window.getAxis('top').setGrid(200)
+
+        # FIXME: find better way of hiding ticks
+        self.window.getAxis('top').setTicks([
+                                            [(-1e100, '0'), (-1e105, '5')]
+                                            ])
+        self.window.getAxis('right').setTicks([
+                                            [(-1e100, '0'), (-1e105, '5')]
+                                            ])
+        self.window.getAxis('right').setPen(colors.GREY_NUM)
+        self.window.getAxis('right').setGrid(200)
 
     def disable_mouse(self):
-
         self.view_box.setMouseEnabled(x = False, y = False)
 
     def enable_mouse(self):
         self.view_box.setMouseEnabled(x = True, y = False)
+
+    def update_markers(self):
+
+        for m in self.markers:
+            if m.enabled:
+                trace = self.traces[m.trace_index]
+                m.update_pos(trace.freq_range, trace.data)

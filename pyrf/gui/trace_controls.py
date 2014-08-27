@@ -180,7 +180,10 @@ class TraceControls(QtGui.QGroupBox):
             self._plot.disable_mouse()
             self._plot.markers[m].enable(self._plot)
             self._plot.markers[m].trace_index = num
-            self.controller.apply_plot_options(marker = True)
+            if m == 0:
+                self.controller.apply_plot_options(marker0 = True)
+            else:
+                self.controller.apply_plot_options(marker1 = True)
             if not self._markers[m].marker.isChecked():
                 self._markers[m].marker.click()  # select markers when adding
             self._build_layout()
@@ -244,8 +247,11 @@ class TraceControls(QtGui.QGroupBox):
                         break
                 m.marker.click()  # select other marker
             if not self._plot.markers[alt_mark].enabled:
-                self.controller.apply_plot_options(marker = False)
                 self._plot.enable_mouse()
+            if num == 0:
+                self.controller.apply_plot_options(marker0 = False)
+            else:
+                self.controller.apply_plot_options(marker1 = False)
             self._plot.markers[num].disable(self._plot)
             self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
