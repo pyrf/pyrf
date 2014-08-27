@@ -141,7 +141,7 @@ class FrequencyControls(QtGui.QGroupBox):
             self.controller.apply_settings(center=freq_edit.value() * M)
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self.controller.apply_device_settings(freq = freq_edit.value() * M)
-        freq_edit.valueChanged.connect(freq_change)
+        freq_edit.editingFinished.connect(freq_change)
         return cfreq, freq_edit
 
     def _bw_controls(self):
@@ -151,7 +151,7 @@ class FrequencyControls(QtGui.QGroupBox):
         bw_edit.setSuffix(' MHz')
         def freq_change():
             self.controller.apply_settings(span=bw_edit.value() * M)
-        bw_edit.valueChanged.connect(freq_change)
+        bw_edit.editingFinished.connect(freq_change)
         self._bw_edit = bw_edit
         return bw, bw_edit
 
@@ -168,7 +168,7 @@ class FrequencyControls(QtGui.QGroupBox):
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
                 )
-        freq.valueChanged.connect(freq_change)
+        freq.editingFinished.connect(freq_change)
         self._fstart_edit = freq
         return fstart, freq
 
@@ -185,7 +185,7 @@ class FrequencyControls(QtGui.QGroupBox):
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
                 )
-        freq.valueChanged.connect(freq_change)
+        freq.editingFinished.connect(freq_change)
         self._fstop_edit = freq
         return fstop, freq
 
