@@ -123,7 +123,7 @@ class Marker(object):
     """
     Class to represent a marker on the plot
     """
-    def __init__(self,plot_area, marker_name):
+    def __init__(self,plot_area, marker_name, color):
 
         self.name = marker_name
         self.marker_plot = pg.ScatterPlotItem()
@@ -133,22 +133,16 @@ class Marker(object):
         self.xdata = []
         self.ydata = 0
         self.trace_index = 0
+        self.color = color
 
         self.coursor_dragged = False
-        cursor_pen = pg.mkPen((0,0,0,0), width = 20)
+        cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
-        hover_pen = pg.mkPen((0,0,0, 0), width = 20)
-        self.cursor_line.setHoverPen(hover_pen)
-        def new_cursor():
-            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
-            self.coursor_dragged = False
-
-        self.cursor_line.sigPositionChangeFinished.connect(new_cursor)
+        self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         def dragged():
             self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
             self.cursor_line.setPen(cursor_pen)
-
         self.cursor_line.sigDragged.connect(dragged)
 
     def enable(self, plot):
@@ -177,19 +171,16 @@ class Marker(object):
 
         xpos = xdata[self.data_index]
         ypos = ydata[self.data_index]
-        if self.selected:
-            color = colors.YELLOW_NUM
-        else: 
-            color = 'w'
+
         self.xdata = xdata
         self.ydata = ydata
         if not self.coursor_dragged:
             self.cursor_line.setValue(xpos)
-        self.marker_plot.addPoints(x = [xpos], 
-                                   y = [ypos], 
-                                    symbol = '+', 
-                                    size = 20, pen = color, 
-                                    brush = color)
+        self.marker_plot.addPoints(x = [xpos],
+                                   y = [ypos],
+                                    symbol = 't',
+                                    size = 25, pen = self.color, 
+                                    brush = self.color)
 
 class Plot(QtCore.QObject):
     """
@@ -258,8 +249,8 @@ class Plot(QtCore.QObject):
         self.traces[0].write = True
 
         self.markers = []
-        for marker_name in labels.MARKERS:
-            self.markers.append(Marker(self, marker_name))
+        for name, color in zip(labels.MARKERS, colors.MARKER_COLORS):
+            self.markers.append(Marker(self, name, color))
 
         self.waterfall_data = WaterfallModel(max_len=600)
 
