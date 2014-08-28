@@ -201,6 +201,13 @@ class WSA5000_220Properties(object):
         }
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+    RBW_VALUES = {}
+    for mode in RFE_MODES:
+        rbw_vals = []
+        for s in SAMPLE_SIZES:
+            rbw_vals.append(FULL_BW[mode] / s)
+        RBW_VALUES[mode] = rbw_vals
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
@@ -220,7 +227,9 @@ class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = ['Sweep ZIF left band', 'Sweep ZIF']
+    SPECA_MODES = []
+    SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
+        mode='SHN')
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'

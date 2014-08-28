@@ -10,6 +10,7 @@ from pyrf.gui import fonts
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
+from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -149,20 +150,23 @@ class Marker(object):
     def update_pos(self, xdata, ydata):
     
         self.marker_plot.clear()
+        if len(xdata) <= 0 or len(ydata) <= 0:
+            return
+
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
    
         if self.data_index < 0:
            self.data_index = 0
             
-        elif self.data_index >= len(ydata):
+        if self.data_index >= len(ydata):
             self.data_index = len(ydata) - 1
 
         xpos = xdata[self.data_index]
         
         ypos = ydata[self.data_index]
         if self.selected:
-            color = 'y'
+            color = colors.YELLOW_NUM
         else: 
             color = 'w'
             
@@ -183,7 +187,11 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
-        self.window = pg.PlotWidget(name = 'pyrf_plot')
+        self.freq_axis = RTSAFrequencyAxisItem()
+        self.window = pg.PlotWidget(name = 'pyrf_plot',
+                                    axisItems = dict(bottom = self.freq_axis),
+                                    )
+        self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
             if not hasattr(ranges, '__getitem__'):
@@ -197,7 +205,7 @@ class Plot(QtCore.QObject):
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
-        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+        #self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize trigger lines
@@ -283,8 +291,8 @@ class Plot(QtCore.QObject):
         self.freqtrig_lines.blockSignals(True)
         if not self._trig_enable:
             self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
-            self.window.addItem(self.amptrig_line)
             self.window.addItem(self.freqtrig_lines)
+            self.window.addItem(self.amptrig_line)
             self._trig_enable = True
         else:
             self.amptrig_line.setValue(amplitude)

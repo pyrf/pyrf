@@ -23,8 +23,9 @@ Windows Dependencies
 10. Install twisted (Twisted-14.0.0.win32-py2.7)
 11. Install pywin32 (pywin32-219.win32-py2.7)
 12. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
-13. Obtain PyRF source code from https://github.com/pyrf/pyrf
-14. Go the pyrf directory and run 'setup.py install'
+13. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
+
+Continue from :ref:`pyrf-installation` below.
 
 Debian/Ubuntu Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,7 +33,7 @@ Debian/Ubuntu Dependencies
 Use packaged requirements::
 
    apt-get install python-pyside python-twisted python-numpy \
-   	python-zope.interface python-pip python-scipy
+   	python-zope.interface python-pip python-scipy python-setuptools
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
    pip install -e git://github.com/pyrf/pyqtgraph.git#egg=pyqtgraph
 
@@ -43,11 +44,12 @@ Or install GUI requirements from source::
    export BLAS=/usr/lib/libblas/libblas.so
    export ATLAS=/usr/lib/atlas-base/libatlas.so
    export LAPACK=/usr/lib/lapack/liblapack.so
-   pip install -r gui-requirements.txt
+   pip install -r requirements.txt
 
 Continue from :ref:`pyrf-installation` below.
 
 .. _pyrf-installation:
+
 
 PyRF Installation
 ~~~~~~~~~~~~~~~~~

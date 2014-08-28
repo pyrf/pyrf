@@ -96,6 +96,8 @@ class AmplitudeControls(QtGui.QGroupBox):
         if state.playback:
             self._atten_box.playback_value(
                 state.device_settings.get('attenuator', False))
+        elif 'playback' in changed:
+            self._atten_box.setEnabled(True)
 
         if 'mode' in changed:
             if state.mode == 'HDR':
@@ -104,6 +106,15 @@ class AmplitudeControls(QtGui.QGroupBox):
             else:
                 self._hdr_gain_box.hide()
                 self._hdr_gain_label.hide()
+
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self._ref_level.setEnabled(False)
+                self._min_level.setEnabled(False)
+            elif state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self._ref_level.setEnabled(True)
+                self._min_level.setEnabled(True)
+
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments
         self.pow_data = power
