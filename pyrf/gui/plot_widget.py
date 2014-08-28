@@ -134,6 +134,8 @@ class Marker(object):
         self.ydata = 0
         self.trace_index = 0
         self.color = color
+        self.draw_color = color
+        self.hovering = False
 
         self.coursor_dragged = False
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
@@ -143,7 +145,16 @@ class Marker(object):
         def dragged():
             self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
             self.cursor_line.setPen(cursor_pen)
+            self.draw_color = colors.MARKER_HOVER
         self.cursor_line.sigDragged.connect(dragged)
+
+        def hovering():
+            self.draw_color = colors.MARKER_HOVER
+        self.cursor_line.sigHovering.connect(hovering)
+
+        def not_hovering():
+            self.draw_color = color
+        self.cursor_line.sigHoveringFinished.connect(not_hovering)
 
     def enable(self, plot):
 
@@ -178,9 +189,9 @@ class Marker(object):
             self.cursor_line.setValue(xpos)
         self.marker_plot.addPoints(x = [xpos],
                                    y = [ypos],
-                                    symbol = 't',
-                                    size = 25, pen = self.color, 
-                                    brush = self.color)
+                                    symbol = '+',
+                                    size = 25, pen = pg.mkPen(self.draw_color, width = 3), 
+                                    brush = self.draw_color)
 
 class Plot(QtCore.QObject):
     """
@@ -249,8 +260,8 @@ class Plot(QtCore.QObject):
         self.traces[0].write = True
 
         self.markers = []
-        for name, color in zip(labels.MARKERS, colors.MARKER_COLORS):
-            self.markers.append(Marker(self, name, color))
+        for name in labels.MARKERS:
+            self.markers.append(Marker(self, name, colors.WHITE_NUM))
 
         self.waterfall_data = WaterfallModel(max_len=600)
 
@@ -317,7 +328,7 @@ class Plot(QtCore.QObject):
         if min_level is not None:
             self.window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
-        
+
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)

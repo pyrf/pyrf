@@ -91,7 +91,8 @@ class infiniteLine(pg.InfiniteLine):
     """
     Infinite Line with controls over the hover pen (feature will be available in pyqtgraph 0.9.9)
     """
-
+    sigHovering = QtCore.Signal(object)
+    sigHoveringFinished = QtCore.Signal(object)
     def setPen(self, *args, **kwargs):
         """Set the pen for drawing the line. Allowable arguments are any that are valid 
         for :func:`mkPen <pyqtgraph.mkPen>`."""
@@ -139,6 +140,8 @@ class infiniteLine(pg.InfiniteLine):
         self.mouseHovering = hover
         if hover:
             self.currentPen = self.hoverPen
+            self.sigHovering.emit(self)
         else:
             self.currentPen = self.pen
+            self.sigHoveringFinished.emit(self)
         self.update()

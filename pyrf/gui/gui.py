@@ -559,11 +559,8 @@ class MainPanel(QtGui.QWidget):
                     trace = self._plot.traces[marker.trace_index]
                     marker_label.show()
                     if not trace.blank:
-                        if marker.selected:
-                            color = colors.YELLOW_NUM
-                        else:
-                            color = colors.WHITE_NUM
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
+
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
 
                         marker.update_pos(trace.freq_range, trace.data)
                         marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 

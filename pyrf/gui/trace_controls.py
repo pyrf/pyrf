@@ -183,8 +183,6 @@ class TraceControls(QtGui.QGroupBox):
                 self.controller.apply_plot_options(marker0 = True)
             else:
                 self.controller.apply_plot_options(marker1 = True)
-            if not self._markers[m].marker.isChecked():
-                self._markers[m].marker.click()  # select markers when adding
             self._build_layout()
         add_marker.clicked.connect(add_marker_clicked)
 
@@ -200,12 +198,7 @@ class TraceControls(QtGui.QGroupBox):
         :returns: a MarkerWidgets namedtuple
 
         """
-        radio = QtGui.QRadioButton("M%d:" % (num + 1))
-        button_group.addButton(radio)
-        def marker_select():
-            for i, marker in enumerate(self._plot.markers):
-                marker.selected = i == num
-        radio.clicked.connect(marker_select)
+        label = QtGui.QLabel("M%d:" % (num + 1))
 
         center = QtGui.QPushButton("Center")
         center.setToolTip("Center the frequency on this marker")
@@ -240,11 +233,6 @@ class TraceControls(QtGui.QGroupBox):
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
             alt_mark = not num
-            if self._markers[num].marker.isChecked():
-                for m in self._markers:
-                    if not m.marker.isChecked():
-                        break
-                m.marker.click()  # select other marker
             if num == 0:
                 self.controller.apply_plot_options(marker0 = False)
             else:
@@ -253,7 +241,7 @@ class TraceControls(QtGui.QGroupBox):
             self._build_layout()
         remove_marker.clicked.connect(remove_marker_clicked)
 
-        return MarkerWidgets(radio, center, peak_left, peak, peak_right,
+        return MarkerWidgets(label, center, peak_left, peak, peak_right,
             remove_marker)
 
     def _build_layout(self):
