@@ -10,7 +10,7 @@ from pyrf.gui import fonts
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
-
+from pyrf.gui.widgets import infiniteLine
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -135,21 +135,20 @@ class Marker(object):
         self.trace_index = 0
 
         self.coursor_dragged = False
-        cursor_pen = pg.mkPen((255,0,0), width = 10)
-        self.cursor_line = pg.InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
-
+        cursor_pen = pg.mkPen((0,0,0,0), width = 20)
+        self.cursor_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        hover_pen = pg.mkPen((0,0,0, 0), width = 20)
+        self.cursor_line.setHoverPen(hover_pen)
         def new_cursor():
             self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
             self.coursor_dragged = False
-            cursor_pen = pg.mkPen((0,0,0,0))
-            self.cursor_line.setPen(cursor_pen)
 
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor)
 
         def dragged():
-            cursor_pen = pg.mkPen((255,0,0))
+            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
             self.cursor_line.setPen(cursor_pen)
-            self.coursor_dragged = True
+
         self.cursor_line.sigDragged.connect(dragged)
 
     def enable(self, plot):
