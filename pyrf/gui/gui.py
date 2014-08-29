@@ -265,7 +265,7 @@ class MainPanel(QtGui.QWidget):
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
             self._update_iq_plot_visibility()
-
+            self.update_rbw_label()
             if rfe_mode in ('DD', 'IQIN'):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
@@ -319,15 +319,29 @@ class MainPanel(QtGui.QWidget):
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         if 'rbw' in changed:
-            self._rbw_label.setText("RBW: %d KHz" % (state.rbw / 1e3))
+            self.update_rbw_label()
 
         if 'span' in changed:
-            self._span_label.setText("SPAN: %d MHz" % (state.span/ M))
+            self.update_span_label()
+
+    def update_rbw_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._rbw_label.setText("RBW: %0.2f KHz" % (self.gui_state.rbw))
+        else:
+            self._rbw_label.setText("RBW: %0.2f KHz" % (self.gui_state.rbw / 1e3))
+
+    def update_span_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._span_label.setText("SPAN: %0.2f KHz" % (self.gui_state.span / 1e3))
+        else:
+            self._span_label.setText("SPAN: %0.2f MHz" % (self.gui_state.span/ M))
 
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        self.plot_width = 8
+        self.plot_width = 11
 
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
@@ -337,18 +351,14 @@ class MainPanel(QtGui.QWidget):
 
         self.marker_labels = []
         marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
-        self._rbw_label = rbw_label
-        self._span_label = span_label
-        self.marker_labels.append(marker_label)
-        self.marker_labels.append(delta_label)
 
-        grid.addWidget(self.mask_label,0,0,2,8)
-        grid.addWidget(marker_label, 0, 1, 1, 2)
-        grid.addWidget(delta_label, 0, 3, 1, 2)
-        grid.addWidget(diff_label , 0, 5, 1, 2)
-        grid.addWidget(self._rbw_label, 0, 0, 1, 1)
-        grid.addWidget(self._span_label, 0, 7, 1, 1)
-        grid.addWidget(self._plot_layout(),1,0,14,self.plot_width)
+        grid.addWidget(self.mask_label, 0, 0, 2, self.plot_width)
+        grid.addWidget(marker_label, 0, 3, 1, 2)
+        grid.addWidget(delta_label, 0, 5, 1, 2)
+        grid.addWidget(diff_label , 0, 7, 1, 2)
+        grid.addWidget(self._rbw_label, 0, 0, 1, 2)
+        grid.addWidget(self._span_label, 0, 9, 1, 2)
+        grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
@@ -406,29 +416,29 @@ class MainPanel(QtGui.QWidget):
         return self._dev_group
 
     def _marker_labels(self):
-        marker_alignment = QtCore.Qt.AlignHCenter
 
         marker_label = QtGui.QLabel('')
-        marker_label.setAlignment(marker_alignment)
+        marker_label.setAlignment(QtCore.Qt.AlignLeft)
 
         delta_label = QtGui.QLabel('')
-        delta_label.setAlignment(marker_alignment)
+        delta_label.setAlignment(QtCore.Qt.AlignLeft)
 
         span_label = QtGui.QLabel('')
-        span_label.setMinimumHeight(25)
-        span_label.setAlignment(marker_alignment)
         span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+        span_label.setAlignment(QtCore.Qt.AlignRight)
 
         rbw_label = QtGui.QLabel('')
-        rbw_label.setMinimumHeight(25)
-        rbw_label.setAlignment(marker_alignment)
         rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+        rbw_label.setAlignment(QtCore.Qt.AlignLeft)
 
         diff_label = QtGui.QLabel('')
-        diff_label.setMinimumHeight(25)
-        diff_label.setAlignment(marker_alignment)
+        diff_label.setAlignment(QtCore.Qt.AlignLeft)
         self._diff_lab = diff_label
+        self._rbw_label = rbw_label
+        self._span_label = span_label
+        self.marker_labels.append(marker_label)
 
+        self.marker_labels.append(delta_label)
         return marker_label,delta_label, diff_label, rbw_label, span_label
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
