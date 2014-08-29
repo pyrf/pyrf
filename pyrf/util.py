@@ -70,9 +70,7 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
             start = 0
             usable_bins[i] = (start, run)
 
-    # FIXME: store the format in the device properties so we don't list
-    # modes here
-    if rfe_mode in ('SH', 'HDR', 'SHN'):
+    if rfe_mode in dut_prop.I_ONLY_RFE_MODES:
         # we're getting only 1/2 the bins
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
