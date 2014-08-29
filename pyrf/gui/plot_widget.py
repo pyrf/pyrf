@@ -136,8 +136,9 @@ class Marker(object):
         self.color = color
         self.draw_color = color
         self.hovering = False
-
+        self._plot = plot_area
         self.coursor_dragged = False
+
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
@@ -172,7 +173,9 @@ class Marker(object):
         self.trace_index = 0
 
     def update_pos(self, xdata, ydata):
-
+        
+        self._plot.window.removeItem(self.marker_plot)
+        self._plot.window.addItem(self.marker_plot)
         self.marker_plot.clear()
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
@@ -190,7 +193,7 @@ class Marker(object):
         self.marker_plot.addPoints(x = [xpos],
                                    y = [ypos],
                                     symbol = '+',
-                                    size = 25, pen = pg.mkPen(self.draw_color, width = 3), 
+                                    size = 25, pen = pg.mkPen(self.draw_color), 
                                     brush = self.draw_color)
 
 class Plot(QtCore.QObject):
