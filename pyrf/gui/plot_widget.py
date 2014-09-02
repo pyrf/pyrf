@@ -316,6 +316,7 @@ class Plot(QtCore.QObject):
         self.window.setXRange(float(fstart), float(fstop), padding=0)
         if min_level is not None:
             self.window.setYRange(min_level, ref_level)
+            self.persistence_window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
         self.persistence_window.setXRange(
             float(fstart) / M,
