@@ -39,7 +39,7 @@ from pyrf.gui.trace_controls import TraceControls
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
     ('&Waterfall Plot', 'waterfall_plot', False),
-    ('&Persistence Plot', 'persistence_plot', True),
+    ('&Persistence Plot', 'persistence_plot', False),
     ]
 
 DEVELOPER_OPTIONS = [
@@ -513,10 +513,17 @@ class MainPanel(QtGui.QWidget):
 
         ww = self._plot.waterfall_window
         if 'waterfall_plot' in changed and ww:
-            if options['waterfall_plot']:
+            if self.waterfall_plot_enabled:
                 ww.show()
             else:
                 ww.hide()
+        
+        pp = self._plot.persistence_window
+        if 'persistence_plot' in changed and pp:
+            if self.persistence_plot_enabled:
+                pp.show()
+            else:
+                pp.hide()
 
     def _update_iq_plot_visibility(self):
         if not self.gui_state:
