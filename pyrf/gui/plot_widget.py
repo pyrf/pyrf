@@ -10,7 +10,8 @@ from pyrf.gui import fonts
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
-from pyrf.gui.persistence_plot_widget import PersistencePlotWidget
+from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
+                                              decay_fn_EXPONENTIAL)
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
 
@@ -257,6 +258,7 @@ class Plot(QtCore.QObject):
             mouse_move_crosshair=False,
             )
         self.persistence_window = PersistencePlotWidget(
+            decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
 
         self.connect_plot_controls()
