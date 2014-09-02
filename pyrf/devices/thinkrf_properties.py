@@ -178,7 +178,7 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    I_ONLY_RFE_MODES = ['SH', 'SHN', 'DD']
+    I_ONLY_RFE_MODES = ['SH', 'SHN', 'HDR', 'DD']
 
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
