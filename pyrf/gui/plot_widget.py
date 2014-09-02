@@ -260,6 +260,7 @@ class Plot(QtCore.QObject):
         self.persistence_window = PersistencePlotWidget(
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
+        self.persistence_window.getAxis('bottom').setScale(1e-9)
 
         self.connect_plot_controls()
 
