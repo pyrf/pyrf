@@ -1,5 +1,7 @@
 import math
 
+from pyrf.vrt import I_ONLY
+
 def read_data_and_context(dut, points=1024):
     """
     Initiate capture of one data packet, wait for and return data packet
@@ -70,7 +72,7 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
             start = 0
             usable_bins[i] = (start, run)
 
-    if rfe_mode in dut_prop.I_ONLY_RFE_MODES:
+    if dut_prop.DEFAULT_SAMPLE_TYPE.get(rfe_mode) == I_ONLY:
         # we're getting only 1/2 the bins
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
