@@ -10,7 +10,9 @@ from pyrf.gui import fonts
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
+from pyrf.gui.persistence_plot_widget import PersistencePlotWidget
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
+from pyrf.units import M
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -254,6 +256,9 @@ class Plot(QtCore.QObject):
             max_frame_rate_fps=30,
             mouse_move_crosshair=False,
             )
+        self.persistence_window = PersistencePlotWidget(
+            data_model=self.waterfall_data)
+
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
@@ -312,10 +317,15 @@ class Plot(QtCore.QObject):
         if min_level is not None:
             self.window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
-        
+        self.persistence_window.setXRange(
+            float(fstart) / M,
+            float(fstop) / M,
+            padding=0)
+
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
+        self.persistence_window.setYRange(min_level, ref_level)
 
     def grid(self,state):
         self.window.showGrid(state,state)

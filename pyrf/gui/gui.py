@@ -39,6 +39,7 @@ from pyrf.gui.trace_controls import TraceControls
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
     ('&Waterfall Plot', 'waterfall_plot', False),
+    ('&Persistence Plot', 'persistence_plot', True),
     ]
 
 DEVELOPER_OPTIONS = [
@@ -240,7 +241,7 @@ class MainPanel(QtGui.QWidget):
         self._waterfall_range = None, None, None
 
         self.options_changed(controller.get_options(),
-            ['iq_plots', 'waterfall_plot'])
+            ['iq_plots', 'waterfall_plot', 'persistence_plot'])
 
     def device_changed(self, dut):
         self.plot_state = gui_config.PlotState(dut.properties)
@@ -399,6 +400,7 @@ class MainPanel(QtGui.QWidget):
         vsplit.addWidget(self._plot.window)
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
+        vsplit.addWidget(self._plot.persistence_window)
 
         hsplit = QtGui.QSplitter()
         hsplit.addWidget(self._plot.const_window)
@@ -487,7 +489,7 @@ class MainPanel(QtGui.QWidget):
         if self.iq_plots_enabled:
             self.update_iq()
 
-        if self.waterfall_plot_enabled:
+        if self.waterfall_plot_enabled or self.persistence_plot_enabled:
             if (fstart, fstop, len(power)) != self._waterfall_range:
                 self._plot.waterfall_data.reset(self.xdata)
                 self._waterfall_range = (fstart, fstop, len(power))
@@ -497,6 +499,7 @@ class MainPanel(QtGui.QWidget):
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
         self.waterfall_plot_enabled = options['waterfall_plot']
+        self.persistence_plot_enabled = options['persistence_plot']
 
         if 'iq_plots' in changed:
             self._update_iq_plot_visibility()
@@ -524,6 +527,8 @@ class MainPanel(QtGui.QWidget):
                 ww.show()
             else:
                 ww.hide()
+        self._plot.persistence_window.setVisible(
+            self.persistence_plot_enabled)
 
     def update_trace(self):
         for trace in self._plot.traces:
