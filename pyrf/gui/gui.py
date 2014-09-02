@@ -400,7 +400,14 @@ class MainPanel(QtGui.QWidget):
         vsplit.addWidget(self._plot.window)
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
-        vsplit.addWidget(self._plot.persistence_window)
+        
+        persist = QtGui.QHBoxLayout()
+        # FIXME: reaching too far into plot..
+        persist.addWidget(self._plot.persistence_window.gradient_editor)
+        persist.addWidget(self._plot.persistence_window)
+        persist_widget = QtGui.QWidget()
+        persist_widget.setLayout(persist)
+        vsplit.addWidget(persist_widget)
 
         hsplit = QtGui.QSplitter()
         hsplit.addWidget(self._plot.const_window)
