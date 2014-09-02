@@ -123,6 +123,10 @@ class PersistencePlotWidget(pg.PlotWidget):
         self._persistent_img.setLookupTable(self._get_lut())
     
     def _UpdatePersistentImage(self):
+        #safety check: if we have zero height or width we can't make an image...
+        if min(self.size().toTuple()) <= 0:
+            return
+        
         #Make sure we have an image to start with!
         if self._persistent_img is None:
             self._InitPersistentImage()
