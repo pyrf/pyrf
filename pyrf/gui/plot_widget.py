@@ -319,8 +319,8 @@ class Plot(QtCore.QObject):
             self.persistence_window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
         self.persistence_window.setXRange(
-            float(fstart) / M,
-            float(fstop) / M,
+            float(fstart),
+            float(fstop),
             padding=0)
 
     def update_waterfall_levels(self, min_level, ref_level):
