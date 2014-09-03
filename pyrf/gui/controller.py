@@ -158,6 +158,7 @@ class SpecAController(QtCore.QObject):
         device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
+
         self._sweep_device.capture_power_spectrum(
             self._state.center - self._state.span / 2.0,
             self._state.center + self._state.span / 2.0,
@@ -417,7 +418,15 @@ class SpecAController(QtCore.QObject):
             if not self._state or span != self._state.span:
                 changed.append('span')
 
+        if 'mode' in changed:
+            # check if RBW is appropriate for given mode
+            if state.rbw not in self._dut.properties.RBW_VALUES[state.rfe_mode()]:
+                if state.sweeping():
+                    state.rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
+                else:
+                    state.rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
         self._state = state
+
         # start capture loop again when user switches output path
         # back to the internal digitizer XXX: very WSA5000-specific
         if 'device_settings.iq_output_path' in changed:
