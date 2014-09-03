@@ -58,6 +58,45 @@ def decay_fn_LINEAR(t_now, t_prev, decay_args, img_data):
     img_data -= (t_delta * decay_per_tick)
     return img_data #caller will clip the negatives
 
+class _PersistentImage(pg.ImageItem):
+    """This subclass exists solely to set the alpha on the background color to
+    zero so that rendering looks correct (with gridlines and such) in the final
+    plot.
+    
+    This is a hack in order to preserve the convenient use of pyqtgraph's
+    setImage function, which makes great use of fn.makeARGB() and the lut usage
+    (unfortunately the lut does not currently support alpha).
+    
+    TODO: fix this by getting the zValue correct for the image (it would be better
+           to draw on top of the gridlines, but under the ticks), rather than this
+           expensive alpha trick.
+    """
+    def __init__(self, bg_color):
+        super(_PersistentImage, self).__init__()
+        assert len(bg_color) == 3 #no alpha
+        rgba_match = bg_color + (255, )
+        rgba_no_alpha = bg_color + (0, )
+        self._rgba_match = np.array(rgba_match, np.uint8).view(np.uint32)[0]
+        self._bg_no_alpha = np.array(rgba_no_alpha, np.uint8).view(np.uint32)[0]
+        
+    def render(self, *args, **kwargs):
+        super(_PersistentImage, self).render(*args, **kwargs)
+        #fully rendered array->image now exists in self.qimage. We want to
+        #assign alpha=0 to all pixels that have the background color.
+        
+        #View the image as a numpy array again...
+        ptr = self.qimage.constBits()
+        w = self.qimage.width()
+        h = self.qimage.height()
+        img_array = np.fromstring(ptr, dtype = np.uint32, count=(w*h))
+        #knock out the alpha for anywhere where there is a bg color...
+        img_array[img_array == self._rgba_match] = self._bg_no_alpha
+        #convert back to an image...
+        img_array = img_array.view(np.uint8).reshape((h, w, 4))
+        self.qimage = pg.functions.makeQImage(img_array,
+                                              alpha=True,
+                                              transpose=False)
+
 
 class PersistencePlotWidget(pg.PlotWidget):
     """Persistence plot widget."""
@@ -68,6 +107,9 @@ class PersistencePlotWidget(pg.PlotWidget):
                  data_model = None, #a WaterfallModel (for now)
                  **kargs):
         pg.PlotWidget.__init__(self, parent, background, **kargs)
+        
+        #grab the rgb of the background color for palette matching later...
+        self._bg_color = self.backgroundBrush().color().toTuple()[:3]
         
         if decay_timing not in ALL_DECAY_TIMING:
             raise ValueError("Unsupported decay timing: %s" % decay_timing)
@@ -85,7 +127,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         self._prev_t = 0
         
         #We will always have a gradient editor for providing our LUT, but it
-        #may not be visible. It is referencable for layour, though... just grab
+        #may not be visible. It can be referenced for layout, though... just grab
         #it after initializing the PersistencePlotWidget.
         self.gradient_editor = pg.GradientWidget(parent = self,
                                                  orientation = "left")
@@ -113,13 +155,13 @@ class PersistencePlotWidget(pg.PlotWidget):
     def _get_lut(self):
         lut = self.gradient_editor.getLookupTable(self._LUT_PTS)
         #make sure that the lowest value drops to the background...
-        lut[0] = self.backgroundBrush().color().toTuple()[:3]
+        lut[0] = self._bg_color
         
         self._latest_lut = lut
         return lut
     
     def _InitPersistentImage(self):
-        self._persistent_img = pg.ImageItem()
+        self._persistent_img = _PersistentImage(self._bg_color)
         self._persistent_img.setLookupTable(self._get_lut())
     
     def _UpdatePersistentImage(self):
@@ -132,7 +174,9 @@ class PersistencePlotWidget(pg.PlotWidget):
             self._InitPersistentImage()
         
         #Make a temporary blank image canvas to render the new plot to...
-        tmp_plt_img = QtGui.QImage(self.size(), QtGui.QImage.Format_RGB32)
+        img_size = self.size()
+        #img_size = self.plotItem.vb.size().toSize()
+        tmp_plt_img = QtGui.QImage(img_size, QtGui.QImage.Format_RGB32)
         
         #Draw the new plot to the temporary image...
         # - assumes it has already been plotted correctly (with plot())
@@ -213,7 +257,6 @@ class PersistencePlotWidget(pg.PlotWidget):
         #pyqtgraph uses __getattr__ to get down to the PlotItem from a
         #PlotWidget, and this messes up inheritance. We need to go directly...
         ret = self.plotItem.plot(*args, **kwargs)
-        
         self._UpdatePersistentImage()
         return ret
     
