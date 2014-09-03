@@ -55,8 +55,6 @@ class WaterfallModel(QtCore.QObject):
     def __init__(self, x_data = None, max_len = 2048):
         self._start_time_s = 0.0
         self._x_data = x_data
-        self._min_x = None
-        self._max_x = None
         self._x_len = None
         self._max_len = max_len
         
@@ -70,14 +68,10 @@ class WaterfallModel(QtCore.QObject):
     
     def _set_x_data_stats(self):
         if self._x_data is None:
-            self._min_x = None
-            self._max_x = None
             self._x_len = None
         else:
-            self._min_x = self._x_data
-            self._max_x = self._x_data
             self._x_len = len(self._x_data)
-        
+
     def add_row(self, data, metadata = None, timestamp_s = None):
         if self._x_data is None:
             #we've never been given x data, but we need it! Generate some
