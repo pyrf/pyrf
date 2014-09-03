@@ -74,14 +74,9 @@ class WaterfallModel(QtCore.QObject):
             self._max_x = None
             self._x_len = None
         else:
-            if len(self._x_data) != 0:
-                self._min_x = np.min(self._x_data)
-                self._max_x = np.max(self._x_data)
-                self._x_len = len(self._x_data)
-            else:
-                self._min_x = self._x_data
-                self._max_x = self._x_data
-                self._x_len = len(self._x_data)
+            self._min_x = self._x_data
+            self._max_x = self._x_data
+            self._x_len = len(self._x_data)
         
     def add_row(self, data, metadata = None, timestamp_s = None):
         if self._x_data is None:
@@ -89,7 +84,8 @@ class WaterfallModel(QtCore.QObject):
             #bogus x data that is just a 0-based range...
             self._x_data = np.arange(len(data))
             self._set_x_data_stats()
-
+        # if not data.any():
+            # return
         assert len(data) == self._x_len
         assert data.ndim == 1
 
