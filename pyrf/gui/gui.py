@@ -12,6 +12,7 @@ and placed to left of the controls.
 from PySide import QtGui, QtCore
 import numpy as np
 import math
+import glob
 
 from pkg_resources import parse_version, require
 
@@ -148,7 +149,21 @@ class MainWindow(QtGui.QMainWindow):
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
-        self.controller.start_recording()
+        names = glob.glob('recording-*.vrt')
+        last_index = -1
+        for n in names:
+            try:
+                last_index = max(last_index, int(n[10:-4]))
+            except ValueError:
+                pass
+        filename = 'recording-%04d.vrt' % (last_index + 1)
+        record_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
+            "Create Recording",
+            filename,
+            "VRT Packet Capture Files (*.vrt)",
+            )
+        if record_filename:
+            self.controller.start_recording(record_filename)
 
     def stop_recording(self):
         self.stop_action.setDisabled(True)
