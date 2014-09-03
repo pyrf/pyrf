@@ -368,15 +368,15 @@ class SpecAController(QtCore.QObject):
                 pow_data, usable_bins, fstart, fstop = (
                     trim_to_usable_fstart_fstop(
                         pow_data, usable_bins, fstart, fstop))
-
-            self.capture_receive.emit(
-                self._state,
-                fstart,
-                fstop,
-                data['data_pkt'],
-                pow_data,
-                usable_bins,
-                None)
+            if pow_data.any():
+                self.capture_receive.emit(
+                    self._state,
+                    fstart,
+                    fstop,
+                    data['data_pkt'],
+                    pow_data,
+                    usable_bins,
+                    None)
 
     def process_sweep(self, fstart, fstop, data):
         sweep_segments = list(self._sweep_device.sweep_segments)
