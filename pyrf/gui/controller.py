@@ -422,9 +422,11 @@ class SpecAController(QtCore.QObject):
             # check if RBW is appropriate for given mode
             if state.rbw not in self._dut.properties.RBW_VALUES[state.rfe_mode()]:
                 if state.sweeping():
-                    state.rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
+                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
+                    state = SpecAState(state, rbw=rbw)
                 else:
-                    state.rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
+                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
+                    state = SpecAState(state, rbw=rbw)
         self._state = state
 
         # start capture loop again when user switches output path
