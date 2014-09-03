@@ -157,10 +157,17 @@ class SpecAController(QtCore.QObject):
         device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
+
+        # check if RBW is appropriate for given mode
+        if self._state.rbw not in self._dut.properties.RBW_VALUES[self._state.rfe_mode()]:
+            rbw = self._dut.properties.RBW_VALUES[self._state.rfe_mode()][0]
+        else:
+            rbw = self._state.rbw
+
         self._sweep_device.capture_power_spectrum(
             self._state.center - self._state.span / 2.0,
             self._state.center + self._state.span / 2.0,
-            self._state.rbw,
+            rbw,
             device_set,
             mode=self._state.rfe_mode())
 
