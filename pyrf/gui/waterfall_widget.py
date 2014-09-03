@@ -58,9 +58,14 @@ class WaterfallModel(QtCore.QObject):
             self._max_x = None
             self._x_len = None
         else:
-            self._min_x = np.min(self._x_data)
-            self._max_x = np.max(self._x_data)
-            self._x_len = len(self._x_data)
+            if len(self._x_data) != 0:
+                self._min_x = np.min(self._x_data)
+                self._max_x = np.max(self._x_data)
+                self._x_len = len(self._x_data)
+            else:
+                self._min_x = self._x_data
+                self._max_x = self._x_data
+                self._x_len = len(self._x_data)
         
     def add_row(self, data, metadata = None, timestamp_s = None):
         if self._x_data is None:
@@ -68,20 +73,20 @@ class WaterfallModel(QtCore.QObject):
             #bogus x data that is just a 0-based range...
             self._x_data = np.arange(len(data))
             self._set_x_data_stats()
-        
+
         assert len(data) == self._x_len
         assert data.ndim == 1
-            
+
         if timestamp_s is None:
             timestamp_s = time.time()
-        
+
         with self._mutex:
             data_tuple = (timestamp_s, data, metadata)
             self._history.append(data_tuple)
             if len(self._history) > self._max_len:
                 self._history.popleft()
             self.sigNewDataRow.emit(data_tuple)
-    
+
     def get_all_data(self):
         with self._mutex:
             #deque iterator efficiency *should* be fine with this generator...
@@ -92,7 +97,7 @@ class WaterfallModel(QtCore.QObject):
             else:
                 all_data = np.ndarray((0, self._x_len))
         return all_data
-    
+
     def get_latest_data(self, num_rows, pad_black = True):
         #st = time.time()
         with self._mutex:
@@ -108,7 +113,7 @@ class WaterfallModel(QtCore.QObject):
                 data_arrays = tuple(d[1] for d in data_iter)
             else:
                 no_data = True
-        
+
         if no_data:
             #No data rows have been added yet! If we know how wide our data
             #is *supposed* to be, we'll at least return an array of the
