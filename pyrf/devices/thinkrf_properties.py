@@ -201,6 +201,13 @@ class WSA5000_220Properties(object):
         }
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+    RBW_VALUES = {}
+    for mode in RFE_MODES:
+        rbw_vals = []
+        for s in SAMPLE_SIZES:
+            rbw_vals.append(FULL_BW[mode] / s)
+        RBW_VALUES[mode] = rbw_vals
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'

@@ -10,7 +10,10 @@ from pyrf.gui import fonts
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
+
 from pyrf.gui.widgets import infiniteLine
+from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
+
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -177,6 +180,9 @@ class Marker(object):
         self._plot.window.removeItem(self.marker_plot)
         self._plot.window.addItem(self.marker_plot)
         self.marker_plot.clear()
+        if len(xdata) <= 0 or len(ydata) <= 0:
+            return
+
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
 
@@ -208,7 +214,10 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
-        self.window = pg.PlotWidget()
+
+        self.freq_axis = RTSAFrequencyAxisItem()
+        self.window = pg.PlotWidget(axisItems = dict(bottom = self.freq_axis))
+        self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
 
@@ -224,9 +233,10 @@ class Plot(QtCore.QObject):
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
-        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
 
+        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
+
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()

@@ -96,6 +96,8 @@ class AmplitudeControls(QtGui.QGroupBox):
         if state.playback:
             self._atten_box.playback_value(
                 state.device_settings.get('attenuator', False))
+        elif 'playback' in changed:
+            self._atten_box.setEnabled(True)
 
         if 'mode' in changed:
             if state.mode == 'HDR':
