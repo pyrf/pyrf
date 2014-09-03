@@ -68,7 +68,10 @@ class PersistencePlotWidget(pg.PlotWidget):
                  data_model = None, #a WaterfallModel (for now)
                  **kargs):
         pg.PlotWidget.__init__(self, parent, background, **kargs)
-        
+
+        self.setMenuEnabled(False)
+        self.plotItem.getViewBox().setMouseEnabled(x = False, y = False)
+
         if decay_timing not in ALL_DECAY_TIMING:
             raise ValueError("Unsupported decay timing: %s" % decay_timing)
         
