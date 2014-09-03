@@ -119,8 +119,11 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
     """
     left_bin = usable_bins[0][0]
     right_bin = usable_bins[-1][0] + usable_bins[-1][1]
+
     span = fstop - fstart
+
     adj_fstart = float(span) * left_bin / len(bins) + fstart
     adj_fstop = float(span) * right_bin / len(bins) + fstart
     trim_bins = [(s - left_bin, r) for (s, r) in usable_bins]
+
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop

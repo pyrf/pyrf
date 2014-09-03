@@ -256,11 +256,10 @@ class MainPanel(QtGui.QWidget):
         :param changed: list of attribute names changed
         """
         self.gui_state = state
-
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
             self._update_iq_plot_visibility()
-
+            self.update_rbw_label()
             if rfe_mode in ('DD', 'IQIN'):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
@@ -310,75 +309,50 @@ class MainPanel(QtGui.QWidget):
                 self.setMinimumWidth(MINIMUM_WIDTH)
                 self.setMinimumHeight(MINIMUM_HEIGHT)
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
-                WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
+                WINDOW_HEIGHT = max(screen.height() * 0.7, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
+        if 'rbw' in changed:
+            self.update_rbw_label()
 
-    def keyPressEvent(self, event):
-        if not self.dut_prop:
-            return
+        if 'span' in changed:
+            self.update_span_label()
 
-        hotkey_dict = {
-            'M': self.trace_group._marker_control,
-            'P': self.trace_group._find_peak,
-            }
-
-        arrow_dict = {
-            '32': 'SPACE',
-            '16777235': 'UP KEY',
-            '16777237': 'DOWN KEY',
-            '16777234': 'LEFT KEY',
-            '16777236': 'RIGHT KEY',
-            }
-
-        if str(event.key()) in arrow_dict:
-            hotkey = arrow_dict[str(event.key())]
+    def update_rbw_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._rbw_label.setText("RBW:\n%0.2f Hz" % (self.gui_state.rbw))
         else:
-            hotkey = str(event.text()).upper()
-        if hotkey in hotkey_dict:
-            hotkey_dict[hotkey]()
+            self._rbw_label.setText("RBW:\n%0.2f KHz" % (self.gui_state.rbw / 1e3))
 
-
-    def mousePressEvent(self, event):
-        if not self.controller._dut:
-            return
-
-        for marker in self._plot.markers:
-            if marker.selected:
-                break
+    def update_span_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._span_label.setText("SPAN:\n%0.2f KHz" % (self.gui_state.span / 1e3))
         else:
-            return
-
-        trace = self._plot.traces[marker.trace_index]
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            click_pos =  event.pos().x() - 68  # FIXME: declare this as a constant?
-            plot_window_width = self._plot.window.width() - 68
-
-            if click_pos < plot_window_width and click_pos > 0:
-                window_freq = self._plot.view_box.viewRange()[0]
-                window_bw =  (window_freq[1] - window_freq[0])
-                click_freq = ((float(click_pos) / float(plot_window_width)) * float(window_bw)) + window_freq[0]
-                index = find_nearest_index(click_freq, trace.freq_range)
-                marker.data_index = index
+            self._span_label.setText("SPAN:\n%0.2f MHz" % (self.gui_state.span/ M))
 
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        self.plot_width = 8
+        self.plot_width = 11
 
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
 
-        grid.addWidget(self._plot_layout(),0,0,13,self.plot_width)
+        self.mask_label = QtGui.QLabel()
+        self.mask_label.setStyleSheet('background-color: black')
 
         self.marker_labels = []
-        marker_label, delta_label, diff_label = self._marker_labels()
-        self.marker_labels.append(marker_label)
-        self.marker_labels.append(delta_label)
-        grid.addWidget(marker_label, 0, 1, 1, 2)
-        grid.addWidget(delta_label, 0, 3, 1, 2)
-        grid.addWidget(diff_label , 0, 5, 1, 2)
+        marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
 
+        grid.addWidget(self.mask_label, 0, 0, 2, self.plot_width)
+        grid.addWidget(marker_label, 0, 3, 1, 2)
+        grid.addWidget(delta_label, 0, 5, 1, 2)
+        grid.addWidget(diff_label , 0, 7, 1, 2)
+        grid.addWidget(self._rbw_label, 0, 0, 1, 2)
+        grid.addWidget(self._span_label, 0, 9, 1, 2)
+        grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
@@ -388,7 +362,7 @@ class MainPanel(QtGui.QWidget):
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._trace_controls())
         controls_layout.addStretch()
-        grid.addLayout(controls_layout, y, x, 13, 5)
+        grid.addLayout(controls_layout, y, x, 14, 5)
 
         self._grid = grid
         self.setLayout(grid)
@@ -435,27 +409,31 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self._dev_group)
         return self._dev_group
 
-
-
     def _marker_labels(self):
-        marker_alignment = QtCore.Qt.AlignHCenter
+
         marker_label = QtGui.QLabel('')
-        marker_label.setStyleSheet('color: %s; background-color: black' % colors.TEAL)
-        marker_label.setMinimumHeight(25)
-        marker_label.setAlignment(marker_alignment)
+        marker_label.setAlignment(QtCore.Qt.AlignLeft)
 
         delta_label = QtGui.QLabel('')
-        delta_label.setStyleSheet('color: %s;' % colors.TEAL)
-        delta_label.setMinimumHeight(25)
-        delta_label.setAlignment(marker_alignment)
+        delta_label.setAlignment(QtCore.Qt.AlignLeft)
+
+        span_label = QtGui.QLabel('')
+        span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+        span_label.setAlignment(QtCore.Qt.AlignRight)
+
+        rbw_label = QtGui.QLabel('')
+        rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+        rbw_label.setAlignment(QtCore.Qt.AlignLeft)
 
         diff_label = QtGui.QLabel('')
-        diff_label.setStyleSheet('color: %s;' % colors.WHITE)
-        diff_label.setMinimumHeight(25)
-        diff_label.setAlignment(marker_alignment)
+        diff_label.setAlignment(QtCore.Qt.AlignLeft)
         self._diff_lab = diff_label
+        self._rbw_label = rbw_label
+        self._span_label = span_label
+        self.marker_labels.append(marker_label)
 
-        return marker_label,delta_label, diff_label
+        self.marker_labels.append(delta_label)
+        return marker_label,delta_label, diff_label, rbw_label, span_label
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         """
@@ -467,6 +445,7 @@ class MainPanel(QtGui.QWidget):
         :param usable: usable bins from power (None when sweeping)
         :param segments: bin segments from power (None when not sweeping)
         """
+
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
@@ -581,20 +560,14 @@ class MainPanel(QtGui.QWidget):
                     trace = self._plot.traces[marker.trace_index]
                     marker_label.show()
                     if not trace.blank:
-                        if marker.selected:
-                            color = colors.YELLOW_NUM
-                        else:
-                            color = colors.WHITE_NUM
-                        if len(trace.freq_range) == 0:
-                            return
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
 
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
                         marker.update_pos(trace.freq_range, trace.data)
                         marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
                         num += 1
                         marker_label.setText(marker_text)
-
+                        self.mask_label.show()
                 else:
                     marker_label.hide()
 
@@ -611,8 +584,9 @@ class MainPanel(QtGui.QWidget):
                 data_indices.append(marker.data_index)
 
         if num_markers == len(labels.MARKERS):
-            if len(traces[0].freq_range) == 0 or len(traces[1].freq_range) == 0:
-                return
+
+            self._diff_lab.show()
+
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
 
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
@@ -623,8 +597,7 @@ class MainPanel(QtGui.QWidget):
                 delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
         else:
-            self._diff_lab.setText('')
-
+            self._diff_lab.hide()
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
