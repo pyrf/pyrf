@@ -291,6 +291,7 @@ class Plot(QtCore.QObject):
                                 state.device_settings['trigger']['fstop'],
                                 state.device_settings['trigger']['amplitude'])
         if 'center' in changed:
+            self.persistence_window.reset_plot()
             for trace in self.traces:
                 trace.clear_data()
 

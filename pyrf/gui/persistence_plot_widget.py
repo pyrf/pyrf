@@ -14,7 +14,8 @@ from waterfall_widget import WaterfallModel
 # - we also want it at the top of the gradient editors... there's no stock
 #    way in python to insert at the top of an ordereddict, so we rebuild it.
 newGradients = collections.OrderedDict()
-newGradients["rycb"] = {'ticks': [(0.00, (  0,   0, 255, 255)),
+newGradients["rycb"] = {'ticks': [(0.00, ( 0, 0, 0, 255)),
+                                  (0.15, (  0,   0, 255, 255)),
                                   (0.33, (  0, 255, 255, 255)),
                                   (0.66, (255, 255,   0, 255)),
                                   (1.00, (255,   0,   0, 255))],
@@ -38,7 +39,7 @@ def decay_fn_EXPONENTIAL(t_now, t_prev, decay_args, img_data):
     #We don't care which it is, but the decay_args will specify the rate.
     half_life = decay_args[0]
     t_delta = float(t_now - t_prev)
-    
+
     decay_frac = 0.5 ** (t_delta / half_life)
     img_data *= decay_frac
     return img_data
@@ -68,7 +69,10 @@ class PersistencePlotWidget(pg.PlotWidget):
                  data_model = None, #a WaterfallModel (for now)
                  **kargs):
         pg.PlotWidget.__init__(self, parent, background, **kargs)
-        
+
+        self.setMenuEnabled(False)
+        self.plotItem.getViewBox().setMouseEnabled(x = False, y = False)
+
         if decay_timing not in ALL_DECAY_TIMING:
             raise ValueError("Unsupported decay timing: %s" % decay_timing)
         
@@ -221,6 +225,10 @@ class PersistencePlotWidget(pg.PlotWidget):
         #Our persistence is entirely contained within the image, so on resize
         #we can only really restart from scratch...
         # - TODO: if using a data model we could reconstruct from history
+        self.reset_plot()
+        super(PersistencePlotWidget, self).resizeEvent(event)
+
+    def reset_plot(self):
+        # Reset current plot
         self._img_array = None
         self._persistent_img = None
-        super(PersistencePlotWidget, self).resizeEvent(event)
