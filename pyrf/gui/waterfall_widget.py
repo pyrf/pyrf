@@ -20,6 +20,22 @@ pg.setConfigOption('useWeave', False)
 
 DLOG_ENABLED = False
 DLOG_start_time = None
+
+#inject a familiar color scheme into pyqtgraph...
+# - this makes it available in the stock gradient editor schemes.
+# - we also want it at the top of the gradient editors... there's no stock
+#    way in python to insert at the top of an ordereddict, so we rebuild it.
+newGradients = collections.OrderedDict()
+newGradients["waterfall"] = {'ticks': [(0, ( 0, 0, 0, 255)),
+                                  (0.3, (  0,   0, 255, 255)),
+                                  (0.55, (  0, 255, 255, 255)),
+                                  (0.66, (255, 255,   0, 255)),
+                                  (0.75, (255,   0,   0, 255))],
+                        'mode': 'rgb'}
+for k, v in pg.graphicsItems.GradientEditorItem.Gradients.iteritems():
+    newGradients[k] = v
+pg.graphicsItems.GradientEditorItem.Gradients = newGradients
+
 def dlog(msg):
     """Simple debug logging function."""
     if DLOG_ENABLED:
@@ -926,7 +942,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
                                                       orientation = "left")
-            self._gradient_editor.loadPreset('thermal')
+            self._gradient_editor.loadPreset('waterfall')
         
         #configure the widgets...
         #self._plot_widget.addItem(self._wf_img)
