@@ -357,15 +357,16 @@ class SpecAController(QtCore.QObject):
                 pow_data, usable_bins, fstart, fstop = (
                     trim_to_usable_fstart_fstop(
                         pow_data, usable_bins, fstart, fstop))
-
-            self.capture_receive.emit(
-                self._state,
-                fstart,
-                fstop,
-                data['data_pkt'],
-                pow_data,
-                usable_bins,
-                None)
+            #FIXME: Find out why there is a case where pow_data may be empty
+            if pow_data.any():
+                self.capture_receive.emit(
+                    self._state,
+                    fstart,
+                    fstop,
+                    data['data_pkt'],
+                    pow_data,
+                    usable_bins,
+                    None)
 
     def process_sweep(self, fstart, fstop, data):
         sweep_segments = list(self._sweep_device.sweep_segments)
@@ -411,9 +412,11 @@ class SpecAController(QtCore.QObject):
             # check if RBW is appropriate for given mode
             if state.rbw not in self._dut.properties.RBW_VALUES[state.rfe_mode()]:
                 if state.sweeping():
-                    state.rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
+                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
+                    state = SpecAState(state, rbw=rbw)
                 else:
-                    state.rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
+                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
+                    state = SpecAState(state, rbw=rbw)
         self._state = state
 
         # start capture loop again when user switches output path
