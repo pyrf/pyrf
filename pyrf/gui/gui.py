@@ -20,7 +20,7 @@ from pyrf.gui import fonts
 from pyrf.gui import labels
 from pyrf.gui import gui_config
 from pyrf.gui.controller import SpecAController
-
+from pyrf.version import __version__
 from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.units import M
@@ -88,7 +88,7 @@ class MainWindow(QtGui.QMainWindow):
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
 
-        self.setWindowTitle('PyRF RTSA ' + require('pyrf')[0].version)
+        self.setWindowTitle('PyRF RTSA: ' + __version__)
         self.setCentralWidget(self.mainPanel)
         if dut_address:
             self.open_device(dut_address, True)
@@ -182,7 +182,7 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
-        self.setWindowTitle('PyRF RTSA %s Connected To: %s' % (require('pyrf')[0].version, name))
+        self.setWindowTitle('PyRF RTSA %s Connected To: %s' % (__version__ , name))
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
