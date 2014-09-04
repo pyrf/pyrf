@@ -1,5 +1,7 @@
 import math
 
+from pyrf.vrt import I_ONLY
+
 def read_data_and_context(dut, points=1024):
     """
     Initiate capture of one data packet, wait for and return data packet
@@ -70,9 +72,7 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
             start = 0
             usable_bins[i] = (start, run)
 
-    # FIXME: store the format in the device properties so we don't list
-    # modes here
-    if rfe_mode in ('SH', 'HDR', 'SHN'):
+    if dut_prop.DEFAULT_SAMPLE_TYPE.get(rfe_mode) == I_ONLY:
         # we're getting only 1/2 the bins
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
@@ -119,8 +119,11 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
     """
     left_bin = usable_bins[0][0]
     right_bin = usable_bins[-1][0] + usable_bins[-1][1]
+
     span = fstop - fstart
+
     adj_fstart = float(span) * left_bin / len(bins) + fstart
     adj_fstop = float(span) * right_bin / len(bins) + fstart
     trim_bins = [(s - left_bin, r) for (s, r) in usable_bins]
+
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop
