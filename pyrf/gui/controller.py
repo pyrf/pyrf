@@ -368,6 +368,7 @@ class SpecAController(QtCore.QObject):
                 pow_data, usable_bins, fstart, fstop = (
                     trim_to_usable_fstart_fstop(
                         pow_data, usable_bins, fstart, fstop))
+            #FIXME: Find out why there is a case where pow_data may be empty
             if pow_data.any():
                 self.capture_receive.emit(
                     self._state,
