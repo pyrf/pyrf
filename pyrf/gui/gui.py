@@ -434,11 +434,11 @@ class MainPanel(QtGui.QWidget):
 
         span_label = QtGui.QLabel('')
         span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
-        span_label.setAlignment(QtCore.Qt.AlignRight)
+        span_label.setAlignment(QtCore.Qt.AlignLeft)
 
         rbw_label = QtGui.QLabel('')
         rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
-        rbw_label.setAlignment(QtCore.Qt.AlignLeft)
+        rbw_label.setAlignment(QtCore.Qt.AlignRight)
 
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
