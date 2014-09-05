@@ -213,19 +213,14 @@ class Plot(QtCore.QObject):
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
+        controller.device_change.connect(self.device_changed)
         # initialize main fft window
 
         self.freq_axis = RTSAFrequencyAxisItem()
         self.window = pg.PlotWidget(axisItems = dict(bottom = self.freq_axis))
         self.window.setMenuEnabled(False)
 
-        def widget_range_changed(widget, ranges):
-
-            if not hasattr(ranges, '__getitem__'):
-                return  # we're not intereted in QRectF updates
-            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
-
-        self.window.sigRangeChanged.connect(widget_range_changed)
+        self.window.sigRangeChanged.connect(self.widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
         self.view_box.setMouseEnabled(x = True, y = False)
@@ -285,6 +280,14 @@ class Plot(QtCore.QObject):
             )
         self.connect_plot_controls()
 
+    def widget_range_changed(self, widget, ranges):
+
+            if not hasattr(ranges, '__getitem__'):
+                return  # we're not intereted in QRectF updates
+            if getattr(self, "dut_prop", None):
+                self.user_xrange_change.emit(np.round(ranges[0][0], -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION) + 1)), 
+                                             np.round(ranges[0][1], -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION) + 1)))
+
     def connect_plot_controls(self):
         def new_trigger_freq():
             self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
@@ -299,6 +302,10 @@ class Plot(QtCore.QObject):
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
         self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
+
+    def device_changed(self, dut):
+        # to retrieve tunning resolution
+        self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
         self.gui_state = state
