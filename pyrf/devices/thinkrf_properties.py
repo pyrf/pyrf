@@ -210,6 +210,7 @@ class WSA5000_220Properties(object):
             div = 1
         rbw_vals = []
         for s in SAMPLE_SIZES:
+            # FIXME: this is workaround for SPP limit in the sweep device
             if div == 1 and s == SAMPLE_SIZES[-1]:
                 break
             rbw_vals.append(FULL_BW[mode] / (s / div))
