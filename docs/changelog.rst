@@ -2,6 +2,76 @@
 Changelog
 ---------
 
+PyRF 2.0.0
+==========
+
+2014-01-31
+
+ * Added multiple traces and trace controls to GUI
+
+ * Added constellation and IQ plots
+
+ * Added raw VRT capture-to-file support
+
+ * Updated SweepDevice sweep plan calculation
+
+ * Created separate GUI for single capture modes
+
+ * Updated device properties for WSA5000 RFE modes
+
+ * Show attenuated edges in gray, sweep steps in different colors in GUI
+
+ * Added decimation and frequency shift controls to single capture GUI
+
+ * Fixed many issues with WSA5000 different RFE mode support
+
+ * Removed trigger controls, waiting for hardware support
+
+ * Switched to using pyinstaller for better windows build support
+
+PyRF 1.2.0
+==========
+
+2013-10-01
+
+ * Added WSA5000 support
+
+ * Added WSA discovery example scripts
+
+ * Renamed WSA4000 class to WSA (supports WSA5000 as well)
+
+ * Separated device properties from WSA class
+
+PyRF 1.1.0
+==========
+
+2013-07-19
+
+ * Fixed some py2exe issues
+
+ * Show the GUI even when not connected
+
+PyRF 1.0.0
+==========
+
+2013-07-18
+
+ * Switched to pyqtgraph for spectrum plot
+
+ * Added trigger controls
+
+ * Added markers
+
+ * Added hotkeys for control
+
+ * Added bandwidth control
+
+ * Renamed GUI launcher speca-gui
+
+ * Created SweepDevice to generalize spectrum analyzer-type function
+
+ * Created CaptureDevice to collect single captures and related context
+
 PyRF 0.4.0
 ==========
 
