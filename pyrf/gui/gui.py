@@ -578,7 +578,11 @@ class MainPanel(QtGui.QWidget):
 
                         marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
+                        if self.gui_state.rfe_mode() == 'HDR':
+                            marker_text = 'M%d: %0.4f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
+                                                                           trace.data[marker.data_index])
+                        else:
+                            marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
                         num += 1
                         marker_label.setText(marker_text)
@@ -607,7 +611,7 @@ class MainPanel(QtGui.QWidget):
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
             self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
             if self.gui_state.rfe_mode() == 'HDR':
-                delta_text = 'Delta: %f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
+                delta_text = 'Delta: %0.2f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
             else:
                 delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_lab.setText(delta_text)
