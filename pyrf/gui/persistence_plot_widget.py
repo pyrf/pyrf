@@ -60,6 +60,11 @@ def decay_fn_LINEAR(t_now, t_prev, decay_args, img_data):
     img_data -= (t_delta * decay_per_tick)
     return img_data #caller will clip the negatives
 
+
+def rgba_tuple_to_int(rgba_tuple):
+    return np.array(rgba_tuple, np.uint8).view(np.uint32)[0]
+
+
 class _PersistentImage(pg.ImageItem):
     """This subclass exists solely to set the alpha on the background color to
     zero so that rendering looks correct (with gridlines and such) in the final
@@ -81,8 +86,8 @@ class _PersistentImage(pg.ImageItem):
         assert len(bg_color) == 3 #no alpha
         rgba_match = bg_color + (255, )
         rgba_no_alpha = bg_color + (0, )
-        self._rgba_match = np.array(rgba_match, np.uint8).view(np.uint32)[0]
-        self._bg_no_alpha = np.array(rgba_no_alpha, np.uint8).view(np.uint32)[0]
+        self._rgba_match = rgba_tuple_to_int(rgba_match)
+        self._bg_no_alpha = rgba_tuple_to_int(rgba_no_alpha)
         
     def render(self, *args, **kwargs):
         super(_PersistentImage, self).render(*args, **kwargs)
@@ -111,6 +116,7 @@ class PersistencePlotWidget(pg.PlotWidget):
                  decay_args = [10, ], #10 arrays until 0.5 decay (20 for full)
                  data_model = None, #a WaterfallModel (for now)
                  **kargs):
+        self._init_complete = False #base class init below triggers a lot
         pg.PlotWidget.__init__(self, parent, background, **kargs)
 
         #grab the rgb of the background color for palette matching later...
@@ -150,6 +156,10 @@ class PersistencePlotWidget(pg.PlotWidget):
                 self._data_model.sigNewDataRow.connect(self.onNewModelData)
             except AttributeError:
                 raise ValueError("data_model must be a WaterfallModel") #for now
+        
+        self._reset_requested = False
+        
+        self._init_complete = True
     
     def _onGradientChange(self):
         if self._persistent_img:
@@ -169,8 +179,16 @@ class PersistencePlotWidget(pg.PlotWidget):
         return lut
     
     def _InitPersistentImage(self):
-        self._persistent_img = _PersistentImage(self._bg_color)
-        self._persistent_img.setLookupTable(self._get_lut())
+        if self._persistent_img is None:
+            self._persistent_img = _PersistentImage(self._bg_color)
+            self._persistent_img.setLookupTable(self._get_lut())
+        else:
+            #if we already have a persistent image, we need to explicitly clear
+            #it due to pytgraph/PySide/Qt's (?) frustrating memory preservation
+            #(somehow)...
+            if self._persistent_img.qimage:
+                bg = rgba_tuple_to_int(self._bg_color + (255, ))
+                self._persistent_img.qimage.fill(bg)
     
     def _UpdatePersistentImage(self):
         #safety check: if we have zero height or width we can't make an image...
@@ -178,8 +196,9 @@ class PersistencePlotWidget(pg.PlotWidget):
             return
         
         #Make sure we have an image to start with!
-        if self._persistent_img is None:
+        if (self._persistent_img is None) or self._reset_requested:
             self._InitPersistentImage()
+            self._reset_requested = False
         
         #Make a temporary blank image canvas to render the new plot to...
         img_size = self.size()
@@ -276,11 +295,12 @@ class PersistencePlotWidget(pg.PlotWidget):
     def resizeEvent(self, event):
         #Our persistence is entirely contained within the image, so on resize
         #we can only really restart from scratch...
-        # - TODO: if using a data model we could reconstruct from history
         self.reset_plot()
         super(PersistencePlotWidget, self).resizeEvent(event)
 
     def reset_plot(self):
         # Reset current plot
+        if not self._init_complete:
+            return
+        self._reset_requested = True
         self._img_array = None
-        self._persistent_img = None

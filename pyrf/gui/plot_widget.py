@@ -26,6 +26,12 @@ IQ_PLOT_XMIN = -1
 IQ_PLOT_XMAX = 1
 
 AXIS_OFFSET = 7
+
+PERSISTENCE_RESETTING_CHANGES = set(["center",
+                                     "device_settings.attenuator",
+                                     #"rbw",  <-- signal is the same area
+                                     "mode"
+                                     ])
 class Trace(object):
     """
     Class to represent a trace in the plot
@@ -320,6 +326,9 @@ class Plot(QtCore.QObject):
             self.persistence_window.reset_plot()
             for trace in self.traces:
                 trace.clear_data()
+        
+        if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
+            self.persistence_window.reset_plot()
 
     def add_trigger(self,fstart, fstop, amplitude):
         self.amptrig_line.blockSignals(True)
@@ -356,6 +365,7 @@ class Plot(QtCore.QObject):
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
+        self.persistence_window.reset_plot()
         self.persistence_window.setYRange(min_level, ref_level)
 
     def grid(self,state):
