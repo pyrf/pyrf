@@ -234,7 +234,6 @@ class Plot(QtCore.QObject):
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
 
-        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize trigger lines

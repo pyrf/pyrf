@@ -433,11 +433,11 @@ class MainPanel(QtGui.QWidget):
         delta_label.setAlignment(QtCore.Qt.AlignLeft)
 
         span_label = QtGui.QLabel('')
-        span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+        span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         span_label.setAlignment(QtCore.Qt.AlignLeft)
 
         rbw_label = QtGui.QLabel('')
-        rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+        rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         rbw_label.setAlignment(QtCore.Qt.AlignRight)
 
         diff_label = QtGui.QLabel('')
@@ -605,7 +605,7 @@ class MainPanel(QtGui.QWidget):
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
 
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.WHITE_NUM))
+            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
             if self.gui_state.rfe_mode() == 'HDR':
                 delta_text = 'Delta: %f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
             else:
