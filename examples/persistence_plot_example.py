@@ -37,7 +37,7 @@ class MainWin(QtGui.QMainWindow):
             self._using_mock_wsa = True
         
     def StartDataCollection(self):
-        self._capture_period_s = 0.05
+        self._capture_period_s = 0.025
         self.wsa.start_continuous_capture(self._capture_period_s)
     
     def DoCreateWidgets(self):
@@ -63,10 +63,7 @@ class MainWin(QtGui.QMainWindow):
         self.setCentralWidget(self._main_wid)
     
     def DoHandlers(self):
-        #self._waterfall.sigMouseMoved.connect(self.onWaterfallMouseMove)
-        #self._start_but.clicked.connect(self.onStartButton)
         pass
-
 
 def calc_vrt_sample_time_s(vrt_data):
     return vrt_data.tsi + vrt_data.tsf * 1e-12
@@ -135,7 +132,7 @@ class MyWifiWSA(object):
         #capture_interval_s is really done on best effort (although the
         #QTimer drivign it does make reasonable efforts to sync timing).
         self._capture_timer.stop()
-        self._capture_timer.start(capture_interval_s)
+        self._capture_timer.start(1000 * capture_interval_s)
         self.capturing = True
         
     def stop_continuous_capture(self):
@@ -222,6 +219,11 @@ class MockWSA(MyWifiWSA):
             self._sigma -= self._SIGMA_WALK
         
         signal_dBm = 10 * np.log10(signal / A)
+        
+        signal_dBm[-2] = 0
+        signal_dBm[-1] = 0
+        signal_dBm[0] = 0
+        signal_dBm[1] = 0
         
         self.capture_history.add_row(signal_dBm)
         

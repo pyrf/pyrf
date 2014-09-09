@@ -4,6 +4,7 @@ import time
 import collections
 
 from PySide import QtGui
+from PySide import QtCore
 import numpy as np
 import pyqtgraph as pg
 
@@ -67,9 +68,12 @@ class _PersistentImage(pg.ImageItem):
     setImage function, which makes great use of fn.makeARGB() and the lut usage
     (unfortunately the lut does not currently support alpha).
     
-    TODO: fix this by getting the zValue correct for the image (it would be better
-           to draw on top of the gridlines, but under the ticks), rather than this
-           expensive alpha trick.
+    NOTE: originally I was thinking on using zorder (zValue) instead of
+    background transparency, and drawing the image before the gridlines.
+    However, it was proving very difficult/annoying to get this to happen, and
+    would also have resulted in gridlines on top of the image, so a transparent
+    background approach was chosen instead.
+    
     """
     def __init__(self, bg_color):
         super(_PersistentImage, self).__init__()
@@ -183,13 +187,17 @@ class PersistencePlotWidget(pg.PlotWidget):
         painter = QtGui.QPainter(tmp_plt_img)
         self.render(painter)
         
+        #Now crop out the plot area...
+        # - we only decay the plot area itelf
+        crop_rect = self.plotItem.vb.geometry().toRect()
+        cropped_img = tmp_plt_img.copy(crop_rect)
+        
         #Get a pointer to the start of the 32-bit (RGB32) image data...
-        ptr = tmp_plt_img.constBits()
+        ptr = cropped_img.constBits()
         
         #Convert the image array to a numpy array...
-        w = tmp_plt_img.width()
-        h = tmp_plt_img.height()
-        #arr = np.array(ptr).reshape(h, w, 4)
+        w = cropped_img.width()
+        h = cropped_img.height()
         new_img_array = np.fromstring(ptr,
                                       dtype = np.int32,
                                       count=(w*h))
@@ -200,6 +208,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         #    issue that Qt/PySide was having.
         del painter # <-- segfaults happen without this!
         del tmp_plt_img
+        del cropped_img
         
         #Fix the array orientation...
         new_img_array = np.rot90(new_img_array, 3)
