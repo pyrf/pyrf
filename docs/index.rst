@@ -13,6 +13,7 @@ Contents:
    usermanual
    reference
    examples
+   changelog
 
 
 PyRF is an openly available, comprehensive development environment for wireless signal analysis. It enables rapid development of powerful applications that leverage the new generation of measurement-grade software-defined radio technology.
