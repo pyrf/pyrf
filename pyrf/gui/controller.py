@@ -399,6 +399,7 @@ class SpecAController(QtCore.QObject):
 
         # make sure resolution of center are the same as the device's tunning resolution
         state.center = float(np.round(state.center, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
+        state = SpecAState(state, center=state.center)
 
         if not state.sweeping():
             # force span to correct value for the mode given
