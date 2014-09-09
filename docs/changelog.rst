@@ -2,6 +2,62 @@
 Changelog
 ---------
 
+PyRF 2.5.0
+==========
+
+2014-09-09
+
+ * Added Persistence plot
+
+ * Made markers draggable in the plot
+
+ * Added version number to title bar
+
+ * Moved DSP options to developer menu, developer menu now hidden
+   unless GUI run with -d option
+
+ * Rounded center to nearest tuning resolution step in GUI
+
+ * Fixed a number of GUI control and label issues
+
+ * Moved changelog into docs and updated
+
+PyRF 2.4.1
+==========
+
+2014-08-19
+
+ * Added missing reqirement
+
+ * Fixed use with CONNECTOR IQ path
+
+PyRF 2.4.0
+==========
+
+2014-08-19
+
+ * Improved trigger controls
+
+ * Fixed modes available with some WSA versions
+
+PyRF 2.3.0
+==========
+
+2014-08-12
+
+ * Added full playback support (including sweep) in GUI
+
+ * Added hdr_gain control to WSA class
+
+ * Added average mode and clear button for traces
+
+ * Added handling for different REFLEVEL_ERROR on early firmware versions
+
+ * Disable triggers for unsupported WSA firmware versions
+
+ * Added free plot adjustment developer option
+
+ * Fixed a number of GUI interface issues
 
 PyRF 2.2.0
 ==========
@@ -15,7 +71,7 @@ PyRF 2.2.0
  * Added recording speca state in recorded VRT files, Start/Stop recording
    menu
 
- * Added GUI playback support and command line '-p' option
+ * Added GUI non-sweep playback support and command line '-p' option
 
  * Added marker controls: peak left, right, center to marker
 
