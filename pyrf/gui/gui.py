@@ -578,7 +578,11 @@ class MainPanel(QtGui.QWidget):
 
                         marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
                         marker.update_pos(trace.freq_range, trace.data)
-                        marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
+                        if self.gui_state.rfe_mode() == 'HDR':
+                            marker_text = 'M%d: %0.4f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
+                                                                           trace.data[marker.data_index])
+                        else:
+                            marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                                    trace.data[marker.data_index])
                         num += 1
                         marker_label.setText(marker_text)
