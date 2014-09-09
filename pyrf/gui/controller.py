@@ -453,10 +453,13 @@ class SpecAController(QtCore.QObject):
 
         :param kwargs: keyword arguments of SpecAState attributes
         """
-
+        # make sure resolution of span/center are the same as the device's tunning resolution
+        kwargs['span'] = np.round(kwargs['span'], -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION)))
+        kwargs['center'] = np.round(kwargs['center'], -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION)))
         if self._state is None:
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
+
         state = SpecAState(self._state, **kwargs)
         self._state_changed(state, kwargs.keys())
 
