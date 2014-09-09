@@ -20,6 +20,22 @@ pg.setConfigOption('useWeave', False)
 
 DLOG_ENABLED = False
 DLOG_start_time = None
+
+#inject a familiar color scheme into pyqtgraph...
+# - this makes it available in the stock gradient editor schemes.
+# - we also want it at the top of the gradient editors... there's no stock
+#    way in python to insert at the top of an ordereddict, so we rebuild it.
+newGradients = collections.OrderedDict()
+newGradients["waterfall"] = {'ticks': [(0, ( 0, 0, 0, 255)),
+                                  (0.3, (  0,   0, 255, 255)),
+                                  (0.55, (  0, 255, 255, 255)),
+                                  (0.66, (255, 255,   0, 255)),
+                                  (0.75, (255,   0,   0, 255))],
+                        'mode': 'rgb'}
+for k, v in pg.graphicsItems.GradientEditorItem.Gradients.iteritems():
+    newGradients[k] = v
+pg.graphicsItems.GradientEditorItem.Gradients = newGradients
+
 def dlog(msg):
     """Simple debug logging function."""
     if DLOG_ENABLED:
@@ -39,8 +55,6 @@ class WaterfallModel(QtCore.QObject):
     def __init__(self, x_data = None, max_len = 2048):
         self._start_time_s = 0.0
         self._x_data = x_data
-        self._min_x = None
-        self._max_x = None
         self._x_len = None
         self._max_len = max_len
         
@@ -54,34 +68,31 @@ class WaterfallModel(QtCore.QObject):
     
     def _set_x_data_stats(self):
         if self._x_data is None:
-            self._min_x = None
-            self._max_x = None
             self._x_len = None
         else:
-            self._min_x = np.min(self._x_data)
-            self._max_x = np.max(self._x_data)
             self._x_len = len(self._x_data)
-        
+
     def add_row(self, data, metadata = None, timestamp_s = None):
         if self._x_data is None:
             #we've never been given x data, but we need it! Generate some
             #bogus x data that is just a 0-based range...
             self._x_data = np.arange(len(data))
             self._set_x_data_stats()
-        
+        # if not data.any():
+            # return
         assert len(data) == self._x_len
         assert data.ndim == 1
-            
+
         if timestamp_s is None:
             timestamp_s = time.time()
-        
+
         with self._mutex:
             data_tuple = (timestamp_s, data, metadata)
             self._history.append(data_tuple)
             if len(self._history) > self._max_len:
                 self._history.popleft()
             self.sigNewDataRow.emit(data_tuple)
-    
+
     def get_all_data(self):
         with self._mutex:
             #deque iterator efficiency *should* be fine with this generator...
@@ -92,7 +103,7 @@ class WaterfallModel(QtCore.QObject):
             else:
                 all_data = np.ndarray((0, self._x_len))
         return all_data
-    
+
     def get_latest_data(self, num_rows, pad_black = True):
         #st = time.time()
         with self._mutex:
@@ -108,7 +119,7 @@ class WaterfallModel(QtCore.QObject):
                 data_arrays = tuple(d[1] for d in data_iter)
             else:
                 no_data = True
-        
+
         if no_data:
             #No data rows have been added yet! If we know how wide our data
             #is *supposed* to be, we'll at least return an array of the
@@ -176,7 +187,9 @@ class WaterfallModel(QtCore.QObject):
                 self._set_x_data_stats()
             sig_data = (self._x_data, self._history)
             self.sigReset.emit(sig_data)
-
+    
+    def get_x_data(self):
+        return self._x_data
 
 class _WaterfallImageRenderer(QtCore.QObject):
     
@@ -919,7 +932,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
                                                       orientation = "left")
-            self._gradient_editor.loadPreset('thermal')
+            self._gradient_editor.loadPreset('waterfall')
         
         #configure the widgets...
         #self._plot_widget.addItem(self._wf_img)
