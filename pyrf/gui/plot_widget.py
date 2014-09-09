@@ -288,7 +288,7 @@ class Plot(QtCore.QObject):
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
         self.persistence_window.getAxis('bottom').setScale(1e-9)
-
+        self.persistence_window.showGrid(True, True)
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
@@ -348,6 +348,10 @@ class Plot(QtCore.QObject):
             self.window.setYRange(min_level, ref_level)
             self.persistence_window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
+        self.persistence_window.setXRange(
+            float(fstart),
+            float(fstop),
+            padding=0)
 
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
