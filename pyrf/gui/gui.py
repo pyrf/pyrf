@@ -39,7 +39,7 @@ from pyrf.gui.trace_controls import TraceControls
 
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
-    ('&Waterfall Plot', 'waterfall_plot', False),
+    ('&Spectrogram Plot', 'waterfall_plot', False),
     ('&Persistence Plot', 'persistence_plot', False),
     ]
 
@@ -411,6 +411,7 @@ class MainPanel(QtGui.QWidget):
         persist.addWidget(self._plot.persistence_window)
         persist_widget = QtGui.QWidget()
         persist_widget.setLayout(persist)
+        self.persist_widget = persist_widget
         vsplit.addWidget(persist_widget)
 
         hsplit = QtGui.QSplitter()
@@ -526,13 +527,9 @@ class MainPanel(QtGui.QWidget):
                 ww.show()
             else:
                 ww.hide()
-        
-        pp = self._plot.persistence_window
-        if 'persistence_plot' in changed and pp:
-            if self.persistence_plot_enabled:
-                pp.show()
-            else:
-                pp.hide()
+
+        if 'persistence_plot' in changed:
+            self.persist_widget.setVisible(self.persistence_plot_enabled)
 
     def _update_iq_plot_visibility(self):
         if not self.gui_state:
@@ -550,8 +547,6 @@ class MainPanel(QtGui.QWidget):
                 ww.show()
             else:
                 ww.hide()
-        self._plot.persistence_window.setVisible(
-            self.persistence_plot_enabled)
 
     def update_trace(self):
         for trace in self._plot.traces:
