@@ -2,6 +2,89 @@
 Changelog
 ---------
 
+
+PyRF 2.2.0
+==========
+
+2014-07-15
+
+ * Added waterfall display for GUI and example program
+
+ * Added automatic re-tuning when plot dragged of zoomed
+
+ * Added recording speca state in recorded VRT files, Start/Stop recording
+   menu
+
+ * Added GUI playback support and command line '-p' option
+
+ * Added marker controls: peak left, right, center to marker
+
+ * Redesigned frequency controls, device controls and trace controls
+
+ * Default to Sweep SH mode in GUI
+
+ * Added developer options menu for attenuated edges etc.
+
+ * Refactored shared GUI code and panels
+
+ * SweepDevice now returns numpy arrays of dBm values
+
+ * Fixed device discovery with multiple interfaces
+
+ * Replaced reflevel adjustment properties with REFLEVEL_ERROR value
+
+ * Renamed GUI launcher to rtsa-gui
+
+PyRF 2.1.0
+==========
+
+2014-06-20
+
+ * Refactored GUI code to separate out device control and state
+
+ * Added SPECA defaults to device properties
+
+ * Restored trigger controls in GUI
+
+ * Added DSP panel to control fft calculations in GUI
+
+ * Fixed a number of GUI plot issues
+
+PyRF 2.0.3
+==========
+
+2014-06-03
+
+ * Added simple QT GUI example with frequency, attenuation and rbw controls
+
+ * Added support for more hardware versions
+
+ * Fixed plotting issues in a number of modes in GUI
+
+PyRF 2.0.2
+==========
+
+2014-04-29
+
+ * Removed Sweep ZIF mode from GUI
+
+ * Fixed RFE input mode GUI issues
+
+PyRF 2.0.1
+==========
+
+2014-04-21
+
+ * Added Sweep SH mode support to SweepDevice
+
+ * Added IQ in, DD, SHN RFE modes to GUI
+
+ * Added IQ output path and PLL reference controls to GUI
+
+ * Added discovery widget to GUI for finding devices
+
+ * Fixed a number of issues
+
 PyRF 2.0.0
 ==========
 
