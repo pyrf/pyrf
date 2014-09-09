@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 
 try:
     import setuptools
@@ -16,9 +17,12 @@ try:
 except ImportError:
     pass
 
+exec(open(os.path.join("pyrf","version.py")).read())
+release = __version__
+
 setup(
     name='pyrf',
-    version='2.5.0dev',
+    version=release,
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
     packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui'],

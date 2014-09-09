@@ -201,12 +201,19 @@ class WSA5000_220Properties(object):
         }
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
-    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
     RBW_VALUES = {}
     for mode in RFE_MODES:
+        if DEFAULT_SAMPLE_TYPE[mode] == I_ONLY:
+            div = 2
+        else:
+            div = 1
         rbw_vals = []
         for s in SAMPLE_SIZES:
-            rbw_vals.append(FULL_BW[mode] / s)
+            # FIXME: this is workaround for SPP limit in the sweep device
+            if div == 1 and s == SAMPLE_SIZES[-1]:
+                break
+            rbw_vals.append(FULL_BW[mode] / (s / div))
         RBW_VALUES[mode] = rbw_vals
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
