@@ -397,8 +397,7 @@ class SpecAController(QtCore.QObject):
         response to a state change.
         """
 
-        # make sure resolution of span/center are the same as the device's tunning resolution
-        state.span = float(np.round(state.span, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
+        # make sure resolution of center are the same as the device's tunning resolution
         state.center = float(np.round(state.center, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
 
         if not state.sweeping():
