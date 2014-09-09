@@ -160,25 +160,26 @@ class Marker(object):
             self.draw_color = color
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
 
-    def enable(self, plot):
+    def remove_marker(self, plot):
+        plot.window.removeItem(self.marker_plot)
+        plot.window.removeItem(self.cursor_line)
 
-        self.enabled = True
+    def add_marker(self, plot):
         plot.window.addItem(self.marker_plot)
         plot.window.addItem(self.cursor_line)
 
-    
+    def enable(self, plot):
+        self.enabled = True
+        self.add_marker(plot)
+
     def disable(self, plot):
-        
         self.enabled = False
-        plot.window.removeItem(self.marker_plot)
-        plot.window.removeItem(self.cursor_line)
+        self.remove_marker(plot)
         self.data_index = None
         self.trace_index = 0
 
     def update_pos(self, xdata, ydata):
-        
-        self._plot.window.removeItem(self.marker_plot)
-        self._plot.window.addItem(self.marker_plot)
+
         self.marker_plot.clear()
         if len(xdata) <= 0 or len(ydata) <= 0:
             return
@@ -311,6 +312,10 @@ class Plot(QtCore.QObject):
                 self.add_trigger(state.device_settings['trigger']['fstart'],
                                 state.device_settings['trigger']['fstop'],
                                 state.device_settings['trigger']['amplitude'])
+                for m in self.markers:
+                    if m.enabled:
+                        m.remove_marker(self)
+                        m.add_marker(self)
         if 'center' in changed:
             for trace in self.traces:
                 trace.clear_data()
