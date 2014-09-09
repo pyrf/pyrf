@@ -1,4 +1,5 @@
 from PySide import QtGui
+import numpy as np
 
 from pyrf.units import M
 from pyrf.gui import colors
@@ -138,9 +139,10 @@ class FrequencyControls(QtGui.QGroupBox):
         freq_edit.setSuffix(' MHz')
         self._freq_edit = freq_edit
         def freq_change():
-            self.controller.apply_settings(center=freq_edit.value() * M)
+            freq = np.round(freq_edit.value() * M, -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION)))
+            self.controller.apply_settings(center=freq)
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.controller.apply_device_settings(freq = freq_edit.value() * M)
+                self.controller.apply_device_settings(freq=freq)
         freq_edit.editingFinished.connect(freq_change)
         return cfreq, freq_edit
 
@@ -150,7 +152,8 @@ class FrequencyControls(QtGui.QGroupBox):
         bw_edit = QDoubleSpinBoxPlayback()
         bw_edit.setSuffix(' MHz')
         def freq_change():
-            self.controller.apply_settings(span=bw_edit.value() * M)
+            span = np.round(bw_edit.value() * M, -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION)))
+            self.controller.apply_settings(span=span)
         bw_edit.editingFinished.connect(freq_change)
         self._bw_edit = bw_edit
         return bw, bw_edit
@@ -164,9 +167,11 @@ class FrequencyControls(QtGui.QGroupBox):
             fstart = freq.value() * M
             fstop = self.gui_state.center + self.gui_state.span / 2.0
             fstop = max(fstop, fstart + self.dut_prop.TUNING_RESOLUTION)
+            center = span = np.round((fstop + fstart) / 2.0, -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION)))
+            span = span = np.round(fstop - fstart, -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION)))
             self.controller.apply_settings(
-                center = (fstop + fstart) / 2.0,
-                span = (fstop - fstart),
+                center = center,
+                span = span,
                 )
         freq.editingFinished.connect(freq_change)
         self._fstart_edit = freq
@@ -181,9 +186,11 @@ class FrequencyControls(QtGui.QGroupBox):
             fstart = self.gui_state.center - self.gui_state.span / 2.0
             fstop = freq.value() * M
             fstart = min(fstart, fstop - self.dut_prop.TUNING_RESOLUTION)
+            center = span = np.round((fstop + fstart) / 2.0, -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION)))
+            span = span = np.round(fstop - fstart, -1 * int(np.log10(self.dut_prop.TUNING_RESOLUTION)))
             self.controller.apply_settings(
-                center = (fstop + fstart) / 2.0,
-                span = (fstop - fstart),
+                center = center,
+                span = span,
                 )
         freq.editingFinished.connect(freq_change)
         self._fstop_edit = freq
