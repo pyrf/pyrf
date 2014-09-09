@@ -159,7 +159,7 @@ class Marker(object):
         def not_hovering():
             self.draw_color = color
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
-    
+
     def remove_marker(self, plot):
         plot.window.removeItem(self.marker_plot)
         plot.window.removeItem(self.cursor_line)
