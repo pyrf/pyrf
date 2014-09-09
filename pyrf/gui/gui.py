@@ -299,24 +299,23 @@ class MainPanel(QtGui.QWidget):
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
                 self._plot_layout.hide()
+                self.hide_labels()
                 if self._main_window.isMaximized():
                     self._main_window.showNormal()
-
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 0)
                 screen = QtGui.QDesktopWidget().screenGeometry()
-
                 self.setMinimumWidth(0)
                 self.setMinimumHeight(0)
                 self._main_window.setMinimumWidth(0)
                 self._main_window.setMinimumHeight(0)
                 self.resize(0,0)
                 self._main_window.resize(0,0)
-
             else:
                 # show plots
                 self._plot_layout.show()
+                self.show_labels()
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
@@ -332,6 +331,22 @@ class MainPanel(QtGui.QWidget):
 
         if 'span' in changed:
             self.update_span_label()
+
+    def show_labels(self):
+        self._rbw_label.show()
+        self._span_label.show()
+        self._diff_label.show()
+        self._mask_label.show()
+        for m in self.marker_labels:
+            m.show()
+
+    def hide_labels(self):
+        self._rbw_label.hide()
+        self._span_label.hide()
+        self._diff_label.hide()
+        self._mask_label.hide()
+        for m in self.marker_labels:
+            m.hide()
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()
@@ -355,13 +370,13 @@ class MainPanel(QtGui.QWidget):
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
 
-        self.mask_label = QtGui.QLabel()
-        self.mask_label.setStyleSheet('background-color: black')
+        self._mask_label = QtGui.QLabel()
+        self._mask_label.setStyleSheet('background-color: black')
 
         self.marker_labels = []
         marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
 
-        grid.addWidget(self.mask_label, 0, 0, 2, self.plot_width)
+        grid.addWidget(self._mask_label, 0, 0, 2, self.plot_width)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
         grid.addWidget(diff_label , 0, 7, 1, 2)
@@ -442,7 +457,7 @@ class MainPanel(QtGui.QWidget):
 
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
-        self._diff_lab = diff_label
+        self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label
         self.marker_labels.append(marker_label)
@@ -582,7 +597,7 @@ class MainPanel(QtGui.QWidget):
                                                                                    trace.data[marker.data_index])
                         num += 1
                         marker_label.setText(marker_text)
-                        self.mask_label.show()
+                        self._mask_label.show()
                 else:
                     marker_label.hide()
 
@@ -600,19 +615,19 @@ class MainPanel(QtGui.QWidget):
 
         if num_markers == len(labels.MARKERS):
 
-            self._diff_lab.show()
+            self._diff_label.show()
 
             freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
 
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_lab.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+            self._diff_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
             if self.gui_state.rfe_mode() == 'HDR':
                 delta_text = 'Delta: %f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
             else:
                 delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
-            self._diff_lab.setText(delta_text)
+            self._diff_label.setText(delta_text)
         else:
-            self._diff_lab.hide()
+            self._diff_label.hide()
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
