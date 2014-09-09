@@ -228,7 +228,7 @@ class TraceControls(QtGui.QGroupBox):
             self._find_right_peak(num)
         peak_right.clicked.connect(peak_right_clicked)
 
-        remove_marker = QtGui.QPushButton("-")
+        remove_marker = QtGui.QPushButton("- Marker")
         remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_marker.setToolTip("Remove this marker")
         def remove_marker_clicked():
@@ -280,12 +280,12 @@ class TraceControls(QtGui.QGroupBox):
 
         def add_marker_widgets(marker_widgets, row):
             show(marker_widgets.marker, row, 0, 3,3)
-            show(marker_widgets.peak, row, 2, 1, 2)
-            show(marker_widgets.center, row, 4, 1, 2)
-            show(marker_widgets.remove, row, 6, 1, 1)
+            show(marker_widgets.peak, row, 1, 1, 2)
+            show(marker_widgets.center, row, 3, 1, 2)
+            show(marker_widgets.remove, row, 5, 1, 2)
             row = row + 1
-            show(marker_widgets.peak_left, row, 2, 1, 2)
-            show(marker_widgets.peak_right, row, 4, 1, 2)
+            show(marker_widgets.peak_left, row, 1, 1, 2)
+            show(marker_widgets.peak_right, row, 3, 1, 2)
             return row + 1
 
         extra_markers = any(not m.enabled for m in self._plot.markers)
