@@ -21,6 +21,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     draw
     hold
     clear
+    custom_color
     average_label
     average
     add
@@ -33,6 +34,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     :param draw: draw combobox, including 'Live', 'Max', 'Min' options
     :param hold: pause checkbox
     :param clear: clear trace button
+    :param custom_color: custom colors button
     :param average_label: average captures label
     :param average: average captures spinbox
     :param add: "+ trace" button
@@ -154,6 +156,17 @@ class TraceControls(QtGui.QGroupBox):
             trace.update_average_factor(average_edit.value())
         average_edit.valueChanged.connect(average_changed)
         average_edit.hide()
+        
+        custom_color = QtGui.QPushButton("Color")
+        color_dialog = QtGui.QColorDialog()
+        def custom_color_clicked():
+            color_dialog.show()
+
+        custom_color.clicked.connect(custom_color_clicked)
+
+        def new_color(color):
+            print new_color
+        color_dialog.colorSelected.connect(new_color)
 
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
@@ -187,7 +200,7 @@ class TraceControls(QtGui.QGroupBox):
         add_marker.clicked.connect(add_marker_clicked)
 
         return TraceWidgets(icon, label, draw, hold, clear,
-                            average_label, average_edit,
+                            custom_color, average_label, average_edit,
                             add_trace, remove_trace, add_marker)
 
     def _create_marker_widgets(self, num, button_group):
@@ -262,6 +275,7 @@ class TraceControls(QtGui.QGroupBox):
             show(trace_widgets.hold, row, 3, 1, 2)
             show(trace_widgets.clear, row, 5, 1, 2)
             row = row + 1
+            show(trace_widgets.custom_color, row, 0, 1, 2)
             show(trace_widgets.average_label, row, 1, 1, 2)
             show(trace_widgets.average, row, 3, 1, 2)
             if trace_widgets.draw.currentText() != 'Average':
