@@ -10,7 +10,11 @@ from pyrf.gui import fonts
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
+from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
+                                              decay_fn_EXPONENTIAL)
+from pyrf.gui.widgets import infiniteLine
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
+from pyrf.units import M
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -22,6 +26,12 @@ IQ_PLOT_XMIN = -1
 IQ_PLOT_XMAX = 1
 
 AXIS_OFFSET = 7
+
+PERSISTENCE_RESETTING_CHANGES = set(["center",
+                                     "device_settings.attenuator",
+                                     #"rbw",  <-- signal is the same area
+                                     "mode"
+                                     ])
 class Trace(object):
     """
     Class to represent a trace in the plot
@@ -124,57 +134,83 @@ class Marker(object):
     """
     Class to represent a marker on the plot
     """
-    def __init__(self,plot_area, marker_name):
+    def __init__(self,plot_area, marker_name, color):
 
         self.name = marker_name
         self.marker_plot = pg.ScatterPlotItem()
         self.enabled = False
         self.selected = False
         self.data_index = None
-        
-        # index of trace associated with marker
+        self.xdata = []
+        self.ydata = 0
         self.trace_index = 0
-        
-    def enable(self, plot):
-        
-        self.enabled = True
-        plot.window.addItem(self.marker_plot)     
-    
-    def disable(self, plot):
-        
-        self.enabled = False
+        self.color = color
+        self.draw_color = color
+        self.hovering = False
+        self._plot = plot_area
+        self.coursor_dragged = False
+
+        cursor_pen = pg.mkPen((0,0,0,0), width = 40)
+        self.cursor_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
+
+        def dragged():
+            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
+            self.cursor_line.setPen(cursor_pen)
+            self.draw_color = colors.MARKER_HOVER
+        self.cursor_line.sigDragged.connect(dragged)
+
+        def hovering():
+            self.draw_color = colors.MARKER_HOVER
+        self.cursor_line.sigHovering.connect(hovering)
+
+        def not_hovering():
+            self.draw_color = color
+        self.cursor_line.sigHoveringFinished.connect(not_hovering)
+
+    def remove_marker(self, plot):
         plot.window.removeItem(self.marker_plot)
+        plot.window.removeItem(self.cursor_line)
+
+    def add_marker(self, plot):
+        plot.window.addItem(self.marker_plot)
+        plot.window.addItem(self.cursor_line)
+
+    def enable(self, plot):
+        self.enabled = True
+        self.add_marker(plot)
+
+    def disable(self, plot):
+        self.enabled = False
+        self.remove_marker(plot)
         self.data_index = None
         self.trace_index = 0
 
     def update_pos(self, xdata, ydata):
-    
+
         self.marker_plot.clear()
         if len(xdata) <= 0 or len(ydata) <= 0:
             return
 
         if self.data_index  == None:
            self.data_index = len(ydata) / 2 
-   
-        if self.data_index < 0:
-           self.data_index = 0
-            
-        if self.data_index >= len(ydata):
-            self.data_index = len(ydata) - 1
+
+        if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
+            self.data_index = int((float(self.data_index)/float(len(self.xdata))) * len(xdata)) 
 
         xpos = xdata[self.data_index]
-        
         ypos = ydata[self.data_index]
-        if self.selected:
-            color = colors.YELLOW_NUM
-        else: 
-            color = 'w'
-            
-        self.marker_plot.addPoints(x = [xpos], 
-                                   y = [ypos], 
-                                    symbol = '+', 
-                                    size = 20, pen = color, 
-                                    brush = color)
+
+        self.xdata = xdata
+        self.ydata = ydata
+        if not self.coursor_dragged:
+            self.cursor_line.setValue(xpos)
+        self.marker_plot.addPoints(x = [xpos],
+                                   y = [ypos],
+                                    symbol = '+',
+                                    size = 25, pen = pg.mkPen(self.draw_color), 
+                                    brush = self.draw_color)
+
 class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -187,16 +223,17 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         # initialize main fft window
+
         self.freq_axis = RTSAFrequencyAxisItem()
-        self.window = pg.PlotWidget(name = 'pyrf_plot',
-                                    axisItems = dict(bottom = self.freq_axis),
-                                    )
+        self.window = pg.PlotWidget(axisItems = dict(bottom = self.freq_axis))
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
+
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
+
         self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
@@ -205,7 +242,7 @@ class Plot(QtCore.QObject):
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
-        #self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
 
         # initialize trigger lines
@@ -217,6 +254,7 @@ class Plot(QtCore.QObject):
         # IQ constellation window
         self.const_window = pg.PlotWidget(name='const_plot')
         self.const_plot = pg.ScatterPlotItem(pen = 'y')
+        self.const_window.setMenuEnabled(False)
         self.const_window.addItem(self.const_plot)
         self.const_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
         self.const_window.setXRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)  
@@ -224,6 +262,7 @@ class Plot(QtCore.QObject):
         # IQ time domain  window
         self.iq_window = pg.PlotWidget(name='const_plot')
         self.iq_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
+        self.iq_window.setMenuEnabled(False)
         self.i_curve = self.iq_window.plot(pen = 'g')
         self.q_curve = self.iq_window.plot(pen = 'r')
 
@@ -243,8 +282,8 @@ class Plot(QtCore.QObject):
         self.traces[0].write = True
 
         self.markers = []
-        for marker_name in labels.MARKERS:
-            self.markers.append(Marker(self, marker_name))
+        for name in labels.MARKERS:
+            self.markers.append(Marker(self, name, colors.WHITE_NUM))
 
         self.waterfall_data = WaterfallModel(max_len=600)
 
@@ -254,10 +293,14 @@ class Plot(QtCore.QObject):
             max_frame_rate_fps=30,
             mouse_move_crosshair=False,
             )
+        self.persistence_window = PersistencePlotWidget(
+            decay_fn=decay_fn_EXPONENTIAL,
+            data_model=self.waterfall_data)
+        self.persistence_window.getAxis('bottom').setScale(1e-9)
+        self.persistence_window.showGrid(True, True)
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
-        
         def new_trigger_freq():
             self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                                                             'fstart': min(self.freqtrig_lines.getRegion()),
@@ -282,9 +325,17 @@ class Plot(QtCore.QObject):
                 self.add_trigger(state.device_settings['trigger']['fstart'],
                                 state.device_settings['trigger']['fstop'],
                                 state.device_settings['trigger']['amplitude'])
+                for m in self.markers:
+                    if m.enabled:
+                        m.remove_marker(self)
+                        m.add_marker(self)
         if 'center' in changed:
+            self.persistence_window.reset_plot()
             for trace in self.traces:
                 trace.clear_data()
+        
+        if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
+            self.persistence_window.reset_plot()
 
     def add_trigger(self,fstart, fstop, amplitude):
         self.amptrig_line.blockSignals(True)
@@ -311,11 +362,18 @@ class Plot(QtCore.QObject):
         self.window.setXRange(float(fstart), float(fstop), padding=0)
         if min_level is not None:
             self.window.setYRange(min_level, ref_level)
+            self.persistence_window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
-        
+        self.persistence_window.setXRange(
+            float(fstart),
+            float(fstop),
+            padding=0)
+
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
+        self.persistence_window.reset_plot()
+        self.persistence_window.setYRange(min_level, ref_level)
 
     def grid(self,state):
         self.window.showGrid(state,state)
@@ -323,3 +381,10 @@ class Plot(QtCore.QObject):
         self.window.getAxis('bottom').setGrid(200)
         self.window.getAxis('left').setPen(colors.GREY_NUM)
         self.window.getAxis('left').setGrid(200)
+
+    def update_markers(self):
+
+        for m in self.markers:
+            if m.enabled:
+                trace = self.traces[m.trace_index]
+                m.update_pos(trace.freq_range, trace.data)

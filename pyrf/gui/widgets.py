@@ -1,8 +1,8 @@
 """
 General-purpose widgets
 """
-from PySide import QtGui
-
+from PySide import QtGui, QtCore
+import pyqtgraph as pg
 class QComboBoxPlayback(QtGui.QComboBox):
     """
     QComboBox with playback features
@@ -86,3 +86,62 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         """
         self.quiet_update(value, value, value)
         self.setEnabled(False)
+
+class infiniteLine(pg.InfiniteLine):
+    """
+    Infinite Line with controls over the hover pen (feature will be available in pyqtgraph 0.9.9)
+    """
+    sigHovering = QtCore.Signal(object)
+    sigHoveringFinished = QtCore.Signal(object)
+    def setPen(self, *args, **kwargs):
+        """Set the pen for drawing the line. Allowable arguments are any that are valid 
+        for :func:`mkPen <pyqtgraph.mkPen>`."""
+        self.pen = pg.mkPen(*args, **kwargs)
+        if not self.mouseHovering:
+            self.currentPen = self.pen
+            self.update()
+
+    def setHoverPen(self, *args, **kwargs):
+        """Set the pen for drawing the line while the mouse hovers over it.
+        Allowable arguments are any that are valid
+        for :func:`mkPen <pyqtgraph.mkPen>`.
+
+        If the line is not movable, then hovering is also disabled.
+
+        Added in version 0.9.9."""
+        self.hoverPen = pg.mkPen(*args, **kwargs)
+        if self.mouseHovering:
+            self.currentPen = self.hoverPen
+            self.update()
+
+    def boundingRect(self):
+        #br = UIGraphicsItem.boundingRect(self)
+        br = self.viewRect()
+        ## add a 4-pixel radius around the line for mouse interaction.
+
+        px = self.pixelLength(direction=pg.Point(1,0), ortho=True)  ## get pixel length orthogonal to the line
+        if px is None:
+            px = 0
+        w = (max(4, self.pen.width()/2, self.hoverPen.width()/2)+1) * px
+        br.setBottom(-w)
+        br.setTop(w)
+        return br.normalized()
+
+    def hoverEvent(self, ev):
+        if (not ev.isExit()) and self.movable and ev.acceptDrags(QtCore.Qt.LeftButton):
+            self.setMouseHover(True)
+        else:
+            self.setMouseHover(False)
+
+    def setMouseHover(self, hover):
+        ## Inform the item that the mouse is (not) hovering over it
+        if self.mouseHovering == hover:
+            return
+        self.mouseHovering = hover
+        if hover:
+            self.currentPen = self.hoverPen
+            self.sigHovering.emit(self)
+        else:
+            self.currentPen = self.pen
+            self.sigHoveringFinished.emit(self)
+        self.update()
