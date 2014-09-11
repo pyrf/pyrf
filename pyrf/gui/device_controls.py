@@ -124,10 +124,9 @@ class DeviceControls(QtGui.QGroupBox):
 
         # 5k features
         if 'attenuator' in features:
-
-            # FIXME: 'iq_output' isn't in device properties yet
-            grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
-            grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
+            if dut_prop.IQ_OUTPUT_CONNECTOR:
+                grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
+                grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
             
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
