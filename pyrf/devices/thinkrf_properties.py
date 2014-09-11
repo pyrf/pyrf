@@ -215,7 +215,7 @@ class WSA5000_220Properties(object):
                 break
             rbw_vals.append(FULL_BW[mode] / (s / div))
         RBW_VALUES[mode] = rbw_vals
-    IQ_OUTPUT_CONNECTOR = False
+    IQ_OUTPUT_CONNECTOR = True
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
