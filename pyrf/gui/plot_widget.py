@@ -15,6 +15,8 @@ from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
 from pyrf.gui.widgets import infiniteLine
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
+from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
+    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 PLOT_YMIN = -160
 PLOT_YMAX = 20
@@ -26,6 +28,10 @@ IQ_PLOT_XMIN = -1
 IQ_PLOT_XMAX = 1
 
 AXIS_OFFSET = 7
+
+# FIXME: we shouldn't be calculating fft in this module
+ZIF_BITS = 2**13
+CONST_POINTS = 512
 
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
@@ -263,6 +269,7 @@ class Plot(QtCore.QObject):
         self.iq_window = pg.PlotWidget(name='const_plot')
         self.iq_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
         self.iq_window.setMenuEnabled(False)
+        self.update_iq_range = True
         self.i_curve = self.iq_window.plot(pen = 'g')
         self.q_curve = self.iq_window.plot(pen = 'r')
 
@@ -333,7 +340,11 @@ class Plot(QtCore.QObject):
             self.persistence_window.reset_plot()
             for trace in self.traces:
                 trace.clear_data()
-        
+        if 'mode' in changed:
+            self.update_iq_range = True
+            self.iq_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)
+
+
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
             self.persistence_window.reset_plot()
 
@@ -383,8 +394,43 @@ class Plot(QtCore.QObject):
         self.window.getAxis('left').setGrid(200)
 
     def update_markers(self):
-
         for m in self.markers:
             if m.enabled:
                 trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
+
+    def update_iq_plots(self, data):
+
+        trace = self.traces[0]
+        if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
+            return
+
+        if data.stream_id == VRT_IFDATA_I14Q14:
+            data = data.data.numpy_array()
+            i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
+            q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+            self.i_curve.setData(i_data)
+            self.q_curve.setData(q_data)
+            self.const_plot.clear()
+            self.const_plot.addPoints(
+                x = i_data[0:CONST_POINTS],
+                y = q_data[0:CONST_POINTS],
+                symbol = 'o',
+                size = 1, pen = 'y',
+                brush = 'y')
+
+        else:
+            data_payload = data.data.numpy_array()
+            i_data = np.array(data_payload, dtype=float)
+
+            if data.stream_id == VRT_IFDATA_I14:
+                i_data = i_data /ZIF_BITS
+
+            elif data.stream_id == VRT_IFDATA_I24:
+                i_data = i_data / (np.mean(i_data)) - 1
+            self.i_curve.setData(i_data)
+            self.q_curve.clear()
+
+        if self.update_iq_range:
+            self.iq_window.setXRange(0, len(i_data))
+            self.update_iq_range = False
