@@ -99,13 +99,15 @@ class TraceControls(QtGui.QGroupBox):
 
         :returns: a TraceWidgets namedtuple
         """
-        r, g, b = colors.TRACE_COLORS[num]
-        color = QtGui.QColor()
-        color.setRgb(r, g, b)
-        pixmap = QtGui.QPixmap(320, 2)
-        pixmap.fill(color)
         icon = QtGui.QLabel()
-        icon.setPixmap(pixmap)
+        def update_banner_color(r, g, b):
+            color = QtGui.QColor()
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(320, 2)
+            pixmap.fill(color)
+            icon.setPixmap(pixmap)
+        r, g, b = colors.TRACE_COLORS[num]
+        update_banner_color(r, g, b)
 
         label = QtGui.QLabel("T%d:" % (num + 1))
 
@@ -156,17 +158,16 @@ class TraceControls(QtGui.QGroupBox):
             trace.update_average_factor(average_edit.value())
         average_edit.valueChanged.connect(average_changed)
         average_edit.hide()
-        
+
         custom_color = QtGui.QPushButton("Color")
-        color_dialog = QtGui.QColorDialog()
+
         def custom_color_clicked():
-            color_dialog.show()
-
+            color = QtGui.QColorDialog.getColor()
+            # Don't update if color chosen is black
+            if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
+                update_banner_color(color.red(), color.green(), color.blue())
+                trace = self._plot.traces[num].color = (color.red(), color.green(), color.blue())
         custom_color.clicked.connect(custom_color_clicked)
-
-        def new_color(color):
-            print new_color
-        color_dialog.colorSelected.connect(new_color)
 
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
@@ -272,10 +273,12 @@ class TraceControls(QtGui.QGroupBox):
             row = row + 1
             show(trace_widgets.label, row, 0, 1, 1)
             show(trace_widgets.draw, row, 1, 1, 2)
-            show(trace_widgets.hold, row, 3, 1, 2)
+            show(trace_widgets.hold, row, 3, 1, 1)
+            show(trace_widgets.custom_color, row, 4, 1, 1)
             show(trace_widgets.clear, row, 5, 1, 2)
+
             row = row + 1
-            show(trace_widgets.custom_color, row, 0, 1, 2)
+
             show(trace_widgets.average_label, row, 1, 1, 2)
             show(trace_widgets.average, row, 3, 1, 2)
             if trace_widgets.draw.currentText() != 'Average':
