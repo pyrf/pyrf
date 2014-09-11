@@ -85,6 +85,14 @@ class FrequencyControls(QtGui.QGroupBox):
 
             enable_disable_edit_boxes()
             self._update_rbw_options()
+
+            if min_tunable == max_tunable:
+                self._freq_edit.setEnabled(False)
+                self._fstep_box.setEnabled(False)
+            else:
+                self._freq_edit.setEnabled(True)
+                self._fstep_box.setEnabled(True)
+
         if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
 
