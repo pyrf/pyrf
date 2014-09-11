@@ -256,8 +256,4 @@ class FrequencyControls(QtGui.QGroupBox):
             self._rbw_box.quiet_update(
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
-            if self.gui_state.sweeping():
-                self._rbw_box.setCurrentIndex(0)
-
-            else:
-                self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
+            self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)

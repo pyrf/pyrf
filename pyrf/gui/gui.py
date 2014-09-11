@@ -496,12 +496,6 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_diff()
-        if (not self.controller.applying_user_xrange() and
-                not self.controller.get_options()['free_plot_adjustment']):
-            self._plot.center_view(fstart,
-                                   fstop,
-                                   self._amplitude_group.get_min_level(),
-                                   self._amplitude_group.get_ref_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
