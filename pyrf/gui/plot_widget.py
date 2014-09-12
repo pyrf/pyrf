@@ -189,6 +189,9 @@ class Marker(object):
     def update_pos(self, xdata, ydata):
 
         self.marker_plot.clear()
+        self._plot.window.removeItem(self.marker_plot)
+        self._plot.window.addItem(self.marker_plot)
+
         if len(xdata) <= 0 or len(ydata) <= 0:
             return
 
@@ -305,12 +308,12 @@ class Plot(QtCore.QObject):
 
     def connect_plot_controls(self):
         def new_trigger_freq():
-            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                                                            'fstart': min(self.freqtrig_lines.getRegion()),
-                                                            'fstop': max(self.freqtrig_lines.getRegion()),
-                                                            'amplitude': self.gui_state.device_settings['trigger']['amplitude']})
+            if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
+                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                                'fstart': min(self.freqtrig_lines.getRegion()),
+                                                                'fstop': max(self.freqtrig_lines.getRegion()),
+                                                                'amplitude': self.gui_state.device_settings['trigger']['amplitude']})
         def new_trigger_amp():
-
             if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
                 self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                     'fstart': self.gui_state.device_settings['trigger']['fstart'],
@@ -343,14 +346,25 @@ class Plot(QtCore.QObject):
             self.persistence_window.reset_plot()
 
     def plot_changed(self, state, changed):
-        self.plot_state = state
+
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
                 self.window.addItem(self.amptrig_line)
             else:
                 self.window.removeItem(self.amptrig_line)
 
+        if 'channel_power' in changed:
+            if state['channel_power']:
+                fstart = self.gui_state.center - (self.gui_state.span / 4)
+                fstop = self.gui_state.center + (self.gui_state.span / 4)
+
+                self.freqtrig_lines.setRegion([(fstart),float(fstop)])
+                self.window.addItem(self.freqtrig_lines)
+            else:
+                self.window.removeItem(self.freqtrig_lines)
+
     def add_trigger(self,fstart, fstop, amplitude):
+
         self.amptrig_line.blockSignals(True)
         self.freqtrig_lines.blockSignals(True)
         if not self._trig_enable:
@@ -368,7 +382,8 @@ class Plot(QtCore.QObject):
     def remove_trigger(self):
         if not self.plot_state.get('horizontal_cursor'):
             self.window.removeItem(self.amptrig_line)
-        self.window.removeItem(self.freqtrig_lines)
+        if not self.plot_state.get('channel_power'):
+            self.window.removeItem(self.freqtrig_lines)
         self._trig_enable = False
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):

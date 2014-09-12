@@ -521,7 +521,7 @@ class SpecAController(QtCore.QObject):
         self._plot_options.update(kwargs)
         self.plot_change.emit(dict(self._plot_options),
             kwargs.keys())
-        print kwargs
+
     def get_options(self):
         return dict(self._options)
 
