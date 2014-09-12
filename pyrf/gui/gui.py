@@ -36,6 +36,7 @@ from pyrf.gui.frequency_controls import FrequencyControls
 from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
+from pyrf.gui.measurements_widget import MeasurementControls
 
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
@@ -389,6 +390,7 @@ class MainPanel(QtGui.QWidget):
         controls_layout = QtGui.QVBoxLayout()
 
         controls_layout.addWidget(self._freq_controls())
+        controls_layout.addWidget(self._measurement_controls())
         controls_layout.addWidget(self._amplitude_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._trace_controls())
@@ -428,7 +430,7 @@ class MainPanel(QtGui.QWidget):
         self._freq_group = FrequencyControls(self.controller)
         self.control_widgets.append(self._freq_group)
         return self._freq_group
-    
+
     def _amplitude_controls(self):
         self._amplitude_group = AmplitudeControls(self.controller, self._plot)
         self.control_widgets.append(self._amplitude_group)
@@ -438,6 +440,11 @@ class MainPanel(QtGui.QWidget):
         self.trace_group = TraceControls(self.controller, self._plot)
         self.control_widgets.append(self.trace_group)
         return self.trace_group
+
+    def _measurement_controls(self):
+        self.measure_group = MeasurementControls(self.controller)
+        self.control_widgets.append(self.measure_group)
+        return self.measure_group
 
     def _dsp_controls(self):
         self._dsp_group = DSPWidget()

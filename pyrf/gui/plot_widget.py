@@ -222,6 +222,7 @@ class Plot(QtCore.QObject):
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
         # initialize main fft window
 
         self.freq_axis = RTSAFrequencyAxisItem()
@@ -307,10 +308,12 @@ class Plot(QtCore.QObject):
                                                             'fstop': max(self.freqtrig_lines.getRegion()),
                                                             'amplitude': self.gui_state.device_settings['trigger']['amplitude']})
         def new_trigger_amp():
-            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                'fstart': self.gui_state.device_settings['trigger']['fstart'],
-                'fstop': self.gui_state.device_settings['trigger']['fstop'],
-                'amplitude': self.amptrig_line.value()})
+
+            if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
+                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                    'fstart': self.gui_state.device_settings['trigger']['fstart'],
+                    'fstop': self.gui_state.device_settings['trigger']['fstop'],
+                    'amplitude': self.amptrig_line.value()})
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
         self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
@@ -336,6 +339,15 @@ class Plot(QtCore.QObject):
         
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
             self.persistence_window.reset_plot()
+
+    def plot_changed(self, state, changed):
+        self._plot_state = state
+
+        if 'horizontal_cursor' in changed:
+            if state['horizontal_cursor']:
+                self.window.addItem(self.amptrig_line)
+            else:
+                self.window.removeItem(self.amptrig_line)
 
     def add_trigger(self,fstart, fstop, amplitude):
         self.amptrig_line.blockSignals(True)
@@ -383,7 +395,6 @@ class Plot(QtCore.QObject):
         self.window.getAxis('left').setGrid(200)
 
     def update_markers(self):
-
         for m in self.markers:
             if m.enabled:
                 trace = self.traces[m.trace_index]
