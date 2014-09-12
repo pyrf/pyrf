@@ -223,6 +223,8 @@ class Plot(QtCore.QObject):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
+        self.plot_state = {}
+
         # initialize main fft window
 
         self.freq_axis = RTSAFrequencyAxisItem()
@@ -336,13 +338,12 @@ class Plot(QtCore.QObject):
             self.persistence_window.reset_plot()
             for trace in self.traces:
                 trace.clear_data()
-        
+
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
             self.persistence_window.reset_plot()
 
     def plot_changed(self, state, changed):
-        self._plot_state = state
-
+        self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
                 self.window.addItem(self.amptrig_line)
@@ -365,7 +366,8 @@ class Plot(QtCore.QObject):
         self.freqtrig_lines.blockSignals(False)
 
     def remove_trigger(self):
-        self.window.removeItem(self.amptrig_line)
+        if not self.plot_state.get('horizontal_cursor'):
+            self.window.removeItem(self.amptrig_line)
         self.window.removeItem(self.freqtrig_lines)
         self._trig_enable = False
 
