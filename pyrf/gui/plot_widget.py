@@ -338,6 +338,11 @@ class Plot(QtCore.QObject):
                         m.remove_marker(self)
                         m.add_marker(self)
         if 'center' in changed:
+            self.controller.apply_device_settings(trigger = {'type': 'None',
+                    'fstart': self.gui_state.device_settings['trigger']['fstart'],
+                    'fstop': self.gui_state.device_settings['trigger']['fstop'],
+                    'amplitude': self.amptrig_line.value()})
+            self.remove_trigger()
             self.persistence_window.reset_plot()
             for trace in self.traces:
                 trace.clear_data()
