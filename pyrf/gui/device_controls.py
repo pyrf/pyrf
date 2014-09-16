@@ -235,7 +235,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._build_layout(self.dut_prop)
         self._update_modes()
 
-
     def _update_modes(self, include_sweep=True, current_mode=None):
         modes = []
         if include_sweep:
@@ -279,12 +278,11 @@ class DeviceControls(QtGui.QGroupBox):
                 self._level_trigger.click()
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
-                self._level_trigger.setEnabled(False)
-
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
                     self._trig_state(False)
+                self._level_trigger.setEnabled(False)
 
             else:
                 self._level_trigger.setEnabled(True)

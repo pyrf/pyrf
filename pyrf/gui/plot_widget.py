@@ -224,6 +224,7 @@ class Plot(QtCore.QObject):
         super(Plot, self).__init__()
 
         self.controller = controller
+        controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
         self.plot_state = {}
@@ -312,23 +313,28 @@ class Plot(QtCore.QObject):
                 self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
                                                                 'fstart': min(self.freqtrig_lines.getRegion()),
                                                                 'fstop': max(self.freqtrig_lines.getRegion()),
-                                                                'amplitude': self.gui_state.device_settings['trigger']['amplitude']})
+                                                                'amplitude': self.amptrig_line.value()})
         def new_trigger_amp():
             if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
                 self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                    'fstart': self.gui_state.device_settings['trigger']['fstart'],
-                    'fstop': self.gui_state.device_settings['trigger']['fstop'],
+                    'fstart': min(self.freqtrig_lines.getRegion()),
+                    'fstop': max(self.freqtrig_lines.getRegion()),
                     'amplitude': self.amptrig_line.value()})
+            elif self.plot_state['horizontal_cursor']:
+                self.controller.apply_plot_options(horizontal_cursor_value = self.amptrig_line.value())
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
         self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
 
+    def device_changed(self, dut):
+        self.dut_prop = dut.properties
+
     def state_changed(self, state, changed):
         self.gui_state = state
         if 'device_settings.trigger' in changed:
-            if 'NONE' in state.device_settings['trigger']['type']:
+            if state.device_settings['trigger']['type'] == 'NONE':
                 self.remove_trigger()
-            elif 'LEVEL' in state.device_settings['trigger']['type']:
+            elif state.device_settings['trigger']['type'] == 'LEVEL':
 
                 self.add_trigger(state.device_settings['trigger']['fstart'],
                                 state.device_settings['trigger']['fstop'],
@@ -350,13 +356,18 @@ class Plot(QtCore.QObject):
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
             self.persistence_window.reset_plot()
 
-    def plot_changed(self, state, changed):
+        if 'mode' in changed:
+            if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
+                self.remove_trigger()
 
+    def plot_changed(self, state, changed):
+        self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
                 self.window.addItem(self.amptrig_line)
             else:
-                self.window.removeItem(self.amptrig_line)
+                if not self.gui_state.device_settings['trigger']['type'] == 'LEVEL':
+                    self.window.removeItem(self.amptrig_line)
 
         if 'channel_power' in changed:
             if state['channel_power']:
@@ -367,7 +378,8 @@ class Plot(QtCore.QObject):
                 self.window.addItem(self.freqtrig_lines)
             else:
                 self.window.removeItem(self.freqtrig_lines)
-
+        if 'horizontal_cursor_value' in changed:
+            self.amptrig_line.setValue(state['horizontal_cursor_value'])
     def add_trigger(self,fstart, fstop, amplitude):
 
         self.amptrig_line.blockSignals(True)
