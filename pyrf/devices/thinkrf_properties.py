@@ -90,7 +90,7 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20
-    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'IQIN', 'DD')
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD', 'IQIN')
     DEFAULT_SAMPLE_TYPE = {
         'ZIF': IQ,
         'SH': I_ONLY,
@@ -221,7 +221,7 @@ class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     REFLEVEL_ERROR = 0
     # v2 -> hardware revision without SHN mode
-    RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
+    RFE_MODES = ('ZIF', 'SH', 'HDR', 'DD', 'IQIN')
 
 
 class WSA5000_208Properties(WSA5000_220Properties):
