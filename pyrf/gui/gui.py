@@ -266,22 +266,6 @@ class MainPanel(QtGui.QWidget):
             rfe_mode = state.rfe_mode()
             self._update_iq_plot_visibility()
             self.update_rbw_label()
-            if rfe_mode in ('DD', 'IQIN'):
-                freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
-                full_bw = self.dut_prop.FULL_BW[rfe_mode]
-
-                self._plot.center_view(freq,
-                                       full_bw,
-                                       self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_ref_level())
-
-            else:
-                freq = state.center
-                full_bw = state.span
-                self._plot.center_view(freq - full_bw/2,
-                                        freq + full_bw/2,
-                                       self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_ref_level())
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -317,8 +301,31 @@ class MainPanel(QtGui.QWidget):
         if 'rbw' in changed:
             self.update_rbw_label()
 
-        if 'span' in changed:
+        if 'span' in changed or 'center' in changed or 'mode' in changed:
+            rfe_mode = state.rfe_mode()
             self.update_span_label()
+            freq = state.center
+            full_bw = state.span
+            if rfe_mode in ('DD', 'IQIN'):
+                freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
+                full_bw = self.dut_prop.FULL_BW[rfe_mode]
+
+                self._plot.center_view(freq,
+                                       full_bw,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                               IQ_PLOT_YMAX[rfe_mode])
+            else:
+                freq = state.center
+                full_bw = state.span
+
+                self._plot.center_view(freq - full_bw/2,
+                                        freq + full_bw/2,
+                                       self._amplitude_group.get_min_level(),
+                                       self._amplitude_group.get_ref_level())
+                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                        IQ_PLOT_YMAX[rfe_mode])
 
     def show_labels(self):
         self._rbw_label.show()
@@ -483,12 +490,6 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_diff()
-        if (not self.controller.applying_user_xrange() and
-                not self.controller.get_options()['free_plot_adjustment']):
-            self._plot.center_view(fstart,
-                                   fstop,
-                                   self._amplitude_group.get_min_level(),
-                                   self._amplitude_group.get_ref_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
