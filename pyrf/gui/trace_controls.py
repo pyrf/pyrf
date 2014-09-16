@@ -21,6 +21,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     draw
     hold
     clear
+    custom_color
     average_label
     average
     add
@@ -33,6 +34,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     :param draw: draw combobox, including 'Live', 'Max', 'Min' options
     :param hold: pause checkbox
     :param clear: clear trace button
+    :param custom_color: custom colors button
     :param average_label: average captures label
     :param average: average captures spinbox
     :param add: "+ trace" button
@@ -97,13 +99,15 @@ class TraceControls(QtGui.QGroupBox):
 
         :returns: a TraceWidgets namedtuple
         """
-        r, g, b = colors.TRACE_COLORS[num]
-        color = QtGui.QColor()
-        color.setRgb(r, g, b)
-        pixmap = QtGui.QPixmap(320, 2)
-        pixmap.fill(color)
         icon = QtGui.QLabel()
-        icon.setPixmap(pixmap)
+        def update_banner_color(r, g, b):
+            color = QtGui.QColor()
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(320, 2)
+            pixmap.fill(color)
+            icon.setPixmap(pixmap)
+        r, g, b = colors.TRACE_COLORS[num]
+        update_banner_color(r, g, b)
 
         label = QtGui.QLabel("T%d:" % (num + 1))
 
@@ -155,6 +159,16 @@ class TraceControls(QtGui.QGroupBox):
         average_edit.valueChanged.connect(average_changed)
         average_edit.hide()
 
+        custom_color = QtGui.QPushButton("Color")
+
+        def custom_color_clicked():
+            color = QtGui.QColorDialog.getColor()
+            # Don't update if color chosen is black
+            if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
+                update_banner_color(color.red(), color.green(), color.blue())
+                trace = self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+        custom_color.clicked.connect(custom_color_clicked)
+
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
         def add_trace_clicked():
@@ -187,7 +201,7 @@ class TraceControls(QtGui.QGroupBox):
         add_marker.clicked.connect(add_marker_clicked)
 
         return TraceWidgets(icon, label, draw, hold, clear,
-                            average_label, average_edit,
+                            custom_color, average_label, average_edit,
                             add_trace, remove_trace, add_marker)
 
     def _create_marker_widgets(self, num, button_group):
@@ -259,9 +273,12 @@ class TraceControls(QtGui.QGroupBox):
             row = row + 1
             show(trace_widgets.label, row, 0, 1, 1)
             show(trace_widgets.draw, row, 1, 1, 2)
-            show(trace_widgets.hold, row, 3, 1, 2)
+            show(trace_widgets.hold, row, 3, 1, 1)
+            show(trace_widgets.custom_color, row, 4, 1, 1)
             show(trace_widgets.clear, row, 5, 1, 2)
+
             row = row + 1
+
             show(trace_widgets.average_label, row, 1, 1, 2)
             show(trace_widgets.average, row, 3, 1, 2)
             if trace_widgets.draw.currentText() != 'Average':
