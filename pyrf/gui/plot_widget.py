@@ -350,6 +350,7 @@ class Plot(QtCore.QObject):
                         m.remove_marker(self)
                         m.add_marker(self)
         if 'center' in changed:
+
             self.controller.apply_device_settings(trigger = {'type': 'None',
                     'fstart': self.gui_state.device_settings['trigger']['fstart'],
                     'fstop': self.gui_state.device_settings['trigger']['fstop'],
@@ -433,6 +434,8 @@ class Plot(QtCore.QObject):
         self.window.getAxis('bottom').setGrid(200)
         self.window.getAxis('left').setPen(colors.GREY_NUM)
         self.window.getAxis('left').setGrid(200)
+        self.window.getAxis('top').setTicks([[(-200, '-200'), (-200, '-200'),
+                                            (-250, '-200'), (-250, '-200')]])
 
     def update_markers(self):
         for m in self.markers:

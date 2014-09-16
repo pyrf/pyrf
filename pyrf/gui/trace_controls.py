@@ -106,6 +106,7 @@ class TraceControls(QtGui.QGroupBox):
             icon.setPixmap(pixmap)
         r, g, b = colors.TRACE_COLORS[num]
         update_banner_color(r, g, b)
+        button_icon = QtGui.QIcon()
 
         color_button = QtGui.QPushButton()
         def update_button_color(r, g, b):
