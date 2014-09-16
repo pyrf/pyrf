@@ -8,14 +8,14 @@ from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
 
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
-    'Sweep SH': 'Sweep, 40MHz steps',
-    'Sweep ZIF': 'Sweep, 100MHz steps',
-    'ZIF': '100MHz BW',
-    'SH': '40MHz BW',
-    'SHN': '10MHz BW',
-    'HDR': '100kHz BW, high dynamic range',
-    'DD': '0-50MHz, no tuning',
-    'IQIN': '100MHz IQ input, no tuning',
+    'Sweep SH': 'Sweep (40 MHz steps)',
+    'Sweep ZIF': 'Sweep (100 MHz steps)',
+    'ZIF': '100 MHz BW',
+    'SH': '40 MHz BW',
+    'SHN': '10 MHz BW',
+    'HDR': '100 kHz BW (high dynamic range)',
+    'DD': '0-50 MHz (no tuning)',
+    'IQIN': '100 MHz IQ input (no tuning)',
 }
 TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
