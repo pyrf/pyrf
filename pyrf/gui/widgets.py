@@ -87,6 +87,14 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         self.quiet_update(value, value, value)
         self.setEnabled(False)
 
+    def stepBy(self, steps):
+        """
+        Force immediate change when using step buttons
+        """
+        rval = super(QDoubleSpinBoxPlayback, self).stepBy(steps)
+        self.editingFinished.emit()
+
+
 class infiniteLine(pg.InfiniteLine):
     """
     Infinite Line with controls over the hover pen (feature will be available in pyqtgraph 0.9.9)
