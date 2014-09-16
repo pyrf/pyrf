@@ -90,7 +90,7 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20
-    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'IQIN', 'DD')
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD', 'IQIN')
     DEFAULT_SAMPLE_TYPE = {
         'ZIF': IQ,
         'SH': I_ONLY,
