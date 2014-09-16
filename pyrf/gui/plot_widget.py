@@ -434,3 +434,6 @@ class Plot(QtCore.QObject):
         if self.update_iq_range:
             self.iq_window.setXRange(0, len(i_data))
             self.update_iq_range = False
+
+    def center_iq_plots(self):
+        self.iq_window.setYRange(IQ_PLOT_YMIN, IQ_PLOT_YMAX)

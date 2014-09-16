@@ -314,8 +314,7 @@ class MainPanel(QtGui.QWidget):
                                        full_bw,
                                        self._amplitude_group.get_min_level(),
                                        self._amplitude_group.get_ref_level())
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                               IQ_PLOT_YMAX[rfe_mode])
+                self._plot.center_iq_plots()
             else:
                 freq = state.center
                 full_bw = state.span
@@ -324,8 +323,7 @@ class MainPanel(QtGui.QWidget):
                                         freq + full_bw/2,
                                        self._amplitude_group.get_min_level(),
                                        self._amplitude_group.get_ref_level())
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                        IQ_PLOT_YMAX[rfe_mode])
+                self._plot.center_iq_plots()
 
     def show_labels(self):
         self._rbw_label.show()
