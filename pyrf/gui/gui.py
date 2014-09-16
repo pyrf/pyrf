@@ -330,8 +330,17 @@ class MainPanel(QtGui.QWidget):
         if 'rbw' in changed:
             self.update_rbw_label()
 
-        if 'span' in changed:
+        if 'span' in changed or 'center' in changed:
+            rfe_mode = state.rfe_mode()
             self.update_span_label()
+            freq = state.center
+            full_bw = state.span
+            self._plot.center_view(freq - full_bw/2,
+                                    freq + full_bw/2,
+                                   self._amplitude_group.get_min_level(),
+                                   self._amplitude_group.get_ref_level())
+            self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
+                                        IQ_PLOT_YMAX[rfe_mode])
 
     def show_labels(self):
         self._rbw_label.show()
