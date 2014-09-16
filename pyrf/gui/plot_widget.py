@@ -251,7 +251,12 @@ class Plot(QtCore.QObject):
         labelStyle = fonts.AXIS_LABEL_FONT
 
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
+        self.window.setLabel('top')
 
+        # horizontal cursor line
+        cursor_pen = pg.mkPen(colors.RED_NUM)
+        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = colors.RED_NUM)
+        # self.cursor_line.setPen(cursor_pen)
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
         self.freqtrig_lines = pg.LinearRegionItem()
@@ -320,11 +325,12 @@ class Plot(QtCore.QObject):
                     'fstart': min(self.freqtrig_lines.getRegion()),
                     'fstop': max(self.freqtrig_lines.getRegion()),
                     'amplitude': self.amptrig_line.value()})
-            elif self.plot_state['horizontal_cursor']:
-                self.controller.apply_plot_options(horizontal_cursor_value = self.amptrig_line.value())
+        def new_cursor_value():
+            self.controller.apply_plot_options(horizontal_cursor_value = self.cursor_line.value())
         # update trigger settings when ever a line is changed
         self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
         self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
+        self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -364,10 +370,9 @@ class Plot(QtCore.QObject):
         self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
-                self.window.addItem(self.amptrig_line)
+                self.window.addItem(self.cursor_line)
             else:
-                if not self.gui_state.device_settings['trigger']['type'] == 'LEVEL':
-                    self.window.removeItem(self.amptrig_line)
+                self.window.removeItem(self.cursor_line)
 
         if 'channel_power' in changed:
             if state['channel_power']:
@@ -379,7 +384,8 @@ class Plot(QtCore.QObject):
             else:
                 self.window.removeItem(self.freqtrig_lines)
         if 'horizontal_cursor_value' in changed:
-            self.amptrig_line.setValue(state['horizontal_cursor_value'])
+            self.cursor_line.setValue(state['horizontal_cursor_value'])
+
     def add_trigger(self,fstart, fstop, amplitude):
 
         self.amptrig_line.blockSignals(True)
@@ -397,8 +403,8 @@ class Plot(QtCore.QObject):
         self.freqtrig_lines.blockSignals(False)
 
     def remove_trigger(self):
-        if not self.plot_state.get('horizontal_cursor'):
-            self.window.removeItem(self.amptrig_line)
+
+        self.window.removeItem(self.amptrig_line)
         if not self.plot_state.get('channel_power'):
             self.window.removeItem(self.freqtrig_lines)
         self._trig_enable = False

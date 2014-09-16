@@ -49,17 +49,8 @@ class MeasurementControls(QtGui.QGroupBox):
             self.controller.apply_plot_options(horizontal_cursor = self._horizontal_cursor.isChecked())
 
         def change_cursor_value():
-            if self.gui_state.device_settings['trigger']['type'] == 'LEVEL':
-                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                                        'fstart': self.gui_state.device_settings['trigger']['fstart'],
-                                        'fstop': self.gui_state.device_settings['trigger']['fstop'],
-                                        'amplitude': self._cursor_spinbox.value()})
-            elif self.plot_state['horizontal_cursor']:
-                self.controller.apply_plot_options(horizontal_cursor_value = self._cursor_spinbox.value())
-                self.controller.apply_device_settings(trigger = {'type': 'NONE',
-                                        'fstart': self.gui_state.device_settings['trigger']['fstart'],
-                                        'fstop': self.gui_state.device_settings['trigger']['fstop'],
-                                        'amplitude': self._cursor_spinbox.value()})
+            self.controller.apply_plot_options(horizontal_cursor_value = self._cursor_spinbox.value())
+
         self._channel_power.clicked.connect(enable_channel_power)
         self._horizontal_cursor.clicked.connect(enable_cursor)
         self._cursor_spinbox.editingFinished.connect(change_cursor_value)
@@ -69,8 +60,8 @@ class MeasurementControls(QtGui.QGroupBox):
 
     def state_changed(self, state, changed):
         self.gui_state = state
-        if 'device_settings.trigger' in changed:
-            self._cursor_spinbox.setValue(self.gui_state.device_settings['trigger']['amplitude'])
+        # if 'device_settings.trigger' in changed:
+            # self._cursor_spinbox.setValue(self.gui_state.device_settings['trigger']['amplitude'])
 
     def plot_changed(self, state, changed):
         self.plot_state = state
