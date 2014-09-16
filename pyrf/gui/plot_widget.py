@@ -54,6 +54,10 @@ class Trace(object):
             max(0, trace_color[0] - 60),
             max(0, trace_color[1] - 60),
             min(255, trace_color[2] + 60),)
+
+        calc_channel_power = False
+        channel_power = True
+        self.channel_power_range = []
         self.curves = []
         self.plot_area = plot_area
         self.average_list = []
@@ -377,15 +381,25 @@ class Plot(QtCore.QObject):
 
         if 'channel_power' in changed:
             if state['channel_power']:
-                fstart = self.gui_state.center - (self.gui_state.span / 4)
-                fstop = self.gui_state.center + (self.gui_state.span / 4)
-
-                self.freqtrig_lines.setRegion([(fstart),float(fstop)])
-                self.window.addItem(self.freqtrig_lines)
+                self.enable_channel_power()
             else:
-                self.window.removeItem(self.freqtrig_lines)
+                self.disable_channel_power()
         if 'horizontal_cursor_value' in changed:
             self.cursor_line.setValue(state['horizontal_cursor_value'])
+
+    def enable_channel_power(self):
+        for t in self.traces:
+            t.calc_channel_power = True
+        fstart = self.gui_state.center - (self.gui_state.span / 4)
+        fstop = self.gui_state.center + (self.gui_state.span / 4)
+
+        self.freqtrig_lines.setRegion([(fstart),float(fstop)])
+        self.window.addItem(self.freqtrig_lines)
+
+    def disable_channel_power(self):
+        for t in self.traces:
+            t.calc_channel_power = False
+        self.window.removeItem(self.freqtrig_lines)
 
     def add_trigger(self,fstart, fstop, amplitude):
 

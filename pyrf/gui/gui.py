@@ -377,7 +377,7 @@ class MainPanel(QtGui.QWidget):
 
         self.marker_labels = []
         marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
-
+        channel_power_labels = self._channel_power_labels()
         grid.addWidget(self._mask_label, 0, 0, 2, self.plot_width)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
@@ -385,6 +385,10 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(self._rbw_label, 0, 0, 1, 2)
         grid.addWidget(self._span_label, 0, 9, 1, 2)
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
+        x = 2
+        for label in channel_power_labels:
+            grid.addWidget(label, 1, x, 1, 2)
+            x += 3
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
@@ -457,23 +461,29 @@ class MainPanel(QtGui.QWidget):
         return self._dev_group
 
     def _marker_labels(self):
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
 
         marker_label = QtGui.QLabel('')
         marker_label.setAlignment(QtCore.Qt.AlignLeft)
+        marker_label.setSizePolicy(sizePolicy)
 
         delta_label = QtGui.QLabel('')
         delta_label.setAlignment(QtCore.Qt.AlignLeft)
+        delta_label.setSizePolicy(sizePolicy)
 
         span_label = QtGui.QLabel('')
         span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         span_label.setAlignment(QtCore.Qt.AlignLeft)
+        span_label.setSizePolicy(sizePolicy)
 
         rbw_label = QtGui.QLabel('')
         rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         rbw_label.setAlignment(QtCore.Qt.AlignRight)
+        rbw_label.setSizePolicy(sizePolicy)
 
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
+        diff_label.setSizePolicy(sizePolicy)
         self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label
@@ -481,6 +491,18 @@ class MainPanel(QtGui.QWidget):
 
         self.marker_labels.append(delta_label)
         return marker_label,delta_label, diff_label, rbw_label, span_label
+
+    def _channel_power_labels(self):
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+
+        self.channel_power_labels = []
+
+        for color in colors.TRACE_COLORS:
+            label = QtGui.QLabel('')
+            label.setSizePolicy(sizePolicy)
+            label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
+            self.channel_power_labels.append(label)
+        return self.channel_power_labels
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         """
