@@ -231,6 +231,7 @@ class MainPanel(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
 
@@ -333,6 +334,9 @@ class MainPanel(QtGui.QWidget):
 
         if 'span' in changed:
             self.update_span_label()
+
+    def plot_changed(self, state, changed):
+        self.plot_state = state
 
     def show_labels(self):
         self._rbw_label.show()
@@ -525,6 +529,7 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_diff()
+        self.update_channel_power()
         if (not self.controller.applying_user_xrange() and
                 not self.controller.get_options()['free_plot_adjustment']):
             self._plot.center_view(fstart,
@@ -675,6 +680,15 @@ class MainPanel(QtGui.QWidget):
             self._diff_label.setText(delta_text)
         else:
             self._diff_label.hide()
+
+    def update_channel_power(self):
+
+        for label, trace in zip(self.channel_power_labels, self._plot.traces):
+            if trace.calc_channel_power and not trace.blank:
+                label.setText(("Channel Power: %0.2f dBm" % trace.channel_power))
+            else:
+                label.setText('')
+
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)

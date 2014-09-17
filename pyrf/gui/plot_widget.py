@@ -15,7 +15,7 @@ from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
 from pyrf.gui.widgets import infiniteLine
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
-
+from pyrf.numpy_util import calculate_channel_power
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -55,8 +55,8 @@ class Trace(object):
             max(0, trace_color[1] - 60),
             min(255, trace_color[2] + 60),)
 
-        calc_channel_power = False
-        channel_power = True
+        self.calc_channel_power = False
+        self.channel_power = 0
         self.channel_power_range = []
         self.curves = []
         self.plot_area = plot_area
@@ -103,6 +103,12 @@ class Trace(object):
             self.data = np.average(self.average_list, axis = 0)
 
         self.clear()
+        if self.calc_channel_power:
+            if min(self.channel_power_range) > min(xdata) and max(self.channel_power_range) < max(xdata):
+                min_bin = (np.abs(xdata-min(self.channel_power_range))).argmin()
+                max_bin = (np.abs(xdata-max(self.channel_power_range))).argmin()
+                self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
+
         if usable_bins:
             # plot usable and unusable curves
             i = 0
@@ -323,6 +329,8 @@ class Plot(QtCore.QObject):
                                                                 'fstart': min(self.freqtrig_lines.getRegion()),
                                                                 'fstop': max(self.freqtrig_lines.getRegion()),
                                                                 'amplitude': self.amptrig_line.value()})
+            if self.plot_state.get('channel_power'):
+                self.controller.apply_plot_options(channel_power_region = self.freqtrig_lines.getRegion())
         def new_trigger_amp():
             if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
                 self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
@@ -353,8 +361,8 @@ class Plot(QtCore.QObject):
                     if m.enabled:
                         m.remove_marker(self)
                         m.add_marker(self)
-        if 'center' in changed:
 
+        if 'center' in changed:
             self.controller.apply_device_settings(trigger = {'type': 'None',
                     'fstart': self.gui_state.device_settings['trigger']['fstart'],
                     'fstop': self.gui_state.device_settings['trigger']['fstop'],
@@ -386,7 +394,10 @@ class Plot(QtCore.QObject):
                 self.disable_channel_power()
         if 'horizontal_cursor_value' in changed:
             self.cursor_line.setValue(state['horizontal_cursor_value'])
+        if 'channel_power_region' in changed:
 
+            for t in self.traces:
+                t.channel_power_range = state['channel_power_region']
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True

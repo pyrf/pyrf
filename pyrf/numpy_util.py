@@ -1,7 +1,18 @@
 import math
-
+import numpy as np
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
+
+def calculate_channel_power(power_spectrum):
+    """
+    Return a dBm value representing the channel power of the input
+    power spectrum.
+    :param power_spectrum: array containing power spectrum to be used for
+                            the channel power calculation
+    """
+
+    channel_power = 10 * np.log(np.sum(np.power(10, power_spectrum / 20) ))
+    return channel_power
 
 def compute_fft(dut, data_pkt, context, correct_phase=True,
         hide_differential_dc_offset=True, convert_to_dbm=True, 
