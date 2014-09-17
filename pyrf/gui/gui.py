@@ -685,6 +685,7 @@ class MainPanel(QtGui.QWidget):
 
         for label, trace in zip(self.channel_power_labels, self._plot.traces):
             if trace.calc_channel_power and not trace.blank:
+                label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + trace.color))
                 label.setText(("Channel Power: %0.2f dBm" % trace.channel_power))
             else:
                 label.setText('')

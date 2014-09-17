@@ -73,8 +73,19 @@ class Trace(object):
         self.average_factor = factor
         self.average_list = []
 
-    def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
+    def compute_channel_power(self):
+        if self.calc_channel_power and not self.blank:
+            if min(self.channel_power_range) > min(self.freq_range) and max(self.channel_power_range) < max(self.freq_range):
+                    min_bin = (np.abs(self.freq_range-min(self.channel_power_range))).argmin()
+                    max_bin = (np.abs(self.freq_range-max(self.channel_power_range))).argmin()
+                    bandwidth = max(self.channel_power_range) - min(self.channel_power_range)
+                    rbw = self.freq_range[2] - self.freq_range[1]
 
+                    self.channel_power = calculate_channel_power(self.data[min_bin:max_bin],
+                                                                 bandwidth,
+                                                                 rbw)
+
+    def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
         if self.store or self.blank:
             return
 
@@ -103,11 +114,7 @@ class Trace(object):
             self.data = np.average(self.average_list, axis = 0)
 
         self.clear()
-        if self.calc_channel_power:
-            if min(self.channel_power_range) > min(xdata) and max(self.channel_power_range) < max(xdata):
-                min_bin = (np.abs(xdata-min(self.channel_power_range))).argmin()
-                max_bin = (np.abs(xdata-max(self.channel_power_range))).argmin()
-                self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
+        self.compute_channel_power()
 
         if usable_bins:
             # plot usable and unusable curves
@@ -398,6 +405,7 @@ class Plot(QtCore.QObject):
 
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
+                t.compute_channel_power()
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
