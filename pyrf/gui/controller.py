@@ -77,6 +77,7 @@ class SpecAController(QtCore.QObject):
             self._sweep_device = SweepDevice(dut)
             self._capture_device = CaptureDevice(dut)
         elif dut:
+            self._dut_prop = dut.properties
             dut.reset()
             self._sweep_device = SweepDevice(dut, self.process_sweep)
             self._capture_device = CaptureDevice(dut, self.process_capture)
@@ -398,16 +399,16 @@ class SpecAController(QtCore.QObject):
         """
 
         # make sure resolution of center are the same as the device's tunning resolution
-        center = float(np.round(state.center, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
+        center = float(np.round(state.center, -1 * int(np.log10(self._dut_prop.TUNING_RESOLUTION))))
         state = SpecAState(state, center=center)
 
         if not state.sweeping():
             # force span to correct value for the mode given
             if state.decimation > 1:
-                span = (float(self._dut.properties.FULL_BW[state.rfe_mode()])
-                    / state.decimation * self._dut.properties.DECIMATED_USABLE)
+                span = (float(self._dut_prop.FULL_BW[state.rfe_mode()])
+                    / state.decimation * self._dut_prop.DECIMATED_USABLE)
             else:
-                span = self._dut.properties.USABLE_BW[state.rfe_mode()]
+                span = self._dut_prop.USABLE_BW[state.rfe_mode()]
             state = SpecAState(state, span=span)
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:
@@ -415,12 +416,12 @@ class SpecAController(QtCore.QObject):
 
         if 'mode' in changed:
             # check if RBW is appropriate for given mode
-            if state.rbw not in self._dut.properties.RBW_VALUES[state.rfe_mode()]:
+            if state.rbw not in self._dut_prop.RBW_VALUES[state.rfe_mode()]:
                 if state.sweeping():
-                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
+                    rbw = self._dut_prop.RBW_VALUES[state.rfe_mode()][0]
                     state = SpecAState(state, rbw=rbw)
                 else:
-                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
+                    rbw = self._dut_prop.RBW_VALUES[state.rfe_mode()][-1]
                     state = SpecAState(state, rbw=rbw)
         self._state = state
 
@@ -431,7 +432,7 @@ class SpecAController(QtCore.QObject):
                 self.start_capture()
             elif state.device_settings.get('iq_output_path') == 'CONNECTOR':
                 if state.sweeping():
-                    state.mode = self._dut.properties.RFE_MODES[0]
+                    state.mode = self._dut_prop.RFE_MODES[0]
 
         if self._recording_file:
             self._dut.inject_recording_state(state.to_json_object())
