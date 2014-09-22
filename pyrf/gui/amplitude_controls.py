@@ -56,7 +56,7 @@ class AmplitudeControls(QtGui.QGroupBox):
         self._ref_level.setSuffix(" dBm")
         self._ref_level.setSingleStep(PLOT_STEP)
         self._ref_level.valueChanged.connect(self._update_plot_y_axis)
-        self._ref_label = QtGui.QLabel('Reflevel: ')
+        self._ref_label = QtGui.QLabel('Maximum: ')
 
         self._min_level = QtGui.QSpinBox()
         self._min_level.setRange(PLOT_YMIN, PLOT_YMAX)
