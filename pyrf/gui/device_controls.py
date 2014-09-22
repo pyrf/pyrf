@@ -273,9 +273,11 @@ class DeviceControls(QtGui.QGroupBox):
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
             self._iq_output_box.setEnabled(True)
 
-        if 'center' in changed:
-            if self._level_trigger.isChecked():
-                self._level_trigger.click()
+        if 'device_settings.trigger' in changed:
+            if state.device_settings['trigger']['type'] == 'None':
+                if self._level_trigger.isChecked():
+                    self._level_trigger.click()
+
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 # forcibly disable triggers
