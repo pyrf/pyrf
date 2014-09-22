@@ -359,6 +359,8 @@ class SpecAController(QtCore.QObject):
                         pow_data, usable_bins, fstart, fstop))
             #FIXME: Find out why there is a case where pow_data may be empty
             if pow_data.any():
+                if self._plot_options.get('spectral_offset'):
+                    pow_data += self._plot_options['spectral_offset_value']
                 self.capture_receive.emit(
                     self._state,
                     fstart,
@@ -381,7 +383,8 @@ class SpecAController(QtCore.QObject):
 
         if not self._options.get('show_sweep_steps'):
             sweep_segments = None
-
+        if self._plot_options.get('spectral_offset'):
+            self.pow_data += self._plot_options['spectral_offset_value']
         self.capture_receive.emit(
             self._state,
             fstart,
