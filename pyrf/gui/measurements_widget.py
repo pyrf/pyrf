@@ -33,6 +33,8 @@ class MeasurementControls(QtGui.QGroupBox):
 
         self._cursor_spinbox = QDoubleSpinBoxPlayback()
         self._cursor_spinbox.setRange(-2000, 2000)
+        self._cursor_spinbox.setEnabled(False)
+        self._cursor_spinbox.quiet_update(value = -100)
     def _build_layout(self):
         grid = self.layout()
         clear_layout(grid)
@@ -66,4 +68,11 @@ class MeasurementControls(QtGui.QGroupBox):
     def plot_changed(self, state, changed):
         self.plot_state = state
         if 'horizontal_cursor_value' in changed:
-            self._cursor_spinbox.quiet_update(value = float(state['horizontal_cursor_value']))
+                self._cursor_spinbox.quiet_update(value = float(state['horizontal_cursor_value']))
+
+        if 'horizontal_cursor' in changed:
+           if state['horizontal_cursor']:
+                    self._cursor_spinbox.setEnabled(True)
+           else:
+                self._cursor_spinbox.setEnabled(False)
+                
