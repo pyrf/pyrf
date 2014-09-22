@@ -35,6 +35,7 @@ class MeasurementControls(QtGui.QGroupBox):
         self._cursor_spinbox.setRange(-2000, 2000)
         self._cursor_spinbox.setEnabled(False)
         self._cursor_spinbox.quiet_update(value = -100)
+
     def _build_layout(self):
         grid = self.layout()
         clear_layout(grid)

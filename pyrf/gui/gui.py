@@ -345,6 +345,8 @@ class MainPanel(QtGui.QWidget):
         self._mask_label.show()
         for m in self.marker_labels:
             m.show()
+        for c in self.channel_power_labels:
+            c.show()
 
     def hide_labels(self):
         self._rbw_label.hide()
@@ -353,6 +355,8 @@ class MainPanel(QtGui.QWidget):
         self._mask_label.hide()
         for m in self.marker_labels:
             m.hide()
+        for c in self.channel_power_labels:
+            c.hide()
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()
