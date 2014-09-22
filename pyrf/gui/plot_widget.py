@@ -78,12 +78,7 @@ class Trace(object):
             if min(self.channel_power_range) > min(self.freq_range) and max(self.channel_power_range) < max(self.freq_range):
                     min_bin = (np.abs(self.freq_range-min(self.channel_power_range))).argmin()
                     max_bin = (np.abs(self.freq_range-max(self.channel_power_range))).argmin()
-                    bandwidth = max(self.channel_power_range) - min(self.channel_power_range)
-                    rbw = self.freq_range[2] - self.freq_range[1]
-
-                    self.channel_power = calculate_channel_power(self.data[min_bin:max_bin],
-                                                                 bandwidth,
-                                                                 rbw)
+                    self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
 
     def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
         if self.store or self.blank:
@@ -272,7 +267,7 @@ class Plot(QtCore.QObject):
 
         # horizontal cursor line
         cursor_pen = pg.mkPen(colors.RED_NUM)
-        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = colors.RED_NUM)
+        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = colors.GREEN_NUM)
         # self.cursor_line.setPen(cursor_pen)
         # initialize trigger lines
         self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
