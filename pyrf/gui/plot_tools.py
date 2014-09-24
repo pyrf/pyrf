@@ -45,7 +45,7 @@ class triggerControl(pg.ROI):
 
     def init_lines(self):
         self.lines = []
-        cursor_pen = pg.mkPen((0,0,0,0), width = 4)
+        cursor_pen = pg.mkPen((0,0,0,0), width = 50)
         self.fstart_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.lines.append(self.fstart_line)
 

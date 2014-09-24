@@ -344,7 +344,9 @@ class DeviceControls(QtGui.QGroupBox):
                 self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
                 self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
                 self._trig_amp.quiet_update(value=trigger['amplitude'])
-
+            else:
+                if self._level_trigger.checkState():
+                    self._level_trigger.click()
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
