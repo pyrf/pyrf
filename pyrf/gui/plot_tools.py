@@ -16,18 +16,92 @@ class triggerControl(pg.ROI):
     def __init__(self):
         super(triggerControl, self).__init__(pos=(0,0))
 
-        self.setPen(pg.mkPen(color = colors.WHITE_NUM, width= 4))
+        self.normal_pen = pg.mkPen(color = colors.WHITE_NUM, width= 4)
+        self.setPen(self.normal_pen)
         self.hover_pen = pg.mkPen(color = colors.LIME_NUM, width= 4)
         self.fstart = 0
         self.fstop = 0
         self.amplitude = 0
 
-        def new_trigger():
-            self.fstart = self.pos().x()
-            self.fstop = self.fstart + self.size().x()
-            self.amplitude = self.size().y() + self.pos().y() 
+        self.init_lines()
+        self.sigRegionChangeFinished.connect(self.new_trigger)
+        self.sigRegionChangeStarted.connect(self.begin_changing)
+
+    def begin_changing(self):
+        for l in self.lines:
+            l.blockSignals(True)
+
+    def new_trigger(self):
+        self.fstart = self.pos().x()
+        self.fstop = self.fstart + self.size().x()
+        self.amplitude = self.size().y() + self.pos().y()
+        self.fstart_line.setValue(self.fstart)
+
+        self.fstop_line.setValue(self.fstop)
+        self.amplitude_line.setValue(self.amplitude)
+        self.sigNewTriggerRange.emit(self)
+        for l in self.lines:
+            l.blockSignals(False)
+
+    def init_lines(self):
+        self.lines = []
+        cursor_pen = pg.mkPen((0,0,0,0), width = 4)
+        self.fstart_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.lines.append(self.fstart_line)
+
+        self.fstop_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.lines.append(self.fstop_line)
+
+        self.amplitude_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 0, movable = True)
+        self.lines.append(self.amplitude_line)
+
+        for l in self.lines:
+            def hovering():
+                self.setPen(self.hover_pen)
+                # l.setPen(self.hover_pen)
+            def not_hovering():
+                self.setPen(self.normal_pen)
+                # l.setPen(cursor_pen)
+
+            l.setHoverPen(cursor_pen)
+            l.sigHovering.connect(hovering)
+            l.sigHoveringFinished.connect(not_hovering)
+
+        def changing_fstart():
+            self.setPen(self.hover_pen)
+            self.resize_trigger(self.fstart_line.value(),
+                                self.fstop,
+                                self.amplitude)
+        self.fstart_line.sigPositionChanged.connect(changing_fstart)
+
+        def finished_changing_fstart():
+            self.setPen(self.normal_pen)
             self.sigNewTriggerRange.emit(self)
-        self.sigRegionChangeFinished.connect(new_trigger)
+        self.fstart_line.sigPositionChangeFinished.connect(finished_changing_fstart)
+
+        def changing_fstop():
+            self.setPen(self.hover_pen)
+            self.resize_trigger(self.fstart,
+                                self.fstop_line.value(),
+                                self.amplitude)
+        self.fstop_line.sigPositionChanged.connect(changing_fstop)
+
+        def finished_changing_fstop():
+            self.setPen(self.normal_pen)
+            self.sigNewTriggerRange.emit(self)
+        self.fstop_line.sigPositionChangeFinished.connect(finished_changing_fstop)
+
+        def changing_amp():
+            self.setPen(self.hover_pen)
+            self.resize_trigger(self.fstart,
+                                self.fstop,
+                                self.amplitude_line.value())
+        self.amplitude_line.sigPositionChanged.connect(changing_amp)
+
+        def finished_changing_amplitude():
+            self.setPen(self.normal_pen)
+            self.sigNewTriggerRange.emit(self)
+        self.amplitude_line.sigPositionChangeFinished.connect(finished_changing_amplitude)
 
     def resize_trigger(self, start, stop, amp):
         self.blockSignals(True)
@@ -35,8 +109,12 @@ class triggerControl(pg.ROI):
         self.fstop = stop
         self.amplitude = amp
         span = stop - start
-        self.setPos(((start  + span /2), LARGE_NEGATIVE_NUMBER))
-        self.setSize((span / 2, (-1 * LARGE_NEGATIVE_NUMBER) - np.abs(amp)))
+        self.setPos(((start), LARGE_NEGATIVE_NUMBER))
+        self.setSize((span, (-1 * LARGE_NEGATIVE_NUMBER) - np.abs(amp)))
+        self.fstart_line.setValue(start)
+
+        self.fstop_line.setValue(stop)
+        self.amplitude_line.setValue(amp)
         self.blockSignals(False)
 
     def setMouseHover(self, hover):
