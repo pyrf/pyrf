@@ -12,10 +12,10 @@ from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
                                               decay_fn_EXPONENTIAL)
-from pyrf.gui.widgets import infiniteLine
+from pyrf.gui.plot_tools import Marker, Trace, infiniteLine, triggerControl
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
-from pyrf.numpy_util import calculate_channel_power
+
 PLOT_YMIN = -160
 PLOT_YMAX = 20
 
@@ -25,206 +25,11 @@ IQ_PLOT_YMAX = 1
 IQ_PLOT_XMIN = -1
 IQ_PLOT_XMAX = 1
 
-AXIS_OFFSET = 7
-
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
                                      "mode"
                                      ])
-class Trace(object):
-    """
-    Class to represent a trace in the plot
-    """
-    
-    def __init__(self,plot_area, trace_name, trace_color, blank = False, write = False):
-        self.name = trace_name
-        self.max_hold = False
-        self.min_hold = False
-        self.blank = blank
-        self.write = write
-        self.store = False
-        self.average = False
-        self.data = None
-        self.raw_packet = None
-        self.freq_range = None
-        self.color = trace_color
-        self.edge_color = trace_color + (40,)
-        self.alternate_color = (
-            max(0, trace_color[0] - 60),
-            max(0, trace_color[1] - 60),
-            min(255, trace_color[2] + 60),)
-
-        self.calc_channel_power = False
-        self.channel_power = 0
-        self.channel_power_range = []
-        self.curves = []
-        self.plot_area = plot_area
-        self.average_list = []
-        self.average_factor = 5
-    def clear(self):
-        for c in self.curves:
-            self.plot_area.window.removeItem(c)
-        self.curves = []
-    def clear_data(self):
-        self.average_list = []
-        self.data = None
-    def update_average_factor(self, factor):
-        self.average_factor = factor
-        self.average_list = []
-
-    def compute_channel_power(self):
-        if self.calc_channel_power and not self.blank:
-            if min(self.channel_power_range) > min(self.freq_range) and max(self.channel_power_range) < max(self.freq_range):
-                    min_bin = (np.abs(self.freq_range-min(self.channel_power_range))).argmin()
-                    max_bin = (np.abs(self.freq_range-max(self.channel_power_range))).argmin()
-                    self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
-
-    def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
-        if self.store or self.blank:
-            return
-
-        self.freq_range = xdata
-
-        if self.max_hold:
-            if (self.data == None or len(self.data) != len(ydata)):
-                self.data = ydata
-            self.data = np.maximum(self.data,ydata)
-
-        elif self.min_hold:
-            if (self.data == None or len(self.data) != len(ydata)):
-                self.data = ydata
-            self.data = np.minimum(self.data,ydata)
-
-        elif self.write:
-            self.data = ydata
-
-        elif self.average:
-            if len(self.average_list) >= self.average_factor:
-                self.average_list.pop(0)
-            if self.average_list:
-                if len(ydata) != len(self.data):
-                    self.average_list = []
-            self.average_list.append(ydata)
-            self.data = np.average(self.average_list, axis = 0)
-
-        self.clear()
-        self.compute_channel_power()
-
-        if usable_bins:
-            # plot usable and unusable curves
-            i = 0
-            for start_bin, run_length in usable_bins:
-                if start_bin > i:
-                    c = self.plot_area.window.plot(x=xdata[i:start_bin+1],
-                        y=self.data[i:start_bin+1], pen=self.edge_color)
-                    self.curves.append(c)
-                    i = start_bin
-                if run_length:
-                    c = self.plot_area.window.plot(x=xdata[i:i+run_length],
-                        y=self.data[i:i+run_length], pen=self.color)
-                    self.curves.append(c)
-                    i = i + run_length - 1
-            if i < len(xdata):
-                c = self.plot_area.window.plot(x=xdata[i:], y=self.data[i:],
-                    pen=self.edge_color)
-                self.curves.append(c)
-        else:
-            odd = True
-            i = 0
-            if sweep_segments is None:
-                sweep_segments = [len(self.data)]
-            for run in sweep_segments:
-                c = self.plot_area.window.plot(x=xdata[i:i + run],
-                    y=self.data[i:i + run],
-                    pen=self.color if odd else self.alternate_color)
-                self.curves.append(c)
-                i = i + run
-                odd = not odd
-
-class Marker(object):
-    """
-    Class to represent a marker on the plot
-    """
-    def __init__(self,plot_area, marker_name, color):
-
-        self.name = marker_name
-        self.marker_plot = pg.ScatterPlotItem()
-        self.enabled = False
-        self.selected = False
-        self.data_index = None
-        self.xdata = []
-        self.ydata = 0
-        self.trace_index = 0
-        self.color = color
-        self.draw_color = color
-        self.hovering = False
-        self._plot = plot_area
-        self.coursor_dragged = False
-
-        cursor_pen = pg.mkPen((0,0,0,0), width = 40)
-        self.cursor_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
-        self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
-
-        def dragged():
-            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
-            self.cursor_line.setPen(cursor_pen)
-            self.draw_color = colors.MARKER_HOVER
-        self.cursor_line.sigDragged.connect(dragged)
-
-        def hovering():
-            self.draw_color = colors.MARKER_HOVER
-        self.cursor_line.sigHovering.connect(hovering)
-
-        def not_hovering():
-            self.draw_color = color
-        self.cursor_line.sigHoveringFinished.connect(not_hovering)
-
-    def remove_marker(self, plot):
-        plot.window.removeItem(self.marker_plot)
-        plot.window.removeItem(self.cursor_line)
-
-    def add_marker(self, plot):
-        plot.window.addItem(self.marker_plot)
-        plot.window.addItem(self.cursor_line)
-
-    def enable(self, plot):
-        self.enabled = True
-        self.add_marker(plot)
-
-    def disable(self, plot):
-        self.enabled = False
-        self.remove_marker(plot)
-        self.data_index = None
-        self.trace_index = 0
-
-    def update_pos(self, xdata, ydata):
-
-        self.marker_plot.clear()
-        self._plot.window.removeItem(self.marker_plot)
-        self._plot.window.addItem(self.marker_plot)
-
-        if len(xdata) <= 0 or len(ydata) <= 0:
-            return
-
-        if self.data_index  == None:
-           self.data_index = len(ydata) / 2 
-
-        if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
-            self.data_index = int((float(self.data_index)/float(len(self.xdata))) * len(xdata)) 
-
-        xpos = xdata[self.data_index]
-        ypos = ydata[self.data_index]
-
-        self.xdata = xdata
-        self.ydata = ydata
-        if not self.coursor_dragged:
-            self.cursor_line.setValue(xpos)
-        self.marker_plot.addPoints(x = [xpos],
-                                   y = [ypos],
-                                    symbol = '+',
-                                    size = 25, pen = pg.mkPen(self.draw_color), 
-                                    brush = self.draw_color)
 
 class Plot(QtCore.QObject):
     """
@@ -268,10 +73,8 @@ class Plot(QtCore.QObject):
         # horizontal cursor line
         cursor_pen = pg.mkPen(colors.RED_NUM)
         self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = colors.GREEN_NUM)
-        # self.cursor_line.setPen(cursor_pen)
-        # initialize trigger lines
-        self.amptrig_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True)
-        self.freqtrig_lines = pg.LinearRegionItem()
+
+        self.channel_power_region = pg.LinearRegionItem()
         self._trig_enable = False
         self.grid(True)
 
@@ -322,57 +125,58 @@ class Plot(QtCore.QObject):
             data_model=self.waterfall_data)
         self.persistence_window.getAxis('bottom').setScale(1e-9)
         self.persistence_window.showGrid(True, True)
+
+
+        self.trigger_control = triggerControl()
         self.connect_plot_controls()
 
     def connect_plot_controls(self):
-        def new_trigger_freq():
-            if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
-                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                                                                'fstart': min(self.freqtrig_lines.getRegion()),
-                                                                'fstop': max(self.freqtrig_lines.getRegion()),
-                                                                'amplitude': self.amptrig_line.value()})
+        def new_channel_power():
             if self.plot_state.get('channel_power'):
-                self.controller.apply_plot_options(channel_power_region = self.freqtrig_lines.getRegion())
-        def new_trigger_amp():
-            if self.gui_state.device_settings.get('trigger')['type'] == 'LEVEL':
-                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                    'fstart': min(self.freqtrig_lines.getRegion()),
-                    'fstop': max(self.freqtrig_lines.getRegion()),
-                    'amplitude': self.amptrig_line.value()})
+                self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
         def new_cursor_value():
             self.controller.apply_plot_options(horizontal_cursor_value = self.cursor_line.value())
-        # update trigger settings when ever a line is changed
-        self.freqtrig_lines.sigRegionChangeFinished.connect(new_trigger_freq)
-        self.amptrig_line.sigPositionChangeFinished.connect(new_trigger_amp)
-        self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
 
+        def new_trigger():
+            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
+                                                        'fstart':self.trigger_control.fstart,
+                                                        'fstop': self.trigger_control.fstop,
+                                                        'amplitude': self.trigger_control.amplitude})
+        # update trigger settings when ever a line is changed
+        self.channel_power_region.sigRegionChangeFinished.connect(new_channel_power)
+        self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
+        self.trigger_control.sigNewTriggerRange.connect(new_trigger)
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
         self.gui_state = state
         if 'device_settings.trigger' in changed:
-            if state.device_settings['trigger']['type'] == 'NONE':
-                self.remove_trigger()
-            elif state.device_settings['trigger']['type'] == 'LEVEL':
+            fstart = state.device_settings['trigger']['fstart']
+            fstop = state.device_settings['trigger']['fstop']
+            amplitude = state.device_settings['trigger']['amplitude']
+            type = state.device_settings['trigger']['type']
 
-                self.add_trigger(state.device_settings['trigger']['fstart'],
-                                state.device_settings['trigger']['fstop'],
-                                state.device_settings['trigger']['amplitude'])
+            if type == 'NONE':
+                self.remove_trigger()
+                self.trigger_control.resize_trigger(fstart, fstop, amplitude)
+            elif type == 'LEVEL':
+                self.add_trigger(fstart,
+                                fstop,
+                                amplitude)
                 for m in self.markers:
                     if m.enabled:
                         m.remove_marker(self)
                         m.add_marker(self)
 
         if 'center' in changed or 'span' in changed:
-
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
-            if fstart > min(self.freqtrig_lines.getRegion()) or fstop < max(self.freqtrig_lines.getRegion()):
-                self.controller.apply_device_settings(trigger = {'type': 'None',
-                        'fstart': self.gui_state.device_settings['trigger']['fstart'],
-                        'fstop': self.gui_state.device_settings['trigger']['fstop'],
-                        'amplitude': self.amptrig_line.value()})
+            if fstart > self.trigger_control.fstart or fstop < self.trigger_control.fstop:
+                self.controller.apply_device_settings(trigger = {'type': 'NONE',
+                                                        'fstart':self.trigger_control.fstart,
+                                                        'fstop': self.trigger_control.fstop,
+                                                        'amplitude': self.trigger_control.amplitude})
                 self.remove_trigger()
                 self.persistence_window.reset_plot()
                 for trace in self.traces:
@@ -401,7 +205,6 @@ class Plot(QtCore.QObject):
         if 'horizontal_cursor_value' in changed:
             self.cursor_line.setValue(state['horizontal_cursor_value'])
         if 'channel_power_region' in changed:
-
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
@@ -411,35 +214,24 @@ class Plot(QtCore.QObject):
         fstart = self.gui_state.center - (self.gui_state.span / 4)
         fstop = self.gui_state.center + (self.gui_state.span / 4)
 
-        self.freqtrig_lines.setRegion([(fstart),float(fstop)])
-        self.window.addItem(self.freqtrig_lines)
+        self.channel_power_region.setRegion([(fstart),float(fstop)])
+        self.window.addItem(self.channel_power_region)
 
     def disable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = False
-        self.window.removeItem(self.freqtrig_lines)
+        self.window.removeItem(self.channel_power_region)
 
     def add_trigger(self,fstart, fstop, amplitude):
 
-        self.amptrig_line.blockSignals(True)
-        self.freqtrig_lines.blockSignals(True)
         if not self._trig_enable:
-            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
-            self.window.addItem(self.freqtrig_lines)
-            self.window.addItem(self.amptrig_line)
+            self.trigger_control.resize_trigger(fstart,
+                                             fstop,
+                                             amplitude)
+            self.window.addItem(self.trigger_control)
             self._trig_enable = True
-        else:
-            self.amptrig_line.setValue(amplitude)
-            self.freqtrig_lines.setRegion([float(fstart),float(fstop)])
-
-        self.amptrig_line.blockSignals(False)
-        self.freqtrig_lines.blockSignals(False)
-
     def remove_trigger(self):
-
-        self.window.removeItem(self.amptrig_line)
-        if not self.plot_state.get('channel_power'):
-            self.window.removeItem(self.freqtrig_lines)
+        self.window.removeItem(self.trigger_control)
         self._trig_enable = False
 
     def center_view(self, fstart, fstop, min_level=None, ref_level=None):
@@ -468,9 +260,12 @@ class Plot(QtCore.QObject):
         self.window.getAxis('left').setGrid(200)
         self.window.getAxis('top').setTicks([[(-200, '-200'), (-200, '-200'),
                                             (-250, '-200'), (-250, '-200')]])
-
     def update_markers(self):
         for m in self.markers:
             if m.enabled:
                 trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
+
+    def get_trigger_region(self):
+        print self.trigger_control.pos()
+        print self.trigger_control.size()
