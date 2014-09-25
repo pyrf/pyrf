@@ -225,14 +225,15 @@ class Plot(QtCore.QObject):
     def add_trigger(self,fstart, fstop, amplitude):
 
         if not self._trig_enable:
-            self.trigger_control.resize_trigger(fstart,
-                                             fstop,
-                                             amplitude)
             self.window.addItem(self.trigger_control)
             self.window.addItem(self.trigger_control.fstart_line)
             self.window.addItem(self.trigger_control.fstop_line)
             self.window.addItem(self.trigger_control.amplitude_line)
             self._trig_enable = True
+        self.trigger_control.resize_trigger(fstart,
+                                             fstop,
+                                             amplitude)
+
     def remove_trigger(self):
         self.window.removeItem(self.trigger_control)
         self.window.removeItem(self.trigger_control.fstart_line)
