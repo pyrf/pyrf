@@ -71,8 +71,8 @@ class Plot(QtCore.QObject):
         self.window.setLabel('top')
 
         # horizontal cursor line
-        cursor_pen = pg.mkPen(colors.RED_NUM)
-        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = colors.GREEN_NUM)
+        cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
+        self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = cursor_pen)
 
         self.channel_power_region = pg.LinearRegionItem()
         self._trig_enable = False

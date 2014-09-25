@@ -16,9 +16,9 @@ class triggerControl(pg.ROI):
     def __init__(self):
         super(triggerControl, self).__init__(pos=(0,0))
 
-        self.normal_pen = pg.mkPen(color = colors.WHITE_NUM, width= 4)
+        self.normal_pen = pg.mkPen(color = colors.WHITE_NUM, width= 2)
         self.setPen(self.normal_pen)
-        self.hover_pen = pg.mkPen(color = colors.LIME_NUM, width= 4)
+        self.hover_pen = pg.mkPen(color = colors.LIME_NUM, width= 2)
         self.fstart = 0
         self.fstop = 0
         self.amplitude = 0
