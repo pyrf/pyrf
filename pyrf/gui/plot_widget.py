@@ -172,6 +172,8 @@ class Plot(QtCore.QObject):
         if 'center' in changed or 'span' in changed:
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
+            for trace in self.traces:
+                trace.clear_data()
             if fstart > self.trigger_control.fstart or fstop < self.trigger_control.fstop:
                 self.controller.apply_device_settings(trigger = {'type': 'NONE',
                                                         'fstart':self.trigger_control.fstart,
@@ -179,8 +181,6 @@ class Plot(QtCore.QObject):
                                                         'amplitude': self.trigger_control.amplitude})
                 self.remove_trigger()
                 self.persistence_window.reset_plot()
-                for trace in self.traces:
-                    trace.clear_data()
 
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
             self.persistence_window.reset_plot()
