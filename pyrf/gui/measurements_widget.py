@@ -8,7 +8,7 @@ from pyrf.gui.widgets import QCheckBoxPlayback, QDoubleSpinBoxPlayback
 
 class MeasurementControls(QtGui.QGroupBox):
 
-    def __init__(self, controller, name="Measurement Controls"):
+    def __init__(self, controller, name="Measurement Control"):
         super(MeasurementControls, self).__init__()
 
         self.controller = controller
@@ -47,13 +47,13 @@ class MeasurementControls(QtGui.QGroupBox):
     def _build_layout(self):
         grid = self.layout()
         clear_layout(grid)
-        grid.addWidget(self._channel_power, 0, 0, 1, 1)
+        grid.addWidget(self._channel_power, 1, 0, 1, 1)
 
-        grid.addWidget(self._horizontal_cursor, 0, 1, 1,1)
-        grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
+        grid.addWidget(self._horizontal_cursor, 0, 0, 1,1)
+        grid.addWidget(self._cursor_spinbox, 0, 1, 1,1)
 
-        grid.addWidget(self._reference_offset, 1, 0, 1,1)
-        grid.addWidget(self._reference_offset_spinbox, 1, 1, 1,1)
+        grid.addWidget(self._reference_offset, 0, 2, 1,1)
+        grid.addWidget(self._reference_offset_spinbox, 0, 3, 1,1)
 
     def _connect_controls(self):
         def enable_channel_power():
