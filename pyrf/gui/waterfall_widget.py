@@ -185,6 +185,10 @@ class WaterfallModel(QtCore.QObject):
     def reset(self, new_x_data = None):
         with self._mutex:
             self._history = collections.deque()
+            if new_x_data is not None and len(new_x_data) > self._max_bins:
+                new_x_data = np.linspace(
+                    new_x_data[0], new_x_data[-1],
+                    len(power_resample_smaller(new_x_data, self._max_bins)))
             self._x_data = new_x_data
             self._set_x_data_stats()
             sig_data = (self._x_data, self._history)
