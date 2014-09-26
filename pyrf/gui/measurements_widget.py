@@ -36,24 +36,14 @@ class MeasurementControls(QtGui.QGroupBox):
         self._cursor_spinbox.setEnabled(False)
         self._cursor_spinbox.quiet_update(value = -100)
 
-        self._reference_offset = QCheckBoxPlayback("Reference Offset")
-        self._reference_offset.setToolTip("Add a reference offset to all plots")
-
-        self._reference_offset_spinbox = QDoubleSpinBoxPlayback()
-        self._reference_offset_spinbox.setRange(-200, 200)
-        self._reference_offset_spinbox.setEnabled(False)
-
-
     def _build_layout(self):
         grid = self.layout()
         clear_layout(grid)
-        grid.addWidget(self._channel_power, 1, 0, 1, 1)
+        grid.addWidget(self._channel_power, 0, 0, 1, 1)
 
-        grid.addWidget(self._horizontal_cursor, 0, 0, 1,1)
-        grid.addWidget(self._cursor_spinbox, 0, 1, 1,1)
+        grid.addWidget(self._horizontal_cursor, 0, 1, 1,1)
+        grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
 
-        grid.addWidget(self._reference_offset, 0, 2, 1,1)
-        grid.addWidget(self._reference_offset_spinbox, 0, 3, 1,1)
 
     def _connect_controls(self):
         def enable_channel_power():
@@ -65,18 +55,9 @@ class MeasurementControls(QtGui.QGroupBox):
         def change_cursor_value():
             self.controller.apply_plot_options(horizontal_cursor_value = self._cursor_spinbox.value())
 
-        def enable_reference_offset():
-            self.controller.apply_plot_options(reference_offset = self._reference_offset.isChecked())
-            self.controller.apply_plot_options(reference_offset_value = self._reference_offset_spinbox.value())
-
-        def change_reference_offset_value():
-            self.controller.apply_plot_options(reference_offset_value = self._reference_offset_spinbox.value())
-
-        self._channel_power.clicked.connect(enable_channel_power)
+            self._channel_power.clicked.connect(enable_channel_power)
         self._horizontal_cursor.clicked.connect(enable_cursor)
         self._cursor_spinbox.editingFinished.connect(change_cursor_value)
-        self._reference_offset.clicked.connect(enable_reference_offset)
-        self._reference_offset_spinbox.editingFinished.connect(change_reference_offset_value)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -94,9 +75,3 @@ class MeasurementControls(QtGui.QGroupBox):
                     self._cursor_spinbox.setEnabled(True)
            else:
                 self._cursor_spinbox.setEnabled(False)
-
-        if 'reference_offset' in changed:
-            if state['reference_offset']:
-                self._reference_offset_spinbox.setEnabled(True)
-            else:
-                self._reference_offset_spinbox.setEnabled(False)

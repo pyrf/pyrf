@@ -275,7 +275,7 @@ class MainPanel(QtGui.QWidget):
                 self._plot.center_view(freq,
                                        full_bw,
                                        self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_ref_level())
+                                       self._amplitude_group.get_max_level())
                 self._plot.center_iq_plots()
             else:
                 freq = state.center
@@ -284,7 +284,7 @@ class MainPanel(QtGui.QWidget):
                 self._plot.center_view(freq - full_bw/2,
                                         freq + full_bw/2,
                                        self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_ref_level())
+                                       self._amplitude_group.get_max_level())
                 self._plot.center_iq_plots()
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -527,7 +527,7 @@ class MainPanel(QtGui.QWidget):
             self._plot.center_view(fstart,
                                    fstop,
                                    self._amplitude_group.get_min_level(),
-                                   self._amplitude_group.get_ref_level())
+                                   self._amplitude_group.get_max_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
