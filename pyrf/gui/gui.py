@@ -498,7 +498,7 @@ class MainPanel(QtGui.QWidget):
 
         if self.waterfall_plot_enabled or self.persistence_plot_enabled:
             if (fstart, fstop, len(power)) != self._waterfall_range:
-                self._plot.waterfall_data.reset(self.xdata)
+                self._plot.waterfall_data.reset()
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
 
