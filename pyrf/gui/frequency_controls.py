@@ -318,4 +318,3 @@ class FrequencyControls(QtGui.QGroupBox):
         self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
         self._mode.setEnabled(True)
 
-
