@@ -46,13 +46,13 @@ class triggerControl(pg.ROI):
     def init_lines(self):
         self.lines = []
         cursor_pen = pg.mkPen((0,0,0,0), width = 50)
-        self.fstart_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.fstart_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.lines.append(self.fstart_line)
 
-        self.fstop_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.fstop_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.lines.append(self.fstop_line)
 
-        self.amplitude_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 0, movable = True)
+        self.amplitude_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 0, movable = True)
         self.lines.append(self.amplitude_line)
 
         for l in self.lines:
@@ -258,7 +258,7 @@ class Marker(object):
         self.coursor_dragged = False
 
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
-        self.cursor_line = infiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.cursor_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         def dragged():
@@ -322,7 +322,7 @@ class Marker(object):
                                     brush = self.draw_color)
 
 
-class infiniteLine(pg.InfiniteLine):
+class InfiniteLine(pg.InfiniteLine):
     """
     Infinite Line with controls over the hover pen (feature will be available in pyqtgraph 0.9.9)
     """

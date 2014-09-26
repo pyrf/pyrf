@@ -12,7 +12,7 @@ from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
                                               decay_fn_EXPONENTIAL)
-from pyrf.gui.plot_tools import Marker, Trace, infiniteLine, triggerControl
+from pyrf.gui.plot_tools import Marker, Trace, InfiniteLine, triggerControl
 from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
