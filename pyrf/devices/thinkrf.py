@@ -691,8 +691,8 @@ class WSA(object):
         """
         This command takes a dict of device settings, and applies them to the 
         WSA
-
-        :param settings: dict containing settings such as gain,antenna,etc
+        Note this method only applies a setting if it has been changed using this method
+        :param settings: dict containing settings such as attenuation,decimation,etc
         """
         device_setting = {
             'freq': self.freq,
