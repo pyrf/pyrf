@@ -55,7 +55,7 @@ class MeasurementControls(QtGui.QGroupBox):
         def change_cursor_value():
             self.controller.apply_plot_options(horizontal_cursor_value = self._cursor_spinbox.value())
 
-            self._channel_power.clicked.connect(enable_channel_power)
+        self._channel_power.clicked.connect(enable_channel_power)
         self._horizontal_cursor.clicked.connect(enable_cursor)
         self._cursor_spinbox.editingFinished.connect(change_cursor_value)
 

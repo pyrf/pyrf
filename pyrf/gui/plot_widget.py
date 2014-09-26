@@ -216,6 +216,7 @@ class Plot(QtCore.QObject):
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
+
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
