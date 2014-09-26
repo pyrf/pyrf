@@ -691,8 +691,8 @@ class WSA(object):
         """
         This command takes a dict of device settings, and applies them to the 
         WSA
-
-        :param settings: dict containing settings such as gain,antenna,etc
+        Note this method only applies a setting if it has been changed using this method
+        :param settings: dict containing settings such as attenuation,decimation,etc
         """
         device_setting = {
             'freq': self.freq,
@@ -711,6 +711,7 @@ class WSA(object):
             'pll_reference': self.pll_reference,
             'trigger': self.trigger,
             }
+
         for k, v in settings.iteritems():
             #FIXME: Find more elegant way to do this
             if not k in self.device_state:
@@ -719,7 +720,6 @@ class WSA(object):
             if not self.device_state[k] == v:
                 self.device_state[k] = v
                 device_setting[k](v)
-
 
 def parse_discovery_response(response):
     """

@@ -194,7 +194,7 @@ class WSA5000_220Properties(object):
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,
                         'fstop': 2460 * M,
-                        'amplitude': -110},
+                        'amplitude': -100},
             },
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',

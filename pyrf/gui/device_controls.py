@@ -216,7 +216,6 @@ class DeviceControls(QtGui.QGroupBox):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
 
-
     def state_changed(self, state, changed):
         self.gui_state = state
 
@@ -244,17 +243,18 @@ class DeviceControls(QtGui.QGroupBox):
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
             self._iq_output_box.setEnabled(True)
 
-        if 'center' in changed:
-            if self._level_trigger.isChecked():
-                self._level_trigger.click()
+        if 'device_settings.trigger' in changed:
+            if state.device_settings['trigger']['type'] == 'None':
+                if self._level_trigger.isChecked():
+                    self._level_trigger.click()
+
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
-                self._level_trigger.setEnabled(False)
-
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
                     self._trig_state(False)
+                self._level_trigger.setEnabled(False)
 
             else:
                 self._level_trigger.setEnabled(True)
@@ -304,7 +304,9 @@ class DeviceControls(QtGui.QGroupBox):
                 self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
                 self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
                 self._trig_amp.quiet_update(value=trigger['amplitude'])
-
+            else:
+                if self._level_trigger.checkState():
+                    self._level_trigger.click()
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)

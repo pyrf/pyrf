@@ -34,6 +34,7 @@ from pyrf.gui.frequency_controls import FrequencyControls
 from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
+from pyrf.gui.measurements_widget import MeasurementControls
 
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
@@ -220,6 +221,7 @@ class MainPanel(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
 
@@ -273,9 +275,8 @@ class MainPanel(QtGui.QWidget):
                 self._plot.center_view(freq,
                                        full_bw,
                                        self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_ref_level())
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                               IQ_PLOT_YMAX[rfe_mode])
+                                       self._amplitude_group.get_max_level())
+                self._plot.center_iq_plots()
             else:
                 freq = state.center
                 full_bw = state.span
@@ -283,9 +284,8 @@ class MainPanel(QtGui.QWidget):
                 self._plot.center_view(freq - full_bw/2,
                                         freq + full_bw/2,
                                        self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_ref_level())
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                        IQ_PLOT_YMAX[rfe_mode])
+                                       self._amplitude_group.get_max_level())
+                self._plot.center_iq_plots()
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
@@ -323,6 +323,9 @@ class MainPanel(QtGui.QWidget):
         if 'span' in changed:
             self.update_span_label()
 
+    def plot_changed(self, state, changed):
+        self.plot_state = state
+
     def show_labels(self):
         self._rbw_label.show()
         self._span_label.show()
@@ -330,6 +333,8 @@ class MainPanel(QtGui.QWidget):
         self._mask_label.show()
         for m in self.marker_labels:
             m.show()
+        for c in self.channel_power_labels:
+            c.show()
 
     def hide_labels(self):
         self._rbw_label.hide()
@@ -338,6 +343,8 @@ class MainPanel(QtGui.QWidget):
         self._mask_label.hide()
         for m in self.marker_labels:
             m.hide()
+        for c in self.channel_power_labels:
+            c.hide()
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()
@@ -366,7 +373,7 @@ class MainPanel(QtGui.QWidget):
 
         self.marker_labels = []
         marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
-
+        channel_power_labels = self._channel_power_labels()
         grid.addWidget(self._mask_label, 0, 0, 2, self.plot_width)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
@@ -374,11 +381,16 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(self._rbw_label, 0, 0, 1, 2)
         grid.addWidget(self._span_label, 0, 9, 1, 2)
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
+        x = 2
+        for label in channel_power_labels:
+            grid.addWidget(label, 1, x, 1, 2)
+            x += 3
         y = 0
         x = self.plot_width
         controls_layout = QtGui.QVBoxLayout()
 
         controls_layout.addWidget(self._freq_controls())
+        controls_layout.addWidget(self._measurement_controls())
         controls_layout.addWidget(self._amplitude_controls())
         controls_layout.addWidget(self._device_controls())
         controls_layout.addWidget(self._trace_controls())
@@ -418,7 +430,7 @@ class MainPanel(QtGui.QWidget):
         self._freq_group = FrequencyControls(self.controller)
         self.control_widgets.append(self._freq_group)
         return self._freq_group
-    
+
     def _amplitude_controls(self):
         self._amplitude_group = AmplitudeControls(self.controller, self._plot)
         self.control_widgets.append(self._amplitude_group)
@@ -428,6 +440,11 @@ class MainPanel(QtGui.QWidget):
         self.trace_group = TraceControls(self.controller, self._plot)
         self.control_widgets.append(self.trace_group)
         return self.trace_group
+
+    def _measurement_controls(self):
+        self.measure_group = MeasurementControls(self.controller)
+        self.control_widgets.append(self.measure_group)
+        return self.measure_group
 
     def _dsp_controls(self):
         self._dsp_group = DSPWidget()
@@ -440,23 +457,29 @@ class MainPanel(QtGui.QWidget):
         return self._dev_group
 
     def _marker_labels(self):
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
 
         marker_label = QtGui.QLabel('')
         marker_label.setAlignment(QtCore.Qt.AlignLeft)
+        marker_label.setSizePolicy(sizePolicy)
 
         delta_label = QtGui.QLabel('')
         delta_label.setAlignment(QtCore.Qt.AlignLeft)
+        delta_label.setSizePolicy(sizePolicy)
 
         span_label = QtGui.QLabel('')
         span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         span_label.setAlignment(QtCore.Qt.AlignLeft)
+        span_label.setSizePolicy(sizePolicy)
 
         rbw_label = QtGui.QLabel('')
         rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         rbw_label.setAlignment(QtCore.Qt.AlignRight)
+        rbw_label.setSizePolicy(sizePolicy)
 
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
+        diff_label.setSizePolicy(sizePolicy)
         self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label
@@ -464,6 +487,18 @@ class MainPanel(QtGui.QWidget):
 
         self.marker_labels.append(delta_label)
         return marker_label,delta_label, diff_label, rbw_label, span_label
+
+    def _channel_power_labels(self):
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+
+        self.channel_power_labels = []
+
+        for color in colors.TRACE_COLORS:
+            label = QtGui.QLabel('')
+            label.setSizePolicy(sizePolicy)
+            label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
+            self.channel_power_labels.append(label)
+        return self.channel_power_labels
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         """
@@ -486,12 +521,13 @@ class MainPanel(QtGui.QWidget):
         self.update_trace()
         self.update_marker()
         self.update_diff()
+        self.update_channel_power()
         if (not self.controller.applying_user_xrange() and
                 not self.controller.get_options()['free_plot_adjustment']):
             self._plot.center_view(fstart,
                                    fstop,
                                    self._amplitude_group.get_min_level(),
-                                   self._amplitude_group.get_ref_level())
+                                   self._amplitude_group.get_max_level())
 
         if self.iq_plots_enabled:
             self.update_iq()
@@ -601,6 +637,16 @@ class MainPanel(QtGui.QWidget):
             self._diff_label.setText(delta_text)
         else:
             self._diff_label.hide()
+
+    def update_channel_power(self):
+
+        for label, trace in zip(self.channel_power_labels, self._plot.traces):
+            if trace.calc_channel_power and not trace.blank:
+                label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + trace.color))
+                label.setText(("Channel Power: %0.2f dBm" % trace.channel_power))
+            else:
+                label.setText('')
+
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
