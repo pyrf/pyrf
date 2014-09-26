@@ -26,8 +26,6 @@ from pyrf.connectors.twisted_async import TwistedConnector
 from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL
 from pyrf.units import M
 from pyrf.devices.thinkrf import WSA
-from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
-    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 from pyrf.gui.util import find_nearest_index
 from pyrf.gui.plot_widget import Plot
@@ -53,14 +51,6 @@ DEVELOPER_OPTIONS = [
     ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
     ('Apply &Hanning Window', 'dsp.apply_window', True),
     ]
-
-# FIXME: we shouldn't be calculating fft in this module
-ZIF_BITS = 2**13
-CONST_POINTS = 512
-
-# FIXME: calculate from device properties instead
-IQ_PLOT_YMIN = {'ZIF': -1, 'HDR': -1, 'SH': -1, 'SHN': -1, 'IQIN': -1, 'DD': -1}
-IQ_PLOT_YMAX = {'ZIF': 1, 'HDR': 1, 'SH': -1, 'SHN': -1, 'IQIN': 1, 'DD': 1}
 
 MINIMUM_WIDTH = 600
 MINIMUM_HEIGHT = 600
@@ -286,8 +276,7 @@ class MainPanel(QtGui.QWidget):
                                        full_bw,
                                        self._amplitude_group.get_min_level(),
                                        self._amplitude_group.get_ref_level())
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                               IQ_PLOT_YMAX[rfe_mode])
+                self._plot.center_iq_plots()
             else:
                 freq = state.center
                 full_bw = state.span
@@ -296,8 +285,7 @@ class MainPanel(QtGui.QWidget):
                                         freq + full_bw/2,
                                        self._amplitude_group.get_min_level(),
                                        self._amplitude_group.get_ref_level())
-                self._plot.iq_window.setYRange(IQ_PLOT_YMIN[rfe_mode],
-                                        IQ_PLOT_YMAX[rfe_mode])
+                self._plot.center_iq_plots()
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 # remove plots
@@ -598,42 +586,7 @@ class MainPanel(QtGui.QWidget):
 
         if not self.raw_data:
                 return
-        trace = self._plot.traces[0]
-
-        if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
-            return
-        if not trace.store:
-            data_pkt = self.raw_data
-            trace.raw_packet = self.raw_data
-        else:
-            data_pkt = trace.raw_packet
-
-        if data_pkt.stream_id == VRT_IFDATA_I14Q14:
-            data = data_pkt.data.numpy_array()
-            i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-            q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
-            self._plot.i_curve.setData(i_data)
-            self._plot.q_curve.setData(q_data)
-            self._plot.const_plot.clear()
-            self._plot.const_plot.addPoints(
-                x = i_data[0:CONST_POINTS],
-                y = q_data[0:CONST_POINTS],
-                symbol = 'o',
-                size = 1, pen = 'y',
-                brush = 'y')
-
-        else:
-            data = data_pkt.data.numpy_array()
-            i_data = np.array(data, dtype=float)
-
-            if data_pkt.stream_id == VRT_IFDATA_I14:
-                i_data = i_data /ZIF_BITS
-
-            elif data_pkt.stream_id == VRT_IFDATA_I24:
-                i_data = i_data / (np.mean(i_data)) - 1
-            self._plot.i_curve.setData(i_data)
-
-            self._plot.q_curve.clear()
+        self._plot.update_iq_plots(self.raw_data)
 
     def update_marker(self):
             num = 1

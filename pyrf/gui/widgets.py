@@ -86,3 +86,11 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         """
         self.quiet_update(value, value, value)
         self.setEnabled(False)
+
+    def stepBy(self, steps):
+        """
+        Force immediate change when using step buttons
+        """
+        rval = super(QDoubleSpinBoxPlayback, self).stepBy(steps)
+        self.editingFinished.emit()
+

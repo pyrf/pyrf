@@ -5,6 +5,21 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
+
+# FIXME: move to device properties?
+MODE_TO_TEXT = {
+    'Sweep SH': 'Sweep (40 MHz steps)',
+    'Sweep ZIF': 'Sweep (100 MHz steps)',
+    'ZIF': '100 MHz BW',
+    'SH': '40 MHz BW',
+    'SHN': '10 MHz BW',
+    'HDR': '100 kHz BW (high dynamic range)',
+    'DD': '0-50 MHz (no tuning)',
+    'IQIN': '100 MHz IQ input (no tuning)',
+}
+TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
+
+
 class DeviceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -102,7 +117,7 @@ class DeviceControls(QtGui.QGroupBox):
         clear_layout(grid)
 
         grid.addWidget(self._mode_label, 0, 0, 1, 1)
-        grid.addWidget(self._mode, 0, 1, 1, 1)
+        grid.addWidget(self._mode, 0, 1, 1, 4)
 
         grid.addWidget(self._dec_label, 1, 0, 1, 1)
         grid.addWidget(self._dec_box, 1, 1, 1, 1)
@@ -124,10 +139,9 @@ class DeviceControls(QtGui.QGroupBox):
 
         # 5k features
         if 'attenuator' in features:
-
-            # FIXME: 'iq_output' isn't in device properties yet
-            grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
-            grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
+            if dut_prop.IQ_OUTPUT_CONNECTOR:
+                grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
+                grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
             
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
@@ -183,8 +197,7 @@ class DeviceControls(QtGui.QGroupBox):
                 iq_output_path= str(self._iq_output_box.currentText().upper()))
 
         def new_input_mode():
-
-            input_mode = self._mode.currentText()
+            input_mode = TEXT_TO_MODE[self._mode.currentText()]
             if not input_mode:
                 return
             self.controller.apply_settings(mode=input_mode)
@@ -237,10 +250,12 @@ class DeviceControls(QtGui.QGroupBox):
 
     def _update_modes(self, include_sweep=True, current_mode=None):
         modes = []
+        if current_mode:
+            current_mode = MODE_TO_TEXT[current_mode]
         if include_sweep:
             modes.extend(self.dut_prop.SPECA_MODES)
         modes.extend(self.dut_prop.RFE_MODES)
-        self._mode.quiet_update(modes, current_mode)
+        self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
         self._mode.setEnabled(True)
 
 
@@ -249,7 +264,7 @@ class DeviceControls(QtGui.QGroupBox):
 
         if state.playback:
             # for playback simply update everything on every state change
-            self._mode.playback_value(state.mode)
+            self._mode.playback_value(MODE_TO_TEXT[state.mode])
             self._level_trigger.playback_value(False)
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)

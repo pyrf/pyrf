@@ -90,7 +90,7 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20
-    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'IQIN', 'DD')
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD', 'IQIN')
     DEFAULT_SAMPLE_TYPE = {
         'ZIF': IQ,
         'SH': I_ONLY,
@@ -215,12 +215,13 @@ class WSA5000_220Properties(object):
                 break
             rbw_vals.append(FULL_BW[mode] / (s / div))
         RBW_VALUES[mode] = rbw_vals
+    IQ_OUTPUT_CONNECTOR = True
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     REFLEVEL_ERROR = 0
     # v2 -> hardware revision without SHN mode
-    RFE_MODES = ('ZIF', 'SH', 'HDR', 'IQIN', 'DD')
+    RFE_MODES = ('ZIF', 'SH', 'HDR', 'DD', 'IQIN')
 
 
 class WSA5000_208Properties(WSA5000_220Properties):
@@ -237,6 +238,7 @@ class WSA5000_108Properties(WSA5000_208Properties):
     SPECA_MODES = []
     SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
         mode='SHN')
+    IQ_OUTPUT_CONNECTOR = False
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
