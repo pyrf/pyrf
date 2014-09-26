@@ -52,12 +52,13 @@ class WaterfallModel(QtCore.QObject):
     #Assumption is that it will be a FIFO, scope-style. ie: fast data
     #arrivals going on for a long time, with old data dropping away.
     
-    def __init__(self, x_data = None, max_len = 2048):
+    def __init__(self, x_data=None, max_len=2048, max_bins=6000):
         self._start_time_s = 0.0
         self._x_data = x_data
         self._x_len = None
         self._max_len = max_len
-        
+        self._max_bins = max_bins
+
         self._set_x_data_stats()
         
         self._history = collections.deque() #of (timestamp_s, data, metadata)
@@ -73,6 +74,8 @@ class WaterfallModel(QtCore.QObject):
             self._x_len = len(self._x_data)
 
     def add_row(self, data, metadata = None, timestamp_s = None):
+        if len(data) > self._max_bins:
+            data = power_resample_smaller(data, self._max_bins)
         if self._x_data is None:
             #we've never been given x data, but we need it! Generate some
             #bogus x data that is just a 0-based range...
@@ -80,7 +83,7 @@ class WaterfallModel(QtCore.QObject):
             self._set_x_data_stats()
         # if not data.any():
             # return
-        assert len(data) == self._x_len
+        assert len(data) == self._x_len, (len(data), self._x_len)
         assert data.ndim == 1
 
         if timestamp_s is None:
@@ -182,9 +185,12 @@ class WaterfallModel(QtCore.QObject):
     def reset(self, new_x_data = None):
         with self._mutex:
             self._history = collections.deque()
-            if new_x_data is not None:
-                self._x_data = new_x_data
-                self._set_x_data_stats()
+            if new_x_data is not None and len(new_x_data) > self._max_bins:
+                new_x_data = np.linspace(
+                    new_x_data[0], new_x_data[-1],
+                    len(power_resample_smaller(new_x_data, self._max_bins)))
+            self._x_data = new_x_data
+            self._set_x_data_stats()
             sig_data = (self._x_data, self._history)
             self.sigReset.emit(sig_data)
     
@@ -1134,3 +1140,15 @@ class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
         self._renderer.start_thread()
         self.paintEvent = super(WaterfallPlotWidget, self).paintEvent
         self.paintEvent(event)
+
+def power_resample_smaller(data, max_bins):
+    """
+    Return a smaller numpy array by taking the maximum values
+    of ranges within data
+    """
+    factor = int(np.ceil(float(len(data)) / max_bins))
+    pad = -np.inf * np.ones((-len(data)) % factor)
+    data = np.concatenate((data, pad))
+    data = np.amax(data.reshape((-1, factor)), axis=1)
+    return data
+
