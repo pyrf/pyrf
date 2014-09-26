@@ -45,9 +45,11 @@ win.setWindowTitle("PYRF FFT Plot Example")
 # initialize WSA configurations
 dut.reset()
 dut.request_read_perm()
-
-dut.rfe_mode(RFE_MODE)
 dut.freq(CENTER_FREQ)
+dut.decimation(DECIMATION)
+dut.attenuator(ATTENUATOR)
+dut.rfe_mode(RFE_MODE)
+
 BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
 # initialize plot
 fft_plot = win.addPlot(title="Power Vs. Frequency")
