@@ -5,6 +5,20 @@ from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 
+
+# FIXME: move to device properties?
+MODE_TO_TEXT = {
+    'Sweep SH': 'Sweep (40 MHz steps)',
+    'Sweep ZIF': 'Sweep (100 MHz steps)',
+    'ZIF': '100 MHz BW',
+    'SH': '40 MHz BW',
+    'SHN': '10 MHz BW',
+    'HDR': '100 kHz BW (high dynamic range)',
+    'DD': '0-50 MHz (no tuning)',
+    'IQIN': '100 MHz IQ input (no tuning)',
+}
+TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
+
 class FrequencyControls(QtGui.QGroupBox):
 
     def __init__(self, controller, name="Frequency Control"):
@@ -18,29 +32,33 @@ class FrequencyControls(QtGui.QGroupBox):
         self.setStyleSheet(GROUP_BOX_FONT)
         grid = QtGui.QGridLayout()
 
+        mode_label, mode = self._input_mode()
+        grid.addWidget(mode_label, 0, 0, 1, 1)
+        grid.addWidget(mode, 0, 1, 1, 4)
+
         cfreq_bt, cfreq_txt = self._center_freq()
-        grid.addWidget(cfreq_bt, 0, 0, 1, 1)
-        grid.addWidget(cfreq_txt, 0, 1, 1, 1)
+        grid.addWidget(cfreq_bt, 1, 0, 1, 1)
+        grid.addWidget(cfreq_txt, 1, 1, 1, 1)
 
         bw_bt, bw_txt = self._bw_controls()
-        grid.addWidget(bw_bt, 1, 0, 1, 1)
-        grid.addWidget(bw_txt, 1, 1, 1, 1)
+        grid.addWidget(bw_bt, 2, 0, 1, 1)
+        grid.addWidget(bw_txt, 2, 1, 1, 1)
 
         fstart_bt, fstart_txt = self._fstart_controls()
-        grid.addWidget(fstart_bt, 0, 3, 1, 1)
-        grid.addWidget(fstart_txt, 0, 4, 1, 1)
+        grid.addWidget(fstart_bt, 1, 3, 1, 1)
+        grid.addWidget(fstart_txt, 1, 4, 1, 1)
 
         fstop_bt, fstop_txt = self._fstop_controls()
-        grid.addWidget(fstop_bt, 1, 3, 1, 1)
-        grid.addWidget(fstop_txt, 1, 4, 1, 1)
+        grid.addWidget(fstop_bt, 2, 3, 1, 1)
+        grid.addWidget(fstop_txt, 2, 4, 1, 1)
 
         freq_inc_label, freq_inc_steps = self._freq_incr()
-        grid.addWidget(freq_inc_label, 2, 0, 1, 1)
-        grid.addWidget(freq_inc_steps, 2, 1, 1, 1)
+        grid.addWidget(freq_inc_label, 3, 0, 1, 1)
+        grid.addWidget(freq_inc_steps, 3, 1, 1, 1)
 
         rbw_label, rbw_combo = self._rbw_controls()
-        grid.addWidget(rbw_label, 2, 3, 1, 1)
-        grid.addWidget(rbw_combo, 2, 4, 1, 1)
+        grid.addWidget(rbw_label, 3, 3, 1, 1)
+        grid.addWidget(rbw_combo, 3, 4, 1, 1)
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 9)
@@ -54,9 +72,14 @@ class FrequencyControls(QtGui.QGroupBox):
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
+        self._update_modes()
 
     def state_changed(self, state, changed):
         self.gui_state = state
+
+        if state.playback:
+            # for playback simply update on every state change
+            self._mode.playback_value(MODE_TO_TEXT[state.mode])
 
         def enable_disable_edit_boxes():
             if state.sweeping():
@@ -97,6 +120,7 @@ class FrequencyControls(QtGui.QGroupBox):
             self._update_freq_edit()
 
         if 'playback' in changed:
+            self._update_modes(current_mode=state.mode)
             self._freq_edit.setEnabled(not state.playback)
             if state.playback:
                 self._rbw_box.playback_value(str(state.rbw))
@@ -107,12 +131,30 @@ class FrequencyControls(QtGui.QGroupBox):
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self._update_modes(include_sweep=False)
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
                 self._rbw_box.setEnabled(False)
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                self._update_modes()
                 self._rbw_box.setEnabled(True)
+
+    def _input_mode(self):
+        self._mode_label = QtGui.QLabel('Mode:')
+        self._mode = QComboBoxPlayback()
+        self._mode.setToolTip("Change the device input mode")
+
+        def new_input_mode():
+            input_mode = TEXT_TO_MODE[self._mode.currentText()]
+            if not input_mode:
+                return
+            self.controller.apply_settings(mode=input_mode)
+            #FIXME rfe_mode should not be in device settings dictionary
+            if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self.controller.apply_device_settings(rfe_mode = input_mode)
+        self._mode.currentIndexChanged.connect(new_input_mode)
+        return self._mode_label, self._mode
 
     def _freq_incr(self):
         steps_label = QtGui.QLabel("Adjust:")
@@ -264,8 +306,15 @@ class FrequencyControls(QtGui.QGroupBox):
             self._rbw_box.quiet_update(
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
-            if self.gui_state.sweeping():
-                self._rbw_box.setCurrentIndex(0)
+            self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
 
-            else:
-                self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
+    def _update_modes(self, include_sweep=True, current_mode=None):
+        modes = []
+        if current_mode:
+            current_mode = MODE_TO_TEXT[current_mode]
+        if include_sweep:
+            modes.extend(self.dut_prop.SPECA_MODES)
+        modes.extend(self.dut_prop.RFE_MODES)
+        self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
+        self._mode.setEnabled(True)
+
