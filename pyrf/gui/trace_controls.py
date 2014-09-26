@@ -280,7 +280,7 @@ class TraceControls(QtGui.QGroupBox):
             row = row + 1
             show(trace_widgets.color_button, row, 0, 1, 1)
             show(trace_widgets.draw, row, 1, 1, 2)
-            show(trace_widgets.hold, row, 3, 1, 1)
+            show(trace_widgets.hold, row, 3, 1, 2)
             show(trace_widgets.clear, row, 5, 1, 2)
 
             row = row + 1
