@@ -215,17 +215,6 @@ class DeviceControls(QtGui.QGroupBox):
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
-        self._update_modes()
-
-    def _update_modes(self, include_sweep=True, current_mode=None):
-        modes = []
-        if current_mode:
-            current_mode = MODE_TO_TEXT[current_mode]
-        if include_sweep:
-            modes.extend(self.dut_prop.SPECA_MODES)
-        modes.extend(self.dut_prop.RFE_MODES)
-        self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
-        self._mode.setEnabled(True)
 
     def state_changed(self, state, changed):
         self.gui_state = state
