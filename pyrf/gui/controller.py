@@ -30,6 +30,7 @@ class SpecAController(QtCore.QObject):
     _state = None
     _recording_file = None
     _csv_file = None
+    _export_csv = False
     _playback_file = None
     _playback_sweep_data = None
     _user_xrange_control_enabled = True
@@ -234,7 +235,8 @@ class SpecAController(QtCore.QObject):
             pow_data, usable_bins, fstart, fstop = (
                 trim_to_usable_fstart_fstop(
                     pow_data, usable_bins, fstart, fstop))
-
+        if self._export_csv:
+            self._export_csv_file(self._state.rfe_mode(), fstart, fstop, pow_data)
         self.capture_receive.emit(
             self._state,
             fstart,
@@ -243,6 +245,14 @@ class SpecAController(QtCore.QObject):
             pow_data,
             usable_bins,
             None)
+    def _export_csv_file(self, mode, fstart, fstop, data):
+        """
+        Save data to csv file
+        """
+        self._csv_file.write('mode,fstart,fstop,size\n')
+        self._csv_file.write('%s,%0.2f,%0.2f,%d\n' % (mode, fstart, fstop, len(data)))
+        for d in data:
+            self._csv_file.write('%0.2f\n' % d)
 
     def _playback_sweep_start(self):
         """
@@ -376,6 +386,8 @@ class SpecAController(QtCore.QObject):
             if pow_data.any():
                 if self._plot_options.get('reference_offset_value'):
                     pow_data += self._plot_options['reference_offset_value']
+                if self._export_csv:
+                    self._export_csv_file(self._state.rfe_mode(), fstart, fstop, pow_data)
                 self.capture_receive.emit(
                     self._state,
                     fstart,
@@ -400,6 +412,8 @@ class SpecAController(QtCore.QObject):
             sweep_segments = None
         if self._plot_options.get('reference_offset_value'):
             self.pow_data += self._plot_options['reference_offset_value']
+        if self._export_csv:
+            self._export_csv_file(self._state.rfe_mode(), fstart, fstop, self.pow_data)
         self.capture_receive.emit(
             self._state,
             fstart,

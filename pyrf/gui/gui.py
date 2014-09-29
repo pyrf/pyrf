@@ -182,17 +182,23 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_csv(self):
+
         names = glob.glob('csv-*.csv')
         last_index = -1
         for n in names:
             try:
-                last_index = max(last_index, int(n[10:-4]))
+                last_index = max(last_index, int(n[4:-4]))
+
             except ValueError:
                 pass
         filename = 'csv-%04d.csv' % (last_index + 1)
-        self.controller.start_csv_export(filename)
-        self.start_csv_export.setDisabled(True)
-        self.stop_csv_export.setDisabled(False)
+        playback_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
+            "CSV File", filename, "CSV File (*.csv)")
+
+        if playback_filename:
+            self.controller.start_csv_export(playback_filename)
+            self.start_csv_export.setDisabled(True)
+            self.stop_csv_export.setDisabled(False)
 
     def stop_csv(self):
         self.start_csv_export.setDisabled(False)
