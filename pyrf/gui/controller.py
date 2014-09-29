@@ -29,6 +29,7 @@ class SpecAController(QtCore.QObject):
     _plot_state = None
     _state = None
     _recording_file = None
+    _csv_file = None
     _playback_file = None
     _playback_sweep_data = None
     _user_xrange_control_enabled = True
@@ -113,6 +114,20 @@ class SpecAController(QtCore.QObject):
         self._dut.set_recording_output(None)
         self._recording_file.close()
         self._recording_file = None
+
+    def start_csv_export(self, filename):
+        """
+        Start exporting datainto CSV file
+        """
+        self._csv_file = open(filename, 'wb')
+        self._export_csv = True
+
+    def stop_csv_export(self):
+        """
+        Stop exporting data into  CSV file
+        """
+        self._csv_file.close()
+        self._export_csv = False
 
     def _apply_pending_user_xrange(self):
         if self._pending_user_xrange:
