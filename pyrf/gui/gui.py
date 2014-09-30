@@ -38,7 +38,7 @@ from pyrf.gui.measurements_widget import MeasurementControls
 
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
-    ('&Spectrogram Plot', 'waterfall_plot', False),
+    ('&Spectrogram', 'waterfall_plot', False),
     ('&Persistence Plot', 'persistence_plot', False),
     ]
 
