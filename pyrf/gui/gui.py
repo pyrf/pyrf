@@ -102,6 +102,11 @@ class MainWindow(QtGui.QMainWindow):
         self.stop_action = QtGui.QAction('&Stop Recording', self)
         self.stop_action.triggered.connect(self.stop_recording)
         self.stop_action.setDisabled(True)
+        self.start_csv_export = QtGui.QAction('&Start Exporting CSV', self)
+        self.start_csv_export.triggered.connect(self.start_csv)
+        self.stop_csv_export = QtGui.QAction('&Stop Exporting CSV', self)
+        self.stop_csv_export.triggered.connect(self.stop_csv)
+        self.stop_csv_export.setDisabled(True)
         exit_action = QtGui.QAction('&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(self.close)
@@ -112,6 +117,8 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.record_action)
         file_menu.addAction(self.stop_action)
+        file_menu.addAction(self.start_csv_export)
+        file_menu.addAction(self.stop_csv_export)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
@@ -173,6 +180,30 @@ class MainWindow(QtGui.QMainWindow):
             "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
         if playback_filename:
             self.start_playback(playback_filename)
+
+    def start_csv(self):
+
+        names = glob.glob('csv-*.csv')
+        last_index = -1
+        for n in names:
+            try:
+                last_index = max(last_index, int(n[4:-4]))
+
+            except ValueError:
+                pass
+        filename = 'csv-%04d.csv' % (last_index + 1)
+        playback_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
+            "CSV File", filename, "CSV File (*.csv)")
+
+        if playback_filename:
+            self.controller.start_csv_export(playback_filename)
+            self.start_csv_export.setDisabled(True)
+            self.stop_csv_export.setDisabled(False)
+
+    def stop_csv(self):
+        self.start_csv_export.setDisabled(False)
+        self.stop_csv_export.setDisabled(True)
+        self.controller.stop_csv_export()
 
     def start_playback(self, playback_filename):
         self.record_action.setDisabled(True)
