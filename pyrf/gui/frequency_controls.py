@@ -10,12 +10,12 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 MODE_TO_TEXT = {
     'Sweep SH': 'Sweep (40 MHz steps)',
     'Sweep ZIF': 'Sweep (100 MHz steps)',
-    'ZIF': '100 MHz BW',
-    'SH': '40 MHz BW',
-    'SHN': '10 MHz BW',
-    'HDR': '100 kHz BW (high dynamic range)',
-    'DD': '0-50 MHz (no tuning)',
-    'IQIN': '100 MHz IQ input (no tuning)',
+    'ZIF': '100 MHz span',
+    'SH': '40 MHz span',
+    'SHN': '10 MHz span',
+    'HDR': '0.1 MHz span (high dynamic range)',
+    'DD': '0 to 50 MHz (no tuning)',
+    'IQIN': 'IQ input 100 MHz span (no tuning)',
 }
 TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
