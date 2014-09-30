@@ -337,8 +337,7 @@ class _WaterfallImageRenderer(QtCore.QObject):
         if new_size_tuple != old_size_tuple: #we have a real resize event
             new_width, new_height = new_size_tuple
             old_width, old_height = old_size_tuple
-            refresh_image_data = True
-            
+
             #updating image params while the render thread may be rendering
             #is a Bad idea, so we'll serialize it in the render pipeline...
             def resize_image():
@@ -348,16 +347,15 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 self._raw_image_height = new_height
                 self._raw_image_width = new_width
 
-                if refresh_image_data:
-                    # Keep it simple for now and just re-fetch all the
-                    # appropriate data and redraw. This could be smarter.
-                    # Note that both calls are thread safe.
-                    new_data = self._get_data_from_model(new_height)
-                    if new_data is None:
-                        self._draw_no_data_image()
-                    else:
-                        self._create_image(new_data)
-            
+                # Keep it simple for now and just re-fetch all the
+                # appropriate data and redraw. This could be smarter.
+                # Note that both calls are thread safe.
+                new_data = self._get_data_from_model(new_height)
+                if new_data is None:
+                    self._draw_no_data_image()
+                else:
+                    self._create_image(new_data)
+
             #queue up the resize in the render pipeline...
             #if refresh_image_data:
                 ##anything else in the pipeline is pointless
