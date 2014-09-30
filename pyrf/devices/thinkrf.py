@@ -757,7 +757,7 @@ def discover_wsa(wait_time=0.125):
     ifaces = netifaces.interfaces()
     destinations = []
     for i in ifaces:
-        addrs = netifaces.ifaddresses(i)[netifaces.AF_INET]
+        addrs = netifaces.ifaddresses(i).get(netifaces.AF_INET, [])
         for a in addrs:
             if 'broadcast' in a:
                 destinations.append(a['broadcast'])
