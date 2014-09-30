@@ -75,7 +75,7 @@ class WaterfallModel(QtCore.QObject):
 
     def add_row(self, data, metadata = None, timestamp_s = None):
         if len(data) > self._max_bins:
-            data = power_resample_smaller(data, self._max_bins)
+            data = power_max_resample_smaller(data, self._max_bins)
         if self._x_data is None:
             #we've never been given x data, but we need it! Generate some
             #bogus x data that is just a 0-based range...
@@ -188,7 +188,7 @@ class WaterfallModel(QtCore.QObject):
             if new_x_data is not None and len(new_x_data) > self._max_bins:
                 new_x_data = np.linspace(
                     new_x_data[0], new_x_data[-1],
-                    len(power_resample_smaller(new_x_data, self._max_bins)))
+                    len(power_max_resample_smaller(new_x_data, self._max_bins)))
             self._x_data = new_x_data
             self._set_x_data_stats()
             sig_data = (self._x_data, self._history)
@@ -332,13 +332,12 @@ class _WaterfallImageRenderer(QtCore.QObject):
             self._output_image_width = new_size_tuple[0]
             self._output_image_height = new_size_tuple[1]
             self._raw_image_height = self._output_image_height
-            #self._raw_image_width comes from the data model... but it might
-            #not have any data yet! This has to be populated later.
+            self._raw_image_width = self._output_image_width
         
         if new_size_tuple != old_size_tuple: #we have a real resize event
             new_width, new_height = new_size_tuple
             old_width, old_height = old_size_tuple
-            refresh_image_data = (new_height != old_height)
+            refresh_image_data = True
             
             #updating image params while the render thread may be rendering
             #is a Bad idea, so we'll serialize it in the render pipeline...
@@ -347,9 +346,8 @@ class _WaterfallImageRenderer(QtCore.QObject):
                 self._output_image_width = new_width
                 self._output_image_height = new_height
                 self._raw_image_height = new_height
-                #self._raw_image_width is the width of the current data model
-                #(if it *has* data).
-                
+                self._raw_image_width = new_width
+
                 if refresh_image_data:
                     # Keep it simple for now and just re-fetch all the
                     # appropriate data and redraw. This could be smarter.
@@ -500,10 +498,6 @@ class _WaterfallImageRenderer(QtCore.QObject):
         
         dlog("_create_image called and re-assigning raw image dimensions")
         with self._mutex:
-            #self._raw_image_height is dictated by the widget height, but the
-            #raw img width comes from the underlying data model...
-            self._raw_image_width = img_data.shape[1]
-            
             #only keep a record of those rows that have data...
             # - soemthing is backwards here... we should be able to have the
             #    real data instead of going backwards from img data.
@@ -513,6 +507,8 @@ class _WaterfallImageRenderer(QtCore.QObject):
             
             self._src_data = collections.deque(populated_img_data)
             
+            img_data = power_max_resample_smaller_exact(img_data,
+                self._raw_image_width)
             argb, alpha = pgfuncs.makeARGB(img_data,
                                            lut=self._lut,
                                            levels=self._lut_levels,
@@ -541,15 +537,8 @@ class _WaterfallImageRenderer(QtCore.QObject):
         with self._mutex:
             #get (potentially) shared memory access out of the way...
             # - all are (must be) immutable
-            if self._raw_image_width is None:
-                #This is the first time we've been able to figure out the
-                #data width! This happens when a data model initially did not
-                #even have the x data specified.
-                self._raw_image_width = self._data_model._x_len
-            
             assert threading.current_thread().name == self._render_thread_name
-            assert row_data.shape == (self._raw_image_width, )
-                
+
             img_cols = self._raw_image_width
             img_rows = self._raw_image_height
             
@@ -568,6 +557,7 @@ class _WaterfallImageRenderer(QtCore.QObject):
             if len(self._src_data) > img_rows:
                 self._src_data.popleft()
         
+        row_data = power_max_resample_smaller_exact(row_data, img_cols)
         argb, alpha = pg.functions.makeARGB(row_data.reshape((1, img_cols)),
                                             lut=lut,
                                             levels=lut_levels)
@@ -721,7 +711,6 @@ class _WaterfallImageRenderer(QtCore.QObject):
             return
         def _reset_data_model():
             self._data_model = data_model
-            self._raw_image_width = self._data_model._x_len
         #Get the new data to plot, and 
         new_data = self._get_data_from_model(self._raw_image_height)
         if new_data is None:
@@ -1141,14 +1130,31 @@ class ThreadedWaterfallPlotWidget(WaterfallPlotWidget):
         self.paintEvent = super(WaterfallPlotWidget, self).paintEvent
         self.paintEvent(event)
 
-def power_resample_smaller(data, max_bins):
+def power_max_resample_smaller(data, max_bins):
     """
     Return a smaller numpy array by taking the maximum values
     of ranges within data
+
+    Returns an array reduced by an integer factor in size to
+    <= max_bins
     """
     factor = int(np.ceil(float(len(data)) / max_bins))
     pad = -np.inf * np.ones((-len(data)) % factor)
     data = np.concatenate((data, pad))
     data = np.amax(data.reshape((-1, factor)), axis=1)
     return data
+
+def power_max_resample_smaller_exact(data, bins):
+    """
+    return a smaller numpy array by taking the maximum values
+    of ranges within data
+
+    Returns an array exactly bins long (operating on last dimension
+    for multidimensional arrays)
+    """
+    width = data.shape[-1]
+    a = np.linspace(0.5, width + .5, bins, endpoint=False, dtype=int)
+    stack = [a + i for i in range(int(width / bins))]
+    stack.append(np.concatenate((a[1:], [width])) - 1)
+    return np.amax(data[...,np.vstack(stack)], axis=len(data.shape) - 1)
 
