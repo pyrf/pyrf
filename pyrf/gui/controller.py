@@ -2,7 +2,7 @@ import logging
 
 from PySide import QtCore
 import numpy as np  # FIXME: move sweep playback out of here
-
+from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
 from pyrf.gui import gui_config
@@ -121,7 +121,7 @@ class SpecAController(QtCore.QObject):
         Start exporting datainto CSV file
         """
         self._csv_file = open(filename, 'wb')
-        self._csv_file.write('data,mode,fstart,fstop,size\n')
+        self._csv_file.write('data,mode,fstart,fstop,size,timestamp\n')
         self._export_csv = True
 
     def stop_csv_export(self):
@@ -135,7 +135,8 @@ class SpecAController(QtCore.QObject):
         """
         Save data to csv file
         """
-        self._csv_file.write(',%s,%0.2f,%0.2f,%d\n' % (mode, fstart, fstop, len(data)))
+        time = datetime.isoformat(datetime.utcnow()) + 'Z'
+        self._csv_file.write(',%s,%0.2f,%0.2f,%d,%s\n' % (mode, fstart, fstop, len(data), time))
         for d in data:
             self._csv_file.write('%0.2f\n' % d)
 
