@@ -2,14 +2,13 @@ from pyrf.config import SweepEntry, TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER
 from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
-from pyrf import windows_util
-from pyrf import linux_util
 from pyrf.devices.thinkrf_properties import wsa_properties
 
 import struct
 import socket
 import select
 import platform
+import netifaces
 
 DISCOVERY_UDP_PORT = 18331
 _DISCOVERY_QUERY_CODE = 0x93315555
@@ -755,12 +754,13 @@ def discover_wsa(wait_time=0.125):
 
     wsa_list = []
 
-    if platform.system() == 'Windows':
-        destinations = windows_util.get_broadcast_addresses()
-    elif platform.system() == 'Linux':
-        destinations = linux_util.get_broadcast_addresses()
-    else:
-        destinations = ['<broadcast>']
+    ifaces = netifaces.interfaces()
+    destinations = []
+    for i in ifaces:
+        addrs = netifaces.ifaddresses(i).get(netifaces.AF_INET, [])
+        for a in addrs:
+            if 'broadcast' in a:
+                destinations.append(a['broadcast'])
 
     for d in destinations:
         # send query command to WSA
