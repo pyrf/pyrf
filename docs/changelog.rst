@@ -2,6 +2,36 @@
 Changelog
 ---------
 
+PyRF 2.6.1
+==========
+
+2014-09-30
+
+ * Upload corrected version with changelog
+
+PyRF 2.6.0
+==========
+
+2014-09-30
+
+ * Added channel power measurement feature to GUI
+
+ * Added Export to CSV feature to GUI for saving streams of processed
+   power spectrum data
+
+ * Added a power level cursor (adjustable horizontal line) to GUI
+
+ * Added reference level offset adjustment box to GUI
+
+ * Trigger region in GUI is now a rectangle to make it visibly different
+   than channel power measurement controls
+
+ * Update mode drop-down in GUI to include information about each mode
+   instead of showing internal mode names
+
+ * Use netifaces for address detection to fix discover issue on
+   non-English windows machines
+
 PyRF 2.5.0
 ==========
 
