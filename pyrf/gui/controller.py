@@ -121,6 +121,7 @@ class SpecAController(QtCore.QObject):
         Start exporting datainto CSV file
         """
         self._csv_file = open(filename, 'wb')
+        self._csv_file.write('data,mode,fstart,fstop,size\n')
         self._export_csv = True
 
     def stop_csv_export(self):
@@ -129,6 +130,14 @@ class SpecAController(QtCore.QObject):
         """
         self._csv_file.close()
         self._export_csv = False
+
+    def _export_csv_file(self, mode, fstart, fstop, data):
+        """
+        Save data to csv file
+        """
+        self._csv_file.write(',%s,%0.2f,%0.2f,%d\n' % (mode, fstart, fstop, len(data)))
+        for d in data:
+            self._csv_file.write('%0.2f\n' % d)
 
     def _apply_pending_user_xrange(self):
         if self._pending_user_xrange:
@@ -245,14 +254,6 @@ class SpecAController(QtCore.QObject):
             pow_data,
             usable_bins,
             None)
-    def _export_csv_file(self, mode, fstart, fstop, data):
-        """
-        Save data to csv file
-        """
-        self._csv_file.write('mode,fstart,fstop,size\n')
-        self._csv_file.write('%s,%0.2f,%0.2f,%d\n' % (mode, fstart, fstop, len(data)))
-        for d in data:
-            self._csv_file.write('%0.2f\n' % d)
 
     def _playback_sweep_start(self):
         """
