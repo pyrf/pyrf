@@ -22,8 +22,9 @@ Windows Dependencies
 9. Install zope.interface (zope.interface-4.1.1.win32-py2.7)
 10. Install twisted (Twisted-14.0.0.win32-py2.7)
 11. Install pywin32 (pywin32-219.win32-py2.7)
-12. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
-13. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
+12. Install netifaces (netifaces-0.10.4.win32-py2.7)
+13. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
+14. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
 
 Continue from :ref:`pyrf-installation` below.
 

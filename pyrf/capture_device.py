@@ -46,17 +46,9 @@ class CaptureDevice(object):
                                 and other device settings
         :type dict:
         """
-        self._configure_device_flag = True
-        iq_path = device_settings.get('iq_output_path') 
-        if self._device_set.get('iq_output_path') != iq_path or iq_path == 'CONNECTOR':
-            self.real_device.apply_device_settings(device_settings)
-
+        self.real_device.apply_device_settings(device_settings)
         for param in device_settings:
             self._device_set[param] = device_settings[param]
-
-        if 'trigger' in self._device_set:
-            if self._device_set['trigger']['type'] == 'LEVEL':
-                self.real_device.apply_device_settings(self._device_set)
 
     def capture_time_domain(self, rfe_mode, freq, rbw, device_settings=None,
             min_points=128):

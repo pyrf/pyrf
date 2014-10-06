@@ -5,6 +5,7 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
+
 class DeviceControls(QtGui.QGroupBox):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -27,10 +28,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._connect_device_controls()
 
     def _create_controls(self):
-        self._mode_label = QtGui.QLabel('Mode:')
-        self._mode = QComboBoxPlayback()
-        self._mode.setToolTip("Change the device input mode")
-
         self._dec_label = QtGui.QLabel('DDC:')
         self._dec_box = QComboBoxPlayback()
         self._dec_box.setToolTip("Choose Decimation Rate")
@@ -101,9 +98,6 @@ class DeviceControls(QtGui.QGroupBox):
         grid = self.layout()
         clear_layout(grid)
 
-        grid.addWidget(self._mode_label, 0, 0, 1, 1)
-        grid.addWidget(self._mode, 0, 1, 1, 1)
-
         grid.addWidget(self._dec_label, 1, 0, 1, 1)
         grid.addWidget(self._dec_box, 1, 1, 1, 1)
         grid.addWidget(self._fshift_label, 1, 3, 1, 1)
@@ -124,10 +118,9 @@ class DeviceControls(QtGui.QGroupBox):
 
         # 5k features
         if 'attenuator' in features:
-
-            # FIXME: 'iq_output' isn't in device properties yet
-            grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
-            grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
+            if dut_prop.IQ_OUTPUT_CONNECTOR:
+                grid.addWidget(self._iq_output_label, 3, 3, 1, 1)
+                grid.addWidget(self._iq_output_box, 3, 4, 1, 1)
             
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
@@ -182,16 +175,6 @@ class DeviceControls(QtGui.QGroupBox):
             self.controller.apply_device_settings(
                 iq_output_path= str(self._iq_output_box.currentText().upper()))
 
-        def new_input_mode():
-
-            input_mode = self._mode.currentText()
-            if not input_mode:
-                return
-            self.controller.apply_settings(mode=input_mode)
-            #FIXME rfe_mode should not be in device settings dictionary
-            if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.controller.apply_device_settings(rfe_mode = input_mode)
-
         def enable_trigger():
             trigger_settings = self.gui_state.device_settings['trigger']
             if self._level_trigger.isChecked():
@@ -222,7 +205,6 @@ class DeviceControls(QtGui.QGroupBox):
         self._dec_box.currentIndexChanged.connect(new_dec)
         self._fshift_edit.valueChanged.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
-        self._mode.currentIndexChanged.connect(new_input_mode)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
         self._level_trigger.clicked.connect(enable_trigger)
@@ -233,24 +215,12 @@ class DeviceControls(QtGui.QGroupBox):
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
-        self._update_modes()
-
-
-    def _update_modes(self, include_sweep=True, current_mode=None):
-        modes = []
-        if include_sweep:
-            modes.extend(self.dut_prop.SPECA_MODES)
-        modes.extend(self.dut_prop.RFE_MODES)
-        self._mode.quiet_update(modes, current_mode)
-        self._mode.setEnabled(True)
-
 
     def state_changed(self, state, changed):
         self.gui_state = state
 
         if state.playback:
             # for playback simply update everything on every state change
-            self._mode.playback_value(state.mode)
             self._level_trigger.playback_value(False)
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
@@ -262,7 +232,6 @@ class DeviceControls(QtGui.QGroupBox):
 
         if 'playback' in changed:
             # restore controls after playback is stopped
-            self._update_modes(current_mode=state.mode)
             self._level_trigger.setEnabled(
                 state.mode in self.dut_prop.LEVEL_TRIGGER_RFE_MODES)
             decimation_available = self.dut_prop.MIN_DECIMATION[
@@ -274,17 +243,18 @@ class DeviceControls(QtGui.QGroupBox):
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
             self._iq_output_box.setEnabled(True)
 
-        if 'center' in changed:
-            if self._level_trigger.isChecked():
-                self._level_trigger.click()
+        if 'device_settings.trigger' in changed:
+            if state.device_settings['trigger']['type'] == 'None':
+                if self._level_trigger.isChecked():
+                    self._level_trigger.click()
+
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
-                self._level_trigger.setEnabled(False)
-
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
                     self._trig_state(False)
+                self._level_trigger.setEnabled(False)
 
             else:
                 self._level_trigger.setEnabled(True)
@@ -303,13 +273,6 @@ class DeviceControls(QtGui.QGroupBox):
 
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
-                # remove sweep capture modes
-                self._update_modes()
-                c = self._mode.count()
-
-                # remove all sweep modes while using IQ out
-                self._update_modes(include_sweep=False)
-
                 # remove all digitizer controls
                 self._dec_box.hide()
                 self._fshift_edit.hide()
@@ -335,16 +298,15 @@ class DeviceControls(QtGui.QGroupBox):
                 self._trig_fstop_label.show()
                 self._trig_amp_label.show()
 
-                # insert all sweep modes only if no sweep mode is in the combo box
-                self._update_modes()
-
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
                 trigger = state.device_settings['trigger']
                 self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
                 self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
                 self._trig_amp.quiet_update(value=trigger['amplitude'])
-
+            else:
+                if self._level_trigger.checkState():
+                    self._level_trigger.click()
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)

@@ -2,7 +2,7 @@ import logging
 
 from PySide import QtCore
 import numpy as np  # FIXME: move sweep playback out of here
-
+from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
 from pyrf.gui import gui_config
@@ -29,6 +29,8 @@ class SpecAController(QtCore.QObject):
     _plot_state = None
     _state = None
     _recording_file = None
+    _csv_file = None
+    _export_csv = False
     _playback_file = None
     _playback_sweep_data = None
     _user_xrange_control_enabled = True
@@ -113,6 +115,30 @@ class SpecAController(QtCore.QObject):
         self._dut.set_recording_output(None)
         self._recording_file.close()
         self._recording_file = None
+
+    def start_csv_export(self, filename):
+        """
+        Start exporting datainto CSV file
+        """
+        self._csv_file = open(filename, 'wb')
+        self._csv_file.write('data,mode,fstart,fstop,size,timestamp\n')
+        self._export_csv = True
+
+    def stop_csv_export(self):
+        """
+        Stop exporting data into  CSV file
+        """
+        self._csv_file.close()
+        self._export_csv = False
+
+    def _export_csv_file(self, mode, fstart, fstop, data):
+        """
+        Save data to csv file
+        """
+        time = datetime.isoformat(datetime.utcnow()) + 'Z'
+        self._csv_file.write(',%s,%0.2f,%0.2f,%d,%s\n' % (mode, fstart, fstop, len(data), time))
+        for d in data:
+            self._csv_file.write('%0.2f\n' % d)
 
     def _apply_pending_user_xrange(self):
         if self._pending_user_xrange:
@@ -219,7 +245,8 @@ class SpecAController(QtCore.QObject):
             pow_data, usable_bins, fstart, fstop = (
                 trim_to_usable_fstart_fstop(
                     pow_data, usable_bins, fstart, fstop))
-
+        if self._export_csv:
+            self._export_csv_file(self._state.rfe_mode(), fstart, fstop, pow_data)
         self.capture_receive.emit(
             self._state,
             fstart,
@@ -359,6 +386,10 @@ class SpecAController(QtCore.QObject):
                         pow_data, usable_bins, fstart, fstop))
             #FIXME: Find out why there is a case where pow_data may be empty
             if pow_data.any():
+                if self._plot_options.get('reference_offset_value'):
+                    pow_data += self._plot_options['reference_offset_value']
+                if self._export_csv:
+                    self._export_csv_file(self._state.rfe_mode(), fstart, fstop, pow_data)
                 self.capture_receive.emit(
                     self._state,
                     fstart,
@@ -381,7 +412,10 @@ class SpecAController(QtCore.QObject):
 
         if not self._options.get('show_sweep_steps'):
             sweep_segments = None
-
+        if self._plot_options.get('reference_offset_value'):
+            self.pow_data += self._plot_options['reference_offset_value']
+        if self._export_csv:
+            self._export_csv_file(self._state.rfe_mode(), fstart, fstop, self.pow_data)
         self.capture_receive.emit(
             self._state,
             fstart,
@@ -396,7 +430,6 @@ class SpecAController(QtCore.QObject):
         Emit signal and handle special cases where extra work is needed in
         response to a state change.
         """
-
         # make sure resolution of center are the same as the device's tunning resolution
         center = float(np.round(state.center, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
         state = SpecAState(state, center=center)
