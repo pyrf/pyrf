@@ -170,7 +170,7 @@ class SpecAController(QtCore.QObject):
     def read_sweep(self):
         self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
-        device_set.pop('pll_reference')
+        # device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
 
