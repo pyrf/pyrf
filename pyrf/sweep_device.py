@@ -187,6 +187,7 @@ class SweepDevice(object):
         assert entries, "starting sweep with no sweep entries"
         for e in entries:
             self.real_device.sweep_add(e)
+
         self._prev_sweep_id = self._sweep_id
         self._sweep_id = (self._sweep_id + 1) & (2**32 - 1)
         self._vrt_context = {}

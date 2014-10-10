@@ -74,7 +74,7 @@ class MainWindow(QtGui.QMainWindow):
         WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
-        self.controller = SpecAController()
+        self.controller = SpecAController(developer_menu)
         self.init_menu_bar(developer_menu)
         self.initUI(dut_address, playback_filename)
 

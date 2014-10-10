@@ -42,11 +42,12 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
-    def __init__(self):
+    def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
         self._plot_options = {}
+        self.developer_mode = developer_mode
 
 
     def set_device(self, dut=None, playback_filename=None):
@@ -170,10 +171,11 @@ class SpecAController(QtCore.QObject):
     def read_sweep(self):
         self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
-        device_set.pop('pll_reference')
+        # device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
-
+        self._dut.pll_reference(device_set['pll_reference'])
+        device_set.pop('pll_reference')
         self._sweep_device.capture_power_spectrum(
             self._state.center - self._state.span / 2.0,
             self._state.center + self._state.span / 2.0,

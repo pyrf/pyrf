@@ -2,6 +2,27 @@
 Changelog
 ---------
 
+PyRF 2.6.2
+==========
+
+2014-10-10
+
+ * HDR gain control in GUI now allows values up to +20 dB
+
+ * Sweep ZIF (100 MHz steps) now only shown in GUI when developer menu is
+   enabled
+
+ * GUI PLL Reference control now works in Sweep mode
+
+ * Darkened trace color in GUI for attenuated edges and dc offset now matches
+   trace color
+
+ * Alternate sweep step color in GUI now matches trace color
+
+ * DC offset region now limited to middle three bins in GUI (was expanding
+   when decimation was applied)
+
+
 PyRF 2.6.1
 ==========
 

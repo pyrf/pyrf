@@ -5,10 +5,9 @@ from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 
-
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
-    'Sweep SH': 'Sweep (40 MHz steps)',
+    'Sweep SH': 'Sweep',
     'Sweep ZIF': 'Sweep (100 MHz steps)',
     'ZIF': '100 MHz span',
     'SH': '40 MHz span',
@@ -313,8 +312,12 @@ class FrequencyControls(QtGui.QGroupBox):
         if current_mode:
             current_mode = MODE_TO_TEXT[current_mode]
         if include_sweep:
+
             modes.extend(self.dut_prop.SPECA_MODES)
+            if not self.controller.developer_mode:
+                modes.remove('Sweep ZIF')
         modes.extend(self.dut_prop.RFE_MODES)
+
         self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
         self._mode.setEnabled(True)
 
