@@ -7,6 +7,8 @@ PyRF 2.6.2
 
 2014-10-10
 
+ * HDR gain control in GUI now allows values up to +20 dB
+
  * Sweep ZIF (100 MHz steps) now only shown in GUI when developer menu is
    enabled
 
