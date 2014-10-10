@@ -51,7 +51,6 @@ class SweepEntry(object):
     :param level_amplitude: level trigger minimum in dBm
     :param attenuator: enable/disable attenuator
     :param rfe_mode: RFE mode to be used
-    :param pll_reference: PLL reference source ('EXT' or 'INT')
     """
 
     def __init__(self,
@@ -73,7 +72,6 @@ class SweepEntry(object):
             level_fstop=10000000000,
             level_amplitude=-100,
             attenuator=True,
-            pll_reference = 'INT',
             rfe_mode='ZIF'):
         self.fstart = fstart
         self.fstop = fstop
@@ -93,7 +91,6 @@ class SweepEntry(object):
         self.level_amplitude = level_amplitude
         self.attenuator = attenuator
         self.rfe_mode = rfe_mode
-        self.pll_reference = pll_reference
 
     def __str__(self):
         return ("SweepEntry(\n"

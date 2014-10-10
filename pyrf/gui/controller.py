@@ -173,7 +173,8 @@ class SpecAController(QtCore.QObject):
         # device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
-
+        self._dut.pll_reference(device_set['pll_reference'])
+        device_set.pop('pll_reference')
         self._sweep_device.capture_power_spectrum(
             self._state.center - self._state.span / 2.0,
             self._state.center + self._state.span / 2.0,
