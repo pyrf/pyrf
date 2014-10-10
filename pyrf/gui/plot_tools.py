@@ -144,11 +144,6 @@ class Trace(object):
         self.raw_packet = None
         self.freq_range = None
         self.color = trace_color
-        self.edge_color = trace_color + (40,)
-        self.alternate_color = (
-            max(0, trace_color[0] - 60),
-            max(0, trace_color[1] - 60),
-            min(255, trace_color[2] + 60),)
 
         self.calc_channel_power = False
         self.channel_power = 0
@@ -209,10 +204,11 @@ class Trace(object):
         if usable_bins:
             # plot usable and unusable curves
             i = 0
+            edge_color = tuple([c / 3 for c in self.color])
             for start_bin, run_length in usable_bins:
                 if start_bin > i:
                     c = self.plot_area.window.plot(x=xdata[i:start_bin+1],
-                        y=self.data[i:start_bin+1], pen=self.edge_color)
+                        y=self.data[i:start_bin+1], pen=edge_color)
                     self.curves.append(c)
                     i = start_bin
                 if run_length:
@@ -222,17 +218,21 @@ class Trace(object):
                     i = i + run_length - 1
             if i < len(xdata):
                 c = self.plot_area.window.plot(x=xdata[i:], y=self.data[i:],
-                    pen=self.edge_color)
+                    pen=edge_color)
                 self.curves.append(c)
         else:
             odd = True
             i = 0
+            alternate_color = (
+                max(0, self.color[0] - 60),
+                max(0, self.color[1] - 60),
+                min(255, self.color[2] + 60),)
             if sweep_segments is None:
                 sweep_segments = [len(self.data)]
             for run in sweep_segments:
                 c = self.plot_area.window.plot(x=xdata[i:i + run],
                     y=self.data[i:i + run],
-                    pen=self.color if odd else self.alternate_color)
+                    pen=self.color if odd else alternate_color)
                 self.curves.append(c)
                 i = i + run
                 odd = not odd
