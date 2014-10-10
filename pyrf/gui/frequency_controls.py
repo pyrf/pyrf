@@ -7,7 +7,7 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
-    'Sweep SH': 'Sweep (40 MHz steps)',
+    'Sweep SH': 'Sweep',
     'Sweep ZIF': 'Sweep (100 MHz steps)',
     'ZIF': '100 MHz span',
     'SH': '40 MHz span',
