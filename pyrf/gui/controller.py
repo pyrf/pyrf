@@ -42,11 +42,12 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
-    def __init__(self):
+    def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
         self._plot_options = {}
+        self.developer_mode = developer_mode
 
 
     def set_device(self, dut=None, playback_filename=None):
