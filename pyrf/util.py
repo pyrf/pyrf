@@ -59,12 +59,10 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
         run0 = int(points * float(usable_bw) / full_bw)
         usable_bins = [(start0, run0)]
     else:
-        dc_offset_bw = dut_prop.DC_OFFSET_BW
-        run0 = int(points * (float(usable_bw) - dc_offset_bw)/2 / full_bw)
-        start1 = int(math.ceil((pass_band_center + float(dc_offset_bw)
-            /2 / full_bw) * points))
-        run1 = run0
-        usable_bins = [(start0, run0), (start1, run1)]
+        run0 = int(points * float(usable_bw) / full_bw)
+        start1 = start0 + int(run0 / 2 ) + 2
+        usable_bins = [(start0, start1 - start0 - 3),
+            (start1, run0 - (start1 - start0))]
 
     for i, (start, run) in enumerate(usable_bins):
         if start < 0:
