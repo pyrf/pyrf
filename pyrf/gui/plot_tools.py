@@ -144,7 +144,6 @@ class Trace(object):
         self.raw_packet = None
         self.freq_range = None
         self.color = trace_color
-        self.edge_color = trace_color + (40,)
         self.alternate_color = (
             max(0, trace_color[0] - 60),
             max(0, trace_color[1] - 60),
@@ -209,10 +208,11 @@ class Trace(object):
         if usable_bins:
             # plot usable and unusable curves
             i = 0
+            edge_color = tuple([c / 3 for c in self.color])
             for start_bin, run_length in usable_bins:
                 if start_bin > i:
                     c = self.plot_area.window.plot(x=xdata[i:start_bin+1],
-                        y=self.data[i:start_bin+1], pen=self.edge_color)
+                        y=self.data[i:start_bin+1], pen=edge_color)
                     self.curves.append(c)
                     i = start_bin
                 if run_length:
@@ -222,7 +222,7 @@ class Trace(object):
                     i = i + run_length - 1
             if i < len(xdata):
                 c = self.plot_area.window.plot(x=xdata[i:], y=self.data[i:],
-                    pen=self.edge_color)
+                    pen=edge_color)
                 self.curves.append(c)
         else:
             odd = True
