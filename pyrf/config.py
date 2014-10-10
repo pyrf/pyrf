@@ -50,6 +50,7 @@ class SweepEntry(object):
     :param level_fstop: level trigger ending frequency in Hz
     :param level_amplitude: level trigger minimum in dBm
     :param attenuator: enable/disable attenuator
+    :param rfe_mode: RFE mode to be used
     """
 
     def __init__(self,
@@ -90,7 +91,6 @@ class SweepEntry(object):
         self.level_amplitude = level_amplitude
         self.attenuator = attenuator
         self.rfe_mode = rfe_mode
-
 
     def __str__(self):
         return ("SweepEntry(\n"
