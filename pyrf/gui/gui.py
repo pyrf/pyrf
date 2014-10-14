@@ -424,7 +424,14 @@ class MainPanel(QtGui.QWidget):
         controls_layout.addWidget(self._measurement_controls())
         controls_layout.addWidget(self._amplitude_controls())
         controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self._trace_controls())
+
+        trace_widget = self._trace_controls()
+        dock = QtGui.QDockWidget("Trace", self)
+        dock.setAllowedAreas(
+            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+        dock.setWidget(trace_widget)
+        self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+
         controls_layout.addStretch()
         grid.addLayout(controls_layout, y, x, 14, 5)
 
