@@ -22,6 +22,11 @@ PyRF 2.6.2
  * DC offset region now limited to middle three bins in GUI (was expanding
    when decimation was applied)
 
+ * Correction to usable region in ZIF and SH modes with decimation applied
+
+ * Fixed HDR center offset value
+
+ * Added device information dialog to GUI
 
 PyRF 2.6.1
 ==========
