@@ -26,6 +26,8 @@ PyRF 2.6.2
 
  * Fixed HDR center offset value
 
+ * Added device information dialog to GUI
+
 PyRF 2.6.1
 ==========
 
