@@ -135,6 +135,7 @@ class MainWindow(QtGui.QMainWindow):
         for text, option, default in VIEW_OPTIONS:
             self.view_menu.addAction(checkbox_action(
                 self.controller.apply_options, text, option, default))
+        self.view_menu.addSeparator()
 
         if developer_menu:
             self.developer_menu = menubar.addMenu('D&eveloper Options')
@@ -433,7 +434,9 @@ class MainPanel(QtGui.QWidget):
         dock.setAllowedAreas(
             QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
         dock.setWidget(widget)
+        # FIXME we should be doing this in the MainWindow
         self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        self._main_window.view_menu.addAction(dock.toggleViewAction())
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
