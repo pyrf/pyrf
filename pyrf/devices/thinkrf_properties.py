@@ -154,7 +154,7 @@ class WSA5000_220Properties(object):
     DECIMATED_USABLE = 0.80
     PASS_BAND_CENTER = {
         'ZIF': 0.5,
-        'HDR': 0.6,
+        'HDR': 0.5,
         'SH': 0.56,
         'SHN': 0.56,
         'DEC_SH': 0.5,
