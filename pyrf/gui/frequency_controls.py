@@ -63,6 +63,8 @@ class FrequencyControls(QtGui.QWidget):
         grid.setColumnStretch(3, 3)
         grid.setColumnStretch(4, 9)
 
+        grid.setRowStretch(4, 1) # expand empty space at the bottom
+
         self.setLayout(grid)
 
 

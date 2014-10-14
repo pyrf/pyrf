@@ -140,6 +140,7 @@ class DeviceControls(QtGui.QWidget):
         grid.setColumnStretch(2, 1)
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 8)
+        grid.setRowStretch(7, 1) # expand empty space at the bottom
 
     def _connect_device_controls(self):
         def new_antenna():

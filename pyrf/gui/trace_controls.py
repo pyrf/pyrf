@@ -335,6 +335,8 @@ class TraceControls(QtGui.QWidget):
         grid.setColumnStretch(5, 4)
         grid.setColumnStretch(6, 8)
 
+        grid.setRowStretch(row, 1)  # expand empty space at the bottom
+
     def state_changed(self, state, changed):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':

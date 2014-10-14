@@ -41,6 +41,8 @@ class MeasurementControls(QtGui.QWidget):
         grid.addWidget(self._horizontal_cursor, 0, 1, 1,1)
         grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
 
+        grid.setRowStretch(1, 1) # expand empty space at the bottom
+
 
     def _connect_controls(self):
         def enable_channel_power():
