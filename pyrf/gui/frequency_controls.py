@@ -18,17 +18,15 @@ MODE_TO_TEXT = {
 }
 TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
-class FrequencyControls(QtGui.QGroupBox):
+class FrequencyControls(QtGui.QWidget):
 
-    def __init__(self, controller, name="Frequency Control"):
+    def __init__(self, controller):
         super(FrequencyControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
 
-        self.setTitle(name)
-        self.setStyleSheet(GROUP_BOX_FONT)
         grid = QtGui.QGridLayout()
 
         mode_label, mode = self._input_mode()

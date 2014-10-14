@@ -6,21 +6,19 @@ from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
 
-class DeviceControls(QtGui.QGroupBox):
+class DeviceControls(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
     can be used to control the WSA4000/WSA5000
     :param name: The name of the groupBox
     """
 
-    def __init__(self, controller, name="Device Control"):
+    def __init__(self, controller):
         super(DeviceControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-        self.setStyleSheet(GROUP_BOX_FONT)
-        self.setTitle(name)
 
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())

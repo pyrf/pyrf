@@ -6,18 +6,15 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import QCheckBoxPlayback, QDoubleSpinBoxPlayback
 
-class MeasurementControls(QtGui.QGroupBox):
+class MeasurementControls(QtGui.QWidget):
 
-    def __init__(self, controller, name="Measurement Control"):
+    def __init__(self, controller):
         super(MeasurementControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
-
-        self.setStyleSheet(GROUP_BOX_FONT)
-        self.setTitle(name)
 
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())

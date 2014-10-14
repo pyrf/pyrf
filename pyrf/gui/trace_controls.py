@@ -59,20 +59,19 @@ class MarkerWidgets(namedtuple('MarkerWidgets', """
     """
     __slots = []
 
-class TraceControls(QtGui.QGroupBox):
+class TraceControls(QtGui.QWidget):
     """
-    A widget based from the Qt QGroupBox widget with a layout containing widgets that
+    A widget with a layout containing widgets that
     can be used to control the FFT plot's traces
     :param name: The name of the groupBox
     """
-    def __init__(self, controller, plot, name="Trace Control"):
+    def __init__(self, controller, plot):
         super(TraceControls, self).__init__()
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
         self._plot = plot
-        self.setTitle(name)
         self.setStyleSheet(GROUP_BOX_FONT)
         self._marker_trace = None
 

@@ -9,15 +9,15 @@ PLOT_TOP = 0
 PLOT_BOTTOM = -160
 PLOT_YMIN = -240
 PLOT_STEP = 5
-class AmplitudeControls(QtGui.QGroupBox):
+class AmplitudeControls(QtGui.QWidget):
     """
-    A widget based from the Qt QGroupBox widget with a layout containing widgets that
+    A widget with a layout containing widgets that
     can be used to control the amplitude configurations of the GUI
     :param name: A controller that emits/receives Qt signals from multiple widgets
     :param name: The name of the groupBox
     """
 
-    def __init__(self, controller, plot, name="Amplitude Control"):
+    def __init__(self, controller, plot):
         super(AmplitudeControls, self).__init__()
 
         self.controller = controller
@@ -26,9 +26,6 @@ class AmplitudeControls(QtGui.QGroupBox):
         controller.capture_receive.connect(self.capture_received)
 
         self._plot = plot
-
-        self.setTitle(name)
-        self.setStyleSheet(GROUP_BOX_FONT)
 
         grid = QtGui.QGridLayout()
         self.setLayout(QtGui.QGridLayout())
