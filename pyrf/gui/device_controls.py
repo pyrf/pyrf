@@ -133,8 +133,8 @@ class DeviceControls(QtGui.QGroupBox):
         grid.addWidget(self._trig_fstop_label, 5, 3, 1, 1)
         grid.addWidget(self._trig_fstop, 5, 4, 1, 1)
         
-        grid.addWidget(self._trig_amp_label, 6, 0, 1, 1)
-        grid.addWidget(self._trig_amp, 6, 1, 1, 1)
+        grid.addWidget(self._trig_amp_label, 4, 3, 1, 1)
+        grid.addWidget(self._trig_amp, 4, 4, 1, 1)
         self._trig_state(False)
 
         grid.setColumnStretch(0, 4)
