@@ -5,6 +5,7 @@ class Playback(object):
         # XXX this is all we support for now
         assert device_class == 'thinkrf.WSA'
         self.properties = wsa_properties(device_identifier)
+        self.device_id = device_identifier
 
     def async_connector(self):
         return False
