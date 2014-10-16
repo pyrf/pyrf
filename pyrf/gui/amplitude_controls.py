@@ -9,6 +9,9 @@ PLOT_TOP = 0
 PLOT_BOTTOM = -160
 PLOT_YMIN = -240
 PLOT_STEP = 5
+MAXIMUM_WIDTH = 400
+MAXIMUM_HEIGHT = 50
+MAXIMUM_HEIGHT_HDR = 80
 class AmplitudeControls(QtGui.QWidget):
     """
     A widget with a layout containing widgets that
@@ -24,6 +27,7 @@ class AmplitudeControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         self._plot = plot
 
@@ -111,9 +115,12 @@ class AmplitudeControls(QtGui.QWidget):
             if state.mode == 'HDR':
                 self._hdr_gain_box.show()
                 self._hdr_gain_label.show()
+                self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT_HDR)
+
             else:
                 self._hdr_gain_box.hide()
                 self._hdr_gain_label.hide()
+                self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':

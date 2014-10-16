@@ -5,6 +5,9 @@ from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 
+MAXIMUM_WIDTH = 400
+MAXIMUM_HEIGHT = 100
+
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
     'Sweep SH': 'Sweep',
@@ -26,6 +29,8 @@ class FrequencyControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+
+        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         grid = QtGui.QGridLayout()
 

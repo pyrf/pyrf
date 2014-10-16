@@ -8,13 +8,12 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback)
 import numpy as np
 
-
-
 REMOVE_BUTTON_WIDTH = 10
-
 MAX_AVERAGE_FACTOR = 1000
 DEFAULT_AVERAGE_FACTOR = 5
 
+MAXIMUM_WIDTH = 400
+MAXIMUM_HEIGHT = 200
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     color_button
@@ -71,6 +70,9 @@ class TraceControls(QtGui.QWidget):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+
+        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
+
         self._plot = plot
         self.setStyleSheet(GROUP_BOX_FONT)
         self._marker_trace = None
