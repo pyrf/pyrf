@@ -10,8 +10,8 @@ PLOT_BOTTOM = -160
 PLOT_YMIN = -240
 PLOT_STEP = 5
 MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 50
-MAXIMUM_HEIGHT_HDR = 80
+MAXIMUM_HEIGHT = 70
+MAXIMUM_HEIGHT_HDR = 90
 class AmplitudeControls(QtGui.QWidget):
     """
     A widget with a layout containing widgets that

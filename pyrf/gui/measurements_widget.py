@@ -68,6 +68,15 @@ class MeasurementControls(QtGui.QWidget):
 
     def state_changed(self, state, changed):
         self.gui_state = state
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self._channel_power.setEnabled(False)
+                self._horizontal_cursor.setEnabled(False)
+                self._cursor_spinbox.setEnabled(False)
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                self._channel_power.setEnabled(True)
+                self._horizontal_cursor.setEnabled(True)
+                self._cursor_spinbox.setEnabled(True)
 
     def plot_changed(self, state, changed):
         self.plot_state = state

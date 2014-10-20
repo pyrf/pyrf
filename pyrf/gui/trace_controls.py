@@ -13,7 +13,7 @@ MAX_AVERAGE_FACTOR = 1000
 DEFAULT_AVERAGE_FACTOR = 5
 
 MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 200
+MAXIMUM_HEIGHT = 250
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     color_button
@@ -342,9 +342,9 @@ class TraceControls(QtGui.QWidget):
     def state_changed(self, state, changed):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.hide()
+                self.setEnabled(False)
             else:
-                self.show()
+                self.setEnabled(True)
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments

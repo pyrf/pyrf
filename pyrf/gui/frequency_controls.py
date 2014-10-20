@@ -6,7 +6,7 @@ from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 
 MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 100
+MAXIMUM_HEIGHT = 130
 
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
