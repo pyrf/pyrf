@@ -177,12 +177,12 @@ class Trace(object):
         self.freq_range = xdata
 
         if self.max_hold:
-            if (self.data == None or len(self.data) != len(ydata)):
+            if (self.data is None or len(self.data) != len(ydata)):
                 self.data = ydata
             self.data = np.maximum(self.data,ydata)
 
         elif self.min_hold:
-            if (self.data == None or len(self.data) != len(ydata)):
+            if (self.data is None or len(self.data) != len(ydata)):
                 self.data = ydata
             self.data = np.minimum(self.data,ydata)
 

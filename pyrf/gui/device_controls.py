@@ -5,27 +5,27 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
-
-class DeviceControls(QtGui.QGroupBox):
+MAXIMUM_WIDTH = 400
+MAXIMUM_HEIGHT = 120
+class DeviceControls(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
     can be used to control the WSA4000/WSA5000
     :param name: The name of the groupBox
     """
 
-    def __init__(self, controller, name="Device Control"):
+    def __init__(self, controller):
         super(DeviceControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-        self.setStyleSheet(GROUP_BOX_FONT)
-        self.setTitle(name)
 
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
         self._build_layout()
         self._connect_device_controls()
+        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
     def _create_controls(self):
         self._dec_label = QtGui.QLabel('DDC:')
@@ -142,6 +142,7 @@ class DeviceControls(QtGui.QGroupBox):
         grid.setColumnStretch(2, 1)
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 8)
+        grid.setRowStretch(7, 1) # expand empty space at the bottom
 
     def _connect_device_controls(self):
         def new_antenna():
@@ -274,29 +275,29 @@ class DeviceControls(QtGui.QGroupBox):
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove all digitizer controls
-                self._dec_box.hide()
-                self._fshift_edit.hide()
-                self._fshift_label.hide()
-                self._level_trigger.hide()
-                self._trig_fstart.hide()
-                self._trig_fstop.hide()
-                self._trig_amp.hide()
-                self._trig_fstart_label.hide()
-                self._trig_fstop_label.hide()
-                self._trig_amp_label.hide()
+                self._dec_box.setEnabled(False)
+                self._fshift_edit.setEnabled(False)
+                self._fshift_label.setEnabled(False)
+                self._level_trigger.setEnabled(False)
+                self._trig_fstart.setEnabled(False)
+                self._trig_fstop.setEnabled(False)
+                self._trig_amp.setEnabled(False)
+                self._trig_fstart_label.setEnabled(False)
+                self._trig_fstop_label.setEnabled(False)
+                self._trig_amp_label.setEnabled(False)
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show digitizer controls
-                self._dec_box.show()
-                self._fshift_edit.show()
-                self._fshift_label.show()
-                self._trig_fstart.show()
-                self._trig_fstop.show()
-                self._trig_amp.show()
-                self._level_trigger.show()
-                self._trig_fstart_label.show()
-                self._trig_fstop_label.show()
-                self._trig_amp_label.show()
+                self._dec_box.setEnabled(True)
+                self._fshift_edit.setEnabled(True)
+                self._fshift_label.setEnabled(True)
+                self._trig_fstart.setEnabled(True)
+                self._trig_fstop.setEnabled(True)
+                self._trig_amp.setEnabled(True)
+                self._level_trigger.setEnabled(True)
+                self._trig_fstart_label.setEnabled(True)
+                self._trig_fstop_label.setEnabled(True)
+                self._trig_amp_label.setEnabled(True)
 
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':

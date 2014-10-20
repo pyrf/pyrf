@@ -9,26 +9,27 @@ PLOT_TOP = 0
 PLOT_BOTTOM = -160
 PLOT_YMIN = -240
 PLOT_STEP = 5
-class AmplitudeControls(QtGui.QGroupBox):
+MAXIMUM_WIDTH = 400
+MAXIMUM_HEIGHT = 70
+MAXIMUM_HEIGHT_HDR = 90
+class AmplitudeControls(QtGui.QWidget):
     """
-    A widget based from the Qt QGroupBox widget with a layout containing widgets that
+    A widget with a layout containing widgets that
     can be used to control the amplitude configurations of the GUI
     :param name: A controller that emits/receives Qt signals from multiple widgets
     :param name: The name of the groupBox
     """
 
-    def __init__(self, controller, plot, name="Amplitude Control"):
+    def __init__(self, controller, plot):
         super(AmplitudeControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         self._plot = plot
-
-        self.setTitle(name)
-        self.setStyleSheet(GROUP_BOX_FONT)
 
         grid = QtGui.QGridLayout()
         self.setLayout(QtGui.QGridLayout())
@@ -96,7 +97,9 @@ class AmplitudeControls(QtGui.QGroupBox):
         grid.setColumnStretch(2, 1)
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 6)
-    
+
+        grid.setRowStretch(3, 1) # expand empty space at the bottom
+
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
@@ -112,9 +115,12 @@ class AmplitudeControls(QtGui.QGroupBox):
             if state.mode == 'HDR':
                 self._hdr_gain_box.show()
                 self._hdr_gain_label.show()
+                self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT_HDR)
+
             else:
                 self._hdr_gain_box.hide()
                 self._hdr_gain_label.hide()
+                self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
