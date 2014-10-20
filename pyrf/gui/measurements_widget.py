@@ -42,7 +42,7 @@ class MeasurementControls(QtGui.QWidget):
         grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
 
         grid.setRowStretch(1, 1) # expand empty space at the bottom
-
+        self.resize_widget()
 
     def _connect_controls(self):
         def enable_channel_power():
@@ -63,6 +63,15 @@ class MeasurementControls(QtGui.QWidget):
 
     def state_changed(self, state, changed):
         self.gui_state = state
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self._channel_power.setEnabled(False)
+                self._horizontal_cursor.setEnabled(False)
+                self._cursor_spinbox.setEnabled(False)
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                self._channel_power.setEnabled(True)
+                self._horizontal_cursor.setEnabled(True)
+                self._cursor_spinbox.setEnabled(True)
 
     def plot_changed(self, state, changed):
         self.plot_state = state
@@ -74,3 +83,6 @@ class MeasurementControls(QtGui.QWidget):
                     self._cursor_spinbox.setEnabled(True)
            else:
                 self._cursor_spinbox.setEnabled(False)
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

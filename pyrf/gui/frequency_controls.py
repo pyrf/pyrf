@@ -66,8 +66,7 @@ class FrequencyControls(QtGui.QWidget):
         grid.setRowStretch(4, 1) # expand empty space at the bottom
 
         self.setLayout(grid)
-
-
+        self.resize_widget()
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
@@ -138,6 +137,9 @@ class FrequencyControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._update_modes()
                 self._rbw_box.setEnabled(True)
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def _input_mode(self):
         self._mode_label = QtGui.QLabel('Mode:')

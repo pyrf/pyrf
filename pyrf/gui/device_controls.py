@@ -5,7 +5,6 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
-
 class DeviceControls(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -131,8 +130,8 @@ class DeviceControls(QtGui.QWidget):
         grid.addWidget(self._trig_fstop_label, 5, 3, 1, 1)
         grid.addWidget(self._trig_fstop, 5, 4, 1, 1)
         
-        grid.addWidget(self._trig_amp_label, 6, 0, 1, 1)
-        grid.addWidget(self._trig_amp, 6, 1, 1, 1)
+        grid.addWidget(self._trig_amp_label, 4, 3, 1, 1)
+        grid.addWidget(self._trig_amp, 4, 4, 1, 1)
         self._trig_state(False)
 
         grid.setColumnStretch(0, 4)
@@ -141,6 +140,7 @@ class DeviceControls(QtGui.QWidget):
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 8)
         grid.setRowStretch(7, 1) # expand empty space at the bottom
+        self.resize_widget()
 
     def _connect_device_controls(self):
         def new_antenna():
@@ -273,29 +273,29 @@ class DeviceControls(QtGui.QWidget):
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
                 # remove all digitizer controls
-                self._dec_box.hide()
-                self._fshift_edit.hide()
-                self._fshift_label.hide()
-                self._level_trigger.hide()
-                self._trig_fstart.hide()
-                self._trig_fstop.hide()
-                self._trig_amp.hide()
-                self._trig_fstart_label.hide()
-                self._trig_fstop_label.hide()
-                self._trig_amp_label.hide()
+                self._dec_box.setEnabled(False)
+                self._fshift_edit.setEnabled(False)
+                self._fshift_label.setEnabled(False)
+                self._level_trigger.setEnabled(False)
+                self._trig_fstart.setEnabled(False)
+                self._trig_fstop.setEnabled(False)
+                self._trig_amp.setEnabled(False)
+                self._trig_fstart_label.setEnabled(False)
+                self._trig_fstop_label.setEnabled(False)
+                self._trig_amp_label.setEnabled(False)
 
             elif 'DIGITIZER' in state.device_settings['iq_output_path']:
                 # show digitizer controls
-                self._dec_box.show()
-                self._fshift_edit.show()
-                self._fshift_label.show()
-                self._trig_fstart.show()
-                self._trig_fstop.show()
-                self._trig_amp.show()
-                self._level_trigger.show()
-                self._trig_fstart_label.show()
-                self._trig_fstop_label.show()
-                self._trig_amp_label.show()
+                self._dec_box.setEnabled(True)
+                self._fshift_edit.setEnabled(True)
+                self._fshift_label.setEnabled(True)
+                self._trig_fstart.setEnabled(True)
+                self._trig_fstop.setEnabled(True)
+                self._trig_amp.setEnabled(True)
+                self._level_trigger.setEnabled(True)
+                self._trig_fstart_label.setEnabled(True)
+                self._trig_fstop_label.setEnabled(True)
+                self._trig_amp_label.setEnabled(True)
 
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
@@ -306,8 +306,12 @@ class DeviceControls(QtGui.QWidget):
             else:
                 if self._level_trigger.checkState():
                     self._level_trigger.click()
+
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
         self._trig_fstop.setEnabled(state)
         self._trig = state
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

@@ -9,6 +9,7 @@ PLOT_TOP = 0
 PLOT_BOTTOM = -160
 PLOT_YMIN = -240
 PLOT_STEP = 5
+
 class AmplitudeControls(QtGui.QWidget):
     """
     A widget with a layout containing widgets that
@@ -24,7 +25,6 @@ class AmplitudeControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
-
         self._plot = plot
 
         grid = QtGui.QGridLayout()
@@ -32,8 +32,6 @@ class AmplitudeControls(QtGui.QWidget):
 
         self._create_controls()
         self._connect_device_controls()
-
-        self.setLayout(grid)
 
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
@@ -70,7 +68,6 @@ class AmplitudeControls(QtGui.QWidget):
         self._reference_offset_spinbox = QDoubleSpinBoxPlayback()
         self._reference_offset_spinbox.setRange(-200, 200)
 
-
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
         grid = self.layout()
@@ -95,7 +92,8 @@ class AmplitudeControls(QtGui.QWidget):
         grid.setColumnStretch(4, 6)
 
         grid.setRowStretch(3, 1) # expand empty space at the bottom
-
+        self.setLayout(grid)
+        self.resize_widget()
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
@@ -111,9 +109,11 @@ class AmplitudeControls(QtGui.QWidget):
             if state.mode == 'HDR':
                 self._hdr_gain_box.show()
                 self._hdr_gain_label.show()
+                self.resize_widget()
             else:
                 self._hdr_gain_box.hide()
                 self._hdr_gain_label.hide()
+                self.resize_widget()
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -127,6 +127,9 @@ class AmplitudeControls(QtGui.QWidget):
         # save x,y data for marker adjustments
         self.pow_data = power
         self.xdata = np.linspace(fstart, fstop, len(power))
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def _update_plot_y_axis(self):
         min_level = self._min_level.value()
@@ -152,7 +155,6 @@ class AmplitudeControls(QtGui.QWidget):
         self._reference_offset_spinbox.editingFinished.connect(change_reference_offset_value)
 
     def get_max_level(self):
-
         return self._max_level.value()
 
     def get_min_level(self):

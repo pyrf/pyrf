@@ -75,6 +75,7 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
         self.controller = SpecAController(developer_menu)
+        self.controller.device_change.connect(self.device_changed)
         self.init_menu_bar(developer_menu)
         self.initUI(dut_address, playback_filename)
 
@@ -107,6 +108,9 @@ class MainWindow(QtGui.QMainWindow):
         self.stop_csv_export = QtGui.QAction('&Stop Exporting CSV', self)
         self.stop_csv_export.triggered.connect(self.stop_csv)
         self.stop_csv_export.setDisabled(True)
+        self.device_info = QtGui.QAction('Device &Information', self)
+        self.device_info.triggered.connect(self.get_device_information)
+        self.device_info.setDisabled(True)
         exit_action = QtGui.QAction('&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(self.close)
@@ -119,6 +123,8 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(self.stop_action)
         file_menu.addAction(self.start_csv_export)
         file_menu.addAction(self.stop_csv_export)
+        file_menu.addSeparator()
+        file_menu.addAction(self.device_info)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
 
@@ -209,8 +215,33 @@ class MainWindow(QtGui.QMainWindow):
     def start_playback(self, playback_filename):
         self.record_action.setDisabled(True)
         self.stop_action.setDisabled(True)
+        self.device_info.setDisabled(False)
+        self._device_address = playback_filename
         self.controller.set_device(playback_filename=playback_filename)
         self.show()
+
+    def device_changed(self, dut):
+        if not dut:
+            self._device_address = None
+            self._device_id = None
+        self._device_id = dut.device_id
+
+    def get_device_information(self):
+        info = QtGui.QMessageBox()
+        device_parts = self._device_id.split(',') + ['', '', '']
+        hardware, serial, firmware = device_parts[1:4]
+        info.setText('''
+Connected to: %s
+
+Serial number: %s
+Hardware version: %s
+Firmware version: %s'''.strip() % (
+                self._device_address,
+                serial,
+                hardware,
+                firmware,
+                ))
+        info.exec_()
 
     @inlineCallbacks
     def open_device(self, name, ok):
@@ -221,6 +252,7 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
+        self._device_address = name
         self.setWindowTitle('PyRF RTSA %s Connected To: %s' % (__version__ , name))
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
@@ -233,6 +265,7 @@ class MainWindow(QtGui.QMainWindow):
         self.controller.set_device(dut)
         self.record_action.setDisabled(False)
         self.stop_action.setDisabled(True)
+        self.device_info.setDisabled(False)
 
     def closeEvent(self, event):
         event.accept()
@@ -286,7 +319,6 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
-
         self.enable_controls()
 
     def state_changed(self, state, changed):
@@ -295,6 +327,7 @@ class MainPanel(QtGui.QWidget):
         :param state: new SpecAState object
         :param changed: list of attribute names changed
         """
+
         self.gui_state = state
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
@@ -548,7 +581,6 @@ class MainPanel(QtGui.QWidget):
         :param usable: usable bins from power (None when sweeping)
         :param segments: bin segments from power (None when not sweeping)
         """
-
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
@@ -688,6 +720,7 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
+
 
     def disable_controls(self):
         for item in self.control_widgets:
