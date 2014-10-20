@@ -12,8 +12,6 @@ REMOVE_BUTTON_WIDTH = 10
 MAX_AVERAGE_FACTOR = 1000
 DEFAULT_AVERAGE_FACTOR = 5
 
-MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 250
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     color_button
@@ -70,8 +68,6 @@ class TraceControls(QtGui.QWidget):
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
-
-        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         self._plot = plot
         self.setStyleSheet(GROUP_BOX_FONT)
@@ -206,6 +202,7 @@ class TraceControls(QtGui.QWidget):
             else:
                 self.controller.apply_plot_options(marker1 = True)
             self._build_layout()
+
         add_marker.clicked.connect(add_marker_clicked)
 
         return TraceWidgets(icon, color_button, draw, hold, clear,
@@ -338,6 +335,11 @@ class TraceControls(QtGui.QWidget):
         grid.setColumnStretch(6, 8)
 
         grid.setRowStretch(row, 1)  # expand empty space at the bottom
+
+        self.resize_widget()
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def state_changed(self, state, changed):
         if 'device_settings.iq_output_path' in changed:

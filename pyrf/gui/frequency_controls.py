@@ -5,9 +5,6 @@ from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 
-MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 130
-
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
     'Sweep SH': 'Sweep',
@@ -29,8 +26,6 @@ class FrequencyControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-
-        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
         grid = QtGui.QGridLayout()
 
@@ -71,8 +66,7 @@ class FrequencyControls(QtGui.QWidget):
         grid.setRowStretch(4, 1) # expand empty space at the bottom
 
         self.setLayout(grid)
-
-
+        self.resize_widget()
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
@@ -143,6 +137,9 @@ class FrequencyControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._update_modes()
                 self._rbw_box.setEnabled(True)
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def _input_mode(self):
         self._mode_label = QtGui.QLabel('Mode:')

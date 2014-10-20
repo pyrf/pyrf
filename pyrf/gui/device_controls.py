@@ -5,8 +5,6 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
-MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 120
 class DeviceControls(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -25,7 +23,6 @@ class DeviceControls(QtGui.QWidget):
         self.setLayout(QtGui.QGridLayout())
         self._build_layout()
         self._connect_device_controls()
-        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
 
     def _create_controls(self):
         self._dec_label = QtGui.QLabel('DDC:')
@@ -143,6 +140,7 @@ class DeviceControls(QtGui.QWidget):
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 8)
         grid.setRowStretch(7, 1) # expand empty space at the bottom
+        self.resize_widget()
 
     def _connect_device_controls(self):
         def new_antenna():
@@ -308,8 +306,12 @@ class DeviceControls(QtGui.QWidget):
             else:
                 if self._level_trigger.checkState():
                     self._level_trigger.click()
+
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
         self._trig_fstop.setEnabled(state)
         self._trig = state
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

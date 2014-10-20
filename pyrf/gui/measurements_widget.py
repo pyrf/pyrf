@@ -6,9 +6,6 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import QCheckBoxPlayback, QDoubleSpinBoxPlayback
 
-MAXIMUM_WIDTH = 400
-MAXIMUM_HEIGHT = 40
-
 class MeasurementControls(QtGui.QWidget):
 
     def __init__(self, controller):
@@ -18,9 +15,7 @@ class MeasurementControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
-        
-        self.setMaximumSize(MAXIMUM_WIDTH,MAXIMUM_HEIGHT)
-        
+
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
         self._build_layout()
@@ -47,7 +42,7 @@ class MeasurementControls(QtGui.QWidget):
         grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
 
         grid.setRowStretch(1, 1) # expand empty space at the bottom
-
+        self.resize_widget()
 
     def _connect_controls(self):
         def enable_channel_power():
@@ -88,3 +83,6 @@ class MeasurementControls(QtGui.QWidget):
                     self._cursor_spinbox.setEnabled(True)
            else:
                 self._cursor_spinbox.setEnabled(False)
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

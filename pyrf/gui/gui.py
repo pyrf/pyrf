@@ -319,7 +319,6 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
-
         self.enable_controls()
 
     def state_changed(self, state, changed):
@@ -328,6 +327,7 @@ class MainPanel(QtGui.QWidget):
         :param state: new SpecAState object
         :param changed: list of attribute names changed
         """
+
         self.gui_state = state
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
@@ -581,7 +581,6 @@ class MainPanel(QtGui.QWidget):
         :param usable: usable bins from power (None when sweeping)
         :param segments: bin segments from power (None when not sweeping)
         """
-
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
@@ -721,6 +720,7 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
+
 
     def disable_controls(self):
         for item in self.control_widgets:
