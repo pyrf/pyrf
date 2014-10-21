@@ -574,7 +574,6 @@ class MainPanel(QtGui.QWidget):
         :param usable: usable bins from power (None when sweeping)
         :param segments: bin segments from power (None when not sweeping)
         """
-
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable

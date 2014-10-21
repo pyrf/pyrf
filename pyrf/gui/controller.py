@@ -380,6 +380,7 @@ class SpecAController(QtCore.QObject):
                 data['data_pkt'],
                 data['context_pkt'],
                 ref=self._ref_level,
+                num_packets=len(data['data_pkt']),
                 **self._dsp_options)
 
             if not self._options.get('show_attenuated_edges'):
@@ -408,8 +409,7 @@ class SpecAController(QtCore.QObject):
             return
         self.read_sweep()
 
-        if len(data) > 2:
-            self.pow_data = data
+        self.pow_data = data
         self.iq_data = None
 
         if not self._options.get('show_sweep_steps'):
@@ -448,15 +448,6 @@ class SpecAController(QtCore.QObject):
             if not self._state or span != self._state.span:
                 changed.append('span')
 
-        if 'mode' in changed:
-            # check if RBW is appropriate for given mode
-            if state.rbw not in self._dut.properties.RBW_VALUES[state.rfe_mode()]:
-                if state.sweeping():
-                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
-                    state = SpecAState(state, rbw=rbw)
-                else:
-                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
-                    state = SpecAState(state, rbw=rbw)
         self._state = state
 
         # start capture loop again when user switches output path

@@ -287,15 +287,18 @@ class Plot(QtCore.QObject):
         print self.trigger_control.size()
 
     def update_iq_plots(self, data):
-
+        
         trace = self.traces[0]
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return
+        i_data = []
+        q_data = []
+        if data[0].stream_id == VRT_IFDATA_I14Q14:
 
-        if data.stream_id == VRT_IFDATA_I14Q14:
-            data = data.data.numpy_array()
-            i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-            q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+            for d in data:
+                i_data += np.array(d.data.numpy_array()[:,0], dtype=float)/ZIF_BITS
+                q_data += np.array(d.data.numpy_array()[:,1], dtype=float)/ZIF_BITS
+
             self.i_curve.setData(i_data)
             self.q_curve.setData(q_data)
             self.const_plot.clear()
@@ -307,8 +310,8 @@ class Plot(QtCore.QObject):
                 brush = 'y')
 
         else:
-            data_payload = data.data.numpy_array()
-            i_data = np.array(data_payload, dtype=float)
+            for d in data:
+                i_data += np.array(d.data.numpy_array(), dtype=float)
 
             if data.stream_id == VRT_IFDATA_I14:
                 i_data = i_data /ZIF_BITS
