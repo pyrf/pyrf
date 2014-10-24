@@ -154,7 +154,7 @@ class WSA5000_220Properties(object):
     DECIMATED_USABLE = 0.80
     PASS_BAND_CENTER = {
         'ZIF': 0.5,
-        'HDR': 0.5,
+        'HDR': 0.50176,
         'SH': 0.56,
         'SHN': 0.56,
         'DEC_SH': 0.5,
@@ -203,7 +203,7 @@ class WSA5000_220Properties(object):
 
     MAX_SPP = 32768
 
-    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144]
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
     RBW_VALUES = {}
     for mode in RFE_MODES:
         if DEFAULT_SAMPLE_TYPE[mode] == I_ONLY:
@@ -215,10 +215,10 @@ class WSA5000_220Properties(object):
             # FIXME: this is workaround for SPP limit in the sweep device
             if div == 1 and s == SAMPLE_SIZES[-1]:
                 break
-            rbw_vals.append(FULL_BW[mode] / (s / div))
+            rbw_vals.append((FULL_BW[mode] / s) * div)
         RBW_VALUES[mode] = rbw_vals
     IQ_OUTPUT_CONNECTOR = True
-
+    print RBW_VALUES['SH']
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     REFLEVEL_ERROR = 0

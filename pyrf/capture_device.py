@@ -1,7 +1,7 @@
 import math
 
 from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop
-
+from pyrf.vrt import I_ONLY
 
 class CaptureDeviceError(Exception):
     pass
@@ -80,7 +80,7 @@ class CaptureDevice(object):
             self._configure_device_flag = False
 
         full_bw = prop.FULL_BW[rfe_mode]
-
+        self.packets_per_block = 1
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.request_read_perm()
@@ -88,16 +88,19 @@ class CaptureDevice(object):
         self._data_packets = []
 
         self.points = round(max(min_points, full_bw / rbw))
+
         self.points = 2 ** math.ceil(math.log(self.points, 2))
+        if prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
+            self.points  *= 2
+            
         if self.points > prop.MAX_SPP:
             self.packets_per_block = self.points / prop.MAX_SPP
             self.points = prop.MAX_SPP
 
         fshift = self._device_set.get('fshift', 0)
         decimation = self._device_set.get('decimation', 1)
-        self.usable_bins = compute_usable_bins(prop, rfe_mode, self.points,
+        self.usable_bins = compute_usable_bins(prop, rfe_mode, (self.points * self.packets_per_block),
             decimation, fshift)
-
         if self.async_callback:
             self.real_device.set_async_callback(self.read_data)
             self.real_device.capture(self.points, self.packets_per_block)
@@ -112,6 +115,7 @@ class CaptureDevice(object):
         return result
 
     def read_data(self, packet):
+
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
             return
@@ -120,10 +124,15 @@ class CaptureDevice(object):
             self._data_packets.append(packet)
             return
         self._data_packets.append(packet)
+        if self.packets_per_block == 1:
+            data_pkt = self._data_packets[0]
+
+        else:
+            data_pkt = self._data_packets
         data= {
             'context_pkt' : self._vrt_context,
-            'data_pkt' : self._data_packets}
-        
+            'data_pkt' : data_pkt}
+        self.packets_read = 0
 
         rfe_mode = self._device_set['rfe_mode']
         # FIXME: add a "can I tune in this mode?" device property instead
@@ -137,7 +146,7 @@ class CaptureDevice(object):
         self.usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
             self.real_device.properties,
             rfe_mode,
-            self.points * self.packets_per_block,
+            (self.points * self.packets_per_block),
             decimation,
             freq,
             packet.spec_inv,

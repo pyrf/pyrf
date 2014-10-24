@@ -309,7 +309,7 @@ class FrequencyControls(QtGui.QGroupBox):
             self._rbw_box.quiet_update(
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
-            self._rbw_box.setCurrentIndex(0)
+            self._rbw_box.setCurrentIndex(4)
 
     def _update_modes(self, include_sweep=True, current_mode=None):
         modes = []

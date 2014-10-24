@@ -380,7 +380,6 @@ class SpecAController(QtCore.QObject):
                 data['data_pkt'],
                 data['context_pkt'],
                 ref=self._ref_level,
-                num_packets=len(data['data_pkt']),
                 **self._dsp_options)
 
             if not self._options.get('show_attenuated_edges'):
@@ -388,6 +387,7 @@ class SpecAController(QtCore.QObject):
                     trim_to_usable_fstart_fstop(
                         pow_data, usable_bins, fstart, fstop))
             #FIXME: Find out why there is a case where pow_data may be empty
+
             if pow_data.any():
                 if self._plot_options.get('reference_offset_value'):
                     pow_data += self._plot_options['reference_offset_value']
