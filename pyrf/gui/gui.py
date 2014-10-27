@@ -581,7 +581,6 @@ class MainPanel(QtGui.QWidget):
         self.sweep_segments = segments
 
         self.xdata = np.linspace(fstart, fstop, len(power))
-        print (self.xdata[1] - self.xdata[0]), len(power)
         self.update_trace()
         self.update_marker()
         self.update_diff()
