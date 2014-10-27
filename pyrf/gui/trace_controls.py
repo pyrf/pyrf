@@ -452,3 +452,5 @@ class TraceControls(QtGui.QWidget):
             return
         marker.data_index = np.where(pow_data==(peak_values[-2 if len(peak_values) > 1 else -1]))[0]
 
+    def showEvent(self, event):
+        self.activateWindow()

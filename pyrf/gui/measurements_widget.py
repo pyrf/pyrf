@@ -86,3 +86,6 @@ class MeasurementControls(QtGui.QWidget):
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
+
+    def showEvent(self, event):
+        self.activateWindow()

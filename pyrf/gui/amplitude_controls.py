@@ -159,3 +159,6 @@ class AmplitudeControls(QtGui.QWidget):
 
     def get_min_level(self):
         return self._min_level.value()
+
+    def showEvent(self, event):
+        self.activateWindow()
