@@ -107,7 +107,7 @@ def _decode_data_pkts(data_pkt):
                 i_data = np.array(d.data.numpy_array(), dtype=float) / 2 ** 23
             else:
                 i_data = np.append(i_data, np.array(d.data.numpy_array(), dtype=float) / 2 ** 23)
-    print len(i_data)
+
     return i_data, q_data, stream_id, spec_inv
 
 def _compute_fft(i_data, q_data, correct_phase,

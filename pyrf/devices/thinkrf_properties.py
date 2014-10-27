@@ -136,18 +136,18 @@ class WSA5000_220Properties(object):
         'DD': 31.24 * M,
         }
     MIN_DECIMATION = {
-        'ZIF': 4,
-        'HDR': None,
-        'SH': 4,
-        'SHN': 4,
-        'IQIN': 4,
-        'DD': 4,
+        'ZIF': 1,
+        'HDR': 1,
+        'SH': 1,
+        'SHN': 1,
+        'IQIN': 1,
+        'DD': 1,
         }
     MAX_DECIMATION = {
         'ZIF': 1024,
-        'HDR': None,
-        'SH': 4,
-        'SHN': 4,
+        'HDR': 4,
+        'SH': 1024,
+        'SHN': 1024,
         'IQIN': 1024,
         'DD': 1024,
         }
@@ -217,8 +217,14 @@ class WSA5000_220Properties(object):
                 break
             rbw_vals.append((FULL_BW[mode] / s) * div)
         RBW_VALUES[mode] = rbw_vals
+
+    DEFAULT_DECIMATION_MODES = ['ZIF', 'SH', 'SHN', 'IQIN', 'DD']
+    HDR_DECIMATION_MODES = ['HDR']
+    DEFAULT_DECIMATION_VALUES = [1, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    HDR_DECIMATION_VALUES = [1, 2, 4]
+    
     IQ_OUTPUT_CONNECTOR = True
-    print RBW_VALUES['SH']
+    
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     REFLEVEL_ERROR = 0

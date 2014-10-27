@@ -259,17 +259,13 @@ class DeviceControls(QtGui.QGroupBox):
             else:
                 self._level_trigger.setEnabled(True)
 
-            if state.sweeping():
-                self._dec_box.setEnabled(False)
+            if not state.sweeping():
                 self._fshift_edit.setEnabled(False)
             else:
-                decimation_available = self.dut_prop.MIN_DECIMATION[
-                    state.rfe_mode()] is not None
-                self._dec_box.setEnabled(decimation_available)
-                self._fshift_edit.setEnabled(decimation_available)
-            fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
-            self._fshift_edit.setRange(-fshift_max, fshift_max)
-
+                fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
+                self._fshift_edit.setEnabled(self.dut_prop.FSHIFT_AVAILABLE[state.rfe_mode()])
+                self._fshift_edit.setRange(-fshift_max, fshift_max)
+            self._update_decimation()
 
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' in state.device_settings['iq_output_path']:
@@ -312,3 +308,17 @@ class DeviceControls(QtGui.QGroupBox):
         self._trig_amp.setEnabled(state)
         self._trig_fstop.setEnabled(state)
         self._trig = state
+    def _update_decimation(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if self.gui_state.sweeping():
+            self._dec_box.setEnabled(False)
+        else:
+            
+            decimation_available = self.dut_prop.MIN_DECIMATION[
+                rfe_mode] is not None
+            if rfe_mode in self.dut_prop.DEFAULT_DECIMATION_MODES:
+                decimation_modes = self.dut_prop.DEFAULT_DECIMATION_MODES
+            elif rfe_mode in HDR_DECIMATION_MODES:
+                decimation_modes = self.dut_prop.HDR_DECIMATION_MODES
+            self._dec_box.setEnabled(decimation_available)
+            

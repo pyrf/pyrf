@@ -581,7 +581,6 @@ class MainPanel(QtGui.QWidget):
         self.sweep_segments = segments
 
         self.xdata = np.linspace(fstart, fstop, len(power))
-        print (self.xdata[1] - self.xdata[0]), len(power)
         self.update_trace()
         self.update_marker()
         self.update_diff()
@@ -601,7 +600,6 @@ class MainPanel(QtGui.QWidget):
                 self._plot.waterfall_data.reset(self.xdata)
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
-
 
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
