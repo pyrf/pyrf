@@ -222,9 +222,9 @@ class WSA5000_220Properties(object):
     HDR_DECIMATION_MODES = ['HDR']
     DEFAULT_DECIMATION_VALUES = [1, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
     HDR_DECIMATION_VALUES = [1, 2, 4]
-    
+
     IQ_OUTPUT_CONNECTOR = True
-    
+
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     REFLEVEL_ERROR = 0
