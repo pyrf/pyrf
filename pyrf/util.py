@@ -46,12 +46,15 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     if rfe_mode in ('SH', 'SHN') and decimation > 1:
         pass_band_center = dut_prop.PASS_BAND_CENTER['DEC_' + rfe_mode]
         full_bw = (dut_prop.FULL_BW['DEC_' + rfe_mode] / decimation)
+    elif rfe_mode == 'HDR':
+        pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode][decimation]
+        full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
     else:
         pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
         full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
 
     if decimation > 1:
-        usable_bw = full_bw * dut_prop.DECIMATED_USABLE
+        usable_bw = full_bw * dut_prop.DECIMATED_USABLE[rfe_mode]
     else:
         usable_bw = dut_prop.USABLE_BW[rfe_mode]
 
@@ -73,7 +76,7 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
             start = 0
             usable_bins[i] = (start, run)
 
-    if decimation == 1 and dut_prop.DEFAULT_SAMPLE_TYPE.get(rfe_mode) == I_ONLY:
+    if decimation == 1 and dut_prop.DEFAULT_SAMPLE_TYPE.get(rfe_mode) == I_ONLY or rfe_mode == 'HDR':
         # we're getting only 1/2 the bins
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
@@ -94,6 +97,9 @@ def adjust_usable_fstart_fstop(dut_prop, rfe_mode, points, decimation,
     if rfe_mode in ('SH', 'SHN') and decimation > 1:
         pass_band_center = dut_prop.PASS_BAND_CENTER['DEC_' + rfe_mode]
         full_bw = (dut_prop.FULL_BW['DEC_' + rfe_mode] / decimation)
+    elif rfe_mode == 'HDR':
+        pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode][decimation]
+        full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
     else:
         pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
         full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
@@ -112,7 +118,6 @@ def adjust_usable_fstart_fstop(dut_prop, rfe_mode, points, decimation,
 
     return usable_bins, fstart, fstop
 
-
 def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
     """
     Returns (trimmed bins, trimmed usable_bins,
@@ -127,3 +132,23 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
     trim_bins = [(s - left_bin, r) for (s, r) in usable_bins]
 
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop
+
+def compute_rbw_values(dut_prop, rfe_mode, decimation):
+    """
+    Return a list of rbw values depending on the rfe_mode, sample size 
+    and decimation
+    """
+    if dut_prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
+        div = 2
+    else:
+        div = 1
+    rbw_vals = []
+    for s in dut_prop.SAMPLE_SIZES:
+        # FIXME: this is workaround for SPP limit in the sweep device
+        if div == 1:
+            break
+        rbw_vals.append(((dut_prop.FULL_BW[rfe_mode]/decimation) / s) * div)
+    return rbw_vals
+        
+
+

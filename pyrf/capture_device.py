@@ -78,15 +78,15 @@ class CaptureDevice(object):
         if self._configure_device_flag:
             self.real_device.apply_device_settings(self._device_set)
             self._configure_device_flag = False
-
-        full_bw = prop.FULL_BW[rfe_mode]
+        fshift = self._device_set.get('fshift', 0)
+        decimation = self._device_set.get('decimation', 1)
+        full_bw = prop.FULL_BW[rfe_mode] / decimation
         self.packets_per_block = 1
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.request_read_perm()
         self._vrt_context = {}
         self._data_packets = []
-
         self.points = round(max(min_points, full_bw / rbw))
 
         self.points = 2 ** math.ceil(math.log(self.points, 2))
@@ -97,8 +97,6 @@ class CaptureDevice(object):
             self.packets_per_block = self.points / prop.MAX_SPP
             self.points = prop.MAX_SPP
 
-        fshift = self._device_set.get('fshift', 0)
-        decimation = self._device_set.get('decimation', 1)
         self.usable_bins = compute_usable_bins(prop, rfe_mode, (self.points * self.packets_per_block),
             decimation, fshift)
         if self.async_callback:

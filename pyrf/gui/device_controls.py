@@ -303,17 +303,18 @@ class DeviceControls(QtGui.QGroupBox):
             else:
                 if self._level_trigger.checkState():
                     self._level_trigger.click()
-    def _trig_state(self, state):
+
+   def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
         self._trig_fstop.setEnabled(state)
         self._trig = state
+
     def _update_decimation(self):
         rfe_mode = self.gui_state.rfe_mode()
         if self.gui_state.sweeping():
             self._dec_box.setEnabled(False)
         else:
-            
             decimation_available = self.dut_prop.MIN_DECIMATION[
                 rfe_mode] is not None
             if rfe_mode in self.dut_prop.DEFAULT_DECIMATION_MODES:

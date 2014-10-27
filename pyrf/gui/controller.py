@@ -440,7 +440,7 @@ class SpecAController(QtCore.QObject):
             # force span to correct value for the mode given
             if state.decimation > 1:
                 span = (float(self._dut.properties.FULL_BW[state.rfe_mode()])
-                    / state.decimation * self._dut.properties.DECIMATED_USABLE)
+                    / state.decimation * self._dut.properties.DECIMATED_USABLE[state.rfe_mode()])
             else:
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
             state = SpecAState(state, span=span)

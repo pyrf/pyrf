@@ -151,10 +151,23 @@ class WSA5000_220Properties(object):
         'IQIN': 1024,
         'DD': 1024,
         }
-    DECIMATED_USABLE = 0.80
+    DECIMATED_USABLE = {
+        'ZIF': 0.8,
+        'HDR': 0.8,
+        'SH': 0.8,
+        'SHN': 0.8,
+        'DEC_SH': 0.8,
+        'DEC_SHN': 0.8,
+        'IQIN': 0.8,
+        'DD': 0.8,
+        }
+    HDR_PASS_BAND_CENTER = {
+    1: 0.50176,
+    2: 0.512,
+    4: 0.53248}
     PASS_BAND_CENTER = {
         'ZIF': 0.5,
-        'HDR': 0.50176,
+        'HDR': HDR_PASS_BAND_CENTER,
         'SH': 0.56,
         'SHN': 0.56,
         'DEC_SH': 0.5,
@@ -162,6 +175,7 @@ class WSA5000_220Properties(object):
         'IQIN': 0.5,
         'DD': 0.5,
         }
+
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {
