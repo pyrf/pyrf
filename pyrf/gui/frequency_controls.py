@@ -304,7 +304,7 @@ class FrequencyControls(QtGui.QGroupBox):
                 unit = 'KHz'
                 div = 1000
             if 'Sweep' in speca_mode:
-                min_rbw = self.dut_prop.FULL_BW[rfe_mode] / 16384
+                min_rbw = self.dut_prop.FULL_BW[rfe_mode] / self.dut_prop.MAX_SPP
                 self._rbw_values = [i for i in self._rbw_values if i > min_rbw]
             self._rbw_box.quiet_update(
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
