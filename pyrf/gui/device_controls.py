@@ -317,8 +317,8 @@ class DeviceControls(QtGui.QGroupBox):
             decimation_available = self.dut_prop.MIN_DECIMATION[
                 rfe_mode] is not None
             if rfe_mode in self.dut_prop.DEFAULT_DECIMATION_MODES:
-                decimation_modes = self.dut_prop.DEFAULT_DECIMATION_MODES
-            elif rfe_mode in HDR_DECIMATION_MODES:
-                decimation_modes = self.dut_prop.HDR_DECIMATION_MODES
+                decimation_values = self.dut_prop.DEFAULT_DECIMATION_VALUES
+            elif rfe_mode in self.dut_prop.HDR_DECIMATION_MODES:
+                decimation_values = self.dut_prop.HDR_DECIMATION_VALUES
             self._dec_box.setEnabled(decimation_available)
-            
+            self._dec_box.quiet_update(["%d " % d for d in decimation_values])
