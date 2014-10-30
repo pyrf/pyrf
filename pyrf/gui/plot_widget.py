@@ -67,7 +67,7 @@ class Plot(QtCore.QObject):
         self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
-        self.view_box.setMouseEnabled(x = True, y = False)
+
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
