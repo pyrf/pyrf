@@ -4,10 +4,11 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.widgets import QCheckBoxPlayback, QDoubleSpinBoxPlayback
 
 import numpy as np
-PLOT_YMAX = 4000
+
+PLOT_YMIN = -5000
+PLOT_YMAX = 5000
 PLOT_TOP = 0
 PLOT_BOTTOM = -160
-PLOT_YMIN = -4000
 PLOT_STEP = 5
 
 class AmplitudeControls(QtGui.QWidget):
@@ -124,8 +125,8 @@ class AmplitudeControls(QtGui.QWidget):
                 self._min_level.setEnabled(True)
     def plot_changed(self, state, changed):
         if 'y_axis' in changed:
-            self._min_level.quiet_update(value = int(min(state['y_axis'])))
-            self._max_level.quiet_update(value = int(max(state['y_axis'])))
+            self._min_level.quiet_update(value = int(state['y_axis'][0]))
+            self._max_level.quiet_update(value = int(state['y_axis'][1]))
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments

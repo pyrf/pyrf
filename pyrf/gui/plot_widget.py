@@ -18,8 +18,8 @@ from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
-PLOT_YMIN = -160
-PLOT_YMAX = 20
+PLOT_YMIN = -5000
+PLOT_YMAX = 5000
 
 IQ_PLOT_YMIN = -1
 IQ_PLOT_YMAX = 1
@@ -220,7 +220,7 @@ class Plot(QtCore.QObject):
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
         if 'y_axis' in changed:
-            self.window.setYRange(int(min(state['y_axis'])), int(max(state['y_axis'])), padding = 0)
+            self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
 
     def enable_channel_power(self):
         for t in self.traces:
