@@ -204,6 +204,7 @@ class WSA5000_220Properties(object):
     MAX_SPP = 32768
 
     SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
+    DEFAULT_RBW_INDEX = 4
     RBW_VALUES = {}
     for mode in RFE_MODES:
         if DEFAULT_SAMPLE_TYPE[mode] == I_ONLY:
