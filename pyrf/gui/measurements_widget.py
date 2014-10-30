@@ -6,18 +6,15 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import QCheckBoxPlayback, QDoubleSpinBoxPlayback
 
-class MeasurementControls(QtGui.QGroupBox):
+class MeasurementControls(QtGui.QWidget):
 
-    def __init__(self, controller, name="Measurement Control"):
+    def __init__(self, controller):
         super(MeasurementControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
-
-        self.setStyleSheet(GROUP_BOX_FONT)
-        self.setTitle(name)
 
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
@@ -44,6 +41,8 @@ class MeasurementControls(QtGui.QGroupBox):
         grid.addWidget(self._horizontal_cursor, 0, 1, 1,1)
         grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
 
+        grid.setRowStretch(1, 1) # expand empty space at the bottom
+        self.resize_widget()
 
     def _connect_controls(self):
         def enable_channel_power():
@@ -64,6 +63,15 @@ class MeasurementControls(QtGui.QGroupBox):
 
     def state_changed(self, state, changed):
         self.gui_state = state
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self._channel_power.setEnabled(False)
+                self._horizontal_cursor.setEnabled(False)
+                self._cursor_spinbox.setEnabled(False)
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                self._channel_power.setEnabled(True)
+                self._horizontal_cursor.setEnabled(True)
+                self._cursor_spinbox.setEnabled(True)
 
     def plot_changed(self, state, changed):
         self.plot_state = state
@@ -75,3 +83,9 @@ class MeasurementControls(QtGui.QGroupBox):
                     self._cursor_spinbox.setEnabled(True)
            else:
                 self._cursor_spinbox.setEnabled(False)
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
+
+    def showEvent(self, event):
+        self.activateWindow()

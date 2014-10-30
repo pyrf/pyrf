@@ -9,34 +9,29 @@ PLOT_TOP = 0
 PLOT_BOTTOM = -160
 PLOT_YMIN = -240
 PLOT_STEP = 5
-class AmplitudeControls(QtGui.QGroupBox):
+
+class AmplitudeControls(QtGui.QWidget):
     """
-    A widget based from the Qt QGroupBox widget with a layout containing widgets that
+    A widget with a layout containing widgets that
     can be used to control the amplitude configurations of the GUI
     :param name: A controller that emits/receives Qt signals from multiple widgets
     :param name: The name of the groupBox
     """
 
-    def __init__(self, controller, plot, name="Amplitude Control"):
+    def __init__(self, controller, plot):
         super(AmplitudeControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
-
         self._plot = plot
-
-        self.setTitle(name)
-        self.setStyleSheet(GROUP_BOX_FONT)
 
         grid = QtGui.QGridLayout()
         self.setLayout(QtGui.QGridLayout())
 
         self._create_controls()
         self._connect_device_controls()
-
-        self.setLayout(grid)
 
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
@@ -73,7 +68,6 @@ class AmplitudeControls(QtGui.QGroupBox):
         self._reference_offset_spinbox = QDoubleSpinBoxPlayback()
         self._reference_offset_spinbox.setRange(-200, 200)
 
-
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
         grid = self.layout()
@@ -96,7 +90,10 @@ class AmplitudeControls(QtGui.QGroupBox):
         grid.setColumnStretch(2, 1)
         grid.setColumnStretch(3, 4)
         grid.setColumnStretch(4, 6)
-    
+
+        grid.setRowStretch(3, 1) # expand empty space at the bottom
+        self.setLayout(grid)
+        self.resize_widget()
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
@@ -112,9 +109,11 @@ class AmplitudeControls(QtGui.QGroupBox):
             if state.mode == 'HDR':
                 self._hdr_gain_box.show()
                 self._hdr_gain_label.show()
+                self.resize_widget()
             else:
                 self._hdr_gain_box.hide()
                 self._hdr_gain_label.hide()
+                self.resize_widget()
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -128,6 +127,9 @@ class AmplitudeControls(QtGui.QGroupBox):
         # save x,y data for marker adjustments
         self.pow_data = power
         self.xdata = np.linspace(fstart, fstop, len(power))
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def _update_plot_y_axis(self):
         min_level = self._min_level.value()
@@ -153,8 +155,10 @@ class AmplitudeControls(QtGui.QGroupBox):
         self._reference_offset_spinbox.editingFinished.connect(change_reference_offset_value)
 
     def get_max_level(self):
-
         return self._max_level.value()
 
     def get_min_level(self):
         return self._min_level.value()
+
+    def showEvent(self, event):
+        self.activateWindow()
