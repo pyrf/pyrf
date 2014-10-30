@@ -37,9 +37,6 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     import numpy as np # import here so docstrings are visible even without numpy
     import numpy # import here so docstrings are visible even without numpy
 
-    if not type(data_pkt) is list:
-        data_pkt = [data_pkt]
-
     i_data, q_data, stream_id, spec_inv = _decode_data_pkts(data_pkt)
     if 'reflevel' in context:
         reference_level = context['reflevel']
@@ -80,33 +77,22 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     return power_spectrum
 
 def _decode_data_pkts(data_pkt):
-    stream_id = data_pkt[0].stream_id
-    spec_inv = data_pkt[0].spec_inv
+    stream_id = data_pkt.stream_id
+    spec_inv = data_pkt.spec_inv
     i_data = None
     q_data = None
 
     if stream_id == VRT_IFDATA_I14Q14:
-        for d in data_pkt:
-            if i_data is None:
-                i_data = np.array(d.data.numpy_array()[:,0], dtype=float) / 2 ** 13
-                q_data = np.array(d.data.numpy_array()[:,1], dtype=float) / 2 ** 13
-            else:
-                i_data = np.append(i_data, np.array(d.data.numpy_array()[:,0], dtype=float) / 2 ** 13)
-                q_data = np.append(q_data, np.array(d.data.numpy_array()[:,1], dtype=float) / 2 ** 13)
+        i_data = np.array(data_pkt.data.numpy_array()[:,0], dtype=float) / 2 ** 13
+        q_data = np.array(data_pkt.data.numpy_array()[:,1], dtype=float) / 2 ** 13
+
     
     if stream_id == VRT_IFDATA_I14:
-        for d in data_pkt:
-            if i_data is None:
-                i_data = np.array(d.data.numpy_array(), dtype=float) / 2 ** 13
-            else:
-                i_data = np.append(i_data, np.array(d.data.numpy_array(), dtype=float) / 2 ** 13)
+        i_data = np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 13
 
     if stream_id == VRT_IFDATA_I24:
-        for d in data_pkt:
-            if i_data is None:
-                i_data = np.array(d.data.numpy_array(), dtype=float) / 2 ** 23
-            else:
-                i_data = np.append(i_data, np.array(d.data.numpy_array(), dtype=float) / 2 ** 23)
+        i_data = np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 23
+
     return i_data, q_data, stream_id, spec_inv
 
 def _compute_fft(i_data, q_data, correct_phase,

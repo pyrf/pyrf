@@ -2,7 +2,7 @@ import math
 
 from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop
 from pyrf.vrt import I_ONLY
-
+from pyrf.vrt import DataPacket
 class CaptureDeviceError(Exception):
     pass
 
@@ -85,7 +85,7 @@ class CaptureDevice(object):
         self.real_device.flush()
         self.real_device.request_read_perm()
         self._vrt_context = {}
-        self._data_packets = []
+        self._data_packets = None
 
         self.points = round(max(min_points, full_bw / rbw))
 
@@ -120,18 +120,16 @@ class CaptureDevice(object):
             self._vrt_context.update(packet.fields)
             return
         self.packets_read += 1
-        if self.packets_read != self.packets_per_block:
-            self._data_packets.append(packet)
-            return
-        self._data_packets.append(packet)
-        if self.packets_per_block == 1:
-            data_pkt = self._data_packets[0]
-
+        if self._data_packets is None:
+            self._data_packets = packet
         else:
-            data_pkt = self._data_packets
+            self._data_packets.data.append_numpy_array(packet.data.numpy_array())
+        if self.packets_read != self.packets_per_block:
+            return
+
         data= {
             'context_pkt' : self._vrt_context,
-            'data_pkt' : data_pkt}
+            'data_pkt' : self._data_packets}
         self.packets_read = 0
 
         rfe_mode = self._device_set['rfe_mode']

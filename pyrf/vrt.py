@@ -3,7 +3,7 @@ import array
 import sys
 import zlib
 import json
-
+import numpy as np
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
 VRTDATA = 1
@@ -284,8 +284,8 @@ class IQData(object):
                   [-124,   56],
                   [ -44,   80]], dtype=int16)
         """
-        import numpy
-        a = numpy.frombuffer(self._strdata, dtype=numpy.int16)
+
+        a = np.frombuffer(self._strdata, dtype=np.int16)
         a = a.newbyteorder('>')
         a.shape = (-1, 2)
         return a
@@ -302,6 +302,17 @@ class DataArray(object):
         self._strdata = binary_data
         self._bytes_per_sample = bytes_per_sample
         self._data = None
+        self._init_numpy_array()
+
+    def _init_numpy_array(self):
+
+        np_array = np.frombuffer(self._strdata, dtype={
+            1: np.int8,
+            2: np.int16,
+            4: np.int32,}[self._bytes_per_sample])
+        if self._bytes_per_sample > 1:
+            np_array = np_array.newbyteorder('>')
+        self._np_array = np_array
 
     def _update_data(self):
         self._data = array.array({
@@ -331,19 +342,17 @@ class DataArray(object):
             self._update_data()
         return reversed(self._data)
 
+    def append_numpy_array(self, array):
+        """
+        append a numpy array into the current data
+        """
+        self._np_array = np.concatenate((self._np_array, array))
+
     def numpy_array(self):
         """
         return a numpy array for this data
         """
-        import numpy
-        a = numpy.frombuffer(self._strdata, dtype={
-            1: numpy.int8,
-            2: numpy.int16,
-            4: numpy.int32,}[self._bytes_per_sample])
-        if self._bytes_per_sample > 1:
-            a = a.newbyteorder('>')
-        return a
-
+        return self._np_array
 
 class DataPacket(object):
     """
