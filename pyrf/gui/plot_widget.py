@@ -68,7 +68,6 @@ class Plot(QtCore.QObject):
 
         self.view_box = self.window.plotItem.getViewBox()
 
-
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
