@@ -141,6 +141,7 @@ class MainWindow(QtGui.QMainWindow):
         for text, option, default in VIEW_OPTIONS:
             self.view_menu.addAction(checkbox_action(
                 self.controller.apply_options, text, option, default))
+        self.view_menu.addSeparator()
 
         if developer_menu:
             self.developer_menu = menubar.addMenu('D&eveloper Options')
@@ -318,7 +319,6 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
-
         self.enable_controls()
 
     def state_changed(self, state, changed):
@@ -327,6 +327,7 @@ class MainPanel(QtGui.QWidget):
         :param state: new SpecAState object
         :param changed: list of attribute names changed
         """
+
         self.gui_state = state
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
@@ -449,20 +450,26 @@ class MainPanel(QtGui.QWidget):
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
-        y = 0
-        x = self.plot_width
-        controls_layout = QtGui.QVBoxLayout()
 
-        controls_layout.addWidget(self._freq_controls())
-        controls_layout.addWidget(self._measurement_controls())
-        controls_layout.addWidget(self._amplitude_controls())
-        controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self._trace_controls())
-        controls_layout.addStretch()
-        grid.addLayout(controls_layout, y, x, 14, 5)
+        self._add_docking_controls(self._freq_controls(), "Frequency Control")
+        self._add_docking_controls(
+            self._measurement_controls(), "Measurement Control")
+        self._add_docking_controls(
+            self._amplitude_controls(), "Amplitude Control")
+        self._add_docking_controls(self._device_controls(), "Device Control")
+        self._add_docking_controls(self._trace_controls(), "Trace Control")
 
         self._grid = grid
         self.setLayout(grid)
+
+    def _add_docking_controls(self, widget, title):
+        dock = QtGui.QDockWidget(title, self)
+        dock.setAllowedAreas(
+            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+        dock.setWidget(widget)
+        # FIXME we should be doing this in the MainWindow
+        self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        self._main_window.view_menu.addAction(dock.toggleViewAction())
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
@@ -574,7 +581,6 @@ class MainPanel(QtGui.QWidget):
         :param usable: usable bins from power (None when sweeping)
         :param segments: bin segments from power (None when not sweeping)
         """
-
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
@@ -712,6 +718,7 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
+
 
     def disable_controls(self):
         for item in self.control_widgets:
