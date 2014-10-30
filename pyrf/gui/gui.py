@@ -338,18 +338,14 @@ class MainPanel(QtGui.QWidget):
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
                 self._plot.center_view(freq,
-                                       full_bw,
-                                       self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_max_level())
+                                       full_bw)
                 self._plot.center_iq_plots()
             else:
                 freq = state.center
                 full_bw = state.span
 
                 self._plot.center_view(freq - full_bw/2,
-                                        freq + full_bw/2,
-                                       self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_max_level())
+                                        freq + full_bw/2)
                 self._plot.center_iq_plots()
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -595,9 +591,7 @@ class MainPanel(QtGui.QWidget):
         if (not self.controller.applying_user_xrange() and
                 not self.controller.get_options()['free_plot_adjustment']):
             self._plot.center_view(fstart,
-                                   fstop,
-                                   self._amplitude_group.get_min_level(),
-                                   self._amplitude_group.get_max_level())
+                                   fstop)
 
         if self.iq_plots_enabled:
             self.update_iq()

@@ -4,10 +4,10 @@ from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.widgets import QCheckBoxPlayback, QDoubleSpinBoxPlayback
 
 import numpy as np
-PLOT_YMAX = 40
+PLOT_YMAX = 4000
 PLOT_TOP = 0
 PLOT_BOTTOM = -160
-PLOT_YMIN = -240
+PLOT_YMIN = -4000
 PLOT_STEP = 5
 
 class AmplitudeControls(QtGui.QWidget):
@@ -25,6 +25,7 @@ class AmplitudeControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.capture_receive.connect(self.capture_received)
+        controller.plot_change.connect(self.plot_changed)
         self._plot = plot
 
         grid = QtGui.QGridLayout()
@@ -32,6 +33,7 @@ class AmplitudeControls(QtGui.QWidget):
 
         self._create_controls()
         self._connect_device_controls()
+        self._connect_plot_controls()
 
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
@@ -46,20 +48,18 @@ class AmplitudeControls(QtGui.QWidget):
         self._hdr_gain_label = hdr_gain_label
         self._hdr_gain_box = hdr_gain_box
 
-        self._max_level = QtGui.QSpinBox()
+        self._max_level = QDoubleSpinBoxPlayback()
         self._max_level.setRange(PLOT_YMIN, PLOT_YMAX)
         self._max_level.setValue(PLOT_TOP)
         self._max_level.setSuffix(" dBm")
         self._max_level.setSingleStep(PLOT_STEP)
-        self._max_level.valueChanged.connect(self._update_plot_y_axis)
         self._max_label = QtGui.QLabel('Maximum: ')
 
-        self._min_level = QtGui.QSpinBox()
+        self._min_level = QDoubleSpinBoxPlayback()
         self._min_level.setRange(PLOT_YMIN, PLOT_YMAX)
         self._min_level.setValue(PLOT_BOTTOM)
         self._min_level.setSuffix(" dBm")
         self._min_level.setSingleStep(PLOT_STEP)
-        self._min_level.valueChanged.connect(self._update_plot_y_axis)
         self._min_label = QtGui.QLabel('Minimum: ')
 
         self._reference_offset = QtGui.QLabel("Offset")
@@ -122,6 +122,10 @@ class AmplitudeControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(True)
                 self._min_level.setEnabled(True)
+    def plot_changed(self, state, changed):
+        if 'y_axis' in changed:
+            self._min_level.quiet_update(value = int(min(state['y_axis'])))
+            self._max_level.quiet_update(value = int(max(state['y_axis'])))
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments
@@ -130,16 +134,6 @@ class AmplitudeControls(QtGui.QWidget):
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
-
-    def _update_plot_y_axis(self):
-        min_level = self._min_level.value()
-        ref_level = self._max_level.value()
-        self._plot.center_view(
-            self.xdata[0], self.xdata[-1],
-            min_level = min_level,
-            ref_level = ref_level)
-
-        self._plot.update_waterfall_levels(min_level, ref_level)
 
     def _connect_device_controls(self):
         def new_hdr_gain():
@@ -153,6 +147,12 @@ class AmplitudeControls(QtGui.QWidget):
         self._hdr_gain_box.valueChanged.connect(new_hdr_gain)
         self._atten_box.clicked.connect(new_attenuator)
         self._reference_offset_spinbox.editingFinished.connect(change_reference_offset_value)
+
+    def _connect_plot_controls(self):
+        def update_plot_y_axis():
+            self.controller.apply_plot_options(y_axis = [self._max_level.value(), self._min_level.value()])
+        self._min_level.valueChanged.connect(update_plot_y_axis)
+        self._max_level.valueChanged.connect(update_plot_y_axis)
 
     def get_max_level(self):
         return self._max_level.value()
