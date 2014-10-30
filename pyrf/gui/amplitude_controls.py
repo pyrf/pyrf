@@ -40,7 +40,7 @@ class AmplitudeControls(QtGui.QWidget):
 
         hdr_gain_label = QtGui.QLabel("HDR Gain:")
         hdr_gain_box = QtGui.QSpinBox()
-        hdr_gain_box.setRange(-10, 20)
+        hdr_gain_box.setRange(-10, 30)
         hdr_gain_box.setValue(-10)
         hdr_gain_box.setSuffix(" dB")
         self._hdr_gain_label = hdr_gain_label

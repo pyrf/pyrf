@@ -4,7 +4,8 @@ from pyrf.units import M
 from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
-
+from pyrf.sweep_device import MAXIMUM_SPP as MAXIMUM_SWEEP_SPP
+from pyrf.util import compute_rbw_values
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
     'Sweep SH': 'Sweep',
@@ -89,6 +90,8 @@ class FrequencyControls(QtGui.QWidget):
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
 
+        if 'decimation' in changed:
+            self._update_rbw_options()
         if 'mode' in changed:
             min_tunable = float(self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
             max_tunable = float(self.dut_prop.MAX_TUNABLE[state.rfe_mode()])
@@ -295,19 +298,24 @@ class FrequencyControls(QtGui.QWidget):
         populate RBW drop-down with reasonable values for the current mode
         """
         if hasattr(self, 'gui_state'):
-            mode = self.gui_state.rfe_mode()
+            rfe_mode = self.gui_state.rfe_mode()
+            speca_mode = self.gui_state.mode
 
-            self._rbw_values = self.dut_prop.RBW_VALUES[mode]
-            if mode == 'HDR':
+            self._rbw_values = compute_rbw_values(self.dut_prop, rfe_mode, self.gui_state.decimation)
+            if rfe_mode == 'HDR':
                 unit = 'Hz'
                 div = 1
             else:
                 unit = 'KHz'
                 div = 1000
+ 
+            if 'Sweep' in speca_mode:
+                min_rbw = self.dut_prop.FULL_BW[rfe_mode] / self.dut_prop.MAX_SPP
+                self._rbw_values = [i for i in self._rbw_values if i > min_rbw]
             self._rbw_box.quiet_update(
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
-            self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
+            self._rbw_box.setCurrentIndex(4)
 
     def _update_modes(self, include_sweep=True, current_mode=None):
         modes = []

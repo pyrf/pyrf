@@ -37,16 +37,17 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     import numpy as np # import here so docstrings are visible even without numpy
     import numpy # import here so docstrings are visible even without numpy
 
+    if not type(data_pkt) is list:
+        data_pkt = [data_pkt]
+
+    i_data, q_data, stream_id, spec_inv = _decode_data_pkts(data_pkt)
     if 'reflevel' in context:
         reference_level = context['reflevel']
     else:
         reference_level = ref
     prop = dut.properties
 
-    data = data_pkt.data.numpy_array()
-    if data_pkt.stream_id == VRT_IFDATA_I14Q14:
-        i_data = np.array(data[:,0], dtype=float) / 2 ** 13
-        q_data = np.array(data[:,1], dtype=float) / 2 ** 13
+    if stream_id == VRT_IFDATA_I14Q14:
 
         # special handling of WSA4k "only I data is valid here" range
         if 'rffreq' in context:
@@ -60,26 +61,54 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         power_spectrum = _compute_fft(i_data, q_data, correct_phase,
             hide_differential_dc_offset, convert_to_dbm, apply_window)
 
-    if data_pkt.stream_id == VRT_IFDATA_I14:
-        i_data = np.array(data, dtype=float) / 2 ** 13
+    if stream_id == VRT_IFDATA_I14:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
 
-    if data_pkt.stream_id == VRT_IFDATA_I24:
-        i_data = np.array(data, dtype=float) / 2 ** 23
+    if stream_id == VRT_IFDATA_I24:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
 
-    if data_pkt.stream_id == VRT_IFDATA_PSD8:
+    if stream_id == VRT_IFDATA_PSD8:
         # TODO: handle convert_to_dbm option
         power_spectrum = np.array(data, dtype=float)
-    
-    if apply_spec_inv:
-        if data_pkt.spec_inv:  # handle inverted spectrum
-            power_spectrum = np.flipud(power_spectrum)
 
+    if apply_spec_inv:
+        if spec_inv:  # handle inverted spectrum
+            power_spectrum = np.flipud(power_spectrum)
     if apply_reference:
         noiselevel_offset = reference_level + prop.REFLEVEL_ERROR
         return power_spectrum + noiselevel_offset
     return power_spectrum
+
+def _decode_data_pkts(data_pkt):
+    stream_id = data_pkt[0].stream_id
+    spec_inv = data_pkt[0].spec_inv
+    i_data = None
+    q_data = None
+
+    if stream_id == VRT_IFDATA_I14Q14:
+        for d in data_pkt:
+            if i_data is None:
+                i_data = np.array(d.data.numpy_array()[:,0], dtype=float) / 2 ** 13
+                q_data = np.array(d.data.numpy_array()[:,1], dtype=float) / 2 ** 13
+            else:
+                i_data = np.append(i_data, np.array(d.data.numpy_array()[:,0], dtype=float) / 2 ** 13)
+                q_data = np.append(q_data, np.array(d.data.numpy_array()[:,1], dtype=float) / 2 ** 13)
+    
+    if stream_id == VRT_IFDATA_I14:
+        for d in data_pkt:
+            if i_data is None:
+                i_data = np.array(d.data.numpy_array(), dtype=float) / 2 ** 13
+            else:
+                i_data = np.append(i_data, np.array(d.data.numpy_array(), dtype=float) / 2 ** 13)
+
+    if stream_id == VRT_IFDATA_I24:
+        for d in data_pkt:
+            if i_data is None:
+                i_data = np.array(d.data.numpy_array(), dtype=float) / 2 ** 23
+            else:
+                i_data = np.append(i_data, np.array(d.data.numpy_array(), dtype=float) / 2 ** 23)
+
+    return i_data, q_data, stream_id, spec_inv
 
 def _compute_fft(i_data, q_data, correct_phase,
         hide_differential_dc_offset, convert_to_dbm, apply_window):

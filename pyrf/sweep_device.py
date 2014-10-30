@@ -8,6 +8,7 @@ import numpy as np
 from pyrf.numpy_util import compute_fft
 from pyrf.config import SweepEntry
 
+MAXIMUM_SPP = 32*1024
 class SweepStep(namedtuple('SweepStep', '''
         fcenter
         fstep
@@ -42,7 +43,7 @@ class SweepStep(namedtuple('SweepStep', '''
         parameters
         """
         # FIXME: this maximum depends on rfe_mode
-        if self.points > 32*1024:
+        if self.points > MAXIMUM_SPP:
             raise SweepDeviceError('large captures not yet supported')
 
         s = SweepEntry(

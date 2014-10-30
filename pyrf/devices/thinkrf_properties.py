@@ -136,25 +136,38 @@ class WSA5000_220Properties(object):
         'DD': 31.24 * M,
         }
     MIN_DECIMATION = {
-        'ZIF': 4,
-        'HDR': None,
-        'SH': 4,
-        'SHN': 4,
-        'IQIN': 4,
-        'DD': 4,
+        'ZIF': 1,
+        'HDR': 1,
+        'SH': 1,
+        'SHN': 1,
+        'IQIN': 1,
+        'DD': 1,
         }
     MAX_DECIMATION = {
         'ZIF': 1024,
-        'HDR': None,
-        'SH': 4,
-        'SHN': 4,
+        'HDR': 4,
+        'SH': 1024,
+        'SHN': 1024,
         'IQIN': 1024,
         'DD': 1024,
         }
-    DECIMATED_USABLE = 0.80
+    DECIMATED_USABLE = {
+        'ZIF': 0.8,
+        'HDR': 0.8,
+        'SH': 0.8,
+        'SHN': 0.8,
+        'DEC_SH': 0.8,
+        'DEC_SHN': 0.8,
+        'IQIN': 0.8,
+        'DD': 0.8,
+        }
+    HDR_PASS_BAND_CENTER = {
+    1: 0.50176,
+    2: 0.512,
+    4: 0.53248}
     PASS_BAND_CENTER = {
         'ZIF': 0.5,
-        'HDR': 0.5,
+        'HDR': HDR_PASS_BAND_CENTER,
         'SH': 0.56,
         'SHN': 0.56,
         'DEC_SH': 0.5,
@@ -162,6 +175,7 @@ class WSA5000_220Properties(object):
         'IQIN': 0.5,
         'DD': 0.5,
         }
+
     DC_OFFSET_BW = 240000 # XXX: an educated guess
     TUNING_RESOLUTION = 100000
     FSHIFT_AVAILABLE = {
@@ -201,7 +215,9 @@ class WSA5000_220Properties(object):
         }
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
-    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+    MAX_SPP = 32768
+
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
     RBW_VALUES = {}
     for mode in RFE_MODES:
         if DEFAULT_SAMPLE_TYPE[mode] == I_ONLY:
@@ -213,8 +229,14 @@ class WSA5000_220Properties(object):
             # FIXME: this is workaround for SPP limit in the sweep device
             if div == 1 and s == SAMPLE_SIZES[-1]:
                 break
-            rbw_vals.append(FULL_BW[mode] / (s / div))
+            rbw_vals.append((FULL_BW[mode] / s) * div)
         RBW_VALUES[mode] = rbw_vals
+
+    DEFAULT_DECIMATION_MODES = ['ZIF', 'SH', 'SHN', 'IQIN', 'DD']
+    HDR_DECIMATION_MODES = ['HDR']
+    DEFAULT_DECIMATION_VALUES = [1, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    HDR_DECIMATION_VALUES = [1, 2, 4]
+
     IQ_OUTPUT_CONNECTOR = True
 
 class WSA5000_220_v2Properties(WSA5000_220Properties):

@@ -387,6 +387,7 @@ class SpecAController(QtCore.QObject):
                     trim_to_usable_fstart_fstop(
                         pow_data, usable_bins, fstart, fstop))
             #FIXME: Find out why there is a case where pow_data may be empty
+
             if pow_data.any():
                 if self._plot_options.get('reference_offset_value'):
                     pow_data += self._plot_options['reference_offset_value']
@@ -408,8 +409,7 @@ class SpecAController(QtCore.QObject):
             return
         self.read_sweep()
 
-        if len(data) > 2:
-            self.pow_data = data
+        self.pow_data = data
         self.iq_data = None
 
         if not self._options.get('show_sweep_steps'):
@@ -440,7 +440,7 @@ class SpecAController(QtCore.QObject):
             # force span to correct value for the mode given
             if state.decimation > 1:
                 span = (float(self._dut.properties.FULL_BW[state.rfe_mode()])
-                    / state.decimation * self._dut.properties.DECIMATED_USABLE)
+                    / state.decimation * self._dut.properties.DECIMATED_USABLE[state.rfe_mode()])
             else:
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
             state = SpecAState(state, span=span)
@@ -448,15 +448,6 @@ class SpecAController(QtCore.QObject):
             if not self._state or span != self._state.span:
                 changed.append('span')
 
-        if 'mode' in changed:
-            # check if RBW is appropriate for given mode
-            if state.rbw not in self._dut.properties.RBW_VALUES[state.rfe_mode()]:
-                if state.sweeping():
-                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][0]
-                    state = SpecAState(state, rbw=rbw)
-                else:
-                    rbw = self._dut.properties.RBW_VALUES[state.rfe_mode()][-1]
-                    state = SpecAState(state, rbw=rbw)
         self._state = state
 
         # start capture loop again when user switches output path
