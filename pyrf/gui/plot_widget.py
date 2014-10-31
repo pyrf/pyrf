@@ -292,12 +292,9 @@ class Plot(QtCore.QObject):
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return
 
-        if not type(data) is list:
-            data = [data]
-
-        if data[0].stream_id == VRT_IFDATA_I14Q14:
-            i_data = np.array(data[0].data.numpy_array()[:,0], dtype=float)/ZIF_BITS
-            q_data = np.array(data[0].data.numpy_array()[:,1], dtype=float)/ZIF_BITS
+        if data.stream_id == VRT_IFDATA_I14Q14:
+            i_data = np.array(data.data.numpy_array()[:,0], dtype=float)/ZIF_BITS
+            q_data = np.array(data.data.numpy_array()[:,1], dtype=float)/ZIF_BITS
 
             self.i_curve.setData(i_data)
             self.q_curve.setData(q_data)
@@ -309,11 +306,11 @@ class Plot(QtCore.QObject):
                 size = 1, pen = 'y',
                 brush = 'y')
         else:
-            i_data = np.array(data[0].data.numpy_array(), dtype=float)
-            if data[0].stream_id == VRT_IFDATA_I14:
+            i_data = np.array(data.data.numpy_array(), dtype=float)
+            if data.stream_id == VRT_IFDATA_I14:
                 i_data = i_data /ZIF_BITS
 
-            elif data[0].stream_id == VRT_IFDATA_I24:
+            elif data.stream_id == VRT_IFDATA_I24:
                 i_data = i_data / (np.mean(i_data)) - 1
 
             self.i_curve.setData(i_data)

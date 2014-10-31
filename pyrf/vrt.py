@@ -306,13 +306,13 @@ class DataArray(object):
 
     def _init_numpy_array(self):
 
-        np_array = np.frombuffer(self._strdata, dtype={
+        self.np_array = np.frombuffer(self._strdata, dtype={
             1: np.int8,
             2: np.int16,
             4: np.int32,}[self._bytes_per_sample])
         if self._bytes_per_sample > 1:
-            np_array = np_array.newbyteorder('>')
-        self._np_array = np_array
+            self.np_array = self.np_array.newbyteorder('>')
+
 
     def _update_data(self):
         self._data = array.array({
@@ -342,17 +342,11 @@ class DataArray(object):
             self._update_data()
         return reversed(self._data)
 
-    def append_numpy_array(self, array):
-        """
-        append a numpy array into the current data
-        """
-        self._np_array = np.concatenate((self._np_array, array))
-
     def numpy_array(self):
         """
         return a numpy array for this data
         """
-        return self._np_array
+        return self.np_array
 
 class DataPacket(object):
     """
