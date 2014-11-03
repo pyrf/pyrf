@@ -18,8 +18,8 @@ from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
-PLOT_YMIN = -160
-PLOT_YMAX = 20
+PLOT_YMIN = -5000
+PLOT_YMAX = 5000
 
 IQ_PLOT_YMIN = -1
 IQ_PLOT_YMAX = 1
@@ -67,7 +67,6 @@ class Plot(QtCore.QObject):
         self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
-        self.view_box.setMouseEnabled(x = True, y = False)
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
@@ -149,10 +148,13 @@ class Plot(QtCore.QObject):
                                                         'fstart':self.trigger_control.fstart,
                                                         'fstop': self.trigger_control.fstop,
                                                         'amplitude': self.trigger_control.amplitude})
+        def new_y_axis():
+            self.controller.apply_plot_options(y_axis = self.view_box.viewRange()[1])
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChangeFinished.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
         self.trigger_control.sigNewTriggerRange.connect(new_trigger)
+        self.window.sigYRangeChanged.connect(new_y_axis)
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
@@ -198,6 +200,7 @@ class Plot(QtCore.QObject):
                 self.remove_trigger()
 
     def plot_changed(self, state, changed):
+
         self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
@@ -216,6 +219,8 @@ class Plot(QtCore.QObject):
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
+        if 'y_axis' in changed:
+            self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
 
     def enable_channel_power(self):
         for t in self.traces:
@@ -250,12 +255,9 @@ class Plot(QtCore.QObject):
         self.window.removeItem(self.trigger_control.amplitude_line)
         self._trig_enable = False
 
-    def center_view(self, fstart, fstop, min_level=None, ref_level=None):
+    def center_view(self, fstart, fstop):
         b = self.window.blockSignals(True)
         self.window.setXRange(float(fstart), float(fstop), padding=0)
-        if min_level is not None:
-            self.window.setYRange(min_level, ref_level)
-            self.persistence_window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
         self.persistence_window.setXRange(
             float(fstart),
