@@ -243,6 +243,9 @@ class IQData(object):
     def __init__(self, binary_data):
         self._strdata = binary_data
         self._data = None
+        self.np_array = np.frombuffer(self._strdata, dtype=np.int16)
+        self.np_array = self.np_array.newbyteorder('>')
+        self.np_array.shape = (-1, 2)
 
     def _update_data(self):
         self._data = array.array('h')
@@ -273,23 +276,8 @@ class IQData(object):
     def numpy_array(self):
         """
         Return a numpy array of I, Q values for this data similar to:
-
-        .. code-block:: python
-
-           array([[ -44,    8],
-                  [ -40,   60],
-                  [ -12,   92],
-                  ...,
-                  [-132,   -8],
-                  [-124,   56],
-                  [ -44,   80]], dtype=int16)
         """
-
-        a = np.frombuffer(self._strdata, dtype=np.int16)
-        a = a.newbyteorder('>')
-        a.shape = (-1, 2)
-        return a
-
+        return self.np_array
 
 class DataArray(object):
     """
