@@ -135,7 +135,7 @@ class Plot(QtCore.QObject):
 
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
-
+        self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
     def connect_plot_controls(self):
         def new_channel_power():
             if self.plot_state.get('channel_power'):
