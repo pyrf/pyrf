@@ -1,4 +1,4 @@
-from PySide import QtGui
+from PySide import QtGui, QtCore
 import operator
 from pyrf.devices.thinkrf import discover_wsa
 
@@ -43,6 +43,9 @@ class DiscoveryWidget(QtGui.QWidget):
         self.setLayout(dev_layout)
         self.layout = dev_layout
 
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self._refresh_list)
+        self.timer.start(10000)
     def return_pressed(self):
         self._ok.click()
 
@@ -88,6 +91,7 @@ class DiscoveryWidget(QtGui.QWidget):
     def closeEvent(self, event):
         if self._open_device_callback is not None:
             self._open_device_callback(self._ip.text(), False)
+        self.timer.stop()
 
     def _refresh_list(self):
         self._list.clear()
