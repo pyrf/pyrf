@@ -1,6 +1,16 @@
 
 Changelog
 ---------
+PyRF 2.7.0
+==========
+
+2014-11-04
+
+ * All control widgets are now dockable
+
+* Enabled mouse control of spectral plot's y-axis
+
+* Added lower RBW values in non-sweep modes
 
 PyRF 2.6.2
 ==========
