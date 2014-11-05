@@ -476,6 +476,7 @@ class SpecAController(QtCore.QObject):
             self._capture_device.configure_device(device_settings)
 
         changed = ['device_settings.%s' % s for s in kwargs]
+
         self._state_changed(state, changed)
 
     def apply_settings(self, **kwargs):
@@ -487,6 +488,8 @@ class SpecAController(QtCore.QObject):
         if self._state is None:
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
+        if kwargs.get('mode') in ('Sweep SH', 'Sweep ZIF'):
+                kwargs['span'] = self._dut.properties.DEFAULT_SPECA_SPAN
 
         state = SpecAState(self._state, **kwargs)
         self._state_changed(state, kwargs.keys())
