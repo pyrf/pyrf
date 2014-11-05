@@ -11,7 +11,7 @@ import numpy as np
 REMOVE_BUTTON_WIDTH = 10
 MAX_AVERAGE_FACTOR = 1000
 DEFAULT_AVERAGE_FACTOR = 5
-
+DEFAULT_TRACE = 0 # 0 indicates LIVE
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     color_button
@@ -176,8 +176,8 @@ class TraceControls(QtGui.QWidget):
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
         def add_trace_clicked():
-            draw.setCurrentIndex(num)
-            draw_changed(num)
+            draw.setCurrentIndex(DEFAULT_TRACE)
+            draw_changed(DEFAULT_TRACE)
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
