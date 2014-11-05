@@ -48,7 +48,7 @@ class SpecAController(QtCore.QObject):
         self._options = {}
         self._plot_options = {}
         self.developer_mode = developer_mode
-
+        self.was_sweeping = False
 
     def set_device(self, dut=None, playback_filename=None):
         """
@@ -166,7 +166,9 @@ class SpecAController(QtCore.QObject):
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
-            self._state.rbw)
+            self._state.rbw,
+            force_change = self.was_sweeping)
+        self.was_sweeping = False
 
     def read_sweep(self):
         self._apply_pending_user_xrange()
@@ -182,6 +184,7 @@ class SpecAController(QtCore.QObject):
             self._state.rbw,
             device_set,
             mode=self._state.rfe_mode())
+        self.was_sweeping = True
 
     def start_capture(self):
         if self._playback_file:

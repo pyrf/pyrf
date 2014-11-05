@@ -686,7 +686,7 @@ class WSA(object):
             errors.append((num, message))
         yield errors
 
-    def apply_device_settings(self, settings):
+    def apply_device_settings(self, settings, force_change = False):
         """
         This command takes a dict of device settings, and applies them to the 
         WSA
@@ -712,6 +712,9 @@ class WSA(object):
             }
 
         for k, v in settings.iteritems():
+            if force_change:
+                self.device_state[k] = v
+                device_setting[k](v)
             #FIXME: Find more elegant way to do this
             if not k in self.device_state:
                 self.device_state[k] = v
