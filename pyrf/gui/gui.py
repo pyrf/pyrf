@@ -470,7 +470,8 @@ class MainPanel(QtGui.QWidget):
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
-        vsplit.addWidget(self._plot.window)
+        vsplit.addWidget(self._plot.spectral_window)
+
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
         
@@ -547,6 +548,7 @@ class MainPanel(QtGui.QWidget):
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
         diff_label.setSizePolicy(sizePolicy)
+
         self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label

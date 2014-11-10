@@ -7,13 +7,13 @@ from PySide import QtCore
 from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui import fonts
+from pyrf.gui.widgets import SpectralWidget
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
                                               decay_fn_EXPONENTIAL)
 from pyrf.gui.plot_tools import Marker, Trace, InfiniteLine, triggerControl
-from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
@@ -53,9 +53,9 @@ class Plot(QtCore.QObject):
         self.plot_state = {}
 
         # initialize main fft window
+        self.spectral_window = SpectralWidget(controller)
+        self.window = self.spectral_window.window
 
-        self.freq_axis = RTSAFrequencyAxisItem()
-        self.window = pg.PlotWidget(axisItems = dict(bottom = self.freq_axis))
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
@@ -74,6 +74,7 @@ class Plot(QtCore.QObject):
 
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
         self.window.setLabel('top')
+        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
 
         # horizontal cursor line
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
