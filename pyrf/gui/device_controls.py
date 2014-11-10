@@ -248,11 +248,12 @@ class DeviceControls(QtGui.QWidget):
                     self._level_trigger.click()
 
         if 'mode' in changed:
+
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 # forcibly disable triggers
                 if self._level_trigger.isChecked():
                     self._level_trigger.click()
-                    self._trig_state(False)
+                self._trig_state(False)
                 self._level_trigger.setEnabled(False)
 
             else:
@@ -271,7 +272,7 @@ class DeviceControls(QtGui.QWidget):
 
 
         if 'device_settings.iq_output_path' in changed:
-            if 'CONNECTOR' in state.device_settings['iq_output_path']:
+            if 'CONNECTOR' == state.device_settings['iq_output_path']:
                 # remove all digitizer controls
                 self._dec_box.setEnabled(False)
                 self._fshift_edit.setEnabled(False)
@@ -284,18 +285,19 @@ class DeviceControls(QtGui.QWidget):
                 self._trig_fstop_label.setEnabled(False)
                 self._trig_amp_label.setEnabled(False)
 
-            elif 'DIGITIZER' in state.device_settings['iq_output_path']:
-                # show digitizer controls
-                self._dec_box.setEnabled(True)
-                self._fshift_edit.setEnabled(True)
-                self._fshift_label.setEnabled(True)
-                self._trig_fstart.setEnabled(True)
-                self._trig_fstop.setEnabled(True)
-                self._trig_amp.setEnabled(True)
-                self._level_trigger.setEnabled(True)
-                self._trig_fstart_label.setEnabled(True)
-                self._trig_fstop_label.setEnabled(True)
-                self._trig_amp_label.setEnabled(True)
+            elif 'DIGITIZER' == state.device_settings['iq_output_path']:
+                # enable digitizer controls
+                if not self.gui_state.device_settings['iq_output_path']  == 'DIGITIZER':
+                    self._dec_box.setEnabled(True)
+                    self._fshift_edit.setEnabled(True)
+                    self._fshift_label.setEnabled(True)
+                    self._trig_fstart.setEnabled(True)
+                    self._trig_fstop.setEnabled(True)
+                    self._trig_amp.setEnabled(True)
+                    self._level_trigger.setEnabled(True)
+                    self._trig_fstart_label.setEnabled(True)
+                    self._trig_fstop_label.setEnabled(True)
+                    self._trig_amp_label.setEnabled(True)
 
         if 'device_settings.trigger' in changed:
             if state.device_settings['trigger']['type'] == 'LEVEL':
@@ -306,7 +308,7 @@ class DeviceControls(QtGui.QWidget):
             else:
                 if self._level_trigger.checkState():
                     self._level_trigger.click()
-
+        self.gui_state = state
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
