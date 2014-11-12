@@ -222,7 +222,7 @@ class Plot(QtCore.QObject):
                 t.compute_channel_power()
         if 'y_axis' in changed:
             self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
-
+            self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
