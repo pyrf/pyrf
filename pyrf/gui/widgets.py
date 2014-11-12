@@ -3,6 +3,9 @@ General-purpose widgets
 """
 from PySide import QtGui, QtCore
 import pyqtgraph as pg
+from pyrf.gui import colors
+from pyrf.gui import fonts
+from pyrf.units import M, G
 class QComboBoxPlayback(QtGui.QComboBox):
     """
     QComboBox with playback features
@@ -94,3 +97,71 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         rval = super(QDoubleSpinBoxPlayback, self).stepBy(steps)
         self.editingFinished.emit()
 
+class SpectralWidget(QtGui.QWidget):
+    """
+    A widget based from the Qt widget with a layout that represents the Fstart/Fstop and Fcenter
+    if the curret spectral plot
+    """
+
+    def __init__(self, controller):
+        super(SpectralWidget, self).__init__()
+
+        self.controller = controller
+        controller.device_change.connect(self.device_changed)
+        controller.state_change.connect(self.state_changed)
+
+        self._create_controls()
+        self.setLayout(QtGui.QGridLayout())
+        self._build_layout()
+
+    def _create_controls(self):
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
+
+        self._fstart_label = QtGui.QLabel('FSTART')
+        self._fstart_label.setSizePolicy(sizePolicy)
+        self._fstart_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._fstart_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._fstop_label = QtGui.QLabel('FSTOP')
+        self._fstop_label.setSizePolicy(sizePolicy)
+        self._fstop_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._fstop_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._fcenter_label = QtGui.QLabel('FCENTER')
+        self._fcenter_label.setSizePolicy(sizePolicy)
+        self._fcenter_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._fcenter_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._mask_label = QtGui.QLabel()
+        self._mask_label.setStyleSheet('background-color: black')
+        self.window = pg.PlotWidget()
+    def _build_layout(self):
+        
+        grid = self.layout()
+        grid.setSpacing(0)
+        grid.setHorizontalSpacing(0)
+
+        grid.addWidget(self.window, 0, 0, 1, 4)
+        grid.addWidget(self._mask_label, 1, 0, 1, 4)
+        grid.addWidget(self._fstart_label, 1, 1, 1, 1)
+        grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
+        grid.addWidget(self._fstop_label, 1, 3, 1, 1)
+
+    def device_changed(self, dut):
+        self.dut_prop = dut.properties
+
+    def state_changed(self, state, changed):
+        self.gui_state = state
+
+        if 'span' in changed or 'center' in changed:
+            fstart = state.center - (state.span/ 2)
+            fstop = state.center + (state.span / 2)
+            if int(state.center) > G:
+                unit = 'GHz'
+                div = G
+            else:
+                unit = 'MHz'
+                div = M
+            self._fstart_label.setText('Fstart (%s): %0.4f' % (unit, fstart / div))
+            self._fcenter_label.setText('Fcenter (%s): %0.4f' % (unit, state.center / div))
+            self._fstop_label.setText('Fstop (%s): %0.4f' % (unit, fstop / div))

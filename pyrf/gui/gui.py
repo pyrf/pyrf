@@ -435,7 +435,7 @@ class MainPanel(QtGui.QWidget):
         self.marker_labels = []
         marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 2, self.plot_width)
+        grid.addWidget(self._mask_label, 0, 0, 15, 11)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
         grid.addWidget(diff_label , 0, 7, 1, 2)
@@ -470,7 +470,8 @@ class MainPanel(QtGui.QWidget):
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
-        vsplit.addWidget(self._plot.window)
+        vsplit.addWidget(self._plot.spectral_window)
+
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
         
@@ -547,6 +548,7 @@ class MainPanel(QtGui.QWidget):
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
         diff_label.setSizePolicy(sizePolicy)
+
         self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label
