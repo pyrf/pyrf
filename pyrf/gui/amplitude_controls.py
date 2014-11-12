@@ -25,7 +25,6 @@ class AmplitudeControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-        controller.capture_receive.connect(self.capture_received)
         controller.plot_change.connect(self.plot_changed)
         self._plot = plot
 
@@ -35,7 +34,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._create_controls()
         self._connect_device_controls()
         self._connect_plot_controls()
-
+        self.plot_state = {'y_axis': [PLOT_TOP, PLOT_BOTTOM]}
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
         attenuator_box.setChecked(True)
@@ -123,15 +122,12 @@ class AmplitudeControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(True)
                 self._min_level.setEnabled(True)
+
     def plot_changed(self, state, changed):
+        self.plot_state = state
         if 'y_axis' in changed:
             self._min_level.quiet_update(value = int(min(state['y_axis'])))
             self._max_level.quiet_update(value = int(max(state['y_axis'])))
-
-    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
-        # save x,y data for marker adjustments
-        self.pow_data = power
-        self.xdata = np.linspace(fstart, fstop, len(power))
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
@@ -150,10 +146,20 @@ class AmplitudeControls(QtGui.QWidget):
         self._reference_offset_spinbox.editingFinished.connect(change_reference_offset_value)
 
     def _connect_plot_controls(self):
-        def update_plot_y_axis():
-            self.controller.apply_plot_options(y_axis = [self._max_level.value(), self._min_level.value()])
-        self._min_level.valueChanged.connect(update_plot_y_axis)
-        self._max_level.valueChanged.connect(update_plot_y_axis)
+        def update_plot_min():
+            if self._min_level.value() > self._max_level.value():
+                self._min_level.quiet_update(value = int(min(self.plot_state['y_axis'])))
+            else:
+                self.controller.apply_plot_options(y_axis = [self._max_level.value(), self._min_level.value()])
+
+        def update_plot_max():
+            if self._max_level.value() < self._min_level.value():
+                self._max_level.quiet_update(value = int(max(self.plot_state['y_axis'])))
+            else:
+                self.controller.apply_plot_options(y_axis = [self._max_level.value(), self._min_level.value()])
+
+        self._min_level.editingFinished.connect(update_plot_min)
+        self._max_level.editingFinished.connect(update_plot_max)
 
     def get_max_level(self):
         return self._max_level.value()
