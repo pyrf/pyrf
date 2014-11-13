@@ -450,7 +450,12 @@ class SpecAController(QtCore.QObject):
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:
                 changed.append('span')
-
+        else:
+            span = self._dut.properties.DEFAULT_SPECA_SPAN
+            state = SpecAState(state, span=self._dut.properties.DEFAULT_SPECA_SPAN)
+            changed = [x for x in changed if x != 'span']
+            if not self._state or span != self._state.span:
+                changed.append('span')
         self._state = state
 
         # start capture loop again when user switches output path
@@ -491,8 +496,6 @@ class SpecAController(QtCore.QObject):
         if self._state is None:
             logger.warn('apply_settings with _state == None: %r' % kwargs)
             return
-        if kwargs.get('mode') in ('Sweep SH', 'Sweep ZIF'):
-                kwargs['span'] = self._dut.properties.DEFAULT_SPECA_SPAN
 
         state = SpecAState(self._state, **kwargs)
         self._state_changed(state, kwargs.keys())
