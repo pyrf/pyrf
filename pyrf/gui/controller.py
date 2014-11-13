@@ -48,7 +48,7 @@ class SpecAController(QtCore.QObject):
         self._options = {}
         self._plot_options = {}
         self.developer_mode = developer_mode
-
+        self.was_sweeping = False
 
     def set_device(self, dut=None, playback_filename=None):
         """
@@ -166,7 +166,9 @@ class SpecAController(QtCore.QObject):
         self._capture_device.capture_time_domain(
             self._state.mode,
             self._state.center,
-            self._state.rbw)
+            self._state.rbw,
+            force_change = self.was_sweeping)
+        self.was_sweeping = False
 
     def read_sweep(self):
         self._apply_pending_user_xrange()
@@ -182,6 +184,7 @@ class SpecAController(QtCore.QObject):
             self._state.rbw,
             device_set,
             mode=self._state.rfe_mode())
+        self.was_sweeping = True
 
     def start_capture(self):
         if self._playback_file:
@@ -447,7 +450,10 @@ class SpecAController(QtCore.QObject):
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:
                 changed.append('span')
-
+        elif 'mode' in changed and 'span' not in changed:
+            span = self._dut.properties.DEFAULT_SPECA_SPAN
+            state = SpecAState(state, span=span)
+            changed.append('span')
         self._state = state
 
         # start capture loop again when user switches output path
@@ -476,6 +482,7 @@ class SpecAController(QtCore.QObject):
             self._capture_device.configure_device(device_settings)
 
         changed = ['device_settings.%s' % s for s in kwargs]
+
         self._state_changed(state, changed)
 
     def apply_settings(self, **kwargs):

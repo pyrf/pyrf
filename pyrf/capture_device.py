@@ -41,7 +41,7 @@ class CaptureDevice(object):
         self.packets_per_block = 1
         self.packets_read = 0
         self.points = 0
-    def configure_device(self, device_settings):
+    def configure_device(self, device_settings, force_change = False):
         """
         Configure the device settings on the next capture
 
@@ -49,12 +49,12 @@ class CaptureDevice(object):
                                 and other device settings
         :type dict:
         """
-        self.real_device.apply_device_settings(device_settings)
+        self.real_device.apply_device_settings(device_settings, force_change)
         for param in device_settings:
             self._device_set[param] = device_settings[param]
 
     def capture_time_domain(self, rfe_mode, freq, rbw, device_settings=None,
-            min_points=128):
+            min_points=128, force_change = False):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
@@ -74,11 +74,7 @@ class CaptureDevice(object):
         self.configure_device(dict(
             freq=freq,
             rfe_mode=rfe_mode,
-            **(device_settings if device_settings else {}))) 
-
-        if self._configure_device_flag:
-            self.real_device.apply_device_settings(self._device_set)
-            self._configure_device_flag = False
+            **(device_settings if device_settings else {})), force_change) 
 
         full_bw = prop.FULL_BW[rfe_mode]
         self.packets_per_block = 1
