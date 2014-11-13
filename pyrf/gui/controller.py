@@ -450,7 +450,7 @@ class SpecAController(QtCore.QObject):
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:
                 changed.append('span')
-        else:
+        elif 'mode' in changed and 'span' not in changed:
             span = self._dut.properties.DEFAULT_SPECA_SPAN
             state = SpecAState(state, span=self._dut.properties.DEFAULT_SPECA_SPAN)
             changed = [x for x in changed if x != 'span']
