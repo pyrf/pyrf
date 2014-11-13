@@ -216,7 +216,6 @@ class DeviceControls(QtGui.QWidget):
         self._build_layout(self.dut_prop)
 
     def state_changed(self, state, changed):
-        self.gui_state = state
 
         if state.playback:
             # for playback simply update everything on every state change
@@ -309,6 +308,7 @@ class DeviceControls(QtGui.QWidget):
                 if self._level_trigger.checkState():
                     self._level_trigger.click()
         self.gui_state = state
+
     def _trig_state(self, state):
         self._trig_fstart.setEnabled(state)
         self._trig_amp.setEnabled(state)
