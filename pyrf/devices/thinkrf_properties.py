@@ -250,4 +250,5 @@ class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD')
 
