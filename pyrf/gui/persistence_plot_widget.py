@@ -145,6 +145,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         #it after initializing the PersistencePlotWidget.
         self.gradient_editor = pg.GradientWidget(parent = self,
                                                  orientation = "left")
+        self.gradient_editor.setStyleSheet('background-color: black')
         self.gradient_editor.loadPreset("rycb") #we injected this scheme
         self.gradient_editor.sigGradientChanged.connect(self._onGradientChange)
         self._LUT_PTS = 256
