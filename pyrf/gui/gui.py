@@ -455,7 +455,7 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
-        self._add_docking_controls(self._trace_controls(), "Plot Control")
+        self._add_docking_controls(self._trace_controls(), "Trace Control")
 
         self._grid = grid
         self.setLayout(grid)
