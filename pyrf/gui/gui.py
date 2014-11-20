@@ -218,6 +218,7 @@ class MainWindow(QtGui.QMainWindow):
         self.device_info.setDisabled(False)
         self._device_address = playback_filename
         self.controller.set_device(playback_filename=playback_filename)
+        self.setWindowTitle('PyRF RTSA: ' + __version__ +' Playback Recording: ' + playback_filename)
         self.show()
 
     def device_changed(self, dut):
