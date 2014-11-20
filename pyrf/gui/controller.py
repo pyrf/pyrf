@@ -26,7 +26,7 @@ class SpecAController(QtCore.QObject):
     _dut = None
     _sweep_device = None
     _capture_device = None
-    _plot_state = None
+    _plot_options = None
     _state = None
     _recording_file = None
     _csv_file = None
@@ -36,7 +36,7 @@ class SpecAController(QtCore.QObject):
     _user_xrange_control_enabled = True
     _pending_user_xrange = None
     _applying_user_xrange = False
-
+    _single_capture = False
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
@@ -46,7 +46,7 @@ class SpecAController(QtCore.QObject):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
-        self._plot_options = {}
+        self._plot_options = {'cont_cap_mode': True}
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -155,111 +155,120 @@ class SpecAController(QtCore.QObject):
             self._applying_user_xrange = False
 
     def read_block(self):
-        self._apply_pending_user_xrange()
-        device_set = dict(self._state.device_settings)
-        device_set['decimation'] = self._state.decimation
-        device_set['fshift'] = self._state.fshift
-        device_set['rfe_mode'] = self._state.rfe_mode()
-        device_set['freq'] = self._state.center
-        self._capture_device.configure_device(device_set)
+        if self._plot_options['cont_cap_mode'] or self._single_capture:
+            self._apply_pending_user_xrange()
+            device_set = dict(self._state.device_settings)
+            device_set['decimation'] = self._state.decimation
+            device_set['fshift'] = self._state.fshift
+            device_set['rfe_mode'] = self._state.rfe_mode()
+            device_set['freq'] = self._state.center
+            self._capture_device.configure_device(device_set)
 
-        self._capture_device.capture_time_domain(
-            self._state.mode,
-            self._state.center,
-            self._state.rbw,
-            force_change = self.was_sweeping)
-        self.was_sweeping = False
+            self._capture_device.capture_time_domain(
+                self._state.mode,
+                self._state.center,
+                self._state.rbw,
+                force_change = self.was_sweeping)
+            self.was_sweeping = False
+        self._single_capture = False
 
     def read_sweep(self):
-        self._apply_pending_user_xrange()
-        device_set = dict(self._state.device_settings)
-        # device_set.pop('pll_reference')
-        device_set.pop('iq_output_path')
-        device_set.pop('trigger')
-        self._dut.pll_reference(device_set['pll_reference'])
-        device_set.pop('pll_reference')
-        self._sweep_device.capture_power_spectrum(
-            self._state.center - self._state.span / 2.0,
-            self._state.center + self._state.span / 2.0,
-            self._state.rbw,
-            device_set,
-            mode=self._state.rfe_mode())
-        self.was_sweeping = True
+        if self._plot_options['cont_cap_mode'] or self._single_capture:
+            self._apply_pending_user_xrange()
+            device_set = dict(self._state.device_settings)
+            # device_set.pop('pll_reference')
+            device_set.pop('iq_output_path')
+            device_set.pop('trigger')
+            self._dut.pll_reference(device_set['pll_reference'])
+            device_set.pop('pll_reference')
+            self._sweep_device.capture_power_spectrum(
+                self._state.center - self._state.span / 2.0,
+                self._state.center + self._state.span / 2.0,
+                self._state.rbw,
+                device_set,
+                mode=self._state.rfe_mode())
+            self.was_sweeping = True
+        self._single_capture = False
 
-    def start_capture(self):
-        if self._playback_file:
-            self.schedule_playback()
-        elif self._state.sweeping():
-            self.read_sweep()
-        else:
-            self.read_block()
+    def start_capture(self, single = False):
+        self._single_capture = single
+        if self._plot_options['cont_cap_mode'] or single:
+            if self._playback_file:
+                self.schedule_playback()
+            elif self._state.sweeping():
+                self.read_sweep()
+            else:
+                self.read_block()
+        self._single_capture = False
 
     def schedule_playback(self):
         if not self._playback_started:
             QtCore.QTimer.singleShot(0, self._playback_step)
             self._playback_started = True
 
-    def _playback_step(self):
-        if not self._playback_file:
-            self._playback_started = False
-            return
-
-        QtCore.QTimer.singleShot(PLAYBACK_STEP_MSEC, self._playback_step)
-
-        while True:
-            pkt = self._playback_vrt()
-
-            if pkt.is_context_packet():
-                if 'speca' in pkt.fields:
-                    self._playback_sweep_data = None
-                    state_json = pkt.fields['speca']
-                    self._apply_complete_settings(state_json, playback=True)
-                else:
-                    self._playback_context.update(pkt.fields)
-                continue
-
-            if self._state.sweeping():
-                if not self._playback_sweep_step(pkt):
-                    continue
+    def _playback_step(self, single = False):
+        if self._plot_options['cont_cap_mode'] or self._single_capture:
+            if not self._playback_file:
+                self._playback_started = False
                 return
-            break
 
-        usable_bins = compute_usable_bins(
-            self._dut.properties,
-            self._state.rfe_mode(),
-            len(pkt.data),
-            self._state.decimation,
-            self._state.fshift)
+            QtCore.QTimer.singleShot(PLAYBACK_STEP_MSEC, self._playback_step)
 
-        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
-            self._dut.properties,
-            self._state.rfe_mode(),
-            len(pkt.data),
-            self._state.decimation,
-            self._state.center,
-            pkt.spec_inv,
-            usable_bins)
+            while True:
+                pkt = self._playback_vrt()
 
-        pow_data = compute_fft(
-            self._dut,
-            pkt,
-            self._playback_context,
-            **self._dsp_options)
+                if pkt.is_context_packet():
+                    if 'speca' in pkt.fields:
+                        self._playback_sweep_data = None
+                        state_json = pkt.fields['speca']
+                        self._apply_complete_settings(state_json, playback=True)
+                    else:
+                        self._playback_context.update(pkt.fields)
+                    continue
 
-        if not self._options.get('show_attenuated_edges'):
-            pow_data, usable_bins, fstart, fstop = (
-                trim_to_usable_fstart_fstop(
-                    pow_data, usable_bins, fstart, fstop))
-        if self._export_csv:
-            self._export_csv_file(self._state.rfe_mode(), fstart, fstop, pow_data)
-        self.capture_receive.emit(
-            self._state,
-            fstart,
-            fstop,
-            pkt,
-            pow_data,
-            usable_bins,
-            None)
+                if self._state.sweeping():
+                    if not self._playback_sweep_step(pkt):
+                        continue
+                    return
+                break
+
+            usable_bins = compute_usable_bins(
+                self._dut.properties,
+                self._state.rfe_mode(),
+                len(pkt.data),
+                self._state.decimation,
+                self._state.fshift)
+
+            usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+                self._dut.properties,
+                self._state.rfe_mode(),
+                len(pkt.data),
+                self._state.decimation,
+                self._state.center,
+                pkt.spec_inv,
+                usable_bins)
+
+            pow_data = compute_fft(
+                self._dut,
+                pkt,
+                self._playback_context,
+                **self._dsp_options)
+
+            if not self._options.get('show_attenuated_edges'):
+                pow_data, usable_bins, fstart, fstop = (
+                    trim_to_usable_fstart_fstop(
+                        pow_data, usable_bins, fstart, fstop))
+            if self._export_csv:
+                self._export_csv_file(self._state.rfe_mode(), fstart, fstop, pow_data)
+            self.capture_receive.emit(
+                self._state,
+                fstart,
+                fstop,
+                pkt,
+                pow_data,
+                usable_bins,
+                None)
+            self._single_capture = False
 
     def _playback_sweep_start(self):
         """

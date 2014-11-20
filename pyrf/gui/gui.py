@@ -35,7 +35,7 @@ from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 from pyrf.gui.measurements_widget import MeasurementControls
-
+from pyrf.gui.capture_widget import CaptureControls
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
     ('&Spectrogram', 'waterfall_plot', False),
@@ -451,6 +451,8 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(
             self._measurement_controls(), "Measurement Control")
         self._add_docking_controls(
+            self._capture_controls(), "Capture Control")
+        self._add_docking_controls(
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Plot Control")
@@ -514,10 +516,10 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self.measure_group)
         return self.measure_group
 
-    def _dsp_controls(self):
-        self._dsp_group = DSPWidget()
-        self.control_widgets.append(self._dsp_group)
-        return self._dsp_group
+    def _capture_controls(self):
+        self.capture_group = CaptureControls(self.controller)
+        self.control_widgets.append(self.capture_group)
+        return self.capture_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
