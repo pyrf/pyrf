@@ -10,9 +10,9 @@ MODE_TO_TEXT = {
     'ZIF': '100 MHz span',
     'SH': '40 MHz span',
     'SHN': '10 MHz span',
-    'HDR': '0.1 MHz span (high dynamic range)',
-    'DD': '0 to 50 MHz (no tuning)',
-    'IQIN': 'IQ input 100 MHz span (no tuning)',
+    'HDR': '0.1 MHz span',
+    'DD': 'Baseband',
+    'IQIN': 'IQIN',
 }
 TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
@@ -46,7 +46,7 @@ class CaptureControls(QtGui.QWidget):
         self._single_button = QtGui.QPushButton('Single')
 
         self._mode_label = QtGui.QLabel('Mode:')
-        self._mode_label.setMaximumWidth(40)
+        # self._mode_label.setMaximumWidth(40)
         self._mode = QComboBoxPlayback()
         self._mode.setToolTip("Change the device input mode")
 
