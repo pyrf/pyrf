@@ -28,6 +28,8 @@ def wsa_properties(device_id):
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
         p = WSA5000_108Properties()
+    elif model == 'WSA5000-408':
+        p = WSA5000_408Properties()
     else:
         p = WSA5000_220Properties()
 
@@ -154,7 +156,7 @@ class WSA5000_220Properties(object):
     DECIMATED_USABLE = 0.80
     PASS_BAND_CENTER = {
         'ZIF': 0.5,
-        'HDR': 0.5,
+        'HDR': 0.50176,
         'SH': 0.56,
         'SHN': 0.56,
         'DEC_SH': 0.5,
@@ -178,12 +180,12 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-
+    DEFAULT_SPECA_SPAN = 125 * M
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450 * M,
         'rbw': 122070,
-        'span': 125 * M,
+        'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
         'fshift': 0,
         'device_settings': {
@@ -201,7 +203,10 @@ class WSA5000_220Properties(object):
         }
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
-    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+    MAX_SPP = 32768
+
+    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
+    DEFAULT_RBW_INDEX = 4
     RBW_VALUES = {}
     for mode in RFE_MODES:
         if DEFAULT_SAMPLE_TYPE[mode] == I_ONLY:
@@ -213,7 +218,7 @@ class WSA5000_220Properties(object):
             # FIXME: this is workaround for SPP limit in the sweep device
             if div == 1 and s == SAMPLE_SIZES[-1]:
                 break
-            rbw_vals.append(FULL_BW[mode] / (s / div))
+            rbw_vals.append((FULL_BW[mode] / s) * div)
         RBW_VALUES[mode] = rbw_vals
     IQ_OUTPUT_CONNECTOR = True
 
@@ -243,4 +248,7 @@ class WSA5000_108Properties(WSA5000_208Properties):
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
 
+class WSA5000_408Properties(WSA5000_208Properties):
+    model = 'WSA5000-408'
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD')
 

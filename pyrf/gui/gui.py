@@ -141,6 +141,7 @@ class MainWindow(QtGui.QMainWindow):
         for text, option, default in VIEW_OPTIONS:
             self.view_menu.addAction(checkbox_action(
                 self.controller.apply_options, text, option, default))
+        self.view_menu.addSeparator()
 
         if developer_menu:
             self.developer_menu = menubar.addMenu('D&eveloper Options')
@@ -318,7 +319,6 @@ class MainPanel(QtGui.QWidget):
         self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
-
         self.enable_controls()
 
     def state_changed(self, state, changed):
@@ -327,6 +327,7 @@ class MainPanel(QtGui.QWidget):
         :param state: new SpecAState object
         :param changed: list of attribute names changed
         """
+
         self.gui_state = state
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
@@ -337,18 +338,14 @@ class MainPanel(QtGui.QWidget):
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
 
                 self._plot.center_view(freq,
-                                       full_bw,
-                                       self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_max_level())
+                                       full_bw)
                 self._plot.center_iq_plots()
             else:
                 freq = state.center
                 full_bw = state.span
 
                 self._plot.center_view(freq - full_bw/2,
-                                        freq + full_bw/2,
-                                       self._amplitude_group.get_min_level(),
-                                       self._amplitude_group.get_max_level())
+                                        freq + full_bw/2)
                 self._plot.center_iq_plots()
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
@@ -438,7 +435,7 @@ class MainPanel(QtGui.QWidget):
         self.marker_labels = []
         marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 2, self.plot_width)
+        grid.addWidget(self._mask_label, 0, 0, 15, 11)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
         grid.addWidget(diff_label , 0, 7, 1, 2)
@@ -449,25 +446,32 @@ class MainPanel(QtGui.QWidget):
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
-        y = 0
-        x = self.plot_width
-        controls_layout = QtGui.QVBoxLayout()
 
-        controls_layout.addWidget(self._freq_controls())
-        controls_layout.addWidget(self._measurement_controls())
-        controls_layout.addWidget(self._amplitude_controls())
-        controls_layout.addWidget(self._device_controls())
-        controls_layout.addWidget(self._trace_controls())
-        controls_layout.addStretch()
-        grid.addLayout(controls_layout, y, x, 14, 5)
+        self._add_docking_controls(self._freq_controls(), "Frequency Control")
+        self._add_docking_controls(
+            self._measurement_controls(), "Measurement Control")
+        self._add_docking_controls(
+            self._amplitude_controls(), "Amplitude Control")
+        self._add_docking_controls(self._device_controls(), "Device Control")
+        self._add_docking_controls(self._trace_controls(), "Plot Control")
 
         self._grid = grid
         self.setLayout(grid)
 
+    def _add_docking_controls(self, widget, title):
+        dock = QtGui.QDockWidget(title, self)
+        dock.setAllowedAreas(
+            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+        dock.setWidget(widget)
+        # FIXME we should be doing this in the MainWindow
+        self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        self._main_window.view_menu.addAction(dock.toggleViewAction())
+
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
-        vsplit.addWidget(self._plot.window)
+        vsplit.addWidget(self._plot.spectral_window)
+
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
         
@@ -544,6 +548,7 @@ class MainPanel(QtGui.QWidget):
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
         diff_label.setSizePolicy(sizePolicy)
+
         self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label
@@ -574,14 +579,12 @@ class MainPanel(QtGui.QWidget):
         :param usable: usable bins from power (None when sweeping)
         :param segments: bin segments from power (None when not sweeping)
         """
-
         self.raw_data = raw
         self.pow_data = power
         self.usable_bins = usable
         self.sweep_segments = segments
 
         self.xdata = np.linspace(fstart, fstop, len(power))
-
         self.update_trace()
         self.update_marker()
         self.update_diff()
@@ -589,9 +592,7 @@ class MainPanel(QtGui.QWidget):
         if (not self.controller.applying_user_xrange() and
                 not self.controller.get_options()['free_plot_adjustment']):
             self._plot.center_view(fstart,
-                                   fstop,
-                                   self._amplitude_group.get_min_level(),
-                                   self._amplitude_group.get_max_level())
+                                   fstop)
 
         if self.iq_plots_enabled:
             self.update_iq()
@@ -663,7 +664,7 @@ class MainPanel(QtGui.QWidget):
                         marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
                         marker.update_pos(trace.freq_range, trace.data)
                         if self.gui_state.rfe_mode() == 'HDR':
-                            marker_text = 'M%d: %0.4f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
+                            marker_text = 'M%d: %0.8f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                            trace.data[marker.data_index])
                         else:
                             marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
@@ -695,7 +696,7 @@ class MainPanel(QtGui.QWidget):
             power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
             self._diff_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
             if self.gui_state.rfe_mode() == 'HDR':
-                delta_text = 'Delta: %0.2f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
+                delta_text = 'Delta: %0.8f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
             else:
                 delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
             self._diff_label.setText(delta_text)
@@ -714,6 +715,7 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
+
 
     def disable_controls(self):
         for item in self.control_widgets:

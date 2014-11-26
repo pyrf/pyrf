@@ -3,7 +3,7 @@ import array
 import sys
 import zlib
 import json
-
+import numpy as np
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
 VRTDATA = 1
@@ -243,6 +243,9 @@ class IQData(object):
     def __init__(self, binary_data):
         self._strdata = binary_data
         self._data = None
+        self.np_array = np.frombuffer(self._strdata, dtype=np.int16)
+        self.np_array = self.np_array.newbyteorder('>')
+        self.np_array.shape = (-1, 2)
 
     def _update_data(self):
         self._data = array.array('h')
@@ -273,23 +276,8 @@ class IQData(object):
     def numpy_array(self):
         """
         Return a numpy array of I, Q values for this data similar to:
-
-        .. code-block:: python
-
-           array([[ -44,    8],
-                  [ -40,   60],
-                  [ -12,   92],
-                  ...,
-                  [-132,   -8],
-                  [-124,   56],
-                  [ -44,   80]], dtype=int16)
         """
-        import numpy
-        a = numpy.frombuffer(self._strdata, dtype=numpy.int16)
-        a = a.newbyteorder('>')
-        a.shape = (-1, 2)
-        return a
-
+        return self.np_array
 
 class DataArray(object):
     """
@@ -302,6 +290,17 @@ class DataArray(object):
         self._strdata = binary_data
         self._bytes_per_sample = bytes_per_sample
         self._data = None
+        self._init_numpy_array()
+
+    def _init_numpy_array(self):
+
+        self.np_array = np.frombuffer(self._strdata, dtype={
+            1: np.int8,
+            2: np.int16,
+            4: np.int32,}[self._bytes_per_sample])
+        if self._bytes_per_sample > 1:
+            self.np_array = self.np_array.newbyteorder('>')
+
 
     def _update_data(self):
         self._data = array.array({
@@ -335,15 +334,7 @@ class DataArray(object):
         """
         return a numpy array for this data
         """
-        import numpy
-        a = numpy.frombuffer(self._strdata, dtype={
-            1: numpy.int8,
-            2: numpy.int16,
-            4: numpy.int32,}[self._bytes_per_sample])
-        if self._bytes_per_sample > 1:
-            a = a.newbyteorder('>')
-        return a
-
+        return self.np_array
 
 class DataPacket(object):
     """

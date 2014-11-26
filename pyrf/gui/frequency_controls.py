@@ -4,7 +4,7 @@ from pyrf.units import M
 from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
-
+from pyrf.sweep_device import MAXIMUM_SPP as MAXIMUM_SWEEP_SPP
 # FIXME: move to device properties?
 MODE_TO_TEXT = {
     'Sweep SH': 'Sweep',
@@ -18,17 +18,15 @@ MODE_TO_TEXT = {
 }
 TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
-class FrequencyControls(QtGui.QGroupBox):
+class FrequencyControls(QtGui.QWidget):
 
-    def __init__(self, controller, name="Frequency Control"):
+    def __init__(self, controller):
         super(FrequencyControls, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
 
-        self.setTitle(name)
-        self.setStyleSheet(GROUP_BOX_FONT)
         grid = QtGui.QGridLayout()
 
         mode_label, mode = self._input_mode()
@@ -65,9 +63,10 @@ class FrequencyControls(QtGui.QGroupBox):
         grid.setColumnStretch(3, 3)
         grid.setColumnStretch(4, 9)
 
+        grid.setRowStretch(4, 1) # expand empty space at the bottom
+
         self.setLayout(grid)
-
-
+        self.resize_widget()
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
@@ -138,6 +137,9 @@ class FrequencyControls(QtGui.QGroupBox):
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._update_modes()
                 self._rbw_box.setEnabled(True)
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def _input_mode(self):
         self._mode_label = QtGui.QLabel('Mode:')
@@ -293,19 +295,23 @@ class FrequencyControls(QtGui.QGroupBox):
         populate RBW drop-down with reasonable values for the current mode
         """
         if hasattr(self, 'gui_state'):
-            mode = self.gui_state.rfe_mode()
+            rfe_mode = self.gui_state.rfe_mode()
+            speca_mode = self.gui_state.mode
 
-            self._rbw_values = self.dut_prop.RBW_VALUES[mode]
-            if mode == 'HDR':
+            self._rbw_values = self.dut_prop.RBW_VALUES[rfe_mode]
+            if rfe_mode == 'HDR':
                 unit = 'Hz'
                 div = 1
             else:
                 unit = 'KHz'
                 div = 1000
+            if 'Sweep' in speca_mode:
+                min_rbw = self.dut_prop.FULL_BW[rfe_mode] / 16384
+                self._rbw_values = [i for i in self._rbw_values if i > min_rbw]
             self._rbw_box.quiet_update(
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
-            self._rbw_box.setCurrentIndex(self._rbw_box.count() - 1)
+            self._rbw_box.setCurrentIndex(self.dut_prop.DEFAULT_RBW_INDEX)
 
     def _update_modes(self, include_sweep=True, current_mode=None):
         modes = []
@@ -321,3 +327,5 @@ class FrequencyControls(QtGui.QGroupBox):
         self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
         self._mode.setEnabled(True)
 
+    def showEvent(self, event):
+        self.activateWindow()

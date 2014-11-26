@@ -938,6 +938,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         if self._show_ge:
             self._gradient_editor = pg.GradientWidget(parent = self,
                                                       orientation = "left")
+            self._gradient_editor.setStyleSheet('background-color: black')
             self._gradient_editor.loadPreset('waterfall')
         
         #configure the widgets...

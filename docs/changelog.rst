@@ -1,6 +1,34 @@
 
 Changelog
 ---------
+PyRF 2.7.1
+==========
+
+2014-11-13
+
+ * Discovery widget now queries for new WSA's on the network every 10 seconds
+
+ * Fixed issue where switching from sweep to non-sweep wrongly changed center
+  frequency
+
+ * Fixed issue where Minimum control not behaving as designed
+
+ * Fixed issue where trigger controls were not disabled for non-trigger modes
+
+ * Fixed frequency axis texts
+
+ * Y-axis in the persistence plot now corresponds with spectral plot's y-axis
+
+PyRF 2.7.0
+==========
+
+2014-11-04
+
+ * All control widgets are now dockable
+
+ * Enabled mouse control of spectral plot's y-axis
+
+ * Added lower RBW values in non-sweep modes
 
 PyRF 2.6.2
 ==========

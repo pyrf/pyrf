@@ -7,19 +7,19 @@ from PySide import QtCore
 from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui import fonts
+from pyrf.gui.widgets import SpectralWidget
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
                                               decay_fn_EXPONENTIAL)
 from pyrf.gui.plot_tools import Marker, Trace, InfiniteLine, triggerControl
-from pyrf.gui.freq_axis_widget import RTSAFrequencyAxisItem
 from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
-PLOT_YMIN = -160
-PLOT_YMAX = 20
+PLOT_YMIN = -5000
+PLOT_YMAX = 5000
 
 IQ_PLOT_YMIN = -1
 IQ_PLOT_YMAX = 1
@@ -53,9 +53,9 @@ class Plot(QtCore.QObject):
         self.plot_state = {}
 
         # initialize main fft window
+        self.spectral_window = SpectralWidget(controller)
+        self.window = self.spectral_window.window
 
-        self.freq_axis = RTSAFrequencyAxisItem()
-        self.window = pg.PlotWidget(axisItems = dict(bottom = self.freq_axis))
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
@@ -67,7 +67,6 @@ class Plot(QtCore.QObject):
         self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.view_box = self.window.plotItem.getViewBox()
-        self.view_box.setMouseEnabled(x = True, y = False)
 
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
@@ -75,6 +74,7 @@ class Plot(QtCore.QObject):
 
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
         self.window.setLabel('top')
+        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
 
         # horizontal cursor line
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
@@ -136,7 +136,7 @@ class Plot(QtCore.QObject):
 
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
-
+        self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
     def connect_plot_controls(self):
         def new_channel_power():
             if self.plot_state.get('channel_power'):
@@ -149,10 +149,13 @@ class Plot(QtCore.QObject):
                                                         'fstart':self.trigger_control.fstart,
                                                         'fstop': self.trigger_control.fstop,
                                                         'amplitude': self.trigger_control.amplitude})
+        def new_y_axis():
+            self.controller.apply_plot_options(y_axis = self.view_box.viewRange()[1])
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChangeFinished.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
         self.trigger_control.sigNewTriggerRange.connect(new_trigger)
+        self.window.sigYRangeChanged.connect(new_y_axis)
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
@@ -198,6 +201,7 @@ class Plot(QtCore.QObject):
                 self.remove_trigger()
 
     def plot_changed(self, state, changed):
+
         self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
@@ -216,7 +220,9 @@ class Plot(QtCore.QObject):
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
-
+        if 'y_axis' in changed:
+            self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+            self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
@@ -250,12 +256,9 @@ class Plot(QtCore.QObject):
         self.window.removeItem(self.trigger_control.amplitude_line)
         self._trig_enable = False
 
-    def center_view(self, fstart, fstop, min_level=None, ref_level=None):
+    def center_view(self, fstart, fstop):
         b = self.window.blockSignals(True)
         self.window.setXRange(float(fstart), float(fstop), padding=0)
-        if min_level is not None:
-            self.window.setYRange(min_level, ref_level)
-            self.persistence_window.setYRange(min_level, ref_level)
         self.window.blockSignals(b)
         self.persistence_window.setXRange(
             float(fstart),
@@ -287,15 +290,15 @@ class Plot(QtCore.QObject):
         print self.trigger_control.size()
 
     def update_iq_plots(self, data):
-
+        
         trace = self.traces[0]
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return
 
         if data.stream_id == VRT_IFDATA_I14Q14:
-            data = data.data.numpy_array()
-            i_data = np.array(data[:,0], dtype=float)/ZIF_BITS
-            q_data = np.array(data[:,1], dtype=float)/ZIF_BITS
+            i_data = np.array(data.data.numpy_array()[:,0], dtype=float)/ZIF_BITS
+            q_data = np.array(data.data.numpy_array()[:,1], dtype=float)/ZIF_BITS
+
             self.i_curve.setData(i_data)
             self.q_curve.setData(q_data)
             self.const_plot.clear()
@@ -305,16 +308,14 @@ class Plot(QtCore.QObject):
                 symbol = 'o',
                 size = 1, pen = 'y',
                 brush = 'y')
-
         else:
-            data_payload = data.data.numpy_array()
-            i_data = np.array(data_payload, dtype=float)
-
+            i_data = np.array(data.data.numpy_array(), dtype=float)
             if data.stream_id == VRT_IFDATA_I14:
                 i_data = i_data /ZIF_BITS
 
             elif data.stream_id == VRT_IFDATA_I24:
                 i_data = i_data / (np.mean(i_data)) - 1
+
             self.i_curve.setData(i_data)
             self.q_curve.clear()
 
