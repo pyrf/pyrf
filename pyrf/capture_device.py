@@ -49,7 +49,9 @@ class CaptureDevice(object):
                                 and other device settings
         :type dict:
         """
-        self.real_device.apply_device_settings(device_settings, force_change)
+        real_func = getattr(self.real_device, "apply_device_settings", None)
+        if callable(real_func):
+            self.real_device.apply_device_settings(device_settings, force_change)
         for param in device_settings:
             self._device_set[param] = device_settings[param]
 

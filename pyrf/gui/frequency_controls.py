@@ -5,18 +5,6 @@ from pyrf.gui import colors
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.sweep_device import MAXIMUM_SPP as MAXIMUM_SWEEP_SPP
-# FIXME: move to device properties?
-MODE_TO_TEXT = {
-    'Sweep SH': 'Sweep',
-    'Sweep ZIF': 'Sweep (100 MHz steps)',
-    'ZIF': '100 MHz span',
-    'SH': '40 MHz span',
-    'SHN': '10 MHz span',
-    'HDR': '0.1 MHz span (high dynamic range)',
-    'DD': '0 to 50 MHz (no tuning)',
-    'IQIN': 'IQ input 100 MHz span (no tuning)',
-}
-TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
 class FrequencyControls(QtGui.QWidget):
 
@@ -28,10 +16,6 @@ class FrequencyControls(QtGui.QWidget):
         controller.state_change.connect(self.state_changed)
 
         grid = QtGui.QGridLayout()
-
-        mode_label, mode = self._input_mode()
-        grid.addWidget(mode_label, 0, 0, 1, 1)
-        grid.addWidget(mode, 0, 1, 1, 4)
 
         cfreq_bt, cfreq_txt = self._center_freq()
         grid.addWidget(cfreq_bt, 1, 0, 1, 1)
@@ -67,17 +51,13 @@ class FrequencyControls(QtGui.QWidget):
 
         self.setLayout(grid)
         self.resize_widget()
+
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
-        self._update_modes()
 
     def state_changed(self, state, changed):
         self.gui_state = state
-
-        if state.playback:
-            # for playback simply update on every state change
-            self._mode.playback_value(MODE_TO_TEXT[state.mode])
 
         def enable_disable_edit_boxes():
             if state.sweeping():
@@ -118,7 +98,6 @@ class FrequencyControls(QtGui.QWidget):
             self._update_freq_edit()
 
         if 'playback' in changed:
-            self._update_modes(current_mode=state.mode)
             self._freq_edit.setEnabled(not state.playback)
             if state.playback:
                 self._rbw_box.playback_value(str(state.rbw))
@@ -129,33 +108,15 @@ class FrequencyControls(QtGui.QWidget):
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self._update_modes(include_sweep=False)
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
                 self._rbw_box.setEnabled(False)
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
-                self._update_modes()
                 self._rbw_box.setEnabled(True)
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
-
-    def _input_mode(self):
-        self._mode_label = QtGui.QLabel('Mode:')
-        self._mode = QComboBoxPlayback()
-        self._mode.setToolTip("Change the device input mode")
-
-        def new_input_mode():
-            input_mode = TEXT_TO_MODE[self._mode.currentText()]
-            if not input_mode:
-                return
-            self.controller.apply_settings(mode=input_mode)
-            #FIXME rfe_mode should not be in device settings dictionary
-            if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.controller.apply_device_settings(rfe_mode = input_mode)
-        self._mode.currentIndexChanged.connect(new_input_mode)
-        return self._mode_label, self._mode
 
     def _freq_incr(self):
         steps_label = QtGui.QLabel("Adjust:")
@@ -312,20 +273,6 @@ class FrequencyControls(QtGui.QWidget):
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
             self._rbw_box.setCurrentIndex(self.dut_prop.DEFAULT_RBW_INDEX)
-
-    def _update_modes(self, include_sweep=True, current_mode=None):
-        modes = []
-        if current_mode:
-            current_mode = MODE_TO_TEXT[current_mode]
-        if include_sweep:
-
-            modes.extend(self.dut_prop.SPECA_MODES)
-            if not self.controller.developer_mode:
-                modes.remove('Sweep ZIF')
-        modes.extend(self.dut_prop.RFE_MODES)
-
-        self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
-        self._mode.setEnabled(True)
 
     def showEvent(self, event):
         self.activateWindow()

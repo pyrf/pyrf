@@ -329,7 +329,7 @@ class Marker(object):
             self.cursor_line.setValue(xpos)
         self.marker_plot.addPoints(x = [xpos],
                                    y = [ypos],
-                                    symbol = '+',
+                                    symbol = 't',
                                     size = 25, pen = pg.mkPen(self.draw_color), 
                                     brush = self.draw_color)
 
