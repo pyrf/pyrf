@@ -59,7 +59,9 @@ class Plot(QtCore.QObject):
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
-
+            if hasattr(self, 'gui_state'):
+                if self.gui_state.mode == 'HDR':
+                    return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
