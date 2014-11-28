@@ -262,7 +262,18 @@ class Marker(object):
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         def dragged():
-            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
+            # determine index of click
+            index = np.abs(self.xdata-self.cursor_line.value()).argmin()
+            # calculate the region around the index to check for maximum value
+            index_region_offset = int(0.01 * len(self.ydata))
+
+            if int(min(self.xdata)) > int(min(self._plot.view_box.viewRange()[0])) or int(max(self.xdata)) > int(max(self._plot.view_box.viewRange()[0])):
+                self.data_index = index
+            else:
+                # position of marker is the maximum of the region surrounding the area where the user clicked
+                if (index - index_region_offset) > 0:
+                    self.data_index = np.where(self.ydata == max(self.ydata[index - index_region_offset: index + index_region_offset]))[0]
+
             self.cursor_line.setPen(cursor_pen)
             self.draw_color = colors.MARKER_HOVER
         self.cursor_line.sigDragged.connect(dragged)
