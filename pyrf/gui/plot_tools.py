@@ -271,7 +271,8 @@ class Marker(object):
                 self.data_index = index
             else:
                 # position of marker is the maximum of the region surrounding the area where the user clicked
-                self.data_index = np.where(self.ydata == max(self.ydata[index - index_region_offset: index + index_region_offset]))[0]
+                if (index - index_region_offset) > 0:
+                    self.data_index = np.where(self.ydata == max(self.ydata[index - index_region_offset: index + index_region_offset]))[0]
 
             self.cursor_line.setPen(cursor_pen)
             self.draw_color = colors.MARKER_HOVER
