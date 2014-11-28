@@ -276,6 +276,7 @@ class Marker(object):
 
             self.cursor_line.setPen(cursor_pen)
             self.draw_color = colors.MARKER_HOVER
+            self.update_pos(self.ydata, self.xdata)
         self.cursor_line.sigDragged.connect(dragged)
 
         def hovering():
