@@ -69,26 +69,6 @@ class DeviceControls(QtGui.QWidget):
         self._pll_box.setToolTip("Choose PLL Reference")
         self._pll_box.quiet_update(["Internal", "External"])
 
-        self._level_trigger = QCheckBoxPlayback("Level Trigger")
-        self._level_trigger.setToolTip("Enable Frequency Level Triggers")
-
-        self._trig_fstart_label = QtGui.QLabel("Start:")
-        self._trig_fstart = QDoubleSpinBoxPlayback()
-        # FIXME: use values from device properties
-        self._trig_fstart.setRange(0, 20000)
-        self._trig_fstart.setSuffix(" MHz")
-
-        self._trig_fstop_label = QtGui.QLabel("Stop:")
-        self._trig_fstop = QDoubleSpinBoxPlayback()
-        # FIXME: use values from device properties
-        self._trig_fstop.setRange(0, 20000)
-        self._trig_fstop.setSuffix(" MHz")
-
-        self._trig_amp_label = QtGui.QLabel("Level:")
-        self._trig_amp = QDoubleSpinBoxPlayback()
-        self._trig_amp.setSuffix(" dBm")
-        self._trig_amp.setRange(-2000, 2000)
-
     def _build_layout(self, dut_prop=None):
         features = dut_prop.SWEEP_SETTINGS if dut_prop else []
 
@@ -121,18 +101,6 @@ class DeviceControls(QtGui.QWidget):
             
             grid.addWidget(self._pll_label, 3, 0, 1, 1)
             grid.addWidget(self._pll_box, 3, 1, 1, 1)
-
-        grid.addWidget(self._level_trigger, 4, 0, 1, 2)
-
-        grid.addWidget(self._trig_fstart_label, 5, 0, 1, 1)
-        grid.addWidget(self._trig_fstart, 5, 1, 1, 1)
-
-        grid.addWidget(self._trig_fstop_label, 5, 3, 1, 1)
-        grid.addWidget(self._trig_fstop, 5, 4, 1, 1)
-        
-        grid.addWidget(self._trig_amp_label, 4, 3, 1, 1)
-        grid.addWidget(self._trig_amp, 4, 4, 1, 1)
-        self._trig_state(False)
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 8)
@@ -174,31 +142,6 @@ class DeviceControls(QtGui.QWidget):
             self.controller.apply_device_settings(
                 iq_output_path= str(self._iq_output_box.currentText().upper()))
 
-        def enable_trigger():
-            trigger_settings = self.gui_state.device_settings['trigger']
-            if self._level_trigger.isChecked():
-                self._trig_state(True)
-
-                start = self.gui_state.center - (self.gui_state.span / 4)
-                stop = self.gui_state.center + (self.gui_state.span / 4)
-                level = trigger_settings['amplitude']
-                self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                                                                'fstart': start,
-                                                                'fstop': stop,
-                                                                'amplitude': trigger_settings['amplitude']})
-            else:
-                self.controller.apply_device_settings(trigger = {'type': 'NONE',
-                                                                'fstart': trigger_settings['fstart'],
-                                                                'fstop': trigger_settings['fstop'],
-                                                                'amplitude': trigger_settings['amplitude']})
-                self._trig_state(False)
-
-        def new_trigger():
-            self.controller.apply_device_settings(trigger = {'type': 'LEVEL',
-                                                    'fstart': self._trig_fstart.value() * M,
-                                                    'fstop': self._trig_fstop.value() * M,
-                                                    'amplitude': self._trig_amp.value()})
-
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
@@ -206,10 +149,6 @@ class DeviceControls(QtGui.QWidget):
         self._ifgain_box.valueChanged.connect(new_ifgain)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
-        self._level_trigger.clicked.connect(enable_trigger)
-        self._trig_fstart.editingFinished.connect(new_trigger)
-        self._trig_fstop.editingFinished.connect(new_trigger)
-        self._trig_amp.editingFinished.connect(new_trigger)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -219,7 +158,6 @@ class DeviceControls(QtGui.QWidget):
 
         if state.playback:
             # for playback simply update everything on every state change
-            self._level_trigger.playback_value(False)
             self._dec_box.playback_value(str(state.decimation))
             self._fshift_edit.playback_value(state.fshift / M)
             self._pll_box.playback_value('External'
@@ -229,9 +167,6 @@ class DeviceControls(QtGui.QWidget):
             return
 
         if 'playback' in changed:
-            # restore controls after playback is stopped
-            self._level_trigger.setEnabled(
-                state.mode in self.dut_prop.LEVEL_TRIGGER_RFE_MODES)
             decimation_available = self.dut_prop.MIN_DECIMATION[
                 state.rfe_mode()] is not None
             self._dec_box.setEnabled(decimation_available)
@@ -247,17 +182,6 @@ class DeviceControls(QtGui.QWidget):
                     self._level_trigger.click()
 
         if 'mode' in changed:
-
-            if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
-                # forcibly disable triggers
-                if self._level_trigger.isChecked():
-                    self._level_trigger.click()
-                self._trig_state(False)
-                self._level_trigger.setEnabled(False)
-
-            else:
-                self._level_trigger.setEnabled(True)
-
             if state.sweeping():
                 self._dec_box.setEnabled(False)
                 self._fshift_edit.setEnabled(False)
@@ -269,7 +193,6 @@ class DeviceControls(QtGui.QWidget):
             fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
             self._fshift_edit.setRange(-fshift_max, fshift_max)
 
-
         if 'device_settings.iq_output_path' in changed:
             if 'CONNECTOR' == state.device_settings['iq_output_path']:
                 # remove all digitizer controls
@@ -280,9 +203,6 @@ class DeviceControls(QtGui.QWidget):
                 self._trig_fstart.setEnabled(False)
                 self._trig_fstop.setEnabled(False)
                 self._trig_amp.setEnabled(False)
-                self._trig_fstart_label.setEnabled(False)
-                self._trig_fstop_label.setEnabled(False)
-                self._trig_amp_label.setEnabled(False)
 
             elif 'DIGITIZER' == state.device_settings['iq_output_path']:
                 # enable digitizer controls
@@ -294,26 +214,8 @@ class DeviceControls(QtGui.QWidget):
                     self._trig_fstop.setEnabled(True)
                     self._trig_amp.setEnabled(True)
                     self._level_trigger.setEnabled(True)
-                    self._trig_fstart_label.setEnabled(True)
-                    self._trig_fstop_label.setEnabled(True)
-                    self._trig_amp_label.setEnabled(True)
 
-        if 'device_settings.trigger' in changed:
-            if state.device_settings['trigger']['type'] == 'LEVEL':
-                trigger = state.device_settings['trigger']
-                self._trig_fstart.quiet_update(value=trigger['fstart'] / M)
-                self._trig_fstop.quiet_update(value=trigger['fstop'] / M)
-                self._trig_amp.quiet_update(value=trigger['amplitude'])
-            else:
-                if self._level_trigger.checkState():
-                    self._level_trigger.click()
         self.gui_state = state
-
-    def _trig_state(self, state):
-        self._trig_fstart.setEnabled(state)
-        self._trig_amp.setEnabled(state)
-        self._trig_fstop.setEnabled(state)
-        self._trig = state
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

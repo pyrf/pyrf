@@ -127,6 +127,7 @@ class triggerControl(pg.ROI):
         else:
             self.currentPen = self.pen
         self.update()
+
 class Trace(object):
     """
     Class to represent a trace in the plot
@@ -243,7 +244,7 @@ class Marker(object):
     """
     Class to represent a marker on the plot
     """
-    def __init__(self,plot_area, marker_name, color):
+    def __init__(self,plot_area, marker_name, color, controller):
 
         self.name = marker_name
         self.marker_plot = pg.ScatterPlotItem()
@@ -251,22 +252,36 @@ class Marker(object):
         self.selected = False
         self.data_index = None
         self.xdata = []
-        self.ydata = 0
+        self.ydata = []
         self.trace_index = 0
         self.color = color
         self.draw_color = color
         self.hovering = False
         self._plot = plot_area
         self.coursor_dragged = False
-
+        self.controller = controller
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         def dragged():
-            self.data_index = np.abs( self.xdata-self.cursor_line.value()).argmin()
+            # determine index of click
+            index = np.abs(self.xdata-int(self.cursor_line.value())).argmin()
+
+            # calculate the region around the index to check for maximum value
+            index_region_offset = int(0.01 * len(self.ydata))
+
+            if int(min(self.xdata)) > int(min(self._plot.view_box.viewRange()[0])) or int(max(self.xdata)) > int(max(self._plot.view_box.viewRange()[0])):
+                self.data_index = index
+            else:
+                # position of marker is the maximum of the region surrounding the area where the user clicked
+                if (index - index_region_offset) > 0:
+                    self.data_index = np.where(self.ydata == max(self.ydata[index - index_region_offset: index + index_region_offset]))[0]
+
             self.cursor_line.setPen(cursor_pen)
             self.draw_color = colors.MARKER_HOVER
+            self.controller.apply_plot_options(marker_dragged = True)
+            self.update_pos(self.xdata, self.ydata)
         self.cursor_line.sigDragged.connect(dragged)
 
         def hovering():
@@ -275,6 +290,7 @@ class Marker(object):
 
         def not_hovering():
             self.draw_color = color
+            self.update_pos(self.xdata, self.ydata)
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
 
     def remove_marker(self, plot):
@@ -288,6 +304,7 @@ class Marker(object):
     def enable(self, plot):
         self.enabled = True
         self.add_marker(plot)
+        self.controller.apply_plot_options(marker_dragged = True)
 
     def disable(self, plot):
         self.enabled = False

@@ -26,7 +26,7 @@ class SpecAController(QtCore.QObject):
     _dut = None
     _sweep_device = None
     _capture_device = None
-    _plot_state = None
+    _plot_options = None
     _state = None
     _recording_file = None
     _csv_file = None
@@ -36,7 +36,7 @@ class SpecAController(QtCore.QObject):
     _user_xrange_control_enabled = True
     _pending_user_xrange = None
     _applying_user_xrange = False
-
+    _single_capture = False
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
@@ -46,7 +46,7 @@ class SpecAController(QtCore.QObject):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
-        self._plot_options = {}
+        self._plot_options = {'cont_cap_mode': True}
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -155,6 +155,8 @@ class SpecAController(QtCore.QObject):
             self._applying_user_xrange = False
 
     def read_block(self):
+        if not (self._plot_options['cont_cap_mode'] or self._single_capture):
+            return
         self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
         device_set['decimation'] = self._state.decimation
@@ -169,8 +171,11 @@ class SpecAController(QtCore.QObject):
             self._state.rbw,
             force_change = self.was_sweeping)
         self.was_sweeping = False
+        self._single_capture = False
 
     def read_sweep(self):
+        if not (self._plot_options['cont_cap_mode'] or self._single_capture):
+            return
         self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
         # device_set.pop('pll_reference')
@@ -185,8 +190,10 @@ class SpecAController(QtCore.QObject):
             device_set,
             mode=self._state.rfe_mode())
         self.was_sweeping = True
+        self._single_capture = False
 
-    def start_capture(self):
+    def start_capture(self, single = False):
+        self._single_capture = single
         if self._playback_file:
             self.schedule_playback()
         elif self._state.sweeping():
@@ -195,18 +202,23 @@ class SpecAController(QtCore.QObject):
             self.read_block()
 
     def schedule_playback(self):
+        if self._single_capture:
+            self._playback_started = False
         if not self._playback_started:
             QtCore.QTimer.singleShot(0, self._playback_step)
             self._playback_started = True
 
-    def _playback_step(self):
+    def _playback_step(self, single = False):
+
+        if not (self._plot_options['cont_cap_mode'] or self._single_capture):
+            return
         if not self._playback_file:
             self._playback_started = False
             return
 
         QtCore.QTimer.singleShot(PLAYBACK_STEP_MSEC, self._playback_step)
-
         while True:
+
             pkt = self._playback_vrt()
 
             if pkt.is_context_packet():
@@ -221,6 +233,7 @@ class SpecAController(QtCore.QObject):
             if self._state.sweeping():
                 if not self._playback_sweep_step(pkt):
                     continue
+                self._single_capture = False
                 return
             break
 
@@ -260,6 +273,8 @@ class SpecAController(QtCore.QObject):
             pow_data,
             usable_bins,
             None)
+
+
 
     def _playback_sweep_start(self):
         """

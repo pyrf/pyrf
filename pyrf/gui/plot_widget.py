@@ -59,7 +59,10 @@ class Plot(QtCore.QObject):
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
-
+            if hasattr(self, 'gui_state'):
+                # HDR mode has a tuning resolution almost the same as its usable bandwidth, making the tuning mouse tuning annoying to use
+                if self.gui_state.mode == 'HDR':
+                    return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
@@ -117,7 +120,7 @@ class Plot(QtCore.QObject):
 
         self.markers = []
         for name in labels.MARKERS:
-            self.markers.append(Marker(self, name, colors.WHITE_NUM))
+            self.markers.append(Marker(self, name, colors.WHITE_NUM, self.controller))
 
         self.waterfall_data = WaterfallModel(max_len=600)
 
