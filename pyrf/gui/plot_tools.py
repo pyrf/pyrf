@@ -165,11 +165,13 @@ class Trace(object):
         self.average_list = []
 
     def compute_channel_power(self):
+
         if self.calc_channel_power and not self.blank:
             if min(self.channel_power_range) > min(self.freq_range) and max(self.channel_power_range) < max(self.freq_range):
-                    min_bin = (np.abs(self.freq_range-min(self.channel_power_range))).argmin()
-                    max_bin = (np.abs(self.freq_range-max(self.channel_power_range))).argmin()
-                    self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
+                    if self.data is not None:
+                        min_bin = (np.abs(self.freq_range-min(self.channel_power_range))).argmin()
+                        max_bin = (np.abs(self.freq_range-max(self.channel_power_range))).argmin()
+                        self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
 
     def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
         if self.store or self.blank:

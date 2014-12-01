@@ -28,6 +28,8 @@ def wsa_properties(device_id):
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
         p = WSA5000_108Properties()
+    elif model == 'WSA5000-408':
+        p = WSA5000_408Properties()
     else:
         p = WSA5000_220Properties()
 
@@ -246,4 +248,7 @@ class WSA5000_108Properties(WSA5000_208Properties):
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
 
+class WSA5000_408Properties(WSA5000_208Properties):
+    model = 'WSA5000-408'
+    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD')
 
