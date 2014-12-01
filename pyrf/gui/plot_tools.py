@@ -263,7 +263,8 @@ class Marker(object):
 
         def dragged():
             # determine index of click
-            index = np.abs(self.xdata-self.cursor_line.value()).argmin()
+            index = np.abs(self.xdata-int(self.cursor_line.value())).argmin()
+
             # calculate the region around the index to check for maximum value
             index_region_offset = int(0.01 * len(self.ydata))
 
@@ -275,8 +276,9 @@ class Marker(object):
                     self.data_index = np.where(self.ydata == max(self.ydata[index - index_region_offset: index + index_region_offset]))[0]
 
             self.cursor_line.setPen(cursor_pen)
-            self.draw_color = colors.MARKER_HOVER
-            self.update_pos(self.ydata, self.xdata)
+            self.draw_color = color
+
+            self.update_pos(self.xdata, self.ydata)
         self.cursor_line.sigDragged.connect(dragged)
 
         def hovering():
