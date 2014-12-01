@@ -187,7 +187,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def start_csv(self):
         names = glob.glob('csv-*.csv')
-        filename = time.strftime('csv-2014-12-01-153853') + '.csv'
+        filename = time.strftime('csv-%Y-%m-%d-%H%M%S') + '.csv'
         if filename in names:
             count = names.count(filename)
             filename += '(%d)' % count
