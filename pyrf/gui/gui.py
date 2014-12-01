@@ -13,7 +13,7 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 import glob
-
+import time
 from pkg_resources import parse_version, require
 
 from pyrf.gui import colors
@@ -162,7 +162,8 @@ class MainWindow(QtGui.QMainWindow):
                 last_index = max(last_index, int(n[10:-4]))
             except ValueError:
                 pass
-        filename = 'recording-%04d.vrt' % (last_index + 1)
+
+        filename = time.strftime('%A-%d-%B-%Y-%H-%M-%S') + '.vrt'
         record_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "Create Recording",
             filename,
