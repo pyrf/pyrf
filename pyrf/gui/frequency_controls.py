@@ -67,6 +67,8 @@ class FrequencyControls(QtGui.QWidget):
 
         self.setLayout(grid)
         self.resize_widget()
+        self.start_stop_changed = False # keep track of what was last changed
+
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
@@ -189,6 +191,7 @@ class FrequencyControls(QtGui.QWidget):
         freq_edit.setSuffix(' MHz')
         self._freq_edit = freq_edit
         def freq_change():
+            self.start_stop_changed = False
             self.controller.apply_settings(center=freq_edit.value() * M)
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self.controller.apply_device_settings(freq = freq_edit.value() * M)
@@ -201,6 +204,7 @@ class FrequencyControls(QtGui.QWidget):
         bw_edit = QDoubleSpinBoxPlayback()
         bw_edit.setSuffix(' MHz')
         def freq_change():
+            self.start_stop_changed = False
             self.controller.apply_settings(span=bw_edit.value() * M)
         bw_edit.editingFinished.connect(freq_change)
         self._bw_edit = bw_edit
@@ -212,9 +216,10 @@ class FrequencyControls(QtGui.QWidget):
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' MHz')
         def freq_change():
-            fstart = freq.value() * M
-            fstop = self.gui_state.center + self.gui_state.span / 2.0
-            fstop = max(fstop, fstart + self.dut_prop.TUNING_RESOLUTION)
+            self.start_stop_changed = True
+            fstart = float(freq.value() * M)
+            fstop = float(self._fstop_edit.value() * M)
+            fstop = float(max(fstop, fstart + self.dut_prop.TUNING_RESOLUTION))
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
@@ -229,9 +234,11 @@ class FrequencyControls(QtGui.QWidget):
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' MHz')
         def freq_change():
-            fstart = self.gui_state.center - self.gui_state.span / 2.0
-            fstop = freq.value() * M
-            fstart = min(fstart, fstop - self.dut_prop.TUNING_RESOLUTION)
+            self.start_stop_changed = True
+            fstart = float(self._fstart_edit.value() * M)
+            fstop = float(freq.value() * M)
+            fstart = float(min(fstart, fstop - self.dut_prop.TUNING_RESOLUTION))
+
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
@@ -256,15 +263,15 @@ class FrequencyControls(QtGui.QWidget):
         """
         update the spin boxes from self.gui_state
         """
-        center = float(self.gui_state.center) / M
-        span = float(self.gui_state.span) / M
-        self._fstop_edit.quiet_update(value=center + span / 2)
-        self._fstart_edit.quiet_update(value=center - span / 2)
+        center = float(self.gui_state.center / M)
+        span = float(self.gui_state.span / M)
         self._freq_edit.quiet_update(value=center)
         self._bw_edit.quiet_update(value=span)
-
+        if not self.start_stop_changed:
+            self._fstop_edit.quiet_update(value=center + span / 2)
+            self._fstart_edit.quiet_update(value=center - span / 2)
         self._updating_values = False
-
+        self.start_stop_changed = False
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
