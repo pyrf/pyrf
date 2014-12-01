@@ -155,8 +155,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
-        names = glob.glob('vrt-*.vrt')
         filename = time.strftime('recording-%Y-%m-%d-%H%M%S') + '.vrt'
+        names = glob.glob(filename[:-4] + '*.vrt')
         if filename in names:
             count = names.count(filename)
             filename += '(%d)' % count
@@ -186,8 +186,8 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_csv(self):
-        names = glob.glob('csv-*.csv')
         filename = time.strftime('csv-%Y-%m-%d-%H%M%S') + '.csv'
+        names = glob.glob(filename[:-4] + '*.csv')
         if filename in names:
             count = names.count(filename)
             filename += '(%d)' % count
