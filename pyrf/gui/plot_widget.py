@@ -119,7 +119,7 @@ class Plot(QtCore.QObject):
 
         self.markers = []
         for name in labels.MARKERS:
-            self.markers.append(Marker(self, name, colors.WHITE_NUM))
+            self.markers.append(Marker(self, name, colors.WHITE_NUM, self.controller))
 
         self.waterfall_data = WaterfallModel(max_len=600)
 

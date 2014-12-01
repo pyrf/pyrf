@@ -386,6 +386,8 @@ class MainPanel(QtGui.QWidget):
             self.update_span_label()
 
     def plot_changed(self, state, changed):
+        if 'marker_dragged' in changed:
+            self.update_marker_labels()
         self.plot_state = state
 
     def show_labels(self):
@@ -590,7 +592,7 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
         self.update_trace()
         self.update_marker()
-        self.update_diff()
+        self.update_marker_labels()
         self.update_channel_power()
         if (not self.controller.applying_user_xrange() and
                 not self.controller.get_options()['free_plot_adjustment']):
@@ -658,14 +660,23 @@ class MainPanel(QtGui.QWidget):
 
     def update_marker(self):
             num = 1
+            for marker in self._plot.markers:
+                if marker.enabled:
+                    trace = self._plot.traces[marker.trace_index]
+                    if not trace.blank:
+                        marker.update_pos(trace.freq_range, trace.data)
+
+    def update_marker_labels(self):
+            num = 1
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
                     marker_label.show()
-                    if not trace.blank:
-
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
+                    if marker.data_index is None:
+                        marker.data_index = int(len(trace.data) / 2)
                         marker.update_pos(trace.freq_range, trace.data)
+                    if not trace.blank:
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
                         if self.gui_state.rfe_mode() == 'HDR':
                             marker_text = 'M%d: %0.8f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                            trace.data[marker.data_index])
@@ -677,6 +688,7 @@ class MainPanel(QtGui.QWidget):
                         self._mask_label.show()
                 else:
                     marker_label.hide()
+            self.update_diff()
 
     def update_diff(self):
 
