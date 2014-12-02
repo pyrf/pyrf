@@ -155,11 +155,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
-        filename = time.strftime('recording-%Y-%m-%d-%H%M%S') + '.vrt'
+        filename = time.strftime('recording-%Y-%m-%d-%H%M%S')
         names = glob.glob(filename[:-4] + '*.vrt')
         if filename in names:
             count = names.count(filename)
             filename += '(%d)' % count
+        filename += '.vrt'
         record_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "Create Recording",
             filename,
@@ -186,11 +187,12 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_csv(self):
-        filename = time.strftime('csv-%Y-%m-%d-%H%M%S') + '.csv'
+        filename = time.strftime('csv-%Y-%m-%d-%H%M%S')
         names = glob.glob(filename[:-4] + '*.csv')
         if filename in names:
             count = names.count(filename)
             filename += '(%d)' % count
+        filename += '.csv'
         playback_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "CSV File", filename, "CSV File (*.csv)")
 
