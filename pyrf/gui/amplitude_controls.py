@@ -41,7 +41,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._atten_box = attenuator_box
 
         hdr_gain_label = QtGui.QLabel("HDR Gain:")
-        hdr_gain_box = QtGui.QSpinBox()
+        hdr_gain_box = QDoubleSpinBoxPlayback()
         hdr_gain_box.setRange(-10, 30)
         hdr_gain_box.setValue(-10)
         hdr_gain_box.setSuffix(" dB")
@@ -84,7 +84,7 @@ class AmplitudeControls(QtGui.QWidget):
         if 'hdr_gain' in features:
             grid.addWidget(self._hdr_gain_label, 2, 0, 1, 1)
             grid.addWidget(self._hdr_gain_box, 2, 1, 1, 1)
-
+            self._hdr_gain_box.quiet_update(value=dut_prop.SPECA_DEFAULTS['device_settings']['hdr_gain'])
         grid.setColumnStretch(0, 3)
         grid.setColumnStretch(1, 6)
         grid.setColumnStretch(2, 1)
