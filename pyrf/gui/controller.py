@@ -33,7 +33,6 @@ class SpecAController(QtCore.QObject):
     _export_csv = False
     _playback_file = None
     _playback_sweep_data = None
-    _user_xrange_control_enabled = True
     _pending_user_xrange = None
     _applying_user_xrange = False
     _single_capture = False
@@ -42,11 +41,13 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
+
     def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
-        self._plot_options = {'cont_cap_mode': True}
+        self._plot_options = {'cont_cap_mode': True,
+                              'mouse_tune': True}
         self.developer_mode = developer_mode
         self.was_sweeping = False
 

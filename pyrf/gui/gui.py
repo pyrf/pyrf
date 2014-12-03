@@ -594,8 +594,7 @@ class MainPanel(QtGui.QWidget):
         self.update_marker()
         self.update_marker_labels()
         self.update_channel_power()
-        if (not self.controller.applying_user_xrange() and
-                not self.controller.get_options()['free_plot_adjustment']):
+        if self.plot_state['mouse_tune']:
             self._plot.center_view(fstart,
                                    fstop)
 

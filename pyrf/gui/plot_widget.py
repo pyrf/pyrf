@@ -59,9 +59,9 @@ class Plot(QtCore.QObject):
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
-            if hasattr(self, 'gui_state'):
+            if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
                 # HDR mode has a tuning resolution almost the same as its usable bandwidth, making the tuning mouse tuning annoying to use
-                if self.gui_state.mode == 'HDR':
+                if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
                     return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
