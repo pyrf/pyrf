@@ -154,14 +154,18 @@ class SpectralWidget(QtGui.QWidget):
         self.gui_state = state
 
         if 'span' in changed or 'center' in changed:
-            fstart = state.center - (state.span/ 2)
-            fstop = state.center + (state.span / 2)
-            if int(state.center) > G:
+            if state.rfe_mode() in self.dut_prop.TUNABLE_MODES:
+                center = state.center
+            else:
+                center = self.dut_prop.MAX_TUNABLE[state.rfe_mode()]
+            fstart = center - (state.span/ 2)
+            fstop = center + (state.span / 2)
+            if int(center) > G:
                 unit = 'GHz'
                 div = G
             else:
                 unit = 'MHz'
                 div = M
             self._fstart_label.setText('Fstart (%s): %0.4f' % (unit, fstart / div))
-            self._fcenter_label.setText('Fcenter (%s): %0.4f' % (unit, state.center / div))
+            self._fcenter_label.setText('Fcenter (%s): %0.4f' % (unit, center / div))
             self._fstop_label.setText('Fstop (%s): %0.4f' % (unit, fstop / div))
