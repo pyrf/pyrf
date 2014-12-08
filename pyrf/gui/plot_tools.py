@@ -6,6 +6,8 @@ from pyrf.units import M
 from pyrf.numpy_util import calculate_channel_power
 LARGE_NEGATIVE_NUMBER = -900000
 
+# minimum size allowed for auto peak
+MIN_AUTO_POS_SIZE = 1000
 class triggerControl(pg.ROI):
     """
     Class to represent the trigger controls in the plot
@@ -272,8 +274,7 @@ class Marker(object):
 
             # calculate the region around the index to check for maximum value
             index_region_offset = int(0.01 * len(self.ydata))
-
-            if int(min(self.xdata)) > int(min(self._plot.view_box.viewRange()[0])) or int(max(self.xdata)) > int(max(self._plot.view_box.viewRange()[0])):
+            if int(min(self.xdata)) > int(min(self._plot.view_box.viewRange()[0])) or int(max(self.xdata)) > int(max(self._plot.view_box.viewRange()[0])) or len(self.ydata) < MIN_AUTO_POS_SIZE:
                 self.data_index = index
             else:
                 # position of marker is the maximum of the region surrounding the area where the user clicked
