@@ -135,7 +135,7 @@ class WSA5000_220Properties(object):
         'SH': 20000 * M,
         'SHN': 20000 * M,
         'IQIN': 0,
-        'DD': 31.24 * M,
+        'DD': 31.25 * M,
         }
     MIN_DECIMATION = {
         'ZIF': 4,
@@ -201,6 +201,7 @@ class WSA5000_220Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
+    TUNABLE_MODES = ['ZIF', 'SH', 'SHN', 'HDR']
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
 
     MAX_SPP = 32768
