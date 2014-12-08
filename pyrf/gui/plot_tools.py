@@ -259,7 +259,9 @@ class Marker(object):
         self.hovering = False
         self._plot = plot_area
         self.coursor_dragged = False
+
         self.controller = controller
+
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
@@ -314,6 +316,8 @@ class Marker(object):
 
     def update_pos(self, xdata, ydata):
 
+        # calculate scale offset for marker
+        scale = np.abs( max(self._plot.view_box.viewRange()[1]) - min(self._plot.view_box.viewRange()[1])) * 0.01
         self.marker_plot.clear()
         self._plot.window.removeItem(self.marker_plot)
         self._plot.window.addItem(self.marker_plot)
@@ -334,11 +338,12 @@ class Marker(object):
         self.ydata = ydata
         if not self.coursor_dragged:
             self.cursor_line.setValue(xpos)
+        brush_color = self.draw_color + (20,)
         self.marker_plot.addPoints(x = [xpos],
-                                   y = [ypos],
-                                    symbol = '+',
-                                    size = 25, pen = pg.mkPen(self.draw_color), 
-                                    brush = self.draw_color)
+                                   y = [ypos + scale],
+                                    symbol = 't',
+                                    size = 20, pen = pg.mkPen(self.draw_color),
+                                    brush = brush_color)
 
 
 class InfiniteLine(pg.InfiniteLine):
