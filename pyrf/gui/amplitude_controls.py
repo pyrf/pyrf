@@ -95,6 +95,7 @@ class AmplitudeControls(QtGui.QWidget):
         grid.setRowStretch(3, 1) # expand empty space at the bottom
         self.setLayout(grid)
         self.resize_widget()
+
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
