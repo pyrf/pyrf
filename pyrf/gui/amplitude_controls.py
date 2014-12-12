@@ -35,6 +35,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._connect_device_controls()
         self._connect_plot_controls()
         self.plot_state = {'y_axis': [PLOT_TOP, PLOT_BOTTOM]}
+
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
         attenuator_box.setChecked(True)
