@@ -156,7 +156,7 @@ class MainWindow(QtGui.QMainWindow):
     def start_recording(self):
         self.stop_action.setDisabled(False)
         filename = time.strftime('recording-%Y-%m-%d-%H%M%S')
-        names = glob.glob(filename + '.vrt')
+        names = glob.glob(filename + '*.vrt')
         if (filename + '.vrt') in names:
             count = names.count(filename)
             filename += '(%d)' % count
