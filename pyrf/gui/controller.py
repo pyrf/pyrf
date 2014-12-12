@@ -35,6 +35,7 @@ class SpecAController(QtCore.QObject):
     _playback_sweep_data = None
     _pending_user_xrange = None
     _applying_user_xrange = False
+    _user_xrange_control_enabled = True
     _single_capture = False
     device_change = QtCore.Signal(object)
     state_change = QtCore.Signal(SpecAState, list)
@@ -556,10 +557,6 @@ class SpecAController(QtCore.QObject):
         for key, value in kwargs.iteritems():
             if key.startswith('dsp.'):
                 self._dsp_options[key[4:]] = value
-
-        if 'free_plot_adjustment' in kwargs:
-            self.enable_user_xrange_control(
-                not kwargs['free_plot_adjustment'])
 
     def apply_plot_options(self, **kwargs):
         """

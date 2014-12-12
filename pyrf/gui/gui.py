@@ -45,7 +45,6 @@ VIEW_OPTIONS = [
 DEVELOPER_OPTIONS = [
     ('Show &Attenuated Edges', 'show_attenuated_edges', False),
     ('Show &Sweep Steps', 'show_sweep_steps', False),
-    ('&Free Plot Adjustment', 'free_plot_adjustment', False),
     ('&IQ Offset Correction', 'dsp.correct_phase', True),
     ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
     ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
