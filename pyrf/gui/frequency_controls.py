@@ -2,7 +2,7 @@ from PySide import QtGui
 
 from pyrf.units import M
 from pyrf.gui import colors
-from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
+from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.sweep_device import MAXIMUM_SPP as MAXIMUM_SWEEP_SPP
 
@@ -41,6 +41,8 @@ class FrequencyControls(QtGui.QWidget):
         grid.addWidget(rbw_label, 3, 3, 1, 1)
         grid.addWidget(rbw_combo, 3, 4, 1, 1)
 
+        mouse_control = self._mouse_control()
+        grid.addWidget(mouse_control, 4, 0, 1, 4)
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 9)
         grid.setColumnStretch(2, 1)
@@ -145,6 +147,15 @@ class FrequencyControls(QtGui.QWidget):
         self._fstep_box = steps
         return steps_label, steps
 
+    def _mouse_control(self):
+        mouse_control = QCheckBoxPlayback("Tune with Mouse")
+        mouse_control.setChecked(True)
+        def change_mouse_control():
+            self.controller.apply_plot_options(mouse_tune = mouse_control.isChecked())
+        mouse_control.clicked.connect(change_mouse_control)
+        
+        return mouse_control
+
     def _center_freq(self):
         cfreq = QtGui.QLabel('Center:')
         self._cfreq = cfreq
@@ -219,7 +230,6 @@ class FrequencyControls(QtGui.QWidget):
         self._rbw_box = rbw_box
         return rbw_label, rbw_box
 
-
     def _update_freq_edit(self):
         """
         update the spin boxes from self.gui_state
@@ -233,6 +243,7 @@ class FrequencyControls(QtGui.QWidget):
             self._fstart_edit.quiet_update(value=center - span / 2)
         self._updating_values = False
         self.start_stop_changed = False
+
     def reset_freq_bounds(self):
             self.start_freq = None
             self.stop_freq = None
