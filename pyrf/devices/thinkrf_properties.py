@@ -191,7 +191,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
-            'hdr_gain': -10,
+            'hdr_gain': 25,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,

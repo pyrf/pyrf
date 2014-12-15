@@ -35,13 +35,14 @@ class AmplitudeControls(QtGui.QWidget):
         self._connect_device_controls()
         self._connect_plot_controls()
         self.plot_state = {'y_axis': [PLOT_TOP, PLOT_BOTTOM]}
+
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
         attenuator_box.setChecked(True)
         self._atten_box = attenuator_box
 
         hdr_gain_label = QtGui.QLabel("HDR Gain:")
-        hdr_gain_box = QtGui.QSpinBox()
+        hdr_gain_box = QDoubleSpinBoxPlayback()
         hdr_gain_box.setRange(-10, 30)
         hdr_gain_box.setValue(-10)
         hdr_gain_box.setSuffix(" dB")
@@ -84,7 +85,7 @@ class AmplitudeControls(QtGui.QWidget):
         if 'hdr_gain' in features:
             grid.addWidget(self._hdr_gain_label, 2, 0, 1, 1)
             grid.addWidget(self._hdr_gain_box, 2, 1, 1, 1)
-
+            self._hdr_gain_box.quiet_update(value=dut_prop.SPECA_DEFAULTS['device_settings']['hdr_gain'])
         grid.setColumnStretch(0, 3)
         grid.setColumnStretch(1, 6)
         grid.setColumnStretch(2, 1)
@@ -94,6 +95,7 @@ class AmplitudeControls(QtGui.QWidget):
         grid.setRowStretch(3, 1) # expand empty space at the bottom
         self.setLayout(grid)
         self.resize_widget()
+
     def device_changed(self, dut):
         self.dut_prop = dut.properties
         self._build_layout(self.dut_prop)
