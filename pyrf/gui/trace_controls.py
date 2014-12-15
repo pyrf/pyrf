@@ -127,7 +127,7 @@ class TraceControls(QtGui.QWidget):
 
         draw = QtGui.QComboBox()
         draw.setToolTip("Select data source")
-        for i, val in enumerate(['Live', 'Max', 'Min', 'Average', 'Off']):
+        for i, val in enumerate(['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
