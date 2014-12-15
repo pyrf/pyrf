@@ -13,7 +13,7 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 import glob
-
+import time
 from pkg_resources import parse_version, require
 
 from pyrf.gui import colors
@@ -155,14 +155,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
-        names = glob.glob('recording-*.vrt')
-        last_index = -1
-        for n in names:
-            try:
-                last_index = max(last_index, int(n[10:-4]))
-            except ValueError:
-                pass
-        filename = 'recording-%04d.vrt' % (last_index + 1)
+        filename = time.strftime('recording-%Y-%m-%d-%H%M%S')
+        names = glob.glob(filename + '*.vrt')
+        if (filename + '.vrt') in names:
+            count = names.count(filename)
+            filename += '(%d)' % count
+        filename += '.vrt'
         record_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "Create Recording",
             filename,
@@ -189,16 +187,13 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_csv(self):
+        filename = time.strftime('csv-%Y-%m-%d-%H%M%S')
+        names = glob.glob(filename + '*.csv')
 
-        names = glob.glob('csv-*.csv')
-        last_index = -1
-        for n in names:
-            try:
-                last_index = max(last_index, int(n[4:-4]))
-
-            except ValueError:
-                pass
-        filename = 'csv-%04d.csv' % (last_index + 1)
+        if (filename + '.csv') in names:
+            count = names.count(filename)
+            filename += '(%d)' % count
+        filename += '.csv'
         playback_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "CSV File", filename, "CSV File (*.csv)")
 
