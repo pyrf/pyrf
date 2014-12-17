@@ -86,6 +86,7 @@ class WSA4000Properties(object):
 
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
+    manufacturer = 'THINKRF'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
     TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 0

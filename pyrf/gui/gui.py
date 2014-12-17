@@ -68,6 +68,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, dut_address=None, playback_filename=None,
             developer_menu=False):
         super(MainWindow, self).__init__()
+
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
         WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
@@ -75,11 +76,18 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller = SpecAController(developer_menu)
         self.controller.device_change.connect(self.device_changed)
+
         self.init_menu_bar(developer_menu)
         self.initUI(dut_address, playback_filename)
 
+        self.update_timer = QtCore.QTimer()
+        self.update_timer.timeout.connect(self.update_title)
+        self.update_timer.start(100)
+
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
+        self._device_address = dut_address
+        self._device_id = None
         self.update_title()
         self.setCentralWidget(self.mainPanel)
         if dut_address:
@@ -210,18 +218,21 @@ class MainWindow(QtGui.QMainWindow):
         self.stop_action.setDisabled(True)
         self.device_info.setDisabled(False)
         self._device_address = playback_filename
-        self.update_title(filename=playback_filename)
+        self.update_title()
         self.controller.set_device(playback_filename=playback_filename)
         self.show()
 
-    def update_title(self, ip=None, filename=None):
-        current_time = time.strftime('%Y %m %d %H:%M:%S')
-        if ip is not None:
-            self.setWindowTitle('PyRF RTSA %s Connected To: %s %s' % (__version__ , ip, current_time))
-        elif filename is not None:
-            self.setWindowTitle('PyRF RTSA: %s Playback Recording: %s %s' % (__version__, filename, current_time))
+    def update_title(self):
+        if self._device_id is None:
+            manufacutrer = ''
         else:
-            self.setWindowTitle('PyRF RTSA: %s %s' % (__version__, current_time))
+            manufacutrer = (self._device_id.split(',') + ['', '', ''])[0]
+
+        current_time = time.strftime('%Y/%m/%d %I:%M:%S %p')
+        spaces = ''
+        for x in range(int(self.size().width() / 15)):
+            spaces += ' '
+        self.setWindowTitle((manufacutrer + '  %s' % current_time)+ spaces + 'PyRF RTSA %s Connected To: %s' % (__version__ , self._device_address))
 
     def device_changed(self, dut):
         if not dut:
@@ -256,6 +267,7 @@ Firmware version: %s'''.strip() % (
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
         self._device_address = name
+        self.dut_prop = dut.properties
         
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
