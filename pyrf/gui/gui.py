@@ -222,7 +222,7 @@ class MainWindow(QtGui.QMainWindow):
             self.setWindowTitle('PyRF RTSA: %s Playback Recording: %s %s' % (__version__, filename, current_time))
         else:
             self.setWindowTitle('PyRF RTSA: %s %s' % (__version__, current_time))
-        
+
     def device_changed(self, dut):
         if not dut:
             self._device_address = None
@@ -311,15 +311,12 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-        self.plot_state = None
-
         self._waterfall_range = None, None, None
 
         self.options_changed(controller.get_options(),
             ['iq_plots', 'waterfall_plot', 'persistence_plot'])
 
     def device_changed(self, dut):
-        self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
         self.enable_controls()
