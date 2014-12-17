@@ -80,8 +80,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
-
-        self.setWindowTitle('PyRF RTSA: ' + __version__)
+        self.update_title()
         self.setCentralWidget(self.mainPanel)
         if dut_address:
             self.open_device(dut_address, True)
@@ -211,10 +210,19 @@ class MainWindow(QtGui.QMainWindow):
         self.stop_action.setDisabled(True)
         self.device_info.setDisabled(False)
         self._device_address = playback_filename
+        self.update_title(filename=playback_filename)
         self.controller.set_device(playback_filename=playback_filename)
-        self.setWindowTitle('PyRF RTSA: ' + __version__ +' Playback Recording: ' + playback_filename)
         self.show()
 
+    def update_title(self, ip=None, filename=None):
+        current_time = time.strftime('%Y %m %d %H:%M:%S')
+        if ip is not None:
+            self.setWindowTitle('PyRF RTSA %s Connected To: %s %s' % (__version__ , ip, current_time))
+        elif filename is not None:
+            self.setWindowTitle('PyRF RTSA: %s Playback Recording: %s %s' % (__version__, filename, current_time))
+        else:
+            self.setWindowTitle('PyRF RTSA: %s %s' % (__version__, current_time))
+        
     def device_changed(self, dut):
         if not dut:
             self._device_address = None
@@ -248,7 +256,7 @@ Firmware version: %s'''.strip() % (
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
         self._device_address = name
-        self.setWindowTitle('PyRF RTSA %s Connected To: %s' % (__version__ , name))
+        
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
