@@ -132,8 +132,19 @@ class SpectralWidget(QtGui.QWidget):
         self._fcenter_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._fcenter_label.setAlignment(QtCore.Qt.AlignCenter)
 
+        self._rbw_label = QtGui.QLabel('RBW: ')
+        self._rbw_label.setSizePolicy(sizePolicy)
+        self._rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._rbw_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._span_label = QtGui.QLabel('SPAN')
+        self._span_label.setSizePolicy(sizePolicy)
+        self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._span_label.setAlignment(QtCore.Qt.AlignCenter)
+
         self._mask_label = QtGui.QLabel()
         self._mask_label.setStyleSheet('background-color: black')
+
         self.window = pg.PlotWidget()
     def _build_layout(self):
         
@@ -142,10 +153,14 @@ class SpectralWidget(QtGui.QWidget):
         grid.setHorizontalSpacing(0)
 
         grid.addWidget(self.window, 0, 0, 1, 4)
-        grid.addWidget(self._mask_label, 1, 0, 1, 4)
+        grid.addWidget(self._mask_label, 1, 0, 2, 4)
         grid.addWidget(self._fstart_label, 1, 1, 1, 1)
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
         grid.addWidget(self._fstop_label, 1, 3, 1, 1)
+        grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
+        grid.addWidget(self._fstop_label, 1, 3, 1, 1)
+        grid.addWidget(self._rbw_label, 2, 1, 1, 1)
+        grid.addWidget(self._span_label, 2, 2, 1, 1)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -169,3 +184,21 @@ class SpectralWidget(QtGui.QWidget):
             self._fstart_label.setText('Fstart (%s): %0.4f' % (unit, fstart / div))
             self._fcenter_label.setText('Fcenter (%s): %0.4f' % (unit, center / div))
             self._fstop_label.setText('Fstop (%s): %0.4f' % (unit, fstop / div))
+            self.update_span_label()
+
+        if 'rbw' in changed:
+            self.update_rbw_label()
+
+    def update_rbw_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._rbw_label.setText("RBW: %0.2f Hz" % (self.gui_state.rbw))
+        else:
+            self._rbw_label.setText("RBW: %0.2f KHz" % (self.gui_state.rbw / 1e3))
+
+    def update_span_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._span_label.setText("SPAN: %0.2f KHz" % (self.gui_state.span / 1e3))
+        else:
+            self._span_label.setText("SPAN: %0.2f MHz" % (self.gui_state.span/ M))

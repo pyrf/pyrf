@@ -77,7 +77,7 @@ class Plot(QtCore.QObject):
 
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
         self.window.setLabel('top')
-        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
+        self.window.setLabel('bottom')
 
         # horizontal cursor line
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
