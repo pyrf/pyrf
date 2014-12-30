@@ -31,6 +31,7 @@ IQ_PLOT_XMAX = 1
 ZIF_BITS = 2**13
 CONST_POINTS = 512
 
+LNEG_NUM = -9e10
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
@@ -77,7 +78,9 @@ class Plot(QtCore.QObject):
 
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
         self.window.setLabel('top')
-        self.window.setLabel('bottom')
+        self.window.getAxis('top').setTicks([[(LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM)),
+                                    (LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM))]])
+        self.window.getAxis('bottom').setPen(colors.GREY_NUM)
 
         # horizontal cursor line
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
@@ -283,8 +286,7 @@ class Plot(QtCore.QObject):
         self.window.getAxis('bottom').setGrid(200)
         self.window.getAxis('left').setPen(colors.GREY_NUM)
         self.window.getAxis('left').setGrid(200)
-        self.window.getAxis('top').setTicks([[(-200, '-200'), (-200, '-200'),
-                                            (-250, '-200'), (-250, '-200')]])
+
     def update_markers(self):
         for m in self.markers:
             if m.enabled:

@@ -117,17 +117,17 @@ class SpectralWidget(QtGui.QWidget):
     def _create_controls(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
 
-        self._fstart_label = QtGui.QLabel('FSTART')
+        self._fstart_label = QtGui.QLabel('Start')
         self._fstart_label.setSizePolicy(sizePolicy)
         self._fstart_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._fstart_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._fstop_label = QtGui.QLabel('FSTOP')
+        self._fstop_label = QtGui.QLabel('Stop')
         self._fstop_label.setSizePolicy(sizePolicy)
         self._fstop_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._fstop_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._fcenter_label = QtGui.QLabel('FCENTER')
+        self._fcenter_label = QtGui.QLabel('Center')
         self._fcenter_label.setSizePolicy(sizePolicy)
         self._fcenter_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._fcenter_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -137,7 +137,7 @@ class SpectralWidget(QtGui.QWidget):
         self._rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._rbw_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._span_label = QtGui.QLabel('SPAN')
+        self._span_label = QtGui.QLabel('Span')
         self._span_label.setSizePolicy(sizePolicy)
         self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._span_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -181,9 +181,9 @@ class SpectralWidget(QtGui.QWidget):
             else:
                 unit = 'MHz'
                 div = M
-            self._fstart_label.setText('Fstart (%s): %0.4f' % (unit, fstart / div))
-            self._fcenter_label.setText('Fcenter (%s): %0.4f' % (unit, center / div))
-            self._fstop_label.setText('Fstop (%s): %0.4f' % (unit, fstop / div))
+            self._fstart_label.setText('Start: %0.4f %s' % (fstart / div, unit))
+            self._fcenter_label.setText('Center: %0.4f %s' % (center / div, unit))
+            self._fstop_label.setText('Stop: %0.4f %s' % (fstop / div, unit))
             self.update_span_label()
 
         if 'rbw' in changed:
@@ -199,6 +199,6 @@ class SpectralWidget(QtGui.QWidget):
     def update_span_label(self):
         rfe_mode = self.gui_state.rfe_mode()
         if rfe_mode == 'HDR':
-            self._span_label.setText("SPAN: %0.2f KHz" % (self.gui_state.span / 1e3))
+            self._span_label.setText("Span: %0.2f KHz" % (self.gui_state.span / 1e3))
         else:
-            self._span_label.setText("SPAN: %0.2f MHz" % (self.gui_state.span/ M))
+            self._span_label.setText("Span: %0.2f MHz" % (self.gui_state.span/ M))
