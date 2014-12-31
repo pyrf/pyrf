@@ -37,7 +37,7 @@ PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      #"rbw",  <-- signal is the same area
                                      "mode"
                                      ])
-
+NUMBER_OF_TICKS = 12
 class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -59,19 +59,8 @@ class Plot(QtCore.QObject):
 
         self.window.setMenuEnabled(False)
 
-        def widget_range_changed(widget, ranges):
-            if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
-                # HDR mode has a tuning resolution almost the same as its usable bandwidth, making the tuning mouse tuning annoying to use
-                if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
-                    return
-            if not hasattr(ranges, '__getitem__'):
-                return  # we're not intereted in QRectF updates
-            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
-
-        self.window.sigRangeChanged.connect(widget_range_changed)
-
         self.view_box = self.window.plotItem.getViewBox()
-
+        self.view_box.setMouseEnabled(False, True)
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
@@ -80,7 +69,7 @@ class Plot(QtCore.QObject):
         self.window.setLabel('top')
         self.window.getAxis('top').setTicks([[(LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM)),
                                     (LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM))]])
-        self.window.getAxis('bottom').setPen(colors.GREY_NUM)
+        self.window.setLabel('bottom')
 
         # horizontal cursor line
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
@@ -143,6 +132,7 @@ class Plot(QtCore.QObject):
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
+
     def connect_plot_controls(self):
         def new_channel_power():
             self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
@@ -161,11 +151,13 @@ class Plot(QtCore.QObject):
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
         self.trigger_control.sigNewTriggerRange.connect(new_trigger)
         self.window.sigYRangeChanged.connect(new_y_axis)
+
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
         self.gui_state = state
+
         if 'device_settings.trigger' in changed:
             fstart = state.device_settings['trigger']['fstart']
             fstop = state.device_settings['trigger']['fstop']
@@ -185,6 +177,7 @@ class Plot(QtCore.QObject):
                         m.add_marker(self)
 
         if 'center' in changed or 'span' in changed:
+            self.update_axis_ticks()
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
             for trace in self.traces:
@@ -229,6 +222,16 @@ class Plot(QtCore.QObject):
         if 'y_axis' in changed:
             self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+
+    def update_axis_ticks(self):
+
+        fstart = self.gui_state.center - (self.gui_state.span / 2)
+        fstop = self.gui_state.center + (self.gui_state.span / 2)
+        ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
+        tick_list = []
+        for t in ticks:
+            tick_list.append((t, ' '))
+        self.window.getAxis('bottom').setTicks([tick_list])
 
     def enable_channel_power(self):
         for t in self.traces:
