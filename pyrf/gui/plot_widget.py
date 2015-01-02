@@ -32,12 +32,13 @@ ZIF_BITS = 2**13
 CONST_POINTS = 512
 
 LNEG_NUM = -9e10
+TICK_REDRAW_DELAY = 100
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
                                      "mode"
                                      ])
-NUMBER_OF_TICKS = 12
+NUMBER_OF_TICKS = 11
 class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -60,15 +61,30 @@ class Plot(QtCore.QObject):
         self.window.setMenuEnabled(False)
 
         self.view_box = self.window.plotItem.getViewBox()
-        self.view_box.setMouseEnabled(False, True)
         # initialize the y-axis of the plot
         self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
         labelStyle = fonts.AXIS_LABEL_FONT
+
+        def widget_range_changed(widget, ranges):
+            self.timer = QtCore.QTimer()
+            self.timer.timeout.connect(self.update_axis_ticks)
+            self.timer.setSingleShot(True)
+            self.timer.start(TICK_REDRAW_DELAY)
+            if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
+                # HDR mode has a tuning resolution almost the same as its usabl
+                if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
+                    return
+            if not hasattr(ranges, '__getitem__'):
+                return  # we're not intereted in QRectF updates
+            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
+
+        self.window.sigRangeChanged.connect(widget_range_changed)
 
         self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
         self.window.setLabel('top')
         self.window.getAxis('top').setTicks([[(LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM)),
                                     (LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM))]])
+        self.window.getAxis('top').setPen(255,255,255,255)
         self.window.setLabel('bottom')
 
         # horizontal cursor line
@@ -177,7 +193,6 @@ class Plot(QtCore.QObject):
                         m.add_marker(self)
 
         if 'center' in changed or 'span' in changed:
-            self.update_axis_ticks()
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
             for trace in self.traces:
@@ -222,22 +237,32 @@ class Plot(QtCore.QObject):
         if 'y_axis' in changed:
             self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+        if 'x_divs' in changed or 'y_divs' in changed:
+            self.update_axis_ticks()
 
     def update_axis_ticks(self):
 
-        fstart = self.gui_state.center - (self.gui_state.span / 2)
-        fstop = self.gui_state.center + (self.gui_state.span / 2)
-        ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
+        fstart = min(self.view_box.viewRange()[0])
+        fstop = max(self.view_box.viewRange()[0])
+        ticks = np.linspace(fstart, fstop, self.plot_state['x_divs'] + 1)
         tick_list = []
         for t in ticks:
             tick_list.append((t, ' '))
         self.window.getAxis('bottom').setTicks([tick_list])
 
+        min_pow = min(self.view_box.viewRange()[1])
+        max_pow = max(self.view_box.viewRange()[1])
+        ticks = np.linspace(min_pow, max_pow, self.plot_state['y_divs'] + 1)
+        tick_list = []
+        for t in ticks:
+            tick_list.append((t, str(int(t))))
+        self.window.getAxis('left').setTicks([tick_list])
+
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
-        fstart = self.gui_state.center - (self.gui_state.span / 4)
-        fstop = self.gui_state.center + (self.gui_state.span / 4)
+        fstart = self.gui_state.center - (self.gui_state.span / 2)
+        fstop = self.gui_state.center + (self.gui_state.span / 2)
         self.move_channel_power(fstart, fstop)
         self.window.addItem(self.channel_power_region)
 
