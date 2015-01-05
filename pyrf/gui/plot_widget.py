@@ -80,7 +80,7 @@ class Plot(QtCore.QObject):
         self.window.setLabel('top')
         self.window.getAxis('top').setTicks([[(LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM)),
                                     (LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM))]])
-        self.window.getAxis('top').setPen(255,255,255,255)
+        self.window.getAxis('top').setPen(colors.WHITE_NUM)
         self.window.setLabel('bottom')
 
         # horizontal cursor line
