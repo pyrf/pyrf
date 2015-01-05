@@ -268,8 +268,8 @@ class Plot(QtCore.QObject):
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
-        fstart = self.gui_state.center - (self.gui_state.span / 2)
-        fstop = self.gui_state.center + (self.gui_state.span / 2)
+        fstart = self.gui_state.center - (self.gui_state.span / 4)
+        fstop = self.gui_state.center + (self.gui_state.span / 4)
         self.move_channel_power(fstart, fstop)
         self.window.addItem(self.channel_power_region)
 
@@ -327,10 +327,6 @@ class Plot(QtCore.QObject):
             if m.enabled:
                 trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
-
-    def get_trigger_region(self):
-        print self.trigger_control.pos()
-        print self.trigger_control.size()
 
     def update_iq_plots(self, data):
         

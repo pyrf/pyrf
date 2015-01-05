@@ -56,7 +56,6 @@ class MeasurementControls(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('X Divisions'), 2, 0, 1,1)
         grid.addWidget(self._x_divs, 2, 1, 1,1)
 
-
         self.resize_widget()
 
     def _connect_controls(self):
