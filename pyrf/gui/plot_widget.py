@@ -66,10 +66,6 @@ class Plot(QtCore.QObject):
         labelStyle = fonts.AXIS_LABEL_FONT
 
         def widget_range_changed(widget, ranges):
-            self.timer = QtCore.QTimer()
-            self.timer.timeout.connect(self.update_axis_ticks)
-            self.timer.setSingleShot(True)
-            self.timer.start(TICK_REDRAW_DELAY)
             if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
                 # HDR mode has a tuning resolution almost the same as its usabl
                 if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
@@ -193,6 +189,7 @@ class Plot(QtCore.QObject):
                         m.add_marker(self)
 
         if 'center' in changed or 'span' in changed:
+            self.delayed_tick_update()
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
             for trace in self.traces:
@@ -245,8 +242,13 @@ class Plot(QtCore.QObject):
         if 'x_divs' in changed or 'y_divs' in changed:
             self.update_axis_ticks()
 
-    def update_axis_ticks(self):
+    def delayed_tick_update(self):
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_axis_ticks)
+        self.timer.setSingleShot(True)
+        self.timer.start(TICK_REDRAW_DELAY)
 
+    def update_axis_ticks(self):
         fstart = min(self.view_box.viewRange()[0])
         fstop = max(self.view_box.viewRange()[0])
         ticks = np.linspace(fstart, fstop, self.plot_state['x_divs'] + 1)
