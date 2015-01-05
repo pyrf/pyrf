@@ -34,11 +34,11 @@ class MeasurementControls(QtGui.QWidget):
         self._cursor_spinbox.quiet_update(value = -100)
 
         self._y_divs = QDoubleSpinBoxPlayback()
-        self._y_divs.setRange(0, 2000)
+        self._y_divs.setRange(1, 2000)
         self._y_divs.quiet_update(value = 10)
 
         self._x_divs = QDoubleSpinBoxPlayback()
-        self._x_divs.setRange(0, 2000)
+        self._x_divs.setRange(1, 2000)
         self._x_divs.quiet_update(value = 10)
 
     def _build_layout(self):
@@ -79,6 +79,7 @@ class MeasurementControls(QtGui.QWidget):
         self._cursor_spinbox.editingFinished.connect(change_cursor_value)
         self._x_divs.editingFinished.connect(change_x_div)
         self._y_divs.editingFinished.connect(change_y_div)
+
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 

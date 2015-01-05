@@ -223,20 +223,25 @@ class Plot(QtCore.QObject):
                 self.window.addItem(self.cursor_line)
             else:
                 self.window.removeItem(self.cursor_line)
+
         if 'channel_power' in changed:
             if state['channel_power']:
                 self.enable_channel_power()
             else:
                 self.disable_channel_power()
+
         if 'horizontal_cursor_value' in changed:
             self.cursor_line.setValue(state['horizontal_cursor_value'])
+
         if 'channel_power_region' in changed:
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
+
         if 'y_axis' in changed:
             self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+
         if 'x_divs' in changed or 'y_divs' in changed:
             self.update_axis_ticks()
 

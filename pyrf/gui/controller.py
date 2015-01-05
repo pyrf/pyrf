@@ -546,6 +546,10 @@ class SpecAController(QtCore.QObject):
         state = SpecAState.from_json_object(state_json, playback)
         self._state_changed(state, changed)
 
+        # apply plot options
+        self.plot_change.emit(dict(self._plot_options),
+            self._plot_options.keys())
+
     def apply_options(self, **kwargs):
         """
         Apply menu options and signal the change
