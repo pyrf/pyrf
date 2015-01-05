@@ -103,6 +103,10 @@ class MainWindow(QtGui.QMainWindow):
         open_action.triggered.connect(self.open_device_dialog)
         play_action = QtGui.QAction('&Playback Recording', self)
         play_action.triggered.connect(self.open_playback_dialog)
+        save_config_action = QtGui.QAction('&Save Settings', self)
+        save_config_action.triggered.connect(self.save_configuration)
+        load_config_action = QtGui.QAction('&Load Settings', self)
+        load_config_action.triggered.connect(self.load_configuration)
         self.record_action = QtGui.QAction('Start &Recording', self)
         self.record_action.triggered.connect(self.start_recording)
         self.record_action.setDisabled(True)
@@ -124,6 +128,9 @@ class MainWindow(QtGui.QMainWindow):
         file_menu = menubar.addMenu('&File')
         file_menu.addAction(open_action)
         file_menu.addAction(play_action)
+        file_menu.addSeparator()
+        file_menu.addAction(load_config_action)
+        file_menu.addAction(save_config_action)
         file_menu.addSeparator()
         file_menu.addAction(self.record_action)
         file_menu.addAction(self.stop_action)
@@ -221,6 +228,27 @@ class MainWindow(QtGui.QMainWindow):
         self.update_title()
         self.controller.set_device(playback_filename=playback_filename)
         self.show()
+
+    def save_configuration(self):
+        filename = time.strftime('config-%Y-%m-%d-%H%M%S')
+        names = glob.glob(filename + '*.config')
+
+        if (filename + '.config') in names:
+            count = names.count(filename)
+            filename += '(%d)' % count
+        filename += '.config'
+        cfilename, file_type = QtGui.QFileDialog.getSaveFileName(self,
+                                                                "PyRF Configuration File", 
+                                                                filename, 
+                                                                "PyRF Configuration File (*.config)")
+        self.controller.save_settings(cfilename)
+
+    def load_configuration(self):
+        cfilename, file_type = QtGui.QFileDialog.getOpenFileName(self,
+                                                                "PyRF Configuration File", 
+                                                                None, 
+                                                                None)
+        self.controller.load_settings(cfilename)
 
     def update_title(self):
         if self._device_id is None:

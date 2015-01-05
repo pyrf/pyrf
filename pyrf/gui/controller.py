@@ -1,4 +1,5 @@
 import logging
+import ConfigParser
 
 from PySide import QtCore
 import numpy as np  # FIXME: move sweep playback out of here
@@ -588,3 +589,27 @@ class SpecAController(QtCore.QObject):
 
     def applying_user_xrange(self):
         return self._applying_user_xrange
+
+    def save_settings(self, dir):
+        cfgfile = open(dir,'w')
+        config = ConfigParser.ConfigParser()
+        state = self._state.to_json_object()
+
+        config.add_section('device_options')
+        for s in state:
+            config.set('device_options', s, state[s])
+
+        config.add_section('plot_options')
+        for p in self._plot_options:
+            config.set('plot_options', p, self._plot_options[p])
+
+        config.write(cfgfile)
+        cfgfile.close()
+
+        print dir
+
+    def load_settings(self, dir):
+        print dir
+        config = ConfigParser.ConfigParser()
+        config.read(dir)
+        print config.sections()
