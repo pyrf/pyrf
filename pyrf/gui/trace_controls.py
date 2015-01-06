@@ -67,6 +67,7 @@ class TraceControls(QtGui.QWidget):
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
 
         self._plot = plot
@@ -122,7 +123,15 @@ class TraceControls(QtGui.QWidget):
             if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
                 update_banner_color(color.red(), color.green(), color.blue())
                 update_button_color(color.red(), color.green(), color.blue())
-                trace = self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                trace_colors = {}
+                for n,t  in enumerate(self._plot.traces):
+                    if n == num:
+                        trace_colors['trace' + str(n + 1)] = (color.red(), color.green(), color.blue())
+                    else:
+                        trace_colors['trace' + str(n + 1)] = self._plot.traces[n].color
+
+                self.controller.apply_plot_options(traces = trace_colors)
         color_button.clicked.connect(custom_color_clicked)
 
         draw = QtGui.QComboBox()
@@ -130,6 +139,7 @@ class TraceControls(QtGui.QWidget):
         for i, val in enumerate(['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
+
         def draw_changed(index):
             trace = self._plot.traces[num]
             # FIXME: why so many exclusive bools?
@@ -151,12 +161,14 @@ class TraceControls(QtGui.QWidget):
 
         hold = QtGui.QCheckBox("Pause")
         hold.setToolTip("Pause trace updating")
+
         def hold_clicked():
             self._store_trace(num, hold.isChecked())
         hold.clicked.connect(hold_clicked)
 
         clear = QtGui.QPushButton("Clear Trace")
         clear.setToolTip("Refresh the data of the trace")
+
         def clear_clicked():
             trace = self._plot.traces[num]
             trace.clear_data()
@@ -167,6 +179,7 @@ class TraceControls(QtGui.QWidget):
         average_edit = QtGui.QSpinBox()
         average_edit.setRange(2, MAX_AVERAGE_FACTOR)
         average_edit.setValue(DEFAULT_AVERAGE_FACTOR)
+
         def average_changed():
             trace = self._plot.traces[num]
             trace.update_average_factor(average_edit.value())
@@ -175,6 +188,7 @@ class TraceControls(QtGui.QWidget):
 
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
+
         def add_trace_clicked():
             draw.setCurrentIndex(DEFAULT_TRACE)
             draw_changed(DEFAULT_TRACE)
@@ -186,6 +200,7 @@ class TraceControls(QtGui.QWidget):
         remove_trace = QtGui.QPushButton("-")
         remove_trace.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_trace.setToolTip("Disable this trace")
+
         def remove_trace_clicked():
             self.blank_trace(num)
             self._build_layout()
@@ -193,6 +208,7 @@ class TraceControls(QtGui.QWidget):
 
         add_marker = QtGui.QPushButton("+ Marker")
         add_marker.setToolTip("Add a marker to this trace")
+
         def add_marker_clicked():
             m = 0 if not self._plot.markers[0].enabled else 1
             self._plot.markers[m].enable(self._plot)
@@ -208,6 +224,20 @@ class TraceControls(QtGui.QWidget):
         return TraceWidgets(icon, color_button, draw, hold, clear,
                             average_label, average_edit,
                             add_trace, remove_trace, add_marker)
+
+    def _update_trace_widget_color(self, trace_widget, c):
+
+            color = QtGui.QColor()
+            color.setRgb(c[0], c[1], c[2])
+            pixmap = QtGui.QPixmap(320, 2)
+            pixmap.fill(color)
+            trace_widget[0].setPixmap(pixmap)
+            button_icon = QtGui.QIcon()
+
+            pixmap = QtGui.QPixmap(50, 50)
+            pixmap.fill(color)
+            button_icon.addPixmap(pixmap)
+            trace_widget[1].setIcon(button_icon)
 
     def _create_marker_widgets(self, num, button_group):
         """
@@ -348,6 +378,12 @@ class TraceControls(QtGui.QWidget):
             else:
                 self.setEnabled(True)
 
+    def plot_changed(self, state, changed):
+        self.plot_state = state
+        if 'traces' in changed:
+            for num, t in enumerate(self._plot.traces):
+                t.color = self.plot_state['traces']['trace' + str(num + 1)]
+                self._update_trace_widget_color(self._traces[num], t.color)
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments
         self.pow_data = power

@@ -143,9 +143,14 @@ def decode_config_type(config_str, str_type):
         value = long(config_str)
     elif 'str' in str_type:
         value = config_str
+    elif 'list' in str_type:
+        value = [int(i) for i in (config_str[1:-2].split(','))]
     elif 'tuple' in str_type:
         # for tuple, remove type, then remove brackets, then split by ',' and final convert to float tuple
-        value = tuple([float(i) for i in (config_str[1:-2].split(','))])
+        try:
+            value = tuple([float(i) for i in (config_str[1:-1].split(','))])
+        except ValueError:
+            value = tuple([int(i) for i in (config_str[1:-1].split(','))])
     else:
         value = config_str
     return value

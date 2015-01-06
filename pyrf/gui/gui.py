@@ -247,7 +247,7 @@ class MainWindow(QtGui.QMainWindow):
         cfilename, file_type = QtGui.QFileDialog.getOpenFileName(self,
                                                                 "PyRF Configuration File", 
                                                                 None, 
-                                                                None)
+                                                                "PyRF Configuration File (*.config)")
         self.controller.load_settings(cfilename)
 
     def update_title(self):

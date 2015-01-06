@@ -590,7 +590,7 @@ class SpecAController(QtCore.QObject):
 
     def save_settings(self, dir):
         cfgfile = open(dir,'w')
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser.SafeConfigParser()
         state = self._state.to_json_object()
 
         config.add_section('device_options')
@@ -615,20 +615,29 @@ class SpecAController(QtCore.QObject):
 
         config.add_section('plot_options')
         for p in self. _plot_options:
+            if 'dict' in str(type(self. _plot_options[p])):
+                for l in self. _plot_options[p]:
+                    option = l
+                    value = str(self. _plot_options[p][l])
+                    config.set('plot_options', option, value)
+                continue
             config.set('plot_options', p, str(self._plot_options[p]))
 
         config.write(cfgfile)
         cfgfile.close()
 
     def load_settings(self, dir):
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser.SafeConfigParser()
         config.read(dir)
-        plot_options = {}
+        plot_options = {'traces':{}}
         device_options = {'device_settings': {'trigger': {}}}
         state = self._state.to_json_object()
 
         for p in config.options('plot_options'):
-            plot_options[p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options[p])))
+            if p in self._plot_options:
+                plot_options[p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options[p])))
+            elif p in self._plot_options['traces']:
+                plot_options['traces'][p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options['traces'][p])))
 
         self.plot_change.emit(dict(plot_options), plot_options.keys())
 
