@@ -241,6 +241,8 @@ class MainWindow(QtGui.QMainWindow):
                                                                 "PyRF Configuration File", 
                                                                 filename, 
                                                                 "PyRF Configuration File (*.config)")
+        if cfilename == '':
+            return
         self.controller.save_settings(cfilename)
 
     def load_configuration(self):
@@ -248,6 +250,8 @@ class MainWindow(QtGui.QMainWindow):
                                                                 "PyRF Configuration File", 
                                                                 None, 
                                                                 "PyRF Configuration File (*.config)")
+        if cfilename == '':
+            return
         self.controller.load_settings(cfilename)
 
     def update_title(self):
