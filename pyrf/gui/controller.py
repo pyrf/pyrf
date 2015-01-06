@@ -48,12 +48,8 @@ class SpecAController(QtCore.QObject):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
-        self._plot_options = {'cont_cap_mode': True,
-                              'mouse_tune': True,
-                              'horizontal_cursor': False,
-                              'horizontal_cursor_value': -100,
-                              'x_divs': 10.0,
-                              'y_divs': 10.0}
+        self._plot_options = gui_config.PlotOptions
+
         self.developer_mode = developer_mode
         self.was_sweeping = False
 

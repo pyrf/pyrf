@@ -33,14 +33,6 @@ class MeasurementControls(QtGui.QWidget):
         self._cursor_spinbox.setEnabled(False)
         self._cursor_spinbox.quiet_update(value = -100)
 
-        self._y_divs = QDoubleSpinBoxPlayback()
-        self._y_divs.setRange(1, 2000)
-        self._y_divs.quiet_update(value = 10)
-
-        self._x_divs = QDoubleSpinBoxPlayback()
-        self._x_divs.setRange(1, 2000)
-        self._x_divs.quiet_update(value = 10)
-
     def _build_layout(self):
         grid = self.layout()
         clear_layout(grid)
@@ -49,13 +41,6 @@ class MeasurementControls(QtGui.QWidget):
         grid.addWidget(self._cursor_spinbox, 0, 1, 1,1)
 
         grid.addWidget(self._channel_power, 0, 2, 1, 1)
-
-        grid.addWidget(QtGui.QLabel('Y Divisions'), 1, 0, 1,1)
-        grid.addWidget(self._y_divs, 1, 1, 1,1)
-
-        grid.addWidget(QtGui.QLabel('X Divisions'), 2, 0, 1,1)
-        grid.addWidget(self._x_divs, 2, 1, 1,1)
-
         self.resize_widget()
 
     def _connect_controls(self):
@@ -68,17 +53,9 @@ class MeasurementControls(QtGui.QWidget):
         def change_cursor_value():
             self.controller.apply_plot_options(horizontal_cursor_value = self._cursor_spinbox.value())
 
-        def change_x_div():
-            self.controller.apply_plot_options(x_divs = self._x_divs.value())
-
-        def change_y_div():
-            self.controller.apply_plot_options(y_divs = self._y_divs.value())
-
         self._channel_power.clicked.connect(enable_channel_power)
         self._horizontal_cursor.clicked.connect(enable_cursor)
         self._cursor_spinbox.editingFinished.connect(change_cursor_value)
-        self._x_divs.editingFinished.connect(change_x_div)
-        self._y_divs.editingFinished.connect(change_y_div)
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties

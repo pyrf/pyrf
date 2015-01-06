@@ -157,7 +157,7 @@ class Plot(QtCore.QObject):
                                                         'fstop': self.trigger_control.fstop,
                                                         'amplitude': self.trigger_control.amplitude})
         def new_y_axis():
-            self.controller.apply_plot_options(y_axis = self.view_box.viewRange()[1])
+            self.controller.apply_plot_options(y_axis = tuple(self.view_box.viewRange()[1]))
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChanged.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
@@ -236,11 +236,8 @@ class Plot(QtCore.QObject):
                 t.compute_channel_power()
 
         if 'y_axis' in changed:
-            self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+            self.window.setYRange(min(state['y_axis']) , max(state['y_axis']), padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
-
-        if 'x_divs' in changed or 'y_divs' in changed:
-            self.update_axis_ticks()
 
     def delayed_tick_update(self):
         self.timer = QtCore.QTimer()
@@ -251,7 +248,7 @@ class Plot(QtCore.QObject):
     def update_axis_ticks(self):
         fstart = min(self.view_box.viewRange()[0])
         fstop = max(self.view_box.viewRange()[0])
-        ticks = np.linspace(fstart, fstop, self.plot_state['x_divs'] + 1)
+        ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
         tick_list = []
         for t in ticks:
             tick_list.append((t, ' '))
@@ -259,7 +256,7 @@ class Plot(QtCore.QObject):
 
         min_pow = min(self.view_box.viewRange()[1])
         max_pow = max(self.view_box.viewRange()[1])
-        ticks = np.linspace(min_pow, max_pow, self.plot_state['y_divs'] + 1)
+        ticks = np.linspace(min_pow, max_pow, NUMBER_OF_TICKS)
         tick_list = []
         for t in ticks:
             tick_list.append((t, str(int(t))))
