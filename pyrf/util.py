@@ -128,21 +128,24 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
 
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop
 
-def decode_config_type(config_str):
+def decode_config_type(config_str, str_type):
     """
-    returns configuration based on type specified in config_str
+    returns config_str value based on str_type
     """
 
-    if 'bool' in config_str:
-        value = (config_str[0:config_str.index('_')] == 'True')
-    elif 'int' in config_str:
-        value = int(config_str[0:config_str.index('_')])
-    elif 'float' in config_str:
-        value = float(config_str[0:config_str.index('_')])
-    elif 'tuple' in config_str:
+    if 'bool' in str_type:
+        value = (config_str == 'True')
+    elif 'int' in str_type:
+        value = int(config_str)
+    elif 'float' in str_type:
+        value = float(config_str)
+    elif 'long' in str_type:
+        value = long(config_str)
+    elif 'str' in str_type:
+        value = config_str
+    elif 'tuple' in str_type:
         # for tuple, remove type, then remove brackets, then split by ',' and final convert to float tuple
-        value = tuple([float(i) for i in (config_str[0:config_str.index('_')][1:-2].split(','))])
-
+        value = tuple([float(i) for i in (config_str[1:-2].split(','))])
     else:
-        value = None
+        value = config_str
     return value

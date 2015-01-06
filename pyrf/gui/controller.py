@@ -50,8 +50,10 @@ class SpecAController(QtCore.QObject):
         self._options = {}
         self._plot_options = {'cont_cap_mode': True,
                               'mouse_tune': True,
-                              'x_divs': 10,
-                              'y_divs': 10}
+                              'horizontal_cursor': False,
+                              'horizontal_cursor_value': -100,
+                              'x_divs': 10.0,
+                              'y_divs': 10.0}
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -595,13 +597,29 @@ class SpecAController(QtCore.QObject):
         config = ConfigParser.ConfigParser()
         state = self._state.to_json_object()
 
-        # config.add_section('device_options')
-        # for s in state:
-            # config.set('device_options', s, state[s])
+        config.add_section('device_options')
+        for s in state:
+            if 'dict' in str(type(state[s])):
+                for k in state[s]:
+                    if 'dict' in str(type(state[s][k])):
+                        for j in state[s][k]:
+                            option = j
+                            value = state[s][k][j]
+                            config.set('device_options', option, str(value))
+                    else:
+                        option = k
+                        value = state[s][k]
+                        config.set('device_options', option, str(value))
+                continue
+
+            else:
+                option = s
+                value = state[s]
+            config.set('device_options', option, str(value))
 
         config.add_section('plot_options')
         for p in self. _plot_options:
-            config.set('plot_options', p, str(self._plot_options[p]) + '_' + str(type(self._plot_options[p])))
+            config.set('plot_options', p, str(self._plot_options[p]))
 
         config.write(cfgfile)
         cfgfile.close()
@@ -610,6 +628,21 @@ class SpecAController(QtCore.QObject):
         config = ConfigParser.ConfigParser()
         config.read(dir)
         plot_options = {}
+        device_options = {'device_settings': {'trigger': {}}}
+        state = self._state.to_json_object()
+
         for p in config.options('plot_options'):
-            plot_options[p] = decode_config_type(config.get('plot_options', p))
+            plot_options[p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options[p])))
+
         self.plot_change.emit(dict(plot_options), plot_options.keys())
+
+        for s in config.options('device_options'):
+            if s in state:
+                device_options[s] = decode_config_type(config.get('device_options', s), str(type(state[s])))
+            elif s in state['device_settings']:
+                device_options['device_settings'][s] = decode_config_type(config.get('device_options', s), str(type(state['device_settings'][s])))
+            elif s in state['device_settings']['trigger']:
+                device_options['device_settings']['trigger'][s] = decode_config_type(config.get('device_options', s), str(type(state['device_settings']['trigger'][s])))
+
+        state = SpecAState(self._state, **device_options)
+        self.state_change.emit(state, device_options.keys())
