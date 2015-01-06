@@ -12,7 +12,7 @@ from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.playback import Playback
 from pyrf.util import (compute_usable_bins, adjust_usable_fstart_fstop,
-    trim_to_usable_fstart_fstop)
+    trim_to_usable_fstart_fstop, decode_config_type)
 
 logger = logging.getLogger(__name__)
 
@@ -595,21 +595,21 @@ class SpecAController(QtCore.QObject):
         config = ConfigParser.ConfigParser()
         state = self._state.to_json_object()
 
-        config.add_section('device_options')
-        for s in state:
-            config.set('device_options', s, state[s])
+        # config.add_section('device_options')
+        # for s in state:
+            # config.set('device_options', s, state[s])
 
         config.add_section('plot_options')
-        for p in self._plot_options:
-            config.set('plot_options', p, self._plot_options[p])
+        for p in self. _plot_options:
+            config.set('plot_options', p, str(self._plot_options[p]) + '_' + str(type(self._plot_options[p])))
 
         config.write(cfgfile)
         cfgfile.close()
 
-        print dir
-
     def load_settings(self, dir):
-        print dir
         config = ConfigParser.ConfigParser()
         config.read(dir)
-        print config.sections()
+        plot_options = {}
+        for p in config.options('plot_options'):
+            plot_options[p] = decode_config_type(config.get('plot_options', p))
+        self.plot_change.emit(dict(plot_options), plot_options.keys())

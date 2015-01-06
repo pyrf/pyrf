@@ -127,3 +127,22 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
     trim_bins = [(s - left_bin, r) for (s, r) in usable_bins]
 
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop
+
+def decode_config_type(config_str):
+    """
+    returns configuration based on type specified in config_str
+    """
+
+    if 'bool' in config_str:
+        value = (config_str[0:config_str.index('_')] == 'True')
+    elif 'int' in config_str:
+        value = int(config_str[0:config_str.index('_')])
+    elif 'float' in config_str:
+        value = float(config_str[0:config_str.index('_')])
+    elif 'tuple' in config_str:
+        # for tuple, remove type, then remove brackets, then split by ',' and final convert to float tuple
+        value = tuple([float(i) for i in (config_str[0:config_str.index('_')][1:-2].split(','))])
+
+    else:
+        value = None
+    return value

@@ -105,6 +105,14 @@ class MeasurementControls(QtGui.QWidget):
                     self._cursor_spinbox.setEnabled(True)
            else:
                 self._cursor_spinbox.setEnabled(False)
+        if 'x_divs' in changed:
+            self._x_divs.quiet_update(value = float(state['x_divs']))
+
+        if 'y_divs' in changed:
+            self._y_divs.quiet_update(value = float(state['y_divs']))
+
+        if 'channel_power' in changed:
+            self._channel_power.setChecked(state['channel_power'])
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

@@ -14,7 +14,7 @@ class FrequencyControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-
+        controller.plot_change.connect(self.plot_changed)
         grid = QtGui.QGridLayout()
 
         cfreq_bt, cfreq_txt = self._center_freq()
@@ -119,6 +119,10 @@ class FrequencyControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._rbw_box.setEnabled(True)
 
+    def plot_changed(self, state, changed):
+        if 'mouse_tune' in changed:
+            self._mouse_cbox.setChecked(state['mouse_tune'])
+
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
@@ -136,6 +140,7 @@ class FrequencyControls(QtGui.QWidget):
         steps.addItem("50 MHz")
         steps.addItem("100 MHz")
         self.fstep = float(steps.currentText().split()[0])
+
         def freq_step_change():
             self.fstep = float(steps.currentText().split()[0])
             self._freq_edit.setSingleStep(self.fstep)
@@ -153,8 +158,8 @@ class FrequencyControls(QtGui.QWidget):
         def change_mouse_control():
             self.controller.apply_plot_options(mouse_tune = mouse_control.isChecked())
         mouse_control.clicked.connect(change_mouse_control)
-        
-        return mouse_control
+        self._mouse_cbox = mouse_control
+        return self._mouse_cbox
 
     def _center_freq(self):
         cfreq = QtGui.QLabel('Center:')
