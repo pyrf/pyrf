@@ -151,9 +151,11 @@ class MainWindow(QtGui.QMainWindow):
             return action
 
         self.view_menu = menubar.addMenu('&View')
+        self.option_actions = {}
         for text, option, default in VIEW_OPTIONS:
-            self.view_menu.addAction(checkbox_action(
-                self.controller.apply_options, text, option, default))
+            self.option_actions[option] = checkbox_action(self.controller.apply_options, text, option, default)
+            self.view_menu.addAction(self.option_actions[option])
+
         self.view_menu.addSeparator()
 
         if developer_menu:
@@ -620,15 +622,18 @@ class MainPanel(QtGui.QWidget):
 
         if 'iq_plots' in changed:
             self._update_iq_plot_visibility()
+            self._main_window.option_actions['iq_plots'].setChecked(options['iq_plots'])
 
         ww = self._plot.waterfall_window
         if 'waterfall_plot' in changed and ww:
+            self._main_window.option_actions['waterfall_plot'].setChecked(options['waterfall_plot'])
             if self.waterfall_plot_enabled:
                 ww.show()
             else:
                 ww.hide()
 
         if 'persistence_plot' in changed:
+            self._main_window.option_actions['persistence_plot'].setChecked(options['persistence_plot'])
             self.persist_widget.setVisible(self.persistence_plot_enabled)
 
     def _update_iq_plot_visibility(self):

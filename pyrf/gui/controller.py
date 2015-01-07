@@ -614,15 +614,18 @@ class SpecAController(QtCore.QObject):
             config.set('device_options', option, str(value))
 
         config.add_section('plot_options')
-        for p in self. _plot_options:
-            if 'dict' in str(type(self. _plot_options[p])):
+        for p in self._plot_options:
+            if 'dict' in str(type(self._plot_options[p])):
                 for l in self. _plot_options[p]:
                     option = l
-                    value = str(self. _plot_options[p][l])
+                    value = str(self._plot_options[p][l])
                     config.set('plot_options', option, value)
                 continue
             config.set('plot_options', p, str(self._plot_options[p]))
 
+        config.add_section('options')
+        for p in self._options:
+            config.set('options', p, str(self._options[p]))
         config.write(cfgfile)
         cfgfile.close()
 
@@ -631,6 +634,7 @@ class SpecAController(QtCore.QObject):
         config.read(dir)
         plot_options = {'traces':{}}
         device_options = {'device_settings': {'trigger': {}}}
+        options = {}
         state = self._state.to_json_object()
 
         for p in config.options('plot_options'):
@@ -649,5 +653,9 @@ class SpecAController(QtCore.QObject):
             elif s in state['device_settings']['trigger']:
                 device_options['device_settings']['trigger'][s] = decode_config_type(config.get('device_options', s), str(type(state['device_settings']['trigger'][s])))
 
+        for p in config.options('options'):
+            options[p] = decode_config_type(config.get('options', p), str(type(self._options[p])))
+
         state = SpecAState(self._state, **device_options)
         self.state_change.emit(state, device_options.keys())
+        self.apply_options(**options)
