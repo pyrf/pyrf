@@ -32,7 +32,7 @@ ZIF_BITS = 2**13
 CONST_POINTS = 512
 
 LNEG_NUM = -9e10
-TICK_REDRAW_DELAY = 100
+TICK_REDRAW_DELAY = 500
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
