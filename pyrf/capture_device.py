@@ -80,9 +80,6 @@ class CaptureDevice(object):
 
         full_bw = prop.FULL_BW[rfe_mode]
         self.packets_per_block = 1
-        self.real_device.abort()
-        self.real_device.flush()
-        self.real_device.request_read_perm()
         self._vrt_context = {}
         self._data_packets = []
 
