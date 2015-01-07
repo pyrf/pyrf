@@ -236,8 +236,10 @@ class Plot(QtCore.QObject):
                 t.compute_channel_power()
 
         if 'y_axis' in changed:
+            b = self.window.blockSignals(True)
             self.window.setYRange(min(state['y_axis']) , max(state['y_axis']), padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+            self.window.blockSignals(b)
 
     def delayed_tick_update(self):
         self.timer = QtCore.QTimer()
