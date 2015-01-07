@@ -67,9 +67,9 @@ class WSA4000Properties(object):
 
     SPECA_DEFAULTS = {
         'mode': 'ZIF',
-        'center': 2450 * M,
+        'center': 2450.0 * M,
         'rbw': 122070,
-        'span': 125 * M,
+        'span': 125.0 * M,
         'decimation': 1,
         'fshift': 0,
         'device_settings': {

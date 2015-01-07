@@ -237,6 +237,7 @@ class Plot(QtCore.QObject):
 
         if 'y_axis' in changed:
             b = self.window.blockSignals(True)
+            self.delayed_tick_update()
             self.window.setYRange(min(state['y_axis']) , max(state['y_axis']), padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.window.blockSignals(b)
