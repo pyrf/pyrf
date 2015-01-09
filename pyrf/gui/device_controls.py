@@ -176,11 +176,6 @@ class DeviceControls(QtGui.QWidget):
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
             self._iq_output_box.setEnabled(True)
 
-        if 'device_settings.trigger' in changed:
-            if state.device_settings['trigger']['type'] == 'None':
-                if self._level_trigger.isChecked():
-                    self._level_trigger.click()
-
         if 'mode' in changed:
             if state.sweeping():
                 self._dec_box.setEnabled(False)
@@ -199,10 +194,7 @@ class DeviceControls(QtGui.QWidget):
                 self._dec_box.setEnabled(False)
                 self._fshift_edit.setEnabled(False)
                 self._fshift_label.setEnabled(False)
-                self._level_trigger.setEnabled(False)
-                self._trig_fstart.setEnabled(False)
-                self._trig_fstop.setEnabled(False)
-                self._trig_amp.setEnabled(False)
+
 
             elif 'DIGITIZER' == state.device_settings['iq_output_path']:
                 # enable digitizer controls
@@ -210,10 +202,6 @@ class DeviceControls(QtGui.QWidget):
                     self._dec_box.setEnabled(True)
                     self._fshift_edit.setEnabled(True)
                     self._fshift_label.setEnabled(True)
-                    self._trig_fstart.setEnabled(True)
-                    self._trig_fstop.setEnabled(True)
-                    self._trig_amp.setEnabled(True)
-                    self._level_trigger.setEnabled(True)
 
         self.gui_state = state
 

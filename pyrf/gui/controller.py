@@ -544,7 +544,6 @@ class SpecAController(QtCore.QObject):
 
         state = SpecAState.from_json_object(state_json, playback)
         self._state_changed(state, changed)
-
         # apply plot options
         self.plot_change.emit(dict(self._plot_options),
             self._plot_options.keys())
@@ -655,7 +654,6 @@ class SpecAController(QtCore.QObject):
 
         for p in config.options('options'):
             options[p] = decode_config_type(config.get('options', p), str(type(self._options[p])))
-
         state = SpecAState(self._state, **device_options)
-        self.state_change.emit(state, device_options.keys())
+        self._apply_complete_settings(device_options, False)
         self.apply_options(**options)

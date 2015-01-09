@@ -101,6 +101,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._build_layout(self.dut_prop)
 
     def state_changed(self, state, changed):
+
         if state.playback:
             self._atten_box.playback_value(
                 state.device_settings.get('attenuator', False))
@@ -124,6 +125,10 @@ class AmplitudeControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(True)
                 self._min_level.setEnabled(True)
+
+        if 'device_settings.hdr_gain' in changed:
+
+            self._hdr_gain_box.quiet_update(value=state.device_settings['hdr_gain'])
 
     def plot_changed(self, state, changed):
         self.plot_state = state

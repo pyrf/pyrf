@@ -179,7 +179,7 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    DEFAULT_SPECA_SPAN = 125 * M
+    DEFAULT_SPECA_SPAN = 125.0 * M
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450 * M,
@@ -190,7 +190,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25,
+            'hdr_gain': 25.0,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,
