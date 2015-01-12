@@ -127,8 +127,10 @@ class AmplitudeControls(QtGui.QWidget):
                 self._min_level.setEnabled(True)
 
         if 'device_settings.hdr_gain' in changed:
-
             self._hdr_gain_box.quiet_update(value=state.device_settings['hdr_gain'])
+
+        if 'device_settings.attenuator' in changed:
+            self._atten_box.setChecked(state.device_settings['attenuator'])
 
     def plot_changed(self, state, changed):
         self.plot_state = state

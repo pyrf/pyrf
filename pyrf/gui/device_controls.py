@@ -5,6 +5,10 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
+DIGITIZER_PATH_STRING = {'DIGITIZER': 'Digitizer',
+                  'CONNECTOR': 'Connector'}
+PLL_REF_STRING = {'EXT': 'External',
+                  'INT': 'Internal'}
 class DeviceControls(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -189,6 +193,7 @@ class DeviceControls(QtGui.QWidget):
             self._fshift_edit.setRange(-fshift_max, fshift_max)
 
         if 'device_settings.iq_output_path' in changed:
+            self._iq_output_box.quiet_update(["Digitizer", "Connector"], DIGITIZER_PATH_STRING[state.device_settings['iq_output_path']])
             if 'CONNECTOR' == state.device_settings['iq_output_path']:
                 # remove all digitizer controls
                 self._dec_box.setEnabled(False)
@@ -203,6 +208,8 @@ class DeviceControls(QtGui.QWidget):
                     self._fshift_edit.setEnabled(True)
                     self._fshift_label.setEnabled(True)
 
+        if 'device_settings.pll_reference' in changed:
+            self._pll_box.quiet_update(["Internal", "External"], PLL_REF_STRING[state.device_settings['pll_reference']])
         self.gui_state = state
 
     def resize_widget(self):
