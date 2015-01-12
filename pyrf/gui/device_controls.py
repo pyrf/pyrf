@@ -22,6 +22,7 @@ class DeviceControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        controller.window_change.connect(self.window_changed)
 
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
@@ -217,6 +218,13 @@ class DeviceControls(QtGui.QWidget):
         if 'device_settings.pll_reference' in changed:
             self._pll_box.quiet_update(["Internal", "External"], PLL_REF_STRING[state.device_settings['pll_reference']])
         self.gui_state = state
+
+    def window_changed(self, state, changed):
+        if 'device_control' in changed:
+            if state['device_control']:
+                self.show()
+            else:
+                self.close()
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

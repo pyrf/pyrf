@@ -6,7 +6,7 @@ import numpy as np  # FIXME: move sweep playback out of here
 from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
-from pyrf.gui import gui_config
+from pyrf.gui.gui_config import PlotOptions, WindowOptions
 from pyrf.gui.state import SpecAState
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
@@ -43,13 +43,14 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
+    window_change = QtCore.Signal(dict, list)
 
     def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
-        self._plot_options = gui_config.PlotOptions
-
+        self._plot_options = PlotOptions
+        self._window_options = WindowOptions
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -548,6 +549,10 @@ class SpecAController(QtCore.QObject):
         self.plot_change.emit(dict(self._plot_options),
             self._plot_options.keys())
 
+        # apply window options
+        self.window_change.emit(dict(self._window_options),
+            self._window_options.keys())
+
     def apply_options(self, **kwargs):
         """
         Apply menu options and signal the change
@@ -574,6 +579,16 @@ class SpecAController(QtCore.QObject):
 
     def get_options(self):
         return dict(self._options)
+
+    def apply_window_options(self, **kwargs):
+        """
+        Apply window options and signal the change
+
+        :param kwargs: keyword arguments of the window options
+        """
+        self._window_options.update(kwargs)
+        self.window_change.emit(dict(self._window_options),
+            kwargs.keys())
 
     def enable_user_xrange_control(self, enable):
         self._user_xrange_control_enabled = enable
@@ -625,6 +640,10 @@ class SpecAController(QtCore.QObject):
         config.add_section('options')
         for p in self._options:
             config.set('options', p, str(self._options[p]))
+
+        config.add_section('window_options')
+        for p in self._window_options:
+            config.set('window_options', p, str(self._window_options[p]))
         config.write(cfgfile)
         cfgfile.close()
 
@@ -634,6 +653,7 @@ class SpecAController(QtCore.QObject):
         plot_options = {'traces':{}}
         device_options = {'device_settings': {'trigger': {}}}
         options = {}
+        window_options = {}
         state = self._state.to_json_object()
 
         for p in config.options('plot_options'):
@@ -654,6 +674,10 @@ class SpecAController(QtCore.QObject):
 
         for p in config.options('options'):
             options[p] = decode_config_type(config.get('options', p), str(type(self._options[p])))
+
+        for p in config.options('window_options'):
+            window_options[p] = decode_config_type(config.get('window_options', p), str(type(self._window_options[p])))
         state = SpecAState(self._state, **device_options)
         self._apply_complete_settings(device_options, False)
         self.apply_options(**options)
+        self.apply_window_options(**window_options)

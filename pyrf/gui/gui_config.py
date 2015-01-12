@@ -12,3 +12,10 @@ PlotOptions = {'cont_cap_mode': True,
               'y_axis': (-160.0, 0.0),
               'mouse_tune': True,
               'traces': traces}
+
+WindowOptions = {'frequency_control': True,
+              'measurement_control': True,
+              'capture_control': True,
+              'amplitude_control': True,
+              'device_control': False,
+              'trace_control': True}

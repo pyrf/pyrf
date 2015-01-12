@@ -26,6 +26,8 @@ class AmplitudeControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
+        controller.window_change.connect(self.window_changed)
+
         self._plot = plot
 
         grid = QtGui.QGridLayout()
@@ -131,6 +133,13 @@ class AmplitudeControls(QtGui.QWidget):
 
         if 'device_settings.attenuator' in changed:
             self._atten_box.setChecked(state.device_settings['attenuator'])
+
+    def window_changed(self, state, changed):
+        if 'amplitude_control' in changed:
+            if state['amplitude_control']:
+                self.show()
+            else:
+                self.close()
 
     def plot_changed(self, state, changed):
         self.plot_state = state

@@ -15,6 +15,7 @@ class FrequencyControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
+
         grid = QtGui.QGridLayout()
 
         cfreq_bt, cfreq_txt = self._center_freq()
@@ -296,6 +297,3 @@ class FrequencyControls(QtGui.QWidget):
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
             self._rbw_box.setCurrentIndex(self.dut_prop.DEFAULT_RBW_INDEX)
-
-    def showEvent(self, event):
-        self.activateWindow()

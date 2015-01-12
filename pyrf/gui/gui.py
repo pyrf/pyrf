@@ -338,12 +338,13 @@ class MainPanel(QtGui.QWidget):
         controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
+        controller.window_change.connect(self.window_changed)
 
         self._main_window = main_window
 
         self.ref_level = 0
         self.dut = None
-        self.control_widgets = []
+        self.control_widgets = {}
         super(MainPanel, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(MINIMUM_WIDTH)
@@ -363,7 +364,6 @@ class MainPanel(QtGui.QWidget):
             ['iq_plots', 'waterfall_plot', 'persistence_plot'])
 
     def device_changed(self, dut):
-        self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
         self.enable_controls()
 
@@ -428,6 +428,18 @@ class MainPanel(QtGui.QWidget):
             self.update_marker_labels()
         self.plot_state = state
 
+    def window_changed(self, state, changed):
+        """
+        signal handler for window changes
+        :param state: new windowState object
+        :param changed: list of attribute names changed
+        """
+        for win in changed:
+            if not self.control_widgets[win].isVisible() and state[win]:
+                self.control_widgets[win].show()
+            if self.control_widgets[win].isVisible() and not state[win]:
+                self.control_widgets[win].close()
+
     def show_labels(self):
         self._diff_label.show()
         self._mask_label.show()
@@ -467,7 +479,13 @@ class MainPanel(QtGui.QWidget):
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
+        self._init_docking_widgets()
 
+        self._grid = grid
+        self.setLayout(grid)
+
+    def _init_docking_widgets(self):
+        self._toggle_actions = {}
         self._add_docking_controls(self._freq_controls(), "Frequency Control")
         self._add_docking_controls(
             self._measurement_controls(), "Measurement Control")
@@ -478,9 +496,6 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Trace Control")
 
-        self._grid = grid
-        self.setLayout(grid)
-
     def _add_docking_controls(self, widget, title):
         dock = QtGui.QDockWidget(title, self)
         dock.setAllowedAreas(
@@ -488,8 +503,15 @@ class MainPanel(QtGui.QWidget):
         dock.setWidget(widget)
         # FIXME we should be doing this in the MainWindow
         self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
-        self._main_window.view_menu.addAction(dock.toggleViewAction())
+        toggle_action = dock.toggleViewAction()
+        def _dock_change():
+            dict = {title.lower().replace(' ', '_'): toggle_action.isChecked()}
+            self.controller.apply_window_options(**dict)
 
+        toggle_action.toggled.connect(_dock_change)
+        self._toggle_actions[title.lower().replace(' ', '_')] = toggle_action
+        self._main_window.view_menu.addAction(toggle_action)
+        self.control_widgets[title.lower().replace(' ', '_')] = dock
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
@@ -497,7 +519,7 @@ class MainPanel(QtGui.QWidget):
 
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
-        
+
         persist = QtGui.QHBoxLayout()
         # FIXME: reaching too far into plot..
         persist.addWidget(self._plot.persistence_window.gradient_editor)
@@ -519,32 +541,27 @@ class MainPanel(QtGui.QWidget):
 
     def _freq_controls(self):
         self._freq_group = FrequencyControls(self.controller)
-        self.control_widgets.append(self._freq_group)
         return self._freq_group
 
     def _amplitude_controls(self):
         self._amplitude_group = AmplitudeControls(self.controller, self._plot)
-        self.control_widgets.append(self._amplitude_group)
         return self._amplitude_group
 
     def _trace_controls(self):
-        self.trace_group = TraceControls(self.controller, self._plot)
-        self.control_widgets.append(self.trace_group)
-        return self.trace_group
+        self._trace_group = TraceControls(self.controller, self._plot)
+        return self._trace_group
 
     def _measurement_controls(self):
-        self.measure_group = MeasurementControls(self.controller)
-        self.control_widgets.append(self.measure_group)
-        return self.measure_group
+        self._measure_group = MeasurementControls(self.controller)
+        return self._measure_group
 
     def _capture_controls(self):
-        self.capture_group = CaptureControls(self.controller)
-        self.control_widgets.append(self.capture_group)
-        return self.capture_group
+        self._capture_group = CaptureControls(self.controller)
+        return self._capture_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
-        self.control_widgets.append(self._dev_group)
+
         return self._dev_group
 
     def _marker_labels(self):
@@ -738,10 +755,9 @@ class MainPanel(QtGui.QWidget):
 
     def enable_controls(self):
         for item in self.control_widgets:
-            item.setEnabled(True)
-
+            self.control_widgets[item].setEnabled(True)
 
     def disable_controls(self):
         for item in self.control_widgets:
-            item.setEnabled(False)
+            self.control_widgets[item].setEnabled(False)
 
