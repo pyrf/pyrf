@@ -140,7 +140,6 @@ class Plot(QtCore.QObject):
         self.persistence_window.getAxis('bottom').setScale(1e-9)
         self.persistence_window.showGrid(True, True)
 
-
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
@@ -211,6 +210,9 @@ class Plot(QtCore.QObject):
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self.remove_trigger()
+
+        if 'fshift' in changed:
+            self.delayed_tick_update()
 
     def plot_changed(self, state, changed):
 

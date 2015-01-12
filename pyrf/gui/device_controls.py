@@ -149,7 +149,7 @@ class DeviceControls(QtGui.QWidget):
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
-        self._fshift_edit.valueChanged.connect(new_freq_shift)
+        self._fshift_edit.editingFinished.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
@@ -189,8 +189,15 @@ class DeviceControls(QtGui.QWidget):
                     state.rfe_mode()] is not None
                 self._dec_box.setEnabled(decimation_available)
                 self._fshift_edit.setEnabled(decimation_available)
-            fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
-            self._fshift_edit.setRange(-fshift_max, fshift_max)
+                fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
+                self._fshift_edit.setRange(-fshift_max, fshift_max)
+
+        if 'decimation' in changed:
+            self._dec_box.quiet_update(self._dec_values, str(state.decimation))
+
+        if 'fshift' in changed:
+
+            self._fshift_edit.quiet_update(value = state.fshift / M)
 
         if 'device_settings.iq_output_path' in changed:
             self._iq_output_box.quiet_update(["Digitizer", "Connector"], DIGITIZER_PATH_STRING[state.device_settings['iq_output_path']])
@@ -199,7 +206,6 @@ class DeviceControls(QtGui.QWidget):
                 self._dec_box.setEnabled(False)
                 self._fshift_edit.setEnabled(False)
                 self._fshift_label.setEnabled(False)
-
 
             elif 'DIGITIZER' == state.device_settings['iq_output_path']:
                 # enable digitizer controls
