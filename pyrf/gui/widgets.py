@@ -151,9 +151,9 @@ class SpectralWidget(QtGui.QWidget):
         
         grid = self.layout()
         grid.setSpacing(0)
+        grid.setColumnMinimumWidth(0, 20)
         grid.setHorizontalSpacing(0)
-
-        grid.addWidget(self.window, 0, 0, 1, 4)
+        grid.addWidget(self.window, 0, 1, 1, 4)
         grid.addWidget(self._mask_label, 1, 0, 2, 4)
         grid.addWidget(self._fstart_label, 1, 1, 1, 1)
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)

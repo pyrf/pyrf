@@ -139,7 +139,8 @@ class Plot(QtCore.QObject):
             data_model=self.waterfall_data)
         self.persistence_window.getAxis('bottom').setScale(1e-9)
         self.persistence_window.showGrid(True, True)
-
+        self.persistence_window.getAxis('top').setPen(colors.WHITE_NUM)
+        self.persistence_window.getAxis('bottom').setPen(colors.WHITE_NUM)
 
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
@@ -251,6 +252,8 @@ class Plot(QtCore.QObject):
         self.timer.start(TICK_REDRAW_DELAY)
 
     def update_axis_ticks(self):
+
+        # update bottom axis ticks
         fstart = min(self.view_box.viewRange()[0])
         fstop = max(self.view_box.viewRange()[0])
         ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
@@ -258,7 +261,9 @@ class Plot(QtCore.QObject):
         for t in ticks:
             tick_list.append((t, ' '))
         self.window.getAxis('bottom').setTicks([tick_list])
+        self.persistence_window.getAxis('bottom').setTicks([tick_list])
 
+        # update left axis ticks
         min_pow = min(self.view_box.viewRange()[1])
         max_pow = max(self.view_box.viewRange()[1])
         ticks = np.linspace(min_pow, max_pow, NUMBER_OF_TICKS)
@@ -266,7 +271,12 @@ class Plot(QtCore.QObject):
         for t in ticks:
             tick_list.append((t, str(int(t))))
         self.window.getAxis('left').setTicks([tick_list])
+        self.persistence_window.getAxis('left').setTicks([tick_list])
+
         self.center_line.setValue(self.gui_state.center)
+        self.persistence_window.center_line.setValue(self.gui_state.center)
+
+
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
