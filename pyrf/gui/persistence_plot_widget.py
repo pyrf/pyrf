@@ -9,6 +9,7 @@ import numpy as np
 import pyqtgraph as pg
 
 from waterfall_widget import WaterfallModel
+
 from pyrf.gui import colors
 
 #inject a familiar color scheme into pyqtgraph...

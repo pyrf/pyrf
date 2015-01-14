@@ -6,6 +6,9 @@ import pyqtgraph as pg
 from pyrf.gui import colors
 from pyrf.gui import fonts
 from pyrf.units import M, G
+from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
+                                              decay_fn_EXPONENTIAL)
+
 class QComboBoxPlayback(QtGui.QComboBox):
     """
     QComboBox with playback features
@@ -97,19 +100,20 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         rval = super(QDoubleSpinBoxPlayback, self).stepBy(steps)
         self.editingFinished.emit()
 
-class SpectralWidget(QtGui.QWidget):
+class PlotWindowWidget(QtGui.QWidget):
     """
     A widget based from the Qt widget with a layout that represents the Fstart/Fstop and Fcenter
-    if the curret spectral plot
+    of the given plot window
     """
 
-    def __init__(self, controller):
-        super(SpectralWidget, self).__init__()
+    def __init__(self, controller, plot, grad = False):
+        super(PlotWindowWidget, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-
+        self._plot = plot
+        self._grad = grad
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
         self._build_layout()
@@ -145,15 +149,18 @@ class SpectralWidget(QtGui.QWidget):
         self._mask_label = QtGui.QLabel()
         self._mask_label.setStyleSheet('background-color: black')
 
-        self.window = pg.PlotWidget()
-
     def _build_layout(self):
         
         grid = self.layout()
         grid.setSpacing(0)
-        grid.setColumnMinimumWidth(0, 20)
+
         grid.setHorizontalSpacing(0)
-        grid.addWidget(self.window, 0, 1, 1, 4)
+        if self._grad:
+            grid.addWidget(self._plot.gradient_editor)
+        else:
+            grid.setColumnMinimumWidth(0, 20)
+
+        grid.addWidget(self._plot, 0, 1, 1, 4)
         grid.addWidget(self._mask_label, 1, 0, 2, 4)
         grid.addWidget(self._fstart_label, 1, 1, 1, 1)
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)

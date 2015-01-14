@@ -465,8 +465,6 @@ class MainPanel(QtGui.QWidget):
             vsplit.addWidget(self._plot.waterfall_window)
         
         persist = QtGui.QHBoxLayout()
-        # FIXME: reaching too far into plot..
-        persist.addWidget(self._plot.persistence_window.gradient_editor)
         persist.addWidget(self._plot.persistence_window)
         persist_widget = QtGui.QWidget()
         persist_widget.setLayout(persist)
