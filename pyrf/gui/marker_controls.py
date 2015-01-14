@@ -1,3 +1,4 @@
+from collections import namedtuple
 from PySide import QtGui
 
 from pyrf.units import M
@@ -6,14 +7,16 @@ from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBo
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.labels import MARKERS
 class MarkerWidgets(namedtuple('MarkerWidgets', """
-    name_label
-    add
-    remove
+    marker_label
+    add_marker
+    remove_marker
     freq
     power
     delta
-    delta_freq
-    delta_power
+    dfreq_label
+    dfreq
+    dpower_label
+    dpower
     """)):
     """
     :param icon: color icon
@@ -36,40 +39,70 @@ class MarkerControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         self._create_controls()
+        self.setLayout(QtGui.QGridLayout())
         self._build_layout()
-        
-    def _create_controls(self):
-        self._marker_controls = {}
-        
-        for m in MARKERS:
-            self._marker_controls
-    def _create_marker_widget(self, name):
-            marker_label = QtGui.QLabel(m)
-            add_marker = QtGui.QPushButton('+')
-            remove_marker = QtGui.QPushButton('+')
-            freq_label = 
-            freq = QDoubleSpinBoxPlayback()
-            freq.setSuffix(' MHz')
-    name_label
-    add
-    remove
-    freq
-    power
-    delta
-    delta_freq
-    delta_power
-    return TraceWidgets(icon, color_button, draw, hold, clear,
-                average_label, average_edit,
-                add_trace, remove_trace)
-    def _build_layout(self):
+        self.resize_widget()
 
+    def _create_controls(self):
+        self._marker_widgets = {}
+
+        for m in MARKERS:
+            self._marker_widgets[m] = self._create_marker_widget(m)
+
+    def _create_marker_widget(self, name):
+        marker_label = QtGui.QLabel(name)
+        add_marker = QtGui.QPushButton('+')
+        add_marker.setMaximumWidth(20)
+        remove_marker = QtGui.QPushButton('-')
+        remove_marker.setMaximumWidth(20)
+        freq_label = QtGui.QLabel('Frequency:')
+        freq = QDoubleSpinBoxPlayback()
+        freq.setSuffix(' MHz')
+        
+        power = QtGui.QLabel('dB')
+
+        
+        delta = QtGui.QPushButton('d')
+        
+        dfreq_label = QtGui.QLabel('Frequency:')
+        dfreq = QDoubleSpinBoxPlayback()
+        dfreq.setSuffix(' MHz')
+
+        dpower_label = QtGui.QLabel('Power:')
+        dpower = QtGui.QLabel('dB')
+
+
+        return MarkerWidgets(marker_label, add_marker, remove_marker, freq, power, 
+                            delta, dfreq_label, dfreq, dpower_label,
+                            dpower)
+
+    def _build_layout(self):
+        grid = self.layout()
+        for n, m in enumerate(sorted(self._marker_widgets)):
+            w = self._marker_widgets[m]
+            # grid.addWidget(w.marker_label, n, 0, 1, 1)
+            # grid.addWidget(w.add_marker, n, 1, 1, 1)
+            grid.addWidget(w.remove_marker, n, 2, 1, 1)
+            grid.addWidget(w.freq, n, 3, 1, 1)
+            grid.addWidget(w.power, n, 4, 1, 1)
+            grid.addWidget(w.delta, n, 5, 1, 1)
+            grid.addWidget( w.dfreq, n, 6, 1, 1)
+            grid.addWidget(w.dpower, n, 7, 1, 1)
+        
+        # grid.setColumnStretch(0, 1)
+        # grid.setColumnStretch(1, 1)
+        # grid.setColumnStretch(2, 1)
+        # grid.setColumnStretch(3, 1)
+        # grid.setColumnStretch(4, 1)
+        # grid.setColumnStretch(5, 1)
+        # grid.setColumnStretch(6, 1) 
+        self.resize_widget()
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
         self.gui_state = state
-
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

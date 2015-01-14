@@ -36,6 +36,8 @@ from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 from pyrf.gui.measurements_widget import MeasurementControls
 from pyrf.gui.capture_widget import CaptureControls
+from pyrf.gui.marker_controls import MarkerControls
+
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
     ('&Spectrogram', 'waterfall_plot', False),
@@ -453,6 +455,7 @@ class MainPanel(QtGui.QWidget):
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Trace Control")
+        self._add_docking_controls(self._marker_controls(), "Marker Control")
 
         self._grid = grid
         self.setLayout(grid)
@@ -522,6 +525,11 @@ class MainPanel(QtGui.QWidget):
         self._dev_group = DeviceControls(self.controller)
         self.control_widgets.append(self._dev_group)
         return self._dev_group
+        
+    def _marker_controls(self):
+        self.marker_group = MarkerControls(self.controller)
+        self.control_widgets.append(self.marker_group)
+        return self.marker_group
 
     def _marker_labels(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
