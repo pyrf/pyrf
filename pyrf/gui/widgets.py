@@ -146,6 +146,7 @@ class SpectralWidget(QtGui.QWidget):
         self._mask_label.setStyleSheet('background-color: black')
 
         self.window = pg.PlotWidget()
+
     def _build_layout(self):
         
         grid = self.layout()

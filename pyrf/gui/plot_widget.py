@@ -144,6 +144,9 @@ class Plot(QtCore.QObject):
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
+        center_pen = pg.mkPen(color = colors.WHITE_NUM, width = 2)
+        self.center_line = pg.InfiniteLine(pos = -100, angle = 90, movable = False, pen = center_pen)
+        self.window.addItem(self.center_line)
 
     def connect_plot_controls(self):
         def new_channel_power():
@@ -263,7 +266,7 @@ class Plot(QtCore.QObject):
         for t in ticks:
             tick_list.append((t, str(int(t))))
         self.window.getAxis('left').setTicks([tick_list])
-
+        self.center_line.setValue(self.gui_state.center)
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
