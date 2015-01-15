@@ -34,7 +34,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._create_controls()
         self._connect_device_controls()
         self._connect_plot_controls()
-        self.plot_state = {'y_axis': [PLOT_TOP, PLOT_BOTTOM]}
+        self.plot_state = None
 
     def _create_controls(self):
         attenuator_box = QCheckBoxPlayback("Attenuator")
@@ -128,8 +128,8 @@ class AmplitudeControls(QtGui.QWidget):
     def plot_changed(self, state, changed):
         self.plot_state = state
         if 'y_axis' in changed:
-            self._min_level.quiet_update(value = int(min(state['y_axis'])))
-            self._max_level.quiet_update(value = int(max(state['y_axis'])))
+            self._min_level.quiet_update(value = (min(state['y_axis'])))
+            self._max_level.quiet_update(value = (max(state['y_axis'])))
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

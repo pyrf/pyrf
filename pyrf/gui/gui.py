@@ -304,7 +304,6 @@ class MainPanel(QtGui.QWidget):
         controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
-
         self._main_window = main_window
 
         self.ref_level = 0
@@ -578,7 +577,6 @@ class MainPanel(QtGui.QWidget):
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
 
-
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
         self.waterfall_plot_enabled = options['waterfall_plot']
@@ -698,6 +696,7 @@ class MainPanel(QtGui.QWidget):
                 label.setText('')
 
     def enable_controls(self):
+
         for item in self.control_widgets:
             item.setEnabled(True)
 

@@ -32,7 +32,7 @@ ZIF_BITS = 2**13
 CONST_POINTS = 512
 
 LNEG_NUM = -9e10
-TICK_REDRAW_DELAY = 500
+TICK_REDRAW_DELAY = 200
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
@@ -77,13 +77,11 @@ class Plot(QtCore.QObject):
         self.spectral_plot.sigRangeChanged.connect(widget_range_changed)
 
         self.spectral_plot.setLabel('left', 'Power', 'dBm', **labelStyle)
-        self.spectral_plot.setLabel('top')
-        self.spectral_plot.getAxis('top').setTicks([[(LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM)),
-                                    (LNEG_NUM, str(LNEG_NUM)), (LNEG_NUM, str(LNEG_NUM))]])
-        self.spectral_plot.getAxis('top').setPen(colors.WHITE_NUM)
+        self.spectral_plot.setLabel('top', ' ')
+        self.spectral_plot.getAxis('top').setLabel(title = ' ', units = None)
+        self.spectral_plot.getAxis('top').setPen(colors.BLACK_NUM)
         self.spectral_plot.setLabel('bottom')
-
-        # horizontal cursor line
+        self.spectral_plot.getAxis('left').hide()
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
         self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = cursor_pen)
 
@@ -219,7 +217,8 @@ class Plot(QtCore.QObject):
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self.remove_trigger()
-
+        if 'fshift' in changed:
+            self.delayed_tick_update()
     def plot_changed(self, state, changed):
 
         self.plot_state = state
@@ -248,6 +247,7 @@ class Plot(QtCore.QObject):
             self.spectral_plot.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.persistence_plot.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.spectral_plot.blockSignals(b)
+            self.delayed_tick_update()
 
     def delayed_tick_update(self):
         self.timer = QtCore.QTimer()
@@ -257,7 +257,7 @@ class Plot(QtCore.QObject):
 
     def update_axis_ticks(self):
 
-        # update bottom axis ticks
+        self.spectral_plot.getAxis('left').show()
         fstart = min(self.view_box.viewRange()[0])
         fstop = max(self.view_box.viewRange()[0])
         ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
@@ -279,7 +279,6 @@ class Plot(QtCore.QObject):
 
         self.center_line.setValue(self.gui_state.center)
         self.persistence_plot.center_line.setValue(self.gui_state.center)
-
 
     def enable_channel_power(self):
         for t in self.traces:
@@ -332,11 +331,7 @@ class Plot(QtCore.QObject):
         self.persistence_plot.setYRange(min_level, ref_level)
 
     def grid(self,state):
-        self.spectral_plot.showGrid(state,state)
-        self.spectral_plot.getAxis('bottom').setPen(colors.GREY_NUM)
-        self.spectral_plot.getAxis('bottom').setGrid(200)
-        self.spectral_plot.getAxis('left').setPen(colors.GREY_NUM)
-        self.spectral_plot.getAxis('left').setGrid(200)
+        self.spectral_plot.showGrid(True,True)
 
     def update_markers(self):
         for m in self.markers:

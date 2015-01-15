@@ -146,22 +146,16 @@ class PlotWindowWidget(QtGui.QWidget):
         self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._span_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._mask_label = QtGui.QLabel()
-        self._mask_label.setStyleSheet('background-color: black')
-
     def _build_layout(self):
         
         grid = self.layout()
-        grid.setSpacing(0)
 
-        grid.setHorizontalSpacing(0)
         if self._grad:
             grid.addWidget(self._plot.gradient_editor)
         else:
             grid.setColumnMinimumWidth(0, 20)
 
-        grid.addWidget(self._plot, 0, 1, 1, 4)
-        grid.addWidget(self._mask_label, 1, 0, 2, 4)
+
         grid.addWidget(self._fstart_label, 1, 1, 1, 1)
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
         grid.addWidget(self._fstop_label, 1, 3, 1, 1)
@@ -169,6 +163,8 @@ class PlotWindowWidget(QtGui.QWidget):
         grid.addWidget(self._fstop_label, 1, 3, 1, 1)
         grid.addWidget(self._rbw_label, 2, 1, 1, 1)
         grid.addWidget(self._span_label, 2, 2, 1, 1)
+        grid.addWidget(self._plot, 0, 1, 1, 4)
+        self.resize_widget()
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -210,3 +206,6 @@ class PlotWindowWidget(QtGui.QWidget):
             self._span_label.setText("Span: %0.2f KHz" % (self.gui_state.span / 1e3))
         else:
             self._span_label.setText("Span: %0.2f MHz" % (self.gui_state.span/ M))
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
