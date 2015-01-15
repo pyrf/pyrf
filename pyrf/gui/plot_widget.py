@@ -138,10 +138,10 @@ class Plot(QtCore.QObject):
         self.persistence_plot = PersistencePlotWidget(
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
-        self.persistence_plot.getAxis('bottom').setScale(1e-9)
         self.persistence_plot.showGrid(True, True)
-        self.persistence_plot.getAxis('top').setPen(colors.WHITE_NUM)
-        self.persistence_plot.getAxis('bottom').setPen(colors.WHITE_NUM)
+        self.persistence_plot.setLabel('top', ' ')
+        self.persistence_plot.getAxis('top').setLabel(title = ' ', units = None)
+        self.persistence_plot.getAxis('top').setPen(colors.BLACK_NUM)
         self.persistence_window = PlotWindowWidget(controller, self.persistence_plot, grad = True)
 
         self.trigger_control = triggerControl()
@@ -257,7 +257,7 @@ class Plot(QtCore.QObject):
 
     def update_axis_ticks(self):
 
-        self.spectral_plot.getAxis('left').show()
+        self.spectral_plot.getAxis('left').hide()
         fstart = min(self.view_box.viewRange()[0])
         fstop = max(self.view_box.viewRange()[0])
         ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
@@ -279,6 +279,7 @@ class Plot(QtCore.QObject):
 
         self.center_line.setValue(self.gui_state.center)
         self.persistence_plot.center_line.setValue(self.gui_state.center)
+        self.spectral_plot.getAxis('left').show()
 
     def enable_channel_power(self):
         for t in self.traces:
