@@ -163,7 +163,7 @@ class Plot(QtCore.QObject):
                                                         'fstop': self.trigger_control.fstop,
                                                         'amplitude': self.trigger_control.amplitude})
         def new_y_axis():
-            self.controller.apply_plot_options(y_axis = self.view_box.viewRange()[1])
+            self.controller.apply_plot_options(ref_level = max(self.view_box.viewRange()[1]))
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChanged.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
@@ -242,10 +242,10 @@ class Plot(QtCore.QObject):
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
 
-        if 'y_axis' in changed:
+        if 'ref_level' in changed or 'db_div' in changed:
             b = self.spectral_plot.blockSignals(True)
-            self.spectral_plot.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
-            self.persistence_plot.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+            self.spectral_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)) , state['ref_level'], padding = 0)
+            self.persistence_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)), state['ref_level'], padding = 0)
             self.spectral_plot.blockSignals(b)
             self.delayed_tick_update()
 

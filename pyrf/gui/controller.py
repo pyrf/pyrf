@@ -17,10 +17,6 @@ logger = logging.getLogger(__name__)
 
 PLAYBACK_STEP_MSEC = 100
 
-# TODO: Remove once all plot options are centralized at gui_config
-PLOT_TOP = 0
-PLOT_BOTTOM = -160
-
 class SpecAController(QtCore.QObject):
     """
     The controller for the rtsa-gui.
@@ -53,7 +49,8 @@ class SpecAController(QtCore.QObject):
         self._options = {}
         self._plot_options = {'cont_cap_mode': True,
                               'mouse_tune': True,
-                              'y_axis': (PLOT_BOTTOM, PLOT_TOP)}
+                              'ref_level': 0,
+                              'db_div': 10}
         self.developer_mode = developer_mode
         self.was_sweeping = False
 

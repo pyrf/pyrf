@@ -56,12 +56,12 @@ class AmplitudeControls(QtGui.QWidget):
         self._max_level.setSingleStep(PLOT_STEP)
         self._max_label = QtGui.QLabel('Maximum: ')
 
-        self._min_level = QDoubleSpinBoxPlayback()
-        self._min_level.setRange(PLOT_YMIN, PLOT_YMAX)
-        self._min_level.setValue(PLOT_BOTTOM)
-        self._min_level.setSuffix(" dBm")
-        self._min_level.setSingleStep(PLOT_STEP)
-        self._min_label = QtGui.QLabel('Minimum: ')
+        self._db_div = QDoubleSpinBoxPlayback()
+        self._db_div.setRange(PLOT_YMIN, PLOT_YMAX)
+        self._db_div.setValue(PLOT_BOTTOM)
+        self._db_div.setSuffix(" dBm")
+        self._db_div.setSingleStep(PLOT_STEP)
+        self._min_label = QtGui.QLabel('dB/div: ')
 
         self._reference_offset = QtGui.QLabel("Offset")
         self._reference_offset.setToolTip("Add a reference offset to all plots")
@@ -76,7 +76,7 @@ class AmplitudeControls(QtGui.QWidget):
         grid.addWidget(self._max_label, 0, 0, 1, 1)
         grid.addWidget(self._max_level, 0, 1, 1, 1)
         grid.addWidget(self._min_label, 0, 3, 1, 1)
-        grid.addWidget(self._min_level, 0, 4, 1, 1)
+        grid.addWidget(self._db_div, 0, 4, 1, 1)
         grid.addWidget(self._reference_offset, 1, 0, 1,1)
         grid.addWidget(self._reference_offset_spinbox, 1, 1, 1,1)
 
@@ -120,16 +120,17 @@ class AmplitudeControls(QtGui.QWidget):
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(False)
-                self._min_level.setEnabled(False)
+                self._db_div.setEnabled(False)
             elif state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(True)
-                self._min_level.setEnabled(True)
+                self._db_div.setEnabled(True)
 
     def plot_changed(self, state, changed):
         self.plot_state = state
-        if 'y_axis' in changed:
-            self._min_level.quiet_update(value = (min(state['y_axis'])))
-            self._max_level.quiet_update(value = (max(state['y_axis'])))
+        if 'ref_level' in changed:
+            self._max_level.quiet_update(value = state['ref_level'])
+        if 'db_div' in changed:
+            self._db_div.quiet_update(value = state['db_div'])
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
@@ -148,26 +149,20 @@ class AmplitudeControls(QtGui.QWidget):
         self._reference_offset_spinbox.editingFinished.connect(change_reference_offset_value)
 
     def _connect_plot_controls(self):
-        def update_plot_min():
-            if self._min_level.value() > self._max_level.value():
-                self._min_level.quiet_update(value = int(min(self.plot_state['y_axis'])))
-            else:
-                self.controller.apply_plot_options(y_axis = [self._max_level.value(), self._min_level.value()])
+        def update_db_div():
+            self.controller.apply_plot_options(db_div =  self._db_div.value())
 
         def update_plot_max():
-            if self._max_level.value() < self._min_level.value():
-                self._max_level.quiet_update(value = int(max(self.plot_state['y_axis'])))
-            else:
-                self.controller.apply_plot_options(y_axis = [self._max_level.value(), self._min_level.value()])
+                self.controller.apply_plot_options(ref_level = self._max_level.value())
 
-        self._min_level.editingFinished.connect(update_plot_min)
+        self._db_div.editingFinished.connect(update_db_div)
         self._max_level.editingFinished.connect(update_plot_max)
 
     def get_max_level(self):
         return self._max_level.value()
 
-    def get_min_level(self):
-        return self._min_level.value()
+    def get_db_div(self):
+        return self._db_div.value()
 
     def showEvent(self, event):
         self.activateWindow()
