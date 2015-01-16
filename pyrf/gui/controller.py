@@ -49,6 +49,7 @@ class SpecAController(QtCore.QObject):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
+
         self._plot_options = PlotOptions
         self._window_options = WindowOptions
         self.developer_mode = developer_mode

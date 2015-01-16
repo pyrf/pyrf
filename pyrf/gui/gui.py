@@ -339,7 +339,6 @@ class MainPanel(QtGui.QWidget):
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
         controller.window_change.connect(self.window_changed)
-
         self._main_window = main_window
 
         self.ref_level = 0
@@ -362,6 +361,7 @@ class MainPanel(QtGui.QWidget):
 
         self.options_changed(controller.get_options(),
             ['iq_plots', 'waterfall_plot', 'persistence_plot'])
+        self.start_time = time.time()
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -459,7 +459,7 @@ class MainPanel(QtGui.QWidget):
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        self.plot_width = 11
+        self.plot_width = 13
 
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
@@ -470,12 +470,12 @@ class MainPanel(QtGui.QWidget):
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 15, 11)
+        grid.addWidget(self._mask_label, 0, 0, 15, self.plot_width)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
         grid.addWidget(diff_label , 0, 7, 1, 2)
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
-        x = 2
+        x = 1
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
@@ -521,8 +521,6 @@ class MainPanel(QtGui.QWidget):
             vsplit.addWidget(self._plot.waterfall_window)
 
         persist = QtGui.QHBoxLayout()
-        # FIXME: reaching too far into plot..
-        persist.addWidget(self._plot.persistence_window.gradient_editor)
         persist.addWidget(self._plot.persistence_window)
         persist_widget = QtGui.QWidget()
         persist_widget.setLayout(persist)
@@ -594,7 +592,9 @@ class MainPanel(QtGui.QWidget):
         for color in colors.TRACE_COLORS:
             label = QtGui.QLabel('')
             label.setSizePolicy(sizePolicy)
+            label.setAlignment(QtCore.Qt.AlignLeft)
             label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
+            label.setMinimumWidth(200)
             self.channel_power_labels.append(label)
         return self.channel_power_labels
 
@@ -631,6 +631,8 @@ class MainPanel(QtGui.QWidget):
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
 
+        self.controller.apply_plot_options(sweep_rate =  time.time() - self.start_time)
+        self.start_time = time.time()
 
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
@@ -754,6 +756,7 @@ class MainPanel(QtGui.QWidget):
                 label.setText('')
 
     def enable_controls(self):
+
         for item in self.control_widgets:
             self.control_widgets[item].setEnabled(True)
 
