@@ -333,7 +333,12 @@ class Plot(QtCore.QObject):
 
     def grid(self,state):
         self.spectral_plot.showGrid(True,True)
-
+        self.spectral_plot.getAxis('bottom').setPen(colors.GREY_NUM)
+        self.spectral_plot.getAxis('bottom').setGrid(200)
+        self.spectral_plot.getAxis('left').setPen(colors.GREY_NUM)
+        self.spectral_plot.getAxis('left').setGrid(200)
+        self.spectral_plot.getAxis('top').setTicks([[(-200, '-200'), (-200, '-200'),
+                                            (-250, '-200'), (-250, '-200')]])
     def update_markers(self):
         for m in self.markers:
             if m.enabled:
