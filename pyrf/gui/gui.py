@@ -413,7 +413,7 @@ class MainPanel(QtGui.QWidget):
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        self.plot_width = 11
+        self.plot_width = 13
 
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
@@ -424,12 +424,12 @@ class MainPanel(QtGui.QWidget):
         self.marker_labels = []
         marker_label, delta_label, diff_label = self._marker_labels()
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 15, 11)
+        grid.addWidget(self._mask_label, 0, 0, 15, self.plot_width)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
         grid.addWidget(diff_label , 0, 7, 1, 2)
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
-        x = 2
+        x = 1
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
@@ -541,7 +541,9 @@ class MainPanel(QtGui.QWidget):
         for color in colors.TRACE_COLORS:
             label = QtGui.QLabel('')
             label.setSizePolicy(sizePolicy)
+            label.setAlignment(QtCore.Qt.AlignLeft)
             label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
+            label.setMinimumWidth(200)
             self.channel_power_labels.append(label)
         return self.channel_power_labels
 
