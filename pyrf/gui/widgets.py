@@ -112,6 +112,7 @@ class PlotWindowWidget(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
         self._plot = plot
         self._grad = grad
         self._create_controls()
@@ -120,16 +121,6 @@ class PlotWindowWidget(QtGui.QWidget):
 
     def _create_controls(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
-
-        self._fstart_label = QtGui.QLabel('Start')
-        self._fstart_label.setSizePolicy(sizePolicy)
-        self._fstart_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._fstart_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        self._fstop_label = QtGui.QLabel('Stop')
-        self._fstop_label.setSizePolicy(sizePolicy)
-        self._fstop_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._fstop_label.setAlignment(QtCore.Qt.AlignCenter)
 
         self._fcenter_label = QtGui.QLabel('Center')
         self._fcenter_label.setSizePolicy(sizePolicy)
@@ -146,6 +137,16 @@ class PlotWindowWidget(QtGui.QWidget):
         self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._span_label.setAlignment(QtCore.Qt.AlignCenter)
 
+        self._div_label = QtGui.QLabel('Div')
+        self._div_label.setSizePolicy(sizePolicy)
+        self._div_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._div_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._sweep_label = QtGui.QLabel('Sweep Rate')
+        self._sweep_label.setSizePolicy(sizePolicy)
+        self._sweep_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._sweep_label.setAlignment(QtCore.Qt.AlignCenter)
+
     def _build_layout(self):
         
         grid = self.layout()
@@ -155,14 +156,13 @@ class PlotWindowWidget(QtGui.QWidget):
         else:
             grid.setColumnMinimumWidth(0, 20)
 
+        grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
+        grid.addWidget(self._rbw_label, 1, 1, 1, 1)
+        grid.addWidget(self._span_label, 1, 3, 1, 1)
 
-        grid.addWidget(self._fstart_label, 1, 1, 1, 1)
-        grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
-        grid.addWidget(self._fstop_label, 1, 3, 1, 1)
-        grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
-        grid.addWidget(self._fstop_label, 1, 3, 1, 1)
-        grid.addWidget(self._rbw_label, 2, 1, 1, 1)
-        grid.addWidget(self._span_label, 2, 2, 1, 1)
+        grid.addWidget(self._sweep_label, 2, 1, 1, 1)
+        grid.addWidget(self._div_label, 2, 3, 1, 1)
+
         grid.addWidget(self._plot, 0, 1, 1, 4)
         self.resize_widget()
 
@@ -177,21 +177,24 @@ class PlotWindowWidget(QtGui.QWidget):
                 center = state.center
             else:
                 center = self.dut_prop.MAX_TUNABLE[state.rfe_mode()]
-            fstart = center - (state.span/ 2)
-            fstop = center + (state.span / 2)
             if int(center) > G:
                 unit = 'GHz'
                 div = G
             else:
                 unit = 'MHz'
                 div = M
-            self._fstart_label.setText('Start: %0.4f %s' % (fstart / div, unit))
             self._fcenter_label.setText('Center: %0.4f %s' % (center / div, unit))
-            self._fstop_label.setText('Stop: %0.4f %s' % (fstop / div, unit))
             self.update_span_label()
 
         if 'rbw' in changed:
             self.update_rbw_label()
+
+    def plot_changed(self, state, changed):
+        self.plot_state = state
+        if 'db_div' in changed:
+            self._div_label.setText('Db/Div: % 0.1f' % state['db_div'])
+        if 'sweep_rate' in changed:
+            self._sweep_label.setText('Sweep Rate: % 0.4f Sec' % state['sweep_rate'])
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()

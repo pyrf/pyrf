@@ -50,7 +50,7 @@ class SpecAController(QtCore.QObject):
         self._plot_options = {'cont_cap_mode': True,
                               'mouse_tune': True,
                               'ref_level': 0,
-                              'db_div': 10}
+                              'db_div': 15}
         self.developer_mode = developer_mode
         self.was_sweeping = False
 

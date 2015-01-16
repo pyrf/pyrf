@@ -61,7 +61,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._db_div.setValue(PLOT_BOTTOM)
         self._db_div.setSuffix(" dBm")
         self._db_div.setSingleStep(PLOT_STEP)
-        self._min_label = QtGui.QLabel('dB/div: ')
+        self._div_label = QtGui.QLabel('dB/Div: ')
 
         self._reference_offset = QtGui.QLabel("Offset")
         self._reference_offset.setToolTip("Add a reference offset to all plots")
@@ -75,7 +75,7 @@ class AmplitudeControls(QtGui.QWidget):
 
         grid.addWidget(self._max_label, 0, 0, 1, 1)
         grid.addWidget(self._max_level, 0, 1, 1, 1)
-        grid.addWidget(self._min_label, 0, 3, 1, 1)
+        grid.addWidget(self._div_label, 0, 3, 1, 1)
         grid.addWidget(self._db_div, 0, 4, 1, 1)
         grid.addWidget(self._reference_offset, 1, 0, 1,1)
         grid.addWidget(self._reference_offset_spinbox, 1, 1, 1,1)

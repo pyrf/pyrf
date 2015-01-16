@@ -263,7 +263,23 @@ class Plot(QtCore.QObject):
         ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
         tick_list = []
         for t in ticks:
-            tick_list.append((t, ' '))
+            if t in (ticks[1], ticks[-2]):
+                if t == ticks[1]:
+                    tick_num = ticks[0]
+                    str = 'Start'
+                else:
+                    tick_num = ticks[-1]
+                    str = 'Stop'
+                if tick_num > 1e9:
+                    units = 'GHz'
+                    div = 1e9
+                else:
+                    units = 'MHz'
+                    div = 1e6
+                text = ('%s: %0.4f %s' % (str, tick_num / div, units))
+            else:
+                text = ''
+            tick_list.append((t, text))
         self.spectral_plot.getAxis('bottom').setTicks([tick_list])
         self.persistence_plot.getAxis('bottom').setTicks([tick_list])
 
