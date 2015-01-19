@@ -5,7 +5,7 @@ import numpy as np  # FIXME: move sweep playback out of here
 from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
-from pyrf.gui import gui_config
+from pyrf.gui.gui_config import plotState, markerState
 from pyrf.gui.state import SpecAState
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
@@ -42,13 +42,14 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
+    marker_change = QtCore.Signal(str, dict, list)
 
     def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
-        self._plot_options = {'cont_cap_mode': True,
-                              'mouse_tune': True}
+        self._plot_options = plotState
+        self._marker_options = markerState
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -95,6 +96,7 @@ class SpecAController(QtCore.QObject):
 
         self.device_change.emit(dut)
         self._apply_complete_settings(state_json, bool(self._playback_file))
+        self.apply_marker_options(self._marker_options.keys(), self._marker_options['1'].keys(), **self._marker_options)
         self.start_capture()
 
     def start_recording(self, filename):
@@ -567,6 +569,16 @@ class SpecAController(QtCore.QObject):
         self._plot_options.update(kwargs)
         self.plot_change.emit(dict(self._plot_options),
             kwargs.keys())
+    
+    def apply_marker_options(self, marker, changed, **kwargs):
+        """
+        Apply marker changes and signal the change
+
+        :param kwargs: keyword arguments of the marker options
+        """
+
+        self._marker_options.update(kwargs)
+        self.marker_change.emit(marker, dict(self._marker_options), changed)
 
     def get_options(self):
         return dict(self._options)

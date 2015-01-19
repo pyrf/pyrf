@@ -313,7 +313,6 @@ class MainPanel(QtGui.QWidget):
             ['iq_plots', 'waterfall_plot', 'persistence_plot'])
 
     def device_changed(self, dut):
-        self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
         self.enable_controls()
@@ -527,7 +526,7 @@ class MainPanel(QtGui.QWidget):
         return self._dev_group
         
     def _marker_controls(self):
-        self.marker_group = MarkerControls(self.controller)
+        self.marker_group = MarkerControls(self.controller, self._plot)
         self.control_widgets.append(self.marker_group)
         return self.marker_group
 
@@ -596,6 +595,7 @@ class MainPanel(QtGui.QWidget):
         self.update_marker()
         self.update_marker_labels()
         self.update_channel_power()
+
         if (not self.controller.applying_user_xrange() and self.plot_state['mouse_tune']):
             self._plot.center_view(fstart,
                                    fstop)

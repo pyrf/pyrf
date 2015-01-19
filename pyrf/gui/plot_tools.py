@@ -263,7 +263,7 @@ class Marker(object):
         self.coursor_dragged = False
 
         self.controller = controller
-
+        controller.marker_change.connect(self.marker_changed)
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
@@ -285,35 +285,46 @@ class Marker(object):
             self.draw_color = colors.MARKER_HOVER
             self.controller.apply_plot_options(marker_dragged = True)
             self.update_pos(self.xdata, self.ydata)
+            self._marker_state[self.name]['freq'] = self.xdata[self.data_index]
+            self._marker_state[self.name]['hovering'] = True
+            self.controller.apply_marker_options(self.name, ['hovering', 'freq'], **self._marker_state)
         self.cursor_line.sigDragged.connect(dragged)
 
         def hovering():
             self.draw_color = colors.MARKER_HOVER
+            self._marker_state[self.name]['hovering'] = True
+            self.controller.apply_marker_options(self.name, ['hovering'], **self._marker_state)
         self.cursor_line.sigHovering.connect(hovering)
 
         def not_hovering():
             self.draw_color = color
             self.update_pos(self.xdata, self.ydata)
+            self._marker_state[self.name]['hovering'] = False
+            self.controller.apply_marker_options(self.name, ['hovering'], **self._marker_state)
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
 
-    def remove_marker(self, plot):
-        plot.window.removeItem(self.marker_plot)
-        plot.window.removeItem(self.cursor_line)
+    def remove_marker(self):
+        self._plot.window.removeItem(self.marker_plot)
+        self._plot.window.removeItem(self.cursor_line)
 
-    def add_marker(self, plot):
-        plot.window.addItem(self.marker_plot)
-        plot.window.addItem(self.cursor_line)
+    def add_marker(self):
+        self._plot.window.addItem(self.marker_plot)
+        self._plot.window.addItem(self.cursor_line)
 
-    def enable(self, plot):
+    def enable(self):
         self.enabled = True
-        self.add_marker(plot)
+        self.add_marker()
         self.controller.apply_plot_options(marker_dragged = True)
 
-    def disable(self, plot):
+    def disable(self):
         self.enabled = False
-        self.remove_marker(plot)
+        self.remove_marker()
         self.data_index = None
         self.trace_index = 0
+
+    def marker_changed(self, marker, state, changed):
+
+        self._marker_state = state
 
     def update_pos(self, xdata, ydata):
 
@@ -346,6 +357,8 @@ class Marker(object):
                                     size = 20, pen = pg.mkPen(self.draw_color),
                                     brush = brush_color)
 
+        self._marker_state[self.name]['power'] = ypos
+        self.controller.apply_marker_options(self.name, ['power'], **self._marker_state)
 
 class InfiniteLine(pg.InfiniteLine):
     """

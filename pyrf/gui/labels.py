@@ -1,3 +1,3 @@
-TRACES = ['1', '2', '3', '4']
-MARKERS = ['Marker 1', 'Marker 2', 'Marker 3', 'Marker 4', 'Marker 5', 'Marker 6']
+TRACES = ['1', '2', '3']
+MARKERS = ['1', '2', '3', '4', '5', '6']
 
