@@ -310,7 +310,7 @@ class Marker(object):
     def add_marker(self):
         self._plot.window.addItem(self.marker_plot)
         self._plot.window.addItem(self.cursor_line)
-
+        
     def enable(self):
         self.enabled = True
         self.add_marker()
@@ -323,8 +323,12 @@ class Marker(object):
         self.trace_index = 0
 
     def marker_changed(self, marker, state, changed):
-
         self._marker_state = state
+        print self._marker_state
+        for m in marker:
+            if m == self.name:
+                if 'trace' in changed:
+                    self.trace_index = state[m]['trace']
 
     def update_pos(self, xdata, ydata):
 
@@ -338,7 +342,9 @@ class Marker(object):
             return
 
         if self.data_index is None:
-           self.data_index = len(ydata) / 2 
+            self.data_index = len(ydata) / 2 
+            self._marker_state[self.name]['freq'] = self.xdata[self.data_index]
+            self.controller.apply_marker_options(self.name, ['freq'], **self._marker_state)
 
         if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
             self.data_index = int((float(self.data_index)/float(len(self.xdata))) * len(xdata)) 
@@ -356,7 +362,7 @@ class Marker(object):
                                     symbol = 't',
                                     size = 20, pen = pg.mkPen(self.draw_color),
                                     brush = brush_color)
-
+        
         self._marker_state[self.name]['power'] = ypos
         self.controller.apply_marker_options(self.name, ['power'], **self._marker_state)
 

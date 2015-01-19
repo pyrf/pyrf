@@ -5,11 +5,12 @@ from pyrf.units import M
 from pyrf.gui import colors, fonts
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
-from pyrf.gui.labels import MARKERS
+from pyrf.gui.labels import MARKERS, TRACES
 from pyrf.gui.util import hide_layout
 class MarkerWidgets(namedtuple('MarkerWidgets', """
     add_marker
     remove_marker
+    trace
     freq
     power
     delta
@@ -55,7 +56,7 @@ class MarkerControls(QtGui.QWidget):
         add_marker = QtGui.QPushButton('+')
         add_marker.setMaximumWidth(50)
         def add_clicked():
-            marker = self._plot.markers[int(name) - 1]
+            marker = self._plot.markers[int(name)]
             marker.enable()
             self._build_layout()
 
@@ -64,11 +65,18 @@ class MarkerControls(QtGui.QWidget):
         remove_marker = QtGui.QPushButton('-')
         remove_marker.setMaximumWidth(50)
         def remove_clicked():
-            marker = self._plot.markers[int(name) - 1]
+            marker = self._plot.markers[int(name)]
             marker.disable()
             self._build_layout()
         remove_marker.clicked.connect(remove_clicked)
 
+        trace = QComboBoxPlayback()
+        trace.quiet_update(TRACES, 1)
+        def new_trace():
+            self._marker_state[name]['trace'] = int(trace.currentText() ) - 1
+            self.controller.apply_marker_options(name, ['trace'], **self._marker_state)
+        trace.currentIndexChanged.connect(new_trace)
+        
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix('Hz')
         freq.setRange(0, 20e9)
@@ -85,7 +93,7 @@ class MarkerControls(QtGui.QWidget):
         dpower = QtGui.QLabel('dB')
 
 
-        return MarkerWidgets(add_marker, remove_marker, freq, power, 
+        return MarkerWidgets(add_marker, remove_marker, trace,  freq, power, 
                             delta, dfreq_label, dfreq, dpower_label,
                             dpower)
 
@@ -97,6 +105,7 @@ class MarkerControls(QtGui.QWidget):
             widget.show()
         def add_marker(w, n):
             show(w.remove_marker, n, 1, 1, 1)
+            show(w.trace, n, 2, 1, 1)
             show(w.freq, n, 3, 1, 1)
             show(w.power, n, 4, 1, 1)
             show(w.delta, n, 5, 1, 1)
@@ -127,7 +136,7 @@ class MarkerControls(QtGui.QWidget):
         self.gui_state = state
     
     def marker_changed(self, marker, state, changed):
-
+        self._marker_state = state
         for m in marker:
             w = self._marker_widgets[m]
             if 'power' in changed:
