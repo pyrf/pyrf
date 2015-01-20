@@ -140,6 +140,7 @@ class Plot(QtCore.QObject):
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
+
     def connect_plot_controls(self):
         def new_channel_power():
             self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
@@ -290,10 +291,6 @@ class Plot(QtCore.QObject):
             if m.enabled:
                 trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
-
-    def get_trigger_region(self):
-        print self.trigger_control.pos()
-        print self.trigger_control.size()
 
     def update_iq_plots(self, data):
         

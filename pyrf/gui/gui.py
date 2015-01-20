@@ -454,18 +454,22 @@ class MainPanel(QtGui.QWidget):
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Trace Control")
-        self._add_docking_controls(self._marker_controls(), "Marker Control")
+        self._add_docking_controls(self._marker_controls(), "Marker Control", True, True)
 
         self._grid = grid
         self.setLayout(grid)
 
-    def _add_docking_controls(self, widget, title):
+    def _add_docking_controls(self, widget, title, left = False, hide = False):
         dock = QtGui.QDockWidget(title, self)
         dock.setAllowedAreas(
-            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
         dock.setWidget(widget)
         # FIXME we should be doing this in the MainWindow
-        self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        if left:
+            self._main_window.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+            dock.hide()
+        else:
+            self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
         self._main_window.view_menu.addAction(dock.toggleViewAction())
 
     def _plot_layout(self):
@@ -692,7 +696,7 @@ class MainPanel(QtGui.QWidget):
             self.update_diff()
 
     def update_diff(self):
-
+        return
         num_markers = 0
         traces = []
         data_indices = []

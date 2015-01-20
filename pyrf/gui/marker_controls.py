@@ -7,6 +7,7 @@ from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBo
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.labels import MARKERS, TRACES
 from pyrf.gui.util import hide_layout
+
 class MarkerWidgets(namedtuple('MarkerWidgets', """
     add_marker
     remove_marker

@@ -324,7 +324,6 @@ class Marker(object):
 
     def marker_changed(self, marker, state, changed):
         self._marker_state = state
-        print self._marker_state
         for m in marker:
             if m == self.name:
                 if 'trace' in changed:
@@ -343,8 +342,6 @@ class Marker(object):
 
         if self.data_index is None:
             self.data_index = len(ydata) / 2 
-            self._marker_state[self.name]['freq'] = self.xdata[self.data_index]
-            self.controller.apply_marker_options(self.name, ['freq'], **self._marker_state)
 
         if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
             self.data_index = int((float(self.data_index)/float(len(self.xdata))) * len(xdata)) 
