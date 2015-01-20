@@ -467,7 +467,7 @@ class MainPanel(QtGui.QWidget):
         # FIXME we should be doing this in the MainWindow
         if left:
             self._main_window.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
-            dock.hide()
+            # dock.hide()
         else:
             self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
         self._main_window.view_menu.addAction(dock.toggleViewAction())

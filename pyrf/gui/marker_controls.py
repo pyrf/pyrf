@@ -11,6 +11,7 @@ from pyrf.gui.util import hide_layout
 class MarkerWidgets(namedtuple('MarkerWidgets', """
     add_marker
     remove_marker
+    trace_label
     trace
     freq
     power
@@ -72,18 +73,20 @@ class MarkerControls(QtGui.QWidget):
         remove_marker.clicked.connect(remove_clicked)
 
         trace = QComboBoxPlayback()
-        trace.quiet_update(TRACES, 1)
+        trace.quiet_update_pixel(colors.TRACE_COLORS, 0)
         def new_trace():
-            self._marker_state[name]['trace'] = int(trace.currentText() ) - 1
+            self._marker_state[name]['trace'] = int(trace.currentIndex())
             self.controller.apply_marker_options(name, ['trace'], **self._marker_state)
         trace.currentIndexChanged.connect(new_trace)
-        
+        trace.setMaximumWidth(40)
+        trace_label = QtGui.QLabel('Trace:')
+        trace_label.setMaximumWidth(30)
+
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix('Hz')
         freq.setRange(0, 20e9)
         power = QtGui.QLabel('dB')
 
-        
         delta = QtGui.QPushButton('d')
         
         dfreq_label = QtGui.QLabel('Frequency:')
@@ -94,7 +97,7 @@ class MarkerControls(QtGui.QWidget):
         dpower = QtGui.QLabel('dB')
 
 
-        return MarkerWidgets(add_marker, remove_marker, trace,  freq, power, 
+        return MarkerWidgets(add_marker, remove_marker, trace_label, trace, freq, power, 
                             delta, dfreq_label, dfreq, dpower_label,
                             dpower)
 
@@ -106,12 +109,13 @@ class MarkerControls(QtGui.QWidget):
             widget.show()
         def add_marker(w, n):
             show(w.remove_marker, n, 1, 1, 1)
-            show(w.trace, n, 2, 1, 1)
-            show(w.freq, n, 3, 1, 1)
-            show(w.power, n, 4, 1, 1)
-            show(w.delta, n, 5, 1, 1)
-            show( w.dfreq, n, 6, 1, 1)
-            show(w.dpower, n, 7, 1, 1)
+            show(w.trace_label, n, 2, 1, 1)
+            show(w.trace, n, 3, 1, 1)
+            show(w.freq, n, 4, 1, 1)
+            show(w.power, n, 5, 1, 1)
+            show(w.delta, n, 6, 1, 1)
+            show( w.dfreq, n, 7, 1, 1)
+            show(w.dpower, n, 8, 1, 1)
 
         def remove_marker(w, n):
             blank_label = QtGui.QLabel()
@@ -126,7 +130,6 @@ class MarkerControls(QtGui.QWidget):
                 add_marker(w, n)
             else:
                 remove_marker(w, n)
-
         self.resize_widget()
 
     def device_changed(self, dut):
