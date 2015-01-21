@@ -178,8 +178,6 @@ class PlotWindowWidget(QtGui.QWidget):
 
     def plot_changed(self, state, changed):
         self.plot_state = state
-        if 'db_div' in changed:
-            self._div_label.setText('dB/Div: % 0.1f' % state['db_div'])
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()
