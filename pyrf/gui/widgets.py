@@ -137,16 +137,6 @@ class PlotWindowWidget(QtGui.QWidget):
         self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._span_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._div_label = QtGui.QLabel('Div')
-        self._div_label.setSizePolicy(sizePolicy)
-        self._div_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._div_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        self._sweep_label = QtGui.QLabel('Sweep Rate')
-        self._sweep_label.setSizePolicy(sizePolicy)
-        self._sweep_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._sweep_label.setAlignment(QtCore.Qt.AlignCenter)
-
     def _build_layout(self):
         
         grid = self.layout()
@@ -159,9 +149,6 @@ class PlotWindowWidget(QtGui.QWidget):
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
         grid.addWidget(self._rbw_label, 1, 1, 1, 1)
         grid.addWidget(self._span_label, 1, 3, 1, 1)
-
-        grid.addWidget(self._sweep_label, 2, 1, 1, 1)
-        grid.addWidget(self._div_label, 2, 3, 1, 1)
 
         grid.addWidget(self._plot, 0, 1, 1, 4)
         self.resize_widget()
@@ -192,9 +179,7 @@ class PlotWindowWidget(QtGui.QWidget):
     def plot_changed(self, state, changed):
         self.plot_state = state
         if 'db_div' in changed:
-            self._div_label.setText('Db/Div: % 0.1f' % state['db_div'])
-        if 'sweep_rate' in changed:
-            self._sweep_label.setText('Sweep Rate: % 0.4f Sec' % state['sweep_rate'])
+            self._div_label.setText('dB/Div: % 0.1f' % state['db_div'])
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()

@@ -54,7 +54,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._max_level.setValue(PLOT_TOP)
         self._max_level.setSuffix(" dBm")
         self._max_level.setSingleStep(PLOT_STEP)
-        self._max_label = QtGui.QLabel('Maximum: ')
+        self._max_label = QtGui.QLabel('Ref Level: ')
 
         self._db_div = QDoubleSpinBoxPlayback()
         self._db_div.setRange(1, 15)
