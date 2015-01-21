@@ -5,7 +5,7 @@ import numpy as np  # FIXME: move sweep playback out of here
 from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
-from pyrf.gui.gui_config import plotState, markerState
+from pyrf.gui.gui_config import plotState, markerState, init_trace_state
 from pyrf.gui.state import SpecAState
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
@@ -42,7 +42,8 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
-    marker_change = QtCore.Signal(str, dict, list)
+    marker_change = QtCore.Signal(int, list, list)
+    trace_change = QtCore.Signal(int, list, list)
 
     def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
@@ -50,6 +51,7 @@ class SpecAController(QtCore.QObject):
         self._options = {}
         self._plot_options = plotState
         self._marker_options = markerState
+        self._trace_options = init_trace_state()
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -96,7 +98,7 @@ class SpecAController(QtCore.QObject):
 
         self.device_change.emit(dut)
         self._apply_complete_settings(state_json, bool(self._playback_file))
-        self.apply_marker_options(self._marker_options.keys(), self._marker_options['1'].keys(), **self._marker_options)
+
         self.start_capture()
 
     def start_recording(self, filename):
@@ -545,6 +547,9 @@ class SpecAController(QtCore.QObject):
 
         state = SpecAState.from_json_object(state_json, playback)
         self._state_changed(state, changed)
+        
+        self.marker_change.emit(self._marker_options.keys(), dict(self._marker_options), self._marker_options[0].keys())
+        self.trace_change.emit(self._trace_options.keys(), dict(self._trace_options), self._trace_options[0].keys())
 
     def apply_options(self, **kwargs):
         """
@@ -560,6 +565,7 @@ class SpecAController(QtCore.QObject):
             if key.startswith('dsp.'):
                 self._dsp_options[key[4:]] = value
 
+
     def apply_plot_options(self, **kwargs):
         """
         Apply plot option changes and signal the change
@@ -570,15 +576,31 @@ class SpecAController(QtCore.QObject):
         self.plot_change.emit(dict(self._plot_options),
             kwargs.keys())
     
-    def apply_marker_options(self, marker, changed, **kwargs):
+    def apply_marker_options(self, marker, changed, value):
         """
         Apply marker changes and signal the change
 
-        :param kwargs: keyword arguments of the marker options
+        :param marker: marker affected by change
+        :param changed: a list of the changes which occurred
+        :param value: a list of values corresponding to the changes
+        
         """
+        for i, c in enumerate(changed):
+            self._marker_options[marker].update({c : value[i]})
 
-        self._marker_options.update(kwargs)
         self.marker_change.emit(marker, dict(self._marker_options), changed)
+
+    def apply_trace_options(self, trace, changed, value):
+        """
+        Apply trace changes and signal the change
+
+        :param trace: trace affected by change
+        :param changed: the change which occurred
+        :param value: a list of values corresponding to the changes
+        """
+        for i, c in enumerate(changed):
+            self._trace_options[trace][c] = value[i]
+        self.trace_change.emit(trace, dict(self._trace_options), changed)
 
     def get_options(self):
         return dict(self._options)

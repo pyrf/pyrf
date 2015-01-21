@@ -7,6 +7,7 @@ from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBo
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.labels import MARKERS, TRACES
 from pyrf.gui.util import hide_layout
+from pyrf.gui.gui_config import markerState
 
 class MarkerWidgets(namedtuple('MarkerWidgets', """
     add_marker
@@ -42,12 +43,13 @@ class MarkerControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.marker_change.connect(self.marker_changed)
+        controller.trace_change.connect(self.trace_changed)
+        self._marker_state = markerState
         self._plot = plot
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
-        self._build_layout()
         self.resize_widget()
-
+        
     def _create_controls(self):
         self._marker_widgets = {}
 
@@ -58,8 +60,7 @@ class MarkerControls(QtGui.QWidget):
         add_marker = QtGui.QPushButton('+')
         add_marker.setMaximumWidth(50)
         def add_clicked():
-            marker = self._plot.markers[int(name)]
-            marker.enable()
+            self.controller.apply_marker_options(name, ['enabled'], [True])
             self._build_layout()
 
         add_marker.clicked.connect(add_clicked)
@@ -67,15 +68,14 @@ class MarkerControls(QtGui.QWidget):
         remove_marker = QtGui.QPushButton('-')
         remove_marker.setMaximumWidth(50)
         def remove_clicked():
-            marker = self._plot.markers[int(name)]
-            marker.disable()
+            self.controller.apply_marker_options(name, ['enabled'], [False])
             self._build_layout()
         remove_marker.clicked.connect(remove_clicked)
 
         trace = QComboBoxPlayback()
         trace.quiet_update_pixel(colors.TRACE_COLORS, 0)
         def new_trace():
-            self._marker_state[name]['trace'] = int(trace.currentIndex())
+            self._marker_state[name]['trace'] = (trace.currentIndex())
             self.controller.apply_marker_options(name, ['trace'], **self._marker_state)
         trace.currentIndexChanged.connect(new_trace)
         trace.setMaximumWidth(40)
@@ -96,7 +96,6 @@ class MarkerControls(QtGui.QWidget):
         dpower_label = QtGui.QLabel('Power:')
         dpower = QtGui.QLabel('dB')
 
-
         return MarkerWidgets(add_marker, remove_marker, trace_label, trace, freq, power, 
                             delta, dfreq_label, dfreq, dpower_label,
                             dpower)
@@ -104,9 +103,11 @@ class MarkerControls(QtGui.QWidget):
     def _build_layout(self):
         grid = self.layout()
         hide_layout(grid)
+
         def show(widget, y, x, h, w):
             grid.addWidget(widget, y, x, h, w)
             widget.show()
+
         def add_marker(w, n):
             show(w.remove_marker, n, 1, 1, 1)
             show(w.trace_label, n, 2, 1, 1)
@@ -122,46 +123,63 @@ class MarkerControls(QtGui.QWidget):
             blank_label.setMaximumHeight(5)
             show(blank_label, n, 1, 1, 7)
             show(w.add_marker, n, 1, 1, 1)
-            
 
         for n, m in enumerate(sorted(self._marker_widgets)):
             w = self._marker_widgets[m]
-            if self._plot.markers[n].enabled:
+            if self._marker_state[m]['enabled']:
                 add_marker(w, n)
             else:
                 remove_marker(w, n)
         self.resize_widget()
 
+    def _update_trace_combo(self):
+        available_colors = []
+        for t in sorted(self._trace_state):
+            if self._trace_state[t]['enabled']:
+                available_colors.append(self._trace_state[t]['color'])
+        for m in self._marker_widgets:
+            self._marker_widgets[m].trace.quiet_update_pixel(available_colors, 0)
+        self._build_layout()
+
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
+        self._build_layout()
 
     def state_changed(self, state, changed):
         self.gui_state = state
-    
+
     def marker_changed(self, marker, state, changed):
         self._marker_state = state
-        for m in marker:
-            w = self._marker_widgets[m]
-            if 'power' in changed:
-                w.power.setText('%0.2f' % state[m]['power'])
+        w = self._marker_widgets[marker]
+        if 'power' in changed:
+            w.power.setText('%0.2f' % state[marker]['power'])
 
-            if 'freq' in changed:
-                w.freq.setValue(state[m]['freq'])
+        if 'freq' in changed:
+            w.freq.setValue(state[marker]['freq'])
 
-            if 'hovering' in changed:
-                if state[m]['hovering']:
-                    w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_HOVER)
-                else:
-                    w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
+        if 'hovering' in changed:
+            if state[marker]['hovering']:
+                w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_HOVER)
+            else:
+                w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
 
+        if 'enabled' in changed:
+            if state[marker]['enabled']:
+                self._build_layout()
+ 
+    def trace_changed(self, trace, state, changed):
+        self._trace_state = state
+        # for m in self._marker_state:
+            # if self._marker_state[m]['trace'] == str(trace):
+                # if 'enabled' in changed:
+                    # disable marker if trace is disabled
+                    # if not state[trace]['enabled']:
+                        # self._marker_state[m]['enabled'] = False
+                        # self.controller.apply_marker_options(m, ['enabled'], **self._marker_state)
 
+        # self._update_trace_combo()
 
-
-
-
-
-          
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 

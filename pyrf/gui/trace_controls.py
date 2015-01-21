@@ -48,6 +48,7 @@ class TraceControls(QtGui.QWidget):
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
+        controller.trace_change.connect(self.trace_changed)
         controller.capture_receive.connect(self.capture_received)
 
         self._plot = plot
@@ -152,6 +153,8 @@ class TraceControls(QtGui.QWidget):
         def add_trace_clicked():
             draw.setCurrentIndex(DEFAULT_TRACE)
             draw_changed(DEFAULT_TRACE)
+            self._trace_state[num]['enabled'] = True
+            self.controller.apply_trace_options(num, ['enabled'], **self._trace_state)
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -162,6 +165,8 @@ class TraceControls(QtGui.QWidget):
         remove_trace.setToolTip("Disable this trace")
         def remove_trace_clicked():
             self.blank_trace(num)
+            self._trace_state[str(num)]['enabled'] = False
+            self.controller.apply_trace_options(num, ['enabled'], **self._trace_state)
             self._build_layout()
         remove_trace.clicked.connect(remove_trace_clicked)
 
@@ -231,6 +236,9 @@ class TraceControls(QtGui.QWidget):
                 self.setEnabled(False)
             else:
                 self.setEnabled(True)
+                
+    def trace_changed(self, trace, state, changed):
+        self._trace_state = state
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments

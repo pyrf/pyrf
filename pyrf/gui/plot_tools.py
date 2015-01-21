@@ -285,22 +285,18 @@ class Marker(object):
             self.draw_color = colors.MARKER_HOVER
             self.controller.apply_plot_options(marker_dragged = True)
             self.update_pos(self.xdata, self.ydata)
-            self._marker_state[self.name]['freq'] = self.xdata[self.data_index]
-            self._marker_state[self.name]['hovering'] = True
-            self.controller.apply_marker_options(self.name, ['hovering', 'freq'], **self._marker_state)
+            self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.xdata[self.data_index]])
         self.cursor_line.sigDragged.connect(dragged)
 
         def hovering():
             self.draw_color = colors.MARKER_HOVER
-            self._marker_state[self.name]['hovering'] = True
-            self.controller.apply_marker_options(self.name, ['hovering'], **self._marker_state)
+            self.controller.apply_marker_options(self.name, ['hovering'], [True])
         self.cursor_line.sigHovering.connect(hovering)
 
         def not_hovering():
             self.draw_color = color
             self.update_pos(self.xdata, self.ydata)
-            self._marker_state[self.name]['hovering'] = False
-            self.controller.apply_marker_options(self.name, ['hovering'], **self._marker_state)
+            self.controller.apply_marker_options(self.name, ['hovering'], [False])
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
 
     def remove_marker(self):
@@ -323,11 +319,11 @@ class Marker(object):
         self.trace_index = 0
 
     def marker_changed(self, marker, state, changed):
+
         self._marker_state = state
-        for m in marker:
-            if m == self.name:
-                if 'trace' in changed:
-                    self.trace_index = state[m]['trace']
+        if marker == self.name:
+            if 'trace' in changed:
+                self.trace_index = state[marker]['trace']
 
     def update_pos(self, xdata, ydata):
 
@@ -359,9 +355,7 @@ class Marker(object):
                                     symbol = 't',
                                     size = 20, pen = pg.mkPen(self.draw_color),
                                     brush = brush_color)
-        
-        self._marker_state[self.name]['power'] = ypos
-        self.controller.apply_marker_options(self.name, ['power'], **self._marker_state)
+        self.controller.apply_marker_options(self.name, ['power'], [ypos])
 
 class InfiniteLine(pg.InfiniteLine):
     """
