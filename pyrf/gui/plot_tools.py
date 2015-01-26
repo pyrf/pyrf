@@ -246,9 +246,10 @@ class Marker(object):
     """
     Class to represent a marker on the plot
     """
-    def __init__(self,plot_area, marker_name, color, controller):
+    def __init__(self,plot_area, marker_name, color, controller, delta = False):
 
         self.name = marker_name
+        self.delta = delta
         self.marker_plot = pg.ScatterPlotItem()
         self.enabled = False
         self.selected = False
@@ -266,22 +267,12 @@ class Marker(object):
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
 
-        cursor_pen = pg.mkPen((0,0,0,0), width = 40)
-        self.cursor_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
+        self.cursor_pen = pg.mkPen((0,0,0,0), width = 40)
+        self.cursor_line = InfiniteLine(pen = self.cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
-        def dragged():
-            # determine freq of drag
-            freq = self.cursor_line.value()
-            self.freq_pos = freq
-
-            self.cursor_line.setPen(cursor_pen)
-            self.draw_color = colors.MARKER_HOVER
-            self.controller.apply_plot_options(marker_dragged = True)
-            self.update_pos(self.xdata, self.ydata)
-            self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.freq_pos])
-        self.cursor_line.sigDragged.connect(dragged)
-
+        self.cursor_line.sigDragged.connect(self.dragged)
+  
         def hovering():
             self.draw_color = colors.MARKER_HOVER
             self.controller.apply_marker_options(self.name, ['hovering'], [True])
@@ -292,6 +283,17 @@ class Marker(object):
             self.update_pos(self.xdata, self.ydata)
             self.controller.apply_marker_options(self.name, ['hovering'], [False])
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
+
+    def dragged(self):
+        # determine freq of drag
+        freq = self.cursor_line.value()
+        self.freq_pos = freq
+
+        self.cursor_line.setPen(self.cursor_pen)
+        self.draw_color = colors.MARKER_HOVER
+        self.controller.apply_plot_options(marker_dragged = True)
+        self.update_pos(self.xdata, self.ydata)
+        self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.freq_pos])
 
     def remove_marker(self):
         self._plot.window.removeItem(self.marker_plot)
@@ -305,13 +307,17 @@ class Marker(object):
         self.enabled = True
         self.add_marker()
         if self.freq_pos is None:
-            self.data_index = len(self.ydata) / 2 
+            self.freq_pos = self.xdata[int(len(self.xdata) / 2)]
         self.controller.apply_plot_options(marker_dragged = True)
+        if self.delta:
+            self.controller.apply_marker_options(self.name, ['dfreq'], [self.freq_pos])
+        else:
+            self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def disable(self):
         self.enabled = False
         self.remove_marker()
-        self.data_index = None
+        self.freq_pos = None
         self.trace_index = 0
 
     def marker_changed(self, marker, state, changed):
@@ -323,11 +329,10 @@ class Marker(object):
             if 'enabled' in changed:
                 if state[marker]['enabled']:
                     self.enable()
-
                 else:
                     self.disable()
             if 'freq' in changed:
-                if not self.coursor_dragged:
+                if not self.coursor_dragged and self.enabled:
                     self.freq_pos = state[marker]['freq']
                     
     def update_data(self, xdata, ydata):
@@ -352,9 +357,9 @@ class Marker(object):
         if xdata[0] <= self.freq_pos <= xdata[-1]:
             # find index of nearest frequency
             index = np.argmin(np.abs(xdata - self.freq_pos))
-            ypos = np.max(ydata[index - 5: index + 5])
+            self.ypos = np.max(ydata[index - 5: index + 5])
         else:
-            ypos = 0
+            self.ypos = 0
         self.xdata = xdata
         self.ydata = ydata
 
@@ -363,12 +368,46 @@ class Marker(object):
 
         brush_color = self.draw_color + (20,)
         self.marker_plot.addPoints(x = [self.freq_pos],
-                                   y = [ypos + scale],
+                                   y = [self.ypos + scale],
                                     symbol = 't',
                                     size = 20, pen = pg.mkPen(self.draw_color),
                                     brush = brush_color)
-        self.controller.apply_marker_options(self.name, ['power'], [ypos])
+        self.update_state_power()
+        
+    def update_state_power(self):
+        self.controller.apply_marker_options(self.name, ['power'], [self.ypos])
 
+class DeltaMarker(Marker):
+       
+    def marker_changed(self, marker, state, changed):
+
+        self._marker_state = state  
+        if marker == self.name:
+            if 'dtrace' in changed:
+                self.trace_index = state[marker]['dtrace']
+            if 'delta' in changed:
+                if state[marker]['delta']:
+                    self.enable()
+                else:
+                    self.disable()
+
+            if 'dfreq' in changed:
+                if not self.coursor_dragged:
+                    self.freq_pos = state[marker]['dfreq']
+    
+    def dragged(self):
+        # determine freq of drag
+        self.freq_pos  = self.cursor_line.value()
+
+        self.cursor_line.setPen(self.cursor_pen)
+        self.draw_color = colors.MARKER_HOVER
+        self.controller.apply_plot_options(marker_dragged = True)
+        self.update_pos(self.xdata, self.ydata)
+        self.controller.apply_marker_options(self.name, ['hovering', 'dfreq'], [True, self.freq_pos])
+
+    def update_state_power(self):
+        self.controller.apply_marker_options(self.name, ['dpower'], [self.ypos])
+        
 class InfiniteLine(pg.InfiniteLine):
     """
     Infinite Line with controls over the hover pen (feature will be available in pyqtgraph 0.9.9)

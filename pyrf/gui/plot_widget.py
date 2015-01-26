@@ -13,7 +13,7 @@ from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
                                               decay_fn_EXPONENTIAL)
-from pyrf.gui.plot_tools import Marker, Trace, InfiniteLine, triggerControl
+from pyrf.gui.plot_tools import Marker, DeltaMarker, Trace, InfiniteLine, triggerControl
 from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
@@ -121,9 +121,10 @@ class Plot(QtCore.QObject):
         self.traces[0].write = True
 
         self.markers = []
+        self.deltas = []
         for name in labels.MARKERS:
             self.markers.append(Marker(self, name, colors.WHITE_NUM, self.controller))
-
+            self.deltas.append(DeltaMarker(self, name, colors.WHITE_NUM, self.controller,  delta = True))
         self.waterfall_data = WaterfallModel(max_len=600)
 
         self.waterfall_window = ThreadedWaterfallPlotWidget(
@@ -288,7 +289,8 @@ class Plot(QtCore.QObject):
         self.usable_bins = usable
         self.sweep_segments = segments
         self.update_trace()
-        self.update_marker()
+        self.update_marker(self.markers)
+        self.update_marker(self.deltas)
 
     def update_trace(self):
         for trace in self.traces:
@@ -298,13 +300,13 @@ class Plot(QtCore.QObject):
                 self.usable_bins,
                 self.sweep_segments)
 
-    def update_marker(self):
-            for marker in self.markers:
-                trace = self.traces[marker.trace_index]
-                if not trace.blank:
-                    marker.update_data(trace.freq_range, trace.data)
-                    if marker.enabled:
-                        marker.update_pos(trace.freq_range, trace.data)
+    def update_marker(self, mset):
+        for marker in mset:
+            trace = self.traces[marker.trace_index]
+            if not trace.blank:
+                marker.update_data(trace.freq_range, trace.data)
+                if marker.enabled:
+                    marker.update_pos(trace.freq_range, trace.data)
 
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:

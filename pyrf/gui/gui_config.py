@@ -9,6 +9,10 @@ for m in labels.MARKERS:
                           'freq': None,
                           'power': -60,
                           'trace': labels.TRACES[0],
+                          'delta': False,
+                          'dtrace': labels.TRACES[0],
+                          'dpower': 0,
+                          'dfreq': None,
                           'hovering': False}
 
 def init_trace_state():
