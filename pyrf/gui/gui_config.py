@@ -6,7 +6,7 @@ from pyrf.gui import colors, labels
 markerState = {}
 for m in labels.MARKERS:
     markerState[m] =  { 'enabled': False,
-                          'freq': 0,
+                          'freq': None,
                           'power': -60,
                           'trace': labels.TRACES[0],
                           'hovering': False}

@@ -252,7 +252,8 @@ class Marker(object):
         self.marker_plot = pg.ScatterPlotItem()
         self.enabled = False
         self.selected = False
-        self.data_index = None
+        self.freq_pos = None
+        self.power_pos = None
         self.xdata = []
         self.ydata = []
         self.trace_index = 0
@@ -261,31 +262,24 @@ class Marker(object):
         self.hovering = False
         self._plot = plot_area
         self.coursor_dragged = False
-
+        self._display_max = True
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
+
         cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = InfiniteLine(pen = cursor_pen, pos = -100, angle = 90, movable = True)
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         def dragged():
-            # determine index of click
-            index = np.abs(self.xdata-int(self.cursor_line.value())).argmin()
-
-            # calculate the region around the index to check for maximum value
-            index_region_offset = int(0.01 * len(self.ydata))
-            if int(min(self.xdata)) > int(min(self._plot.view_box.viewRange()[0])) or int(max(self.xdata)) > int(max(self._plot.view_box.viewRange()[0])) or len(self.ydata) < MIN_AUTO_POS_SIZE:
-                self.data_index = index
-            else:
-                # position of marker is the maximum of the region surrounding the area where the user clicked
-                if (index - index_region_offset) > 0:
-                    self.data_index = np.where(self.ydata == max(self.ydata[index - index_region_offset: index + index_region_offset]))[0]
+            # determine freq of drag
+            freq = self.cursor_line.value()
+            self.freq_pos = freq
 
             self.cursor_line.setPen(cursor_pen)
             self.draw_color = colors.MARKER_HOVER
             self.controller.apply_plot_options(marker_dragged = True)
             self.update_pos(self.xdata, self.ydata)
-            self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.xdata[self.data_index]])
+            self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.freq_pos])
         self.cursor_line.sigDragged.connect(dragged)
 
         def hovering():
@@ -310,6 +304,8 @@ class Marker(object):
     def enable(self):
         self.enabled = True
         self.add_marker()
+        if self.freq_pos is None:
+            self.data_index = len(self.ydata) / 2 
         self.controller.apply_plot_options(marker_dragged = True)
 
     def disable(self):
@@ -324,6 +320,19 @@ class Marker(object):
         if marker == self.name:
             if 'trace' in changed:
                 self.trace_index = state[marker]['trace']
+            if 'enabled' in changed:
+                if state[marker]['enabled']:
+                    self.enable()
+
+                else:
+                    self.disable()
+            if 'freq' in changed:
+                if not self.coursor_dragged:
+                    self.freq_pos = state[marker]['freq']
+                # state[marker]['freq']
+    def update_data(self, xdata, ydata):
+        self.xdata = xdata
+        self.ydata = ydata
 
     def update_pos(self, xdata, ydata):
 
@@ -336,21 +345,24 @@ class Marker(object):
         if len(xdata) <= 0 or len(ydata) <= 0:
             return
 
-        if self.data_index is None:
-            self.data_index = len(ydata) / 2 
+        if self.freq_pos is None:
+            self.freq_pos = xdata[len(xdata) / 2 ]
+            self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
-        if not len(xdata) == len(self.xdata) and not len(self.xdata) == 0:
-            self.data_index = int((float(self.data_index)/float(len(self.xdata))) * len(xdata)) 
-
-        xpos = xdata[self.data_index]
-        ypos = ydata[self.data_index]
-
+        if xdata[0] <= self.freq_pos <= xdata[-1]:
+            # find index of nearest frequency
+            index = np.argmin(np.abs(xdata - self.freq_pos))
+            ypos = np.max(ydata[index - 5: index + 5])
+        else:
+            ypos = 0
         self.xdata = xdata
         self.ydata = ydata
+
         if not self.coursor_dragged:
-            self.cursor_line.setValue(xpos)
+            self.cursor_line.setValue(self.freq_pos)
+
         brush_color = self.draw_color + (20,)
-        self.marker_plot.addPoints(x = [xpos],
+        self.marker_plot.addPoints(x = [self.freq_pos],
                                    y = [ypos + scale],
                                     symbol = 't',
                                     size = 20, pen = pg.mkPen(self.draw_color),

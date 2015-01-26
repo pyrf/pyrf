@@ -50,6 +50,8 @@ class Plot(QtCore.QObject):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
+        controller.capture_receive.connect(self.capture_received)
+
         self.plot_state = {}
 
         # initialize main fft window
@@ -245,7 +247,6 @@ class Plot(QtCore.QObject):
         self.window.removeItem(self.channel_power_region)
 
     def add_trigger(self,fstart, fstop, amplitude):
-
         if not self._trig_enable:
             self.window.addItem(self.trigger_control)
             self.window.addItem(self.trigger_control.fstart_line)
@@ -272,6 +273,39 @@ class Plot(QtCore.QObject):
             float(fstop),
             padding=0)
 
+    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
+        """
+        :param state: SpecAState when capture was requested
+        :param fstart: lowest frequency included in data in Hz
+        :param fstop: highest frequency included in data in Hz
+        :param raw: raw samples (None if not available)
+        :param power: power spectrum
+        :param usable: usable bins from power (None when sweeping)
+        :param segments: bin segments from power (None when not sweeping)
+        """
+        self.pow_data = power
+        self.xdata = np.linspace(fstart, fstop, len(power))
+        self.usable_bins = usable
+        self.sweep_segments = segments
+        self.update_trace()
+        self.update_marker()
+
+    def update_trace(self):
+        for trace in self.traces:
+            trace.update_curve(
+                self.xdata,
+                self.pow_data,
+                self.usable_bins,
+                self.sweep_segments)
+
+    def update_marker(self):
+            for marker in self.markers:
+                trace = self.traces[marker.trace_index]
+                if not trace.blank:
+                    marker.update_data(trace.freq_range, trace.data)
+                    if marker.enabled:
+                        marker.update_pos(trace.freq_range, trace.data)
+
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
@@ -288,12 +322,11 @@ class Plot(QtCore.QObject):
                                             (-250, '-200'), (-250, '-200')]])
     def update_markers(self):
         for m in self.markers:
+            trace = self.traces[m.trace_index]
             if m.enabled:
-                trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
 
     def update_iq_plots(self, data):
-        
         trace = self.traces[0]
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return

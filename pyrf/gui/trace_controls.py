@@ -153,8 +153,7 @@ class TraceControls(QtGui.QWidget):
         def add_trace_clicked():
             draw.setCurrentIndex(DEFAULT_TRACE)
             draw_changed(DEFAULT_TRACE)
-            self._trace_state[num]['enabled'] = True
-            self.controller.apply_trace_options(num, ['enabled'], **self._trace_state)
+            self.controller.apply_trace_options(num, ['enabled'], [True])
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -165,8 +164,7 @@ class TraceControls(QtGui.QWidget):
         remove_trace.setToolTip("Disable this trace")
         def remove_trace_clicked():
             self.blank_trace(num)
-            self._trace_state[str(num)]['enabled'] = False
-            self.controller.apply_trace_options(num, ['enabled'], **self._trace_state)
+            self.controller.apply_trace_options(num, ['enabled'], [False])
             self._build_layout()
         remove_trace.clicked.connect(remove_trace_clicked)
 

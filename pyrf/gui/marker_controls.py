@@ -83,8 +83,11 @@ class MarkerControls(QtGui.QWidget):
         trace_label.setMaximumWidth(30)
 
         freq = QDoubleSpinBoxPlayback()
-        freq.setSuffix('Hz')
+        freq.setSuffix(' Hz')
         freq.setRange(0, 20e9)
+        def freq_change():
+            self.controller.apply_marker_options(name, ['freq'], [freq.value()])
+        freq.editingFinished.connect(freq_change)
         power = QtGui.QLabel('dB')
 
         delta = QtGui.QPushButton('d')
@@ -156,7 +159,7 @@ class MarkerControls(QtGui.QWidget):
             w.power.setText('%0.2f' % state[marker]['power'])
 
         if 'freq' in changed:
-            w.freq.setValue(state[marker]['freq'])
+            w.freq.quiet_update(state[marker]['freq'])
 
         if 'hovering' in changed:
             if state[marker]['hovering']:

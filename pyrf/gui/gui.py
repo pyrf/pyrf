@@ -381,8 +381,6 @@ class MainPanel(QtGui.QWidget):
             self.update_span_label()
 
     def plot_changed(self, state, changed):
-        if 'marker_dragged' in changed:
-            self.update_marker_labels()
         self.plot_state = state
 
     def show_labels(self):
@@ -591,13 +589,8 @@ class MainPanel(QtGui.QWidget):
         """
         self.raw_data = raw
         self.pow_data = power
-        self.usable_bins = usable
-        self.sweep_segments = segments
 
         self.xdata = np.linspace(fstart, fstop, len(power))
-        self.update_trace()
-        self.update_marker()
-        self.update_marker_labels()
         self.update_channel_power()
 
         if (not self.controller.applying_user_xrange() and self.plot_state['mouse_tune']):
@@ -612,7 +605,6 @@ class MainPanel(QtGui.QWidget):
                 self._plot.waterfall_data.reset(self.xdata)
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
-
 
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
@@ -649,82 +641,12 @@ class MainPanel(QtGui.QWidget):
             else:
                 ww.hide()
 
-    def update_trace(self):
-        for trace in self._plot.traces:
-            trace.update_curve(
-                self.xdata,
-                self.pow_data,
-                self.usable_bins,
-                self.sweep_segments)
-
     def update_iq(self):
-
         if not self.raw_data:
                 return
         self._plot.update_iq_plots(self.raw_data)
 
-    def update_marker(self):
-            num = 1
-            for marker in self._plot.markers:
-                if marker.enabled:
-                    trace = self._plot.traces[marker.trace_index]
-                    if not trace.blank:
-                        marker.update_pos(trace.freq_range, trace.data)
-
-    def update_marker_labels(self):
-            num = 1
-            for marker, marker_label in zip(self._plot.markers, self.marker_labels):
-                if marker.enabled:
-                    trace = self._plot.traces[marker.trace_index]
-                    marker_label.show()
-                    if marker.data_index is None:
-                        marker.data_index = int(len(trace.data) / 2)
-                        marker.update_pos(trace.freq_range, trace.data)
-                    if not trace.blank:
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
-                        if self.gui_state.rfe_mode() == 'HDR':
-                            marker_text = 'M%d: %0.8f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
-                                                                           trace.data[marker.data_index])
-                        else:
-                            marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
-                                                                                   trace.data[marker.data_index])
-                        num += 1
-                        marker_label.setText(marker_text)
-                        self._mask_label.show()
-                else:
-                    marker_label.hide()
-            self.update_diff()
-
-    def update_diff(self):
-        return
-        num_markers = 0
-        traces = []
-        data_indices = []
-        for marker in self._plot.markers:
-
-            if marker.enabled == True:
-                num_markers += 1
-                traces.append(self._plot.traces[marker.trace_index])
-                data_indices.append(marker.data_index)
-
-        if num_markers == len(labels.MARKERS):
-
-            self._diff_label.show()
-
-            freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
-
-            power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-            if self.gui_state.rfe_mode() == 'HDR':
-                delta_text = 'Delta: %0.8f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
-            else:
-                delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
-            self._diff_label.setText(delta_text)
-        else:
-            self._diff_label.hide()
-
     def update_channel_power(self):
-
         for label, trace in zip(self.channel_power_labels, self._plot.traces):
             if trace.calc_channel_power and not trace.blank:
                 label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + trace.color))
