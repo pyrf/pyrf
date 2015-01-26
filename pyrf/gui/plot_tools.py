@@ -329,7 +329,7 @@ class Marker(object):
             if 'freq' in changed:
                 if not self.coursor_dragged:
                     self.freq_pos = state[marker]['freq']
-                # state[marker]['freq']
+                    
     def update_data(self, xdata, ydata):
         self.xdata = xdata
         self.ydata = ydata
@@ -346,7 +346,7 @@ class Marker(object):
             return
 
         if self.freq_pos is None:
-            self.freq_pos = xdata[len(xdata) / 2 ]
+            self.freq_pos = xdata[len(xdata) / 2]
             self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
         if xdata[0] <= self.freq_pos <= xdata[-1]:

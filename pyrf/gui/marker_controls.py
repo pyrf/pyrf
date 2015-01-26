@@ -49,7 +49,7 @@ class MarkerControls(QtGui.QWidget):
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
         self.resize_widget()
-        
+
     def _create_controls(self):
         self._marker_widgets = {}
 
@@ -84,8 +84,9 @@ class MarkerControls(QtGui.QWidget):
 
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' Hz')
-        freq.setRange(0, 20e9)
+        freq.setRange(0, 20e12)
         def freq_change():
+
             self.controller.apply_marker_options(name, ['freq'], [freq.value()])
         freq.editingFinished.connect(freq_change)
         power = QtGui.QLabel('dB')
@@ -158,9 +159,6 @@ class MarkerControls(QtGui.QWidget):
         if 'power' in changed:
             w.power.setText('%0.2f' % state[marker]['power'])
 
-        if 'freq' in changed:
-            w.freq.quiet_update(state[marker]['freq'])
-
         if 'hovering' in changed:
             if state[marker]['hovering']:
                 w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_HOVER)
@@ -170,7 +168,10 @@ class MarkerControls(QtGui.QWidget):
         if 'enabled' in changed:
             if state[marker]['enabled']:
                 self._build_layout()
- 
+
+        if 'freq' in changed:
+            w.freq.quiet_update(value = state[marker]['freq'])
+
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
         # for m in self._marker_state:

@@ -585,6 +585,7 @@ class SpecAController(QtCore.QObject):
         :param value: a list of values corresponding to the changes
         
         """
+
         for i, c in enumerate(changed):
             self._marker_options[marker].update({c : value[i]})
 
