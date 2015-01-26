@@ -76,7 +76,7 @@ class MarkerControls(QtGui.QWidget):
         trace.quiet_update_pixel(colors.TRACE_COLORS, 0)
         def new_trace():
             self._marker_state[name]['trace'] = (trace.currentIndex())
-            self.controller.apply_marker_options(name, ['trace'], **self._marker_state)
+            self.controller.apply_marker_options(name, ['trace'], [int(trace.currentText())])
         trace.currentIndexChanged.connect(new_trace)
         trace.setMaximumWidth(40)
         trace_label = QtGui.QLabel('Trace:')
@@ -114,13 +114,12 @@ class MarkerControls(QtGui.QWidget):
 
         def add_marker(w, n):
             show(w.remove_marker, n, 1, 1, 1)
-            show(w.trace_label, n, 2, 1, 1)
-            show(w.trace, n, 3, 1, 1)
-            show(w.freq, n, 4, 1, 1)
-            show(w.power, n, 5, 1, 1)
-            show(w.delta, n, 6, 1, 1)
-            show( w.dfreq, n, 7, 1, 1)
-            show(w.dpower, n, 8, 1, 1)
+            show(w.trace, n, 2, 1, 1)
+            show(w.freq, n, 3, 1, 1)
+            show(w.power, n, 4, 1, 1)
+            show(w.delta, n, 5, 1, 1)
+            show( w.dfreq, n, 6, 1, 1)
+            show(w.dpower, n, 7, 1, 1)
 
         def remove_marker(w, n):
             blank_label = QtGui.QLabel()
@@ -174,15 +173,14 @@ class MarkerControls(QtGui.QWidget):
 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
-        # for m in self._marker_state:
-            # if self._marker_state[m]['trace'] == str(trace):
-                # if 'enabled' in changed:
+        for m in self._marker_state:
+            if self._marker_state[m]['trace'] == trace:
+                if 'enabled' in changed:
                     # disable marker if trace is disabled
-                    # if not state[trace]['enabled']:
-                        # self._marker_state[m]['enabled'] = False
-                        # self.controller.apply_marker_options(m, ['enabled'], **self._marker_state)
+                    if not state[trace]['enabled']:
+                        self.controller.apply_marker_options(m, ['enabled'], [False])
 
-        # self._update_trace_combo()
+        self._update_trace_combo()
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
