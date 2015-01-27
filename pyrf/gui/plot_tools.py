@@ -246,13 +246,14 @@ class Marker(object):
     """
     Class to represent a marker on the plot
     """
+    shape = 't'
+    size = 20
     def __init__(self,plot_area, marker_name, color, controller, delta = False):
 
         self.name = marker_name
         self.delta = delta
         self.marker_plot = pg.ScatterPlotItem()
         self.enabled = False
-        self.selected = False
         self.freq_pos = None
         self.power_pos = None
         self.xdata = []
@@ -263,7 +264,6 @@ class Marker(object):
         self.hovering = False
         self._plot = plot_area
         self.coursor_dragged = False
-        self._display_max = True
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
         controller.trace_change.connect(self.trace_changed)
@@ -273,7 +273,7 @@ class Marker(object):
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         self.cursor_line.sigDragged.connect(self.dragged)
-  
+        self.text_box = pg.TextItem(text = '12312444')
         def hovering():
             self.draw_color = colors.MARKER_HOVER
             self.controller.apply_marker_options(self.name, ['hovering'], [True])
@@ -299,14 +299,15 @@ class Marker(object):
     def remove_marker(self):
         self._plot.window.removeItem(self.marker_plot)
         self._plot.window.removeItem(self.cursor_line)
+        self._plot.window.removeItem(self.text_box)
 
     def add_marker(self):
         self._plot.window.addItem(self.marker_plot)
         self._plot.window.addItem(self.cursor_line)
-        
+        self._plot.window.addItem(self.text_box)
+
     def enable(self):
-        if not self._trace_state[self.trace_index]['enabled']:
-            return
+
         self.enabled = True
         self.add_marker()
         if self.freq_pos is None:
@@ -321,14 +322,15 @@ class Marker(object):
         self.enabled = False
         self.remove_marker()
         self.freq_pos = None
-        self.trace_index = 0
 
     def marker_changed(self, marker, state, changed):
 
         self._marker_state = state
         if marker == self.name:
+            self.trace_index 
             if 'trace' in changed:
                 self.trace_index = state[marker]['trace']
+
             if 'enabled' in changed:
                 if state[marker]['enabled']:
                     self.enable()
@@ -342,7 +344,6 @@ class Marker(object):
                     self.draw_color = colors.MARKER_HOVER
                 else:
                     self.draw_color = self.color
-                    
     
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
@@ -379,18 +380,26 @@ class Marker(object):
             self.cursor_line.setValue(self.freq_pos)
 
         brush_color = self.draw_color + (20,)
+        
         self.marker_plot.addPoints(x = [self.freq_pos],
                                    y = [self.ypos + scale],
-                                    symbol = 't',
-                                    size = 20, pen = pg.mkPen(self.draw_color),
+                                    symbol =  self.shape,
+                                    size = self.size, pen = pg.mkPen(self.draw_color),
                                     brush = brush_color)
+        if self.delta:
+            text = '*' + str(self.name)
+        else:
+            text = str(self.name)
+        self.text_box.setText(text)
+        self.text_box.setPos(self.freq_pos, self.ypos + (8 * scale))
         self.update_state_power()
         
     def update_state_power(self):
         self.controller.apply_marker_options(self.name, ['power'], [self.ypos])
 
 class DeltaMarker(Marker):
-       
+    shape = 'd'
+    size = 25
     def marker_changed(self, marker, state, changed):
 
         self._marker_state = state  

@@ -587,6 +587,7 @@ class SpecAController(QtCore.QObject):
         """
 
         for i, c in enumerate(changed):
+
             self._marker_options[marker].update({c : value[i]})
 
         self.marker_change.emit(marker, dict(self._marker_options), changed)

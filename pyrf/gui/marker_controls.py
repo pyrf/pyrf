@@ -76,7 +76,7 @@ class MarkerControls(QtGui.QWidget):
         remove_marker.clicked.connect(remove_clicked)
 
         trace = QComboBoxPlayback()
-        trace.quiet_update_pixel(colors.TRACE_COLORS, 0)
+        trace.quiet_update_pixel(colors.TRACE_COLORS, TRACES)
         def new_trace():
             self._marker_state[name]['trace'] = (trace.currentIndex())
             self.controller.apply_marker_options(name, ['trace'], [int(trace.currentText())])
@@ -98,18 +98,16 @@ class MarkerControls(QtGui.QWidget):
         add_delta.setMaximumWidth(75)
         def add_delta_clicked():
             self.controller.apply_marker_options(name, ['delta'], [True])
-            self._build_layout()
         add_delta.clicked.connect(add_delta_clicked)
 
         remove_delta = QtGui.QPushButton('Remove Delta')
         remove_delta.setMaximumWidth(75)
         def remove_delta_clicked():
             self.controller.apply_marker_options(name, ['delta'], [False])
-            self._build_layout()
         remove_delta.clicked.connect(remove_delta_clicked)
 
         dtrace = QComboBoxPlayback()
-        dtrace.quiet_update_pixel(colors.TRACE_COLORS, 0)
+        dtrace.quiet_update_pixel(colors.TRACE_COLORS, TRACES)
         def new_dtrace():
             self.controller.apply_marker_options(name, ['dtrace'], [int(dtrace.currentText())])
         dtrace.currentIndexChanged.connect(new_dtrace)
@@ -167,7 +165,6 @@ class MarkerControls(QtGui.QWidget):
             w = self._marker_widgets[m]
             d = self._marker_state[m]['delta']
             if self._marker_state[m]['enabled']: 
-            
                 # if marker's current trace is disabled, assign marker to next trace
                 if not self._trace_state[self._marker_state[m]['trace']]['enabled']:
                     if w.trace.count() == 0:
@@ -175,23 +172,26 @@ class MarkerControls(QtGui.QWidget):
                         remove_marker(w, n)
                         self.controller.apply_marker_options(m, ['enabled', 'delta'], [False, False])
                     else:
-                        self.controller.apply_marker_options(m, ['trace'], [int(w.trace.currentText())])
+                        self.controller.apply_marker_options(m, ['trace', 'dtrace'], [int(w.trace.currentText()), int(w.trace.currentText())])
                         add_marker(w, n, d)
                 else:
                     add_marker(w, n, d)
             else:
                 remove_marker(w, n)
-
+            
         self.resize_widget()
 
     def _update_trace_combo(self):
         available_colors = []
-        for t in sorted(self._trace_state):
+        trace_name = []
+        for n, t in zip(TRACES, sorted(self._trace_state)):
             if self._trace_state[t]['enabled']:
                 available_colors.append(self._trace_state[t]['color'])
+                trace_name.append(n)
         for m in self._marker_widgets:
-            self._marker_widgets[m].trace.quiet_update_pixel(available_colors, 0)
-            self._marker_widgets[m].dtrace.quiet_update_pixel(available_colors, 0)
+            index = self._marker_state[m]['trace']
+            self._marker_widgets[m].trace.quiet_update_pixel(available_colors, trace_name, index)
+            self._marker_widgets[m].dtrace.quiet_update_pixel(available_colors, trace_name, index)
         self._build_layout()
 
     def device_changed(self, dut):
@@ -215,15 +215,14 @@ class MarkerControls(QtGui.QWidget):
 
         if 'hovering' in changed:
             if state[marker]['hovering']:
-                w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_HOVER)
-                w.dfreq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_HOVER)
+                w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_LABEL_HOVER)
+                w.dfreq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_LABEL_HOVER)
             else:
                 w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
                 w.dfreq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
 
-        if 'enabled' in changed:
-            if state[marker]['enabled']:
-                self._build_layout()
+        if 'enabled' in changed or 'delta' in changed:
+            self._build_layout()
 
         if 'freq' in changed:
             w.freq.quiet_update(value = state[marker]['freq'])

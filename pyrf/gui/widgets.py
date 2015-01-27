@@ -30,7 +30,7 @@ class QComboBoxPlayback(QtGui.QComboBox):
                 self.setCurrentIndex(i)
         self.blockSignals(b)
 
-    def quiet_update_pixel(self, colors, select_item = None):
+    def quiet_update_pixel(self, colors, name, select_item = None):
         """
         Update all the item colors
 
@@ -44,7 +44,7 @@ class QComboBoxPlayback(QtGui.QComboBox):
             select_item = 0
         block = self.blockSignals(True)
         self.clear()
-        for i, c in enumerate(colors):
+        for n, c in zip(name, colors):
 
             button_icon = QtGui.QIcon()
             color = QtGui.QColor()
@@ -53,9 +53,9 @@ class QComboBoxPlayback(QtGui.QComboBox):
             pixmap = QtGui.QPixmap(50, 50)
             pixmap.fill(color)
             button_icon.addPixmap(pixmap)
-            self.addItem(button_icon, str(i))
-            if i == select_item:
-                self.setCurrentIndex(i)
+            self.addItem(button_icon, str(n))
+            if n == select_item:
+                self.setCurrentIndex(select_item)
         self.blockSignals(block)
     def playback_value(self, value):
         """
