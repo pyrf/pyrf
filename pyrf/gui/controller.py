@@ -5,7 +5,7 @@ import numpy as np  # FIXME: move sweep playback out of here
 from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
-from pyrf.gui.gui_config import plotState, markerState, init_trace_state
+from pyrf.gui.gui_config import plotState, markerState, traceState
 from pyrf.gui.state import SpecAState
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
@@ -51,7 +51,7 @@ class SpecAController(QtCore.QObject):
         self._options = {}
         self._plot_options = plotState
         self._marker_options = markerState
-        self._trace_options = init_trace_state()
+        self._trace_options = traceState
         self.developer_mode = developer_mode
         self.was_sweeping = False
 

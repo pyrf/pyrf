@@ -266,6 +266,7 @@ class Marker(object):
         self._display_max = True
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
+        controller.trace_change.connect(self.trace_changed)
 
         self.cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = InfiniteLine(pen = self.cursor_pen, pos = -100, angle = 90, movable = True)
@@ -304,6 +305,8 @@ class Marker(object):
         self._plot.window.addItem(self.cursor_line)
         
     def enable(self):
+        if not self._trace_state[self.trace_index]['enabled']:
+            return
         self.enabled = True
         self.add_marker()
         if self.freq_pos is None:
@@ -334,6 +337,15 @@ class Marker(object):
             if 'freq' in changed:
                 if not self.coursor_dragged and self.enabled:
                     self.freq_pos = state[marker]['freq']
+            if 'hovering' in changed:
+                if state[marker]['hovering']:
+                    self.draw_color = colors.MARKER_HOVER
+                else:
+                    self.draw_color = self.color
+                    
+    
+    def trace_changed(self, trace, state, changed):
+        self._trace_state = state
                     
     def update_data(self, xdata, ydata):
         self.xdata = xdata
@@ -385,6 +397,7 @@ class DeltaMarker(Marker):
         if marker == self.name:
             if 'dtrace' in changed:
                 self.trace_index = state[marker]['dtrace']
+
             if 'delta' in changed:
                 if state[marker]['delta']:
                     self.enable()
@@ -394,7 +407,14 @@ class DeltaMarker(Marker):
             if 'dfreq' in changed:
                 if not self.coursor_dragged:
                     self.freq_pos = state[marker]['dfreq']
-    
+
+            if 'hovering' in changed:
+
+                if state[marker]['hovering']:
+                    self.draw_color = colors.MARKER_HOVER
+                else:
+                    self.draw_color = self.color
+            # print self.draw_color
     def dragged(self):
         # determine freq of drag
         self.freq_pos  = self.cursor_line.value()

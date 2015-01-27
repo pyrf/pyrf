@@ -1,5 +1,6 @@
 from collections import namedtuple
 from PySide import QtGui
+import numpy as np
 
 from pyrf.units import M
 from pyrf.gui import colors, fonts
@@ -7,8 +8,8 @@ from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBo
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.gui.labels import MARKERS, TRACES
 from pyrf.gui.util import hide_layout
-from pyrf.gui.gui_config import markerState
-BUTTON_WIDTH = 50
+from pyrf.gui.gui_config import markerState, traceState
+BUTTON_WIDTH = 65
 class MarkerWidgets(namedtuple('MarkerWidgets', """
     add_marker
     remove_marker
@@ -47,6 +48,7 @@ class MarkerControls(QtGui.QWidget):
         controller.marker_change.connect(self.marker_changed)
         controller.trace_change.connect(self.trace_changed)
         self._marker_state = markerState
+        self._trace_state = traceState
         self._plot = plot
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
@@ -93,14 +95,14 @@ class MarkerControls(QtGui.QWidget):
         power = QtGui.QLabel('dB')
         power.setMaximumWidth(40)
         add_delta = QtGui.QPushButton('Add Delta')
-        add_delta.setMaximumWidth(70)
+        add_delta.setMaximumWidth(75)
         def add_delta_clicked():
             self.controller.apply_marker_options(name, ['delta'], [True])
             self._build_layout()
         add_delta.clicked.connect(add_delta_clicked)
 
         remove_delta = QtGui.QPushButton('Remove Delta')
-        remove_delta.setMaximumWidth(70)
+        remove_delta.setMaximumWidth(75)
         def remove_delta_clicked():
             self.controller.apply_marker_options(name, ['delta'], [False])
             self._build_layout()
@@ -115,7 +117,7 @@ class MarkerControls(QtGui.QWidget):
         dtrace_label = QtGui.QLabel(' Delta Trace:')
         dtrace_label.setMaximumWidth(30)
 
-        dfreq_label = QtGui.QLabel('Frequency:')
+        
         dfreq = QDoubleSpinBoxPlayback()
         dfreq.setSuffix(' Hz')
         dfreq.setRange(0, 20e12)
@@ -123,9 +125,12 @@ class MarkerControls(QtGui.QWidget):
         def dfreq_change():
             self.controller.apply_marker_options(name, ['dfreq'], [dfreq.value()])
         dfreq.editingFinished.connect(dfreq_change)
-
-        dpower_label = QtGui.QLabel('Power:')
+        
         dpower = QtGui.QLabel('dB')
+        dpower.setMaximumWidth(50)
+        dpower_label = QtGui.QLabel('Power:')
+
+        dfreq_label = QtGui.QLabel('Frequency:')
 
         return MarkerWidgets(add_marker, remove_marker, trace_label, trace, freq, power, 
                             add_delta, remove_delta, dtrace, dfreq_label, dfreq, dpower_label,
@@ -149,6 +154,8 @@ class MarkerControls(QtGui.QWidget):
                 show( w.dtrace,  n, 5, 1, 1)
                 show( w.dfreq,  n, 6, 1, 1)
                 show(w.dpower, n, 7, 1, 1)
+                show(w.dfreq_label, n, 8, 1, 1)
+                show(w.dpower_label, n, 9, 1, 1)
             else:
                 show(w.add_delta, n, 4, 1, 1)
 
@@ -158,9 +165,20 @@ class MarkerControls(QtGui.QWidget):
 
         for n, m in enumerate(sorted(self._marker_widgets)):
             w = self._marker_widgets[m]
-            if self._marker_state[m]['enabled']:
-                d = self._marker_state[m]['delta']
-                add_marker(w, n, d)
+            d = self._marker_state[m]['delta']
+            if self._marker_state[m]['enabled']: 
+            
+                # if marker's current trace is disabled, assign marker to next trace
+                if not self._trace_state[self._marker_state[m]['trace']]['enabled']:
+                    if w.trace.count() == 0:
+                        # if no trace is enabled, disable marker
+                        remove_marker(w, n)
+                        self.controller.apply_marker_options(m, ['enabled', 'delta'], [False, False])
+                    else:
+                        self.controller.apply_marker_options(m, ['trace'], [int(w.trace.currentText())])
+                        add_marker(w, n, d)
+                else:
+                    add_marker(w, n, d)
             else:
                 remove_marker(w, n)
 
@@ -177,7 +195,7 @@ class MarkerControls(QtGui.QWidget):
         self._build_layout()
 
     def device_changed(self, dut):
-        # to later calculate valid frequency values
+
         self.dut_prop = dut.properties
         self._build_layout()
 
@@ -188,10 +206,12 @@ class MarkerControls(QtGui.QWidget):
         self._marker_state = state
         w = self._marker_widgets[marker]
         if 'power' in changed:
-            w.power.setText('%0.2f' % state[marker]['power'])
+            w.power.setText('%0.2f dB' % state[marker]['power'])
+            self.update_diff(w, state[marker])
 
         if 'dpower' in changed:
-            w.dpower.setText('%0.2f' % state[marker]['dpower'])
+            w.dpower.setText('%0.2f dB' % state[marker]['dpower'])
+            self.update_diff(w, state[marker])
 
         if 'hovering' in changed:
             if state[marker]['hovering']:
@@ -207,9 +227,11 @@ class MarkerControls(QtGui.QWidget):
 
         if 'freq' in changed:
             w.freq.quiet_update(value = state[marker]['freq'])
+            self.update_diff(w, state[marker])
 
         if 'dfreq' in changed:
             w.dfreq.quiet_update(value = state[marker]['dfreq'])
+            self.update_diff(w, state[marker])
 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
@@ -218,10 +240,13 @@ class MarkerControls(QtGui.QWidget):
                 if 'enabled' in changed:
                     # disable marker if trace is disabled
                     if not state[trace]['enabled']:
-                        self.controller.apply_marker_options(m, ['enabled'], [False])
+                        self.controller.apply_marker_options(m, ['enabled', 'delta'], [False, False])
 
         self._update_trace_combo()
-
+    def update_diff(self, widget, state):
+        if state['enabled'] and state['delta']:
+            widget.dfreq_label.setText('Frequency Delta: %0.2f Hz' % (np.abs(state['freq'] - state['dfreq'])))
+            widget.dpower_label.setText('Power Delta: %0.2f dB' % (np.abs(state['power'] - state['dpower'])))
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Minimum)
 

@@ -97,7 +97,8 @@ class TraceControls(QtGui.QWidget):
             if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
                 update_banner_color(color.red(), color.green(), color.blue())
                 update_button_color(color.red(), color.green(), color.blue())
-                trace = self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                self.controller.apply_trace_options(num, ['color'], [self._plot.traces[num].color])
         color_button.clicked.connect(custom_color_clicked)
 
         draw = QtGui.QComboBox()
