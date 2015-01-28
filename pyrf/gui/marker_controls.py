@@ -5,7 +5,7 @@ import numpy as np
 from pyrf.units import M
 from pyrf.gui import colors, fonts
 from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBoxPlayback
-from pyrf.gui.fonts import GROUP_BOX_FONT
+from pyrf.gui.fonts import GROUP_BOX_FONT, HIGHLIGHTED_MARKER_LABEL
 from pyrf.gui.labels import MARKERS, TRACES
 from pyrf.gui.util import hide_layout
 from pyrf.gui.gui_config import markerState, traceState
@@ -93,7 +93,7 @@ class MarkerControls(QtGui.QWidget):
             self.controller.apply_marker_options(name, ['freq'], [freq.value()])
         freq.editingFinished.connect(freq_change)
         power = QtGui.QLabel('dB')
-        power.setMaximumWidth(40)
+        power.setMaximumWidth(50)
         add_delta = QtGui.QPushButton('Add Delta')
         add_delta.setMaximumWidth(75)
         def add_delta_clicked():
@@ -123,12 +123,13 @@ class MarkerControls(QtGui.QWidget):
         def dfreq_change():
             self.controller.apply_marker_options(name, ['dfreq'], [dfreq.value()])
         dfreq.editingFinished.connect(dfreq_change)
-        
         dpower = QtGui.QLabel('dB')
         dpower.setMaximumWidth(50)
-        dpower_label = QtGui.QLabel('Power:')
-
+        
         dfreq_label = QtGui.QLabel('Frequency:')
+        dfreq_label.setMaximumWidth(200)
+        dpower_label = QtGui.QLabel('Power:')
+        
 
         return MarkerWidgets(add_marker, remove_marker, trace_label, trace, freq, power, 
                             add_delta, remove_delta, dtrace, dfreq_label, dfreq, dpower_label,
@@ -215,11 +216,16 @@ class MarkerControls(QtGui.QWidget):
 
         if 'hovering' in changed:
             if state[marker]['hovering']:
-                w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_LABEL_HOVER)
-                w.dfreq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.MARKER_LABEL_HOVER)
+            
+                w.freq.setStyleSheet(HIGHLIGHTED_MARKER_LABEL)
+                w.power.setStyleSheet(HIGHLIGHTED_MARKER_LABEL)
+                w.dfreq.setStyleSheet(HIGHLIGHTED_MARKER_LABEL)
+                w.dpower.setStyleSheet(HIGHLIGHTED_MARKER_LABEL)
             else:
                 w.freq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
+                w.power.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
                 w.dfreq.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
+                w.dpower.setStyleSheet('color: rgb(%s, %s, %s)' % colors.BLACK_NUM)
 
         if 'enabled' in changed or 'delta' in changed:
             self._build_layout()
@@ -247,7 +253,7 @@ class MarkerControls(QtGui.QWidget):
             widget.dfreq_label.setText('Frequency Delta: %0.2f Hz' % (np.abs(state['freq'] - state['dfreq'])))
             widget.dpower_label.setText('Power Delta: %0.2f dB' % (np.abs(state['power'] - state['dpower'])))
     def resize_widget(self):
-        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Minimum)
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def showEvent(self, event):
         self.activateWindow()

@@ -246,8 +246,8 @@ class Marker(object):
     """
     Class to represent a marker on the plot
     """
-    shape = 't'
-    size = 20
+    shape = 'd'
+    size = 25
     def __init__(self,plot_area, marker_name, color, controller, delta = False):
 
         self.name = marker_name
@@ -275,11 +275,13 @@ class Marker(object):
         self.cursor_line.sigDragged.connect(self.dragged)
         self.text_box = pg.TextItem(text = '12312444')
         def hovering():
+            self.coursor_dragged = True
             self.draw_color = colors.MARKER_HOVER
             self.controller.apply_marker_options(self.name, ['hovering'], [True])
         self.cursor_line.sigHovering.connect(hovering)
 
         def not_hovering():
+            self.coursor_dragged = False
             self.draw_color = color
             self.update_pos(self.xdata, self.ydata)
             self.controller.apply_marker_options(self.name, ['hovering'], [False])
@@ -289,13 +291,13 @@ class Marker(object):
         # determine freq of drag
         freq = self.cursor_line.value()
         self.freq_pos = freq
-
+        self.coursor_dragged = True
         self.cursor_line.setPen(self.cursor_pen)
         self.draw_color = colors.MARKER_HOVER
         self.controller.apply_plot_options(marker_dragged = True)
         self.update_pos(self.xdata, self.ydata)
         self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.freq_pos])
-
+        
     def remove_marker(self):
         self._plot.window.removeItem(self.marker_plot)
         self._plot.window.removeItem(self.cursor_line)
@@ -378,8 +380,9 @@ class Marker(object):
 
         if not self.coursor_dragged:
             self.cursor_line.setValue(self.freq_pos)
-
-        brush_color = self.draw_color + (20,)
+            brush_color = self.draw_color + (20,)
+        else:
+            brush_color = self.draw_color
         
         self.marker_plot.addPoints(x = [self.freq_pos],
                                    y = [self.ypos + scale],
@@ -398,8 +401,8 @@ class Marker(object):
         self.controller.apply_marker_options(self.name, ['power'], [self.ypos])
 
 class DeltaMarker(Marker):
-    shape = 'd'
-    size = 25
+    shape = 't'
+    size = 20
     def marker_changed(self, marker, state, changed):
 
         self._marker_state = state  
@@ -427,7 +430,7 @@ class DeltaMarker(Marker):
     def dragged(self):
         # determine freq of drag
         self.freq_pos  = self.cursor_line.value()
-
+        self.coursor_dragged = True
         self.cursor_line.setPen(self.cursor_pen)
         self.draw_color = colors.MARKER_HOVER
         self.controller.apply_plot_options(marker_dragged = True)

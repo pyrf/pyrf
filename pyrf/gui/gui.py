@@ -464,7 +464,7 @@ class MainPanel(QtGui.QWidget):
         dock.setWidget(widget)
         # FIXME we should be doing this in the MainWindow
         if left:
-            self._main_window.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+            self._main_window.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock)
             # dock.hide()
         else:
             self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
