@@ -293,8 +293,8 @@ class Plot(QtCore.QObject):
             tick_list.append((t, "% 0.1f" % t ))
         self.spectral_plot.getAxis('left').setTicks([tick_list])
         self.persistence_plot.getAxis('left').setTicks([tick_list])
-
-        self.center_line.setValue(self.gui_state.center)
+        
+        self.center_line.setValue(fstart + ((fstop - fstart)/ 2))
         self.persistence_plot.center_line.setValue(self.gui_state.center)
         self.spectral_plot.getAxis('left').show()
 

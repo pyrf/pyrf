@@ -184,12 +184,12 @@ class PlotWindowWidget(QtGui.QWidget):
         if rfe_mode == 'HDR':
             self._rbw_label.setText("RBW: %0.2f Hz" % (self.gui_state.rbw))
         else:
-            self._rbw_label.setText("RBW: %0.2f KHz" % (self.gui_state.rbw / 1e3))
+            self._rbw_label.setText("RBW: %0.2f kHz" % (self.gui_state.rbw / 1e3))
 
     def update_span_label(self):
         rfe_mode = self.gui_state.rfe_mode()
         if rfe_mode == 'HDR':
-            self._span_label.setText("Span: %0.2f KHz" % (self.gui_state.span / 1e3))
+            self._span_label.setText("Span: %0.2f kHz" % (self.gui_state.span / 1e3))
         else:
             self._span_label.setText("Span: %0.2f MHz" % (self.gui_state.span/ M))
 
