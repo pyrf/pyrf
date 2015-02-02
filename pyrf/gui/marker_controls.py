@@ -10,6 +10,7 @@ from pyrf.gui.labels import MARKERS, TRACES
 from pyrf.gui.util import hide_layout
 from pyrf.gui.gui_config import markerState, traceState
 BUTTON_WIDTH = 65
+
 class MarkerWidgets(namedtuple('MarkerWidgets', """
     add_marker
     remove_marker
@@ -252,8 +253,149 @@ class MarkerControls(QtGui.QWidget):
         if state['enabled'] and state['delta']:
             widget.dfreq_label.setText('Frequency Delta: %0.2f Hz' % (np.abs(state['freq'] - state['dfreq'])))
             widget.dpower_label.setText('Power Delta: %0.2f dB' % (np.abs(state['power'] - state['dpower'])))
+
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
     def showEvent(self, event):
         self.activateWindow()
+
+class MarkerTableRow(namedtuple('MarkerTableRow', """
+    name
+    freq
+    power
+    delta_freq
+    delta_power
+    diff_freq
+    diff_power
+    """)):
+    """
+    :param icon: color icon
+    :param color_button: trace color button
+    :param draw: draw combobox, including 'Live', 'Max', 'Min' options
+    :param hold: pause checkbox
+    :param clear: clear trace button
+    :param average_label: average captures label
+    :param average: average captures spinbox
+    :param add: "+ trace" button
+    :param remove: "- trace" button
+    """
+    
+class MarkerTable(QtGui.QWidget):
+
+    def __init__(self, controller):
+        super(MarkerTable, self).__init__()
+
+        self.controller = controller
+        controller.marker_change.connect(self.marker_changed)
+        controller.trace_change.connect(self.trace_changed)
+        self._marker_state = markerState
+        self._trace_state = traceState
+        self._create_controls()
+        self.setLayout(QtGui.QGridLayout())
+        self.setStyleSheet('background-color: rgb(0,0,0)')
+        self.setAutoFillBackground(True)
+        self.resize_widget()
+
+    def _create_controls(self):
+        self._marker_rows = {}
+
+        for m in MARKERS:
+            self._marker_rows[m] = self._create_marker_widget(m)
+    
+    def _create_marker_widget(self, name):
+        sizePolicy = QtGui.QSizePolicy()
+        name = QtGui.QLabel('Marker %d' % name)
+        name.setSizePolicy(sizePolicy)
+
+        freq = QtGui.QLabel()
+        freq.setSizePolicy(sizePolicy)
+
+        power = QtGui.QLabel()
+        power.setSizePolicy(sizePolicy)
+
+        delta_freq = QtGui.QLabel()
+        delta_freq.setSizePolicy(sizePolicy)
+
+        delta_power = QtGui.QLabel()
+        delta_power.setSizePolicy(sizePolicy)
+
+        diff_freq = QtGui.QLabel()
+        diff_freq.setSizePolicy(sizePolicy)
+
+        diff_power = QtGui.QLabel()
+        diff_power.setSizePolicy(sizePolicy)
+
+
+        return MarkerTableRow(name, freq, power, delta_freq, delta_power, diff_freq, diff_power)
+
+    def _build_layout(self):
+        grid = self.layout()
+        hide_layout(grid)
+
+        def show(widget, y, x, h, w):
+            grid.addWidget(widget, y, x, h, w)
+            widget.show()
+
+        def add_marker(w, n, d):
+            show(w.name, n, 1, 1, 1)
+            show(w.freq, n, 2, 1, 1)
+            show(w.power, n, 3, 1, 1)
+            # if d:
+            show( w.delta_freq,  n, 4, 1, 1)
+            show(w.delta_power, n, 5, 1, 1)
+            show(w.diff_freq, n, 6, 1, 1)
+            show(w.diff_power, n, 7, 1, 1)
+
+        for n, m in enumerate(sorted(self._marker_rows)):
+            w = self._marker_rows[m]
+            d = self._marker_state[m]['delta']
+            if self._marker_state[m]['enabled']: 
+                add_marker(w, n, d)
+            else:
+                continue
+            
+        self.resize_widget()
+
+    def marker_changed(self, marker, state, changed):
+        self._marker_state = state
+        if  'enabled' in changed:
+            self._build_layout()
+            self._update_label_color(marker)
+
+        if state[marker]['enabled']:
+            if 'freq' in changed:
+                self._marker_rows[marker].freq.setText('Frequency: %0.2f MHz' % state[marker]['freq'])
+            if 'power' in changed:
+                self._marker_rows[marker].power.setText('Power: %0.2f dB' % state[marker]['power'])
+            if 'dfreq' in changed:
+                self._marker_rows[marker].delta_freq.setText('Frequency: %0.2f MHz' % state[marker]['dfreq'])
+            if 'dpower' in changed:
+                self._marker_rows[marker].delta_power.setText('Power: %0.2f dB' % state[marker]['dpower'])
+            if 'trace' in changed:
+                self._update_label_color(marker)
+            if 'dtrace' in changed:
+                self._update_label_color(marker)
+            if 'hovering' in changed:
+                self._update_label_color(marker)
+
+    def _update_label_color(self, marker):
+            if self._marker_state[marker]['hovering']:
+                color = self._trace_state[self._marker_state[marker]['trace']]['color']
+                dcolor = self._trace_state[self._marker_state[marker]['dtrace']]['color']
+            else:
+                color = colors.WHITE_NUM
+                dcolor = colors.WHITE_NUM
+            color_str = 'rgb(%s, %s, %s)' % (color[0], color[1], color[2])
+            dcolor_str = 'rgb(%s, %s, %s)' % (dcolor[0], dcolor[1], dcolor[2])
+            self._marker_rows[marker].name.setStyleSheet('color: %s' % color_str)
+            self._marker_rows[marker].freq.setStyleSheet('color: %s' % color_str)
+            self._marker_rows[marker].power.setStyleSheet('color: %s' % color_str)
+            self._marker_rows[marker].delta_freq.setStyleSheet('color: %s' % dcolor_str)
+            self._marker_rows[marker].delta_power.setStyleSheet('color: %s' % dcolor_str)
+
+    def trace_changed(self, trace, state, changed):
+        self._trace_state = state
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

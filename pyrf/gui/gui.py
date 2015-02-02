@@ -36,7 +36,7 @@ from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 from pyrf.gui.measurements_widget import MeasurementControls
 from pyrf.gui.capture_widget import CaptureControls
-from pyrf.gui.marker_controls import MarkerControls
+from pyrf.gui.marker_controls import MarkerControls, MarkerTable
 
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
@@ -328,7 +328,6 @@ class MainPanel(QtGui.QWidget):
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
             self._update_iq_plot_visibility()
-            self.update_rbw_label()
             if rfe_mode in ('DD', 'IQIN'):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
@@ -363,7 +362,6 @@ class MainPanel(QtGui.QWidget):
             else:
                 # show plots
                 self._plot_layout.show()
-                self.show_labels()
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
@@ -374,48 +372,8 @@ class MainPanel(QtGui.QWidget):
                 WINDOW_HEIGHT = max(screen.height() * 0.7, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
-        if 'rbw' in changed:
-            self.update_rbw_label()
-
-        if 'span' in changed:
-            self.update_span_label()
-
     def plot_changed(self, state, changed):
         self.plot_state = state
-
-    def show_labels(self):
-        self._rbw_label.show()
-        self._span_label.show()
-        self._diff_label.show()
-        self._mask_label.show()
-        for m in self.marker_labels:
-            m.show()
-        for c in self.channel_power_labels:
-            c.show()
-
-    def hide_labels(self):
-        self._rbw_label.hide()
-        self._span_label.hide()
-        self._diff_label.hide()
-        self._mask_label.hide()
-        for m in self.marker_labels:
-            m.hide()
-        for c in self.channel_power_labels:
-            c.hide()
-
-    def update_rbw_label(self):
-        rfe_mode = self.gui_state.rfe_mode()
-        if rfe_mode == 'HDR':
-            self._rbw_label.setText("RBW:\n%0.2f Hz" % (self.gui_state.rbw))
-        else:
-            self._rbw_label.setText("RBW:\n%0.2f KHz" % (self.gui_state.rbw / 1e3))
-
-    def update_span_label(self):
-        rfe_mode = self.gui_state.rfe_mode()
-        if rfe_mode == 'HDR':
-            self._span_label.setText("SPAN:\n%0.2f KHz" % (self.gui_state.span / 1e3))
-        else:
-            self._span_label.setText("SPAN:\n%0.2f MHz" % (self.gui_state.span/ M))
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -424,19 +382,12 @@ class MainPanel(QtGui.QWidget):
 
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
-
-        self._mask_label = QtGui.QLabel()
-        self._mask_label.setStyleSheet('background-color: black')
-
-        self.marker_labels = []
-        marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
+        self.mask_label = QtGui.QLabel()
+        self.mask_label.setStyleSheet('background-color: rgb(0,0,0)')
+        grid.addWidget(self.mask_label, 0, 0, 14, self.plot_width)
+        marker_table = MarkerTable(self.controller)
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 15, 11)
-        grid.addWidget(marker_label, 0, 3, 1, 2)
-        grid.addWidget(delta_label, 0, 5, 1, 2)
-        grid.addWidget(diff_label , 0, 7, 1, 2)
-        grid.addWidget(self._rbw_label, 0, 0, 1, 2)
-        grid.addWidget(self._span_label, 0, 9, 1, 2)
+        grid.addWidget(marker_table, 0, 0, 1, self.plot_width)
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
         x = 2
         for label in channel_power_labels:
@@ -464,7 +415,7 @@ class MainPanel(QtGui.QWidget):
         dock.setWidget(widget)
         # FIXME we should be doing this in the MainWindow
         if left:
-            self._main_window.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock)
+            self._main_window.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
             # dock.hide()
         else:
             self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
@@ -535,14 +486,6 @@ class MainPanel(QtGui.QWidget):
     def _marker_labels(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
 
-        marker_label = QtGui.QLabel('')
-        marker_label.setAlignment(QtCore.Qt.AlignLeft)
-        marker_label.setSizePolicy(sizePolicy)
-
-        delta_label = QtGui.QLabel('')
-        delta_label.setAlignment(QtCore.Qt.AlignLeft)
-        delta_label.setSizePolicy(sizePolicy)
-
         span_label = QtGui.QLabel('')
         span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         span_label.setAlignment(QtCore.Qt.AlignLeft)
@@ -553,21 +496,13 @@ class MainPanel(QtGui.QWidget):
         rbw_label.setAlignment(QtCore.Qt.AlignRight)
         rbw_label.setSizePolicy(sizePolicy)
 
-        diff_label = QtGui.QLabel('')
-        diff_label.setAlignment(QtCore.Qt.AlignLeft)
-        diff_label.setSizePolicy(sizePolicy)
-
-        self._diff_label = diff_label
         self._rbw_label = rbw_label
         self._span_label = span_label
-        self.marker_labels.append(marker_label)
 
-        self.marker_labels.append(delta_label)
-        return marker_label,delta_label, diff_label, rbw_label, span_label
+        return  rbw_label, span_label
 
     def _channel_power_labels(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
-
         self.channel_power_labels = []
 
         for color in colors.TRACE_COLORS:

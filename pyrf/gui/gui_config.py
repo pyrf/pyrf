@@ -11,8 +11,8 @@ for m in labels.MARKERS:
                           'trace': labels.TRACES[0],
                           'delta': False,
                           'dtrace': labels.TRACES[0],
-                          'dpower': 0,
                           'dfreq': None,
+                          'dpower': 0,
                           'hovering': False}
 
 
