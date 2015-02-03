@@ -266,10 +266,10 @@ class Plot(QtCore.QObject):
         for t in ticks:
             if t in (ticks[1], ticks[-2]):
                 if t == ticks[1]:
-                    tick_num = ticks[0]
+                    tick_num = self.gui_state.center - (self.gui_state.span / 2)
                     str = 'Start'
                 else:
-                    tick_num = ticks[-1]
+                    tick_num = self.gui_state.center + (self.gui_state.span / 2)
                     str = 'Stop'
                 if tick_num > 1e9:
                     units = 'GHz'
@@ -277,7 +277,7 @@ class Plot(QtCore.QObject):
                 else:
                     units = 'MHz'
                     div = 1e6
-                text = ('%s: %0.4f %s' % (str, tick_num / div, units))
+                text = ('%s: %0.5f %s' % (str, tick_num / div, units))
             else:
                 text = ''
             tick_list.append((t, text))
