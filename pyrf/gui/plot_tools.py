@@ -390,9 +390,9 @@ class Marker(object):
                                     size = self.size, pen = pg.mkPen(self.draw_color),
                                     brush = brush_color)
         if self.delta:
-            text = '*' + str(self.name)
+            text = '*' + str(self.name + 1)
         else:
-            text = str(self.name)
+            text = str(self.name + 1)
         self.text_box.setText(text)
         self.text_box.setPos(self.freq_pos, self.ypos + (8 * scale))
         self.update_state_power()
