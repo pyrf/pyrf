@@ -43,25 +43,23 @@ class MarkerWidget(QtGui.QWidget):
         self.trace = QComboBoxPlayback()
         self.trace.quiet_update_pixel(colors.TRACE_COLORS, TRACES)
         def new_trace():
-            self._marker_state[name]['trace'] = (trace.currentIndex())
-            self.controller.apply_marker_options(self.name, ['trace'], [int(trace.currentText())])
+            self.controller.apply_marker_options(self.name, ['trace'], [int(self.trace.currentText())])
         self.trace.currentIndexChanged.connect(new_trace)
-        self.trace.setMaximumWidth(40)
+
         self.trace_label = QtGui.QLabel('Trace:')
-        self.trace_label.setMaximumWidth(30)
+
 
         self.freq = QDoubleSpinBoxPlayback()
         self.freq.setSuffix(' Hz')
         self.freq.setRange(0, 20e12)
-        self.freq.setMaximumWidth(120)
         def freq_change():
-            self.controller.apply_marker_options(self.name, ['freq'], [freq.value()])
+            self.controller.apply_marker_options(self.name, ['freq'], [self.freq.value()])
         self.freq.editingFinished.connect(freq_change)
 
         self.power = QtGui.QLabel('dB')
-        self.power.setMaximumWidth(50)
+
         self.add_delta = QtGui.QPushButton('Add Delta')
-        self.add_delta.setMaximumWidth(75)
+
         def add_delta_clicked():
             self.controller.apply_marker_options(self.name, ['delta'], [True])
             self._build_layout()
@@ -77,7 +75,7 @@ class MarkerWidget(QtGui.QWidget):
         self.dtrace = QComboBoxPlayback()
         self.dtrace.quiet_update_pixel(colors.TRACE_COLORS, TRACES)
         def new_dtrace():
-            self.controller.apply_marker_options(self.name, ['dtrace'], [int(dtrace.currentText())])
+            self.controller.apply_marker_options(self.name, ['dtrace'], [int(self.dtrace.currentText())])
         self.dtrace.currentIndexChanged.connect(new_dtrace)
         self.dtrace.setMaximumWidth(40)
         self.dtrace_label = QtGui.QLabel(' Delta Trace:')
@@ -88,7 +86,7 @@ class MarkerWidget(QtGui.QWidget):
         self.dfreq.setRange(0, 20e12)
         self.dfreq.setMaximumWidth(120)
         def dfreq_change():
-            self.controller.apply_marker_options(self.name, ['dfreq'], [dfreq.value()])
+            self.controller.apply_marker_options(self.name, ['dfreq'], [self.dfreq.value()])
         self.dfreq.editingFinished.connect(dfreq_change)
         self.dpower = QtGui.QLabel('dB')
         self.dpower.setMaximumWidth(50)
@@ -127,7 +125,7 @@ class MarkerWidget(QtGui.QWidget):
                     remove_marker()
                     self.controller.apply_marker_options(self.name, ['enabled', 'delta'], [False, False])
                 else:
-                    self.controller.apply_marker_options(self.name, ['trace', 'dtrace'], [int(w.trace.currentText()), int(w.trace.currentText())])
+                    self.controller.apply_marker_options(self.name, ['trace', 'dtrace'], [int(self.dtrace.currentText()), int(self.dtrace.currentText())])
                     add_marker(d)
             else:
                 add_marker(d)
@@ -262,7 +260,7 @@ class MarkerTable(QtGui.QWidget):
 
     def _create_marker_row(self, m):
         sizePolicy = QtGui.QSizePolicy()
-        name = QtGui.QLabel('%d' % m)
+        name = QtGui.QLabel('%d' % (m + 1))
         name.setSizePolicy(sizePolicy)
 
         freq = QtGui.QLabel()

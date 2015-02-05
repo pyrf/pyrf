@@ -397,13 +397,14 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(self._freq_controls(), "Frequency Control")
         self._add_docking_controls(
             self._measurement_controls(), "Measurement Control")
+        self._add_docking_controls(self._marker_controls(), "Marker Control", True)
         self._add_docking_controls(
             self._capture_controls(), "Capture Control")
         self._add_docking_controls(
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Trace Control")
-        self._add_docking_controls(self._marker_controls(), "Marker Control", True)
+        
 
         self._grid = grid
         self.setLayout(grid)
