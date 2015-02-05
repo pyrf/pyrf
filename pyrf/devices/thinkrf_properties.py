@@ -28,6 +28,8 @@ def wsa_properties(device_id):
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
         p = WSA5000_108Properties()
+    elif model == 'WSA5000-308':
+        p = WSA5000_308Properties()
     elif model == 'WSA5000-408':
         p = WSA5000_408Properties()
     elif model == 'WSA5000-427':
@@ -85,145 +87,6 @@ class WSA4000Properties(object):
         }
     SPECA_MODES = ['Sweep ZIF']
 
-
-class WSA5000_427Properties(object):
-    model = 'WSA5000-427'
-    MINIMUM_FW_VERSION = '3.2.0-rc1'
-    TRIGGER_FW_VERSION = '4.1.0'
-    REFLEVEL_ERROR = 0
-    CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
-    SWEEP_FREQ_RANGE = (100*M, 27000*M)
-    RFE_ATTENUATION = 20
-    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD', 'IQIN')
-    DEFAULT_SAMPLE_TYPE = {
-        'ZIF': IQ,
-        'SH': I_ONLY,
-        'SHN': I_ONLY,
-        'HDR': I_ONLY,
-        'IQIN': IQ,
-        'DD': I_ONLY,
-        }
-    FULL_BW = {
-        'ZIF': 125 * M,
-        'HDR': 0.16276 * M,
-        'SH': 62.5 * M,
-        'SHN': 62.5 * M,
-        'DEC_SH': 125 * M,
-        'DEC_SHN': 125 * M,
-        'IQIN': 125 * M,
-        'DD': 62.5 * M,
-        }
-    USABLE_BW = {
-        'ZIF': 100 * M,
-        'HDR': 0.1 * M,
-        'SH': 40 * M,
-        'SHN': 10 * M,
-        'DEC_SH': 100 * M,
-        'DEC_SHN': 100 * M,
-        'IQIN': 100 * M,
-        'DD': 62.5 * M,
-        }
-    MIN_TUNABLE = {
-        'ZIF': 50 * M,
-        'HDR': 50 * M,
-        'SH': 50 * M,
-        'SHN': 50 * M,
-        'IQIN': 0,
-        'DD': 31.24 * M,
-        }
-    MAX_TUNABLE = {
-        'ZIF': 27000 * M,
-        'HDR': 27000 * M,
-        'SH': 27000 * M,
-        'SHN': 27000 * M,
-        'IQIN': 0,
-        'DD': 31.25 * M,
-        }
-    MIN_DECIMATION = {
-        'ZIF': 4,
-        'HDR': None,
-        'SH': 4,
-        'SHN': 4,
-        'IQIN': 4,
-        'DD': 4,
-        }
-    MAX_DECIMATION = {
-        'ZIF': 1024,
-        'HDR': None,
-        'SH': 4,
-        'SHN': 4,
-        'IQIN': 1024,
-        'DD': 1024,
-        }
-    DECIMATED_USABLE = 0.80
-    PASS_BAND_CENTER = {
-        'ZIF': 0.5,
-        'HDR': 0.50176,
-        'SH': 0.56,
-        'SHN': 0.56,
-        'DEC_SH': 0.5,
-        'DEC_SHN': 0.5,
-        'IQIN': 0.5,
-        'DD': 0.5,
-        }
-    DC_OFFSET_BW = 240000 # XXX: an educated guess
-    TUNING_RESOLUTION = 100000
-    FSHIFT_AVAILABLE = {
-        'ZIF': True,
-        'HDR': False,
-        'SH': True,
-        'SHN': True,
-        'IQIN': True,
-        'DD': True,
-        }
-    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
-        'dwell_s', 'dwell_us',
-        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-
-    LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    DEFAULT_SPECA_SPAN = 125 * M
-    SPECA_DEFAULTS = {
-        'mode': 'Sweep SH',
-        'center': 2450 * M,
-        'rbw': 122070,
-        'span': DEFAULT_SPECA_SPAN,
-        'decimation': 1,
-        'fshift': 0,
-        'device_settings': {
-            'attenuator': True,
-            'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25,
-            'pll_reference': 'INT',
-            'trigger': {'type': 'NONE',
-                        'fstart': 2440 * M,
-                        'fstop': 2460 * M,
-                        'amplitude': -100},
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
-    TUNABLE_MODES = ['ZIF', 'SH', 'SHN', 'HDR']
-    SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
-
-    MAX_SPP = 32768
-
-    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
-    DEFAULT_RBW_INDEX = 4
-    RBW_VALUES = {}
-    for mode in RFE_MODES:
-        if DEFAULT_SAMPLE_TYPE[mode] == I_ONLY:
-            div = 2
-        else:
-            div = 1
-        rbw_vals = []
-        for s in SAMPLE_SIZES:
-            # FIXME: this is workaround for SPP limit in the sweep device
-            if div == 1 and s == SAMPLE_SIZES[-1]:
-                break
-            rbw_vals.append((FULL_BW[mode] / s) * div)
-        RBW_VALUES[mode] = rbw_vals
-    IQ_OUTPUT_CONNECTOR = True
 
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
@@ -370,7 +233,6 @@ class WSA5000_220_v2Properties(WSA5000_220Properties):
     # v2 -> hardware revision without SHN mode
     RFE_MODES = ('ZIF', 'SH', 'HDR', 'DD', 'IQIN')
 
-
 class WSA5000_208Properties(WSA5000_220Properties):
     model = 'WSA5000-208'
     # 208 -> limited to 8GHz
@@ -387,10 +249,22 @@ class WSA5000_108Properties(WSA5000_208Properties):
         mode='SHN')
     IQ_OUTPUT_CONNECTOR = False
 
+class WSA5000_308Properties(WSA5000_108Properties):
+    model = 'WSA5000-308'
+
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
     RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD')
+
+class WSA5000_427Properties(WSA5000_220Properties):
+    model = 'WSA5000-427'
+    # 427 -> increased to 27GHz
+    CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 27000*M)
+
+    MAX_TUNABLE = dict((mode, max(27000*M, f))
+        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
 
