@@ -59,7 +59,10 @@ class Plot(QtCore.QObject):
         self.window.setMenuEnabled(False)
 
         def widget_range_changed(widget, ranges):
-
+            if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
+                # HDR mode has a tuning resolution almost the same as its usable bandwidth, making the tuning mouse tuning annoying to use
+                if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
+                    return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
@@ -117,7 +120,7 @@ class Plot(QtCore.QObject):
 
         self.markers = []
         for name in labels.MARKERS:
-            self.markers.append(Marker(self, name, colors.WHITE_NUM))
+            self.markers.append(Marker(self, name, colors.WHITE_NUM, self.controller))
 
         self.waterfall_data = WaterfallModel(max_len=600)
 
@@ -139,8 +142,7 @@ class Plot(QtCore.QObject):
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
     def connect_plot_controls(self):
         def new_channel_power():
-            if self.plot_state.get('channel_power'):
-                self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
+            self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
         def new_cursor_value():
             self.controller.apply_plot_options(horizontal_cursor_value = self.cursor_line.value())
 
@@ -152,7 +154,7 @@ class Plot(QtCore.QObject):
         def new_y_axis():
             self.controller.apply_plot_options(y_axis = self.view_box.viewRange()[1])
         # update trigger settings when ever a line is changed
-        self.channel_power_region.sigRegionChangeFinished.connect(new_channel_power)
+        self.channel_power_region.sigRegionChanged.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
         self.trigger_control.sigNewTriggerRange.connect(new_trigger)
         self.window.sigYRangeChanged.connect(new_y_axis)
@@ -192,6 +194,8 @@ class Plot(QtCore.QObject):
                                                         'amplitude': self.trigger_control.amplitude})
                 self.remove_trigger()
                 self.persistence_window.reset_plot()
+            if fstart > float(min(self.channel_power_region.getRegion())) or fstop < float(max(self.channel_power_region.getRegion())):
+                self.move_channel_power(fstart + state.span / 4, fstop - state.span / 4)
 
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
             self.persistence_window.reset_plot()
@@ -208,7 +212,6 @@ class Plot(QtCore.QObject):
                 self.window.addItem(self.cursor_line)
             else:
                 self.window.removeItem(self.cursor_line)
-
         if 'channel_power' in changed:
             if state['channel_power']:
                 self.enable_channel_power()
@@ -223,14 +226,17 @@ class Plot(QtCore.QObject):
         if 'y_axis' in changed:
             self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
             self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+
     def enable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = True
         fstart = self.gui_state.center - (self.gui_state.span / 4)
         fstop = self.gui_state.center + (self.gui_state.span / 4)
-
-        self.channel_power_region.setRegion([(fstart),float(fstop)])
+        self.move_channel_power(fstart, fstop)
         self.window.addItem(self.channel_power_region)
+
+    def move_channel_power(self, fstart, fstop):
+        self.channel_power_region.setRegion([(fstart),float(fstop)])
 
     def disable_channel_power(self):
         for t in self.traces:

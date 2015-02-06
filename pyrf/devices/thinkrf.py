@@ -8,7 +8,6 @@ import struct
 import socket
 import select
 import platform
-import netifaces
 
 DISCOVERY_UDP_PORT = 18331
 _DISCOVERY_QUERY_CODE = 0x93315555
@@ -742,6 +741,7 @@ def parse_discovery_response(response):
         response[8:]))
 
 def discover_wsa(wait_time=0.125):
+    import netifaces
     """
     This function returns a list that contains all of the WSA's available
     on the local network

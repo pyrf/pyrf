@@ -1,6 +1,25 @@
 
 Changelog
 ---------
+PyRF 2.7.2
+==========
+
+2014-12-16
+
+* Added capture control widget
+
+* Changed default save file names to represent date and time of capture
+
+* Fixed baseband mode frequency axis issue
+
+* Netifaces library is no longer a hard requirement
+
+* Improved overall marker controls
+
+* Added 'Enable mouse tune' option to frequency widget
+
+* Default HDR gain is now 25
+ 
 PyRF 2.7.1
 ==========
 

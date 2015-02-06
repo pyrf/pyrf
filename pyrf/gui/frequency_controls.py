@@ -2,21 +2,9 @@ from PySide import QtGui
 
 from pyrf.units import M
 from pyrf.gui import colors
-from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback
+from pyrf.gui.widgets import QComboBoxPlayback, QDoubleSpinBoxPlayback, QCheckBoxPlayback
 from pyrf.gui.fonts import GROUP_BOX_FONT
 from pyrf.sweep_device import MAXIMUM_SPP as MAXIMUM_SWEEP_SPP
-# FIXME: move to device properties?
-MODE_TO_TEXT = {
-    'Sweep SH': 'Sweep',
-    'Sweep ZIF': 'Sweep (100 MHz steps)',
-    'ZIF': '100 MHz span',
-    'SH': '40 MHz span',
-    'SHN': '10 MHz span',
-    'HDR': '0.1 MHz span (high dynamic range)',
-    'DD': '0 to 50 MHz (no tuning)',
-    'IQIN': 'IQ input 100 MHz span (no tuning)',
-}
-TEXT_TO_MODE = dict((m,t) for (t,m) in MODE_TO_TEXT.iteritems())
 
 class FrequencyControls(QtGui.QWidget):
 
@@ -28,10 +16,6 @@ class FrequencyControls(QtGui.QWidget):
         controller.state_change.connect(self.state_changed)
 
         grid = QtGui.QGridLayout()
-
-        mode_label, mode = self._input_mode()
-        grid.addWidget(mode_label, 0, 0, 1, 1)
-        grid.addWidget(mode, 0, 1, 1, 4)
 
         cfreq_bt, cfreq_txt = self._center_freq()
         grid.addWidget(cfreq_bt, 1, 0, 1, 1)
@@ -57,6 +41,8 @@ class FrequencyControls(QtGui.QWidget):
         grid.addWidget(rbw_label, 3, 3, 1, 1)
         grid.addWidget(rbw_combo, 3, 4, 1, 1)
 
+        mouse_control = self._mouse_control()
+        grid.addWidget(mouse_control, 4, 0, 1, 4)
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 9)
         grid.setColumnStretch(2, 1)
@@ -67,17 +53,15 @@ class FrequencyControls(QtGui.QWidget):
 
         self.setLayout(grid)
         self.resize_widget()
+
+        self.start_stop_changed = False # keep track of what was last changed
+
     def device_changed(self, dut):
         # to later calculate valid frequency values
         self.dut_prop = dut.properties
-        self._update_modes()
 
     def state_changed(self, state, changed):
         self.gui_state = state
-
-        if state.playback:
-            # for playback simply update on every state change
-            self._mode.playback_value(MODE_TO_TEXT[state.mode])
 
         def enable_disable_edit_boxes():
             if state.sweeping():
@@ -118,7 +102,6 @@ class FrequencyControls(QtGui.QWidget):
             self._update_freq_edit()
 
         if 'playback' in changed:
-            self._update_modes(current_mode=state.mode)
             self._freq_edit.setEnabled(not state.playback)
             if state.playback:
                 self._rbw_box.playback_value(str(state.rbw))
@@ -129,33 +112,15 @@ class FrequencyControls(QtGui.QWidget):
 
         if 'device_settings.iq_output_path' in changed:
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self._update_modes(include_sweep=False)
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
                 self._rbw_box.setEnabled(False)
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
-                self._update_modes()
                 self._rbw_box.setEnabled(True)
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
-
-    def _input_mode(self):
-        self._mode_label = QtGui.QLabel('Mode:')
-        self._mode = QComboBoxPlayback()
-        self._mode.setToolTip("Change the device input mode")
-
-        def new_input_mode():
-            input_mode = TEXT_TO_MODE[self._mode.currentText()]
-            if not input_mode:
-                return
-            self.controller.apply_settings(mode=input_mode)
-            #FIXME rfe_mode should not be in device settings dictionary
-            if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.controller.apply_device_settings(rfe_mode = input_mode)
-        self._mode.currentIndexChanged.connect(new_input_mode)
-        return self._mode_label, self._mode
 
     def _freq_incr(self):
         steps_label = QtGui.QLabel("Adjust:")
@@ -182,6 +147,15 @@ class FrequencyControls(QtGui.QWidget):
         self._fstep_box = steps
         return steps_label, steps
 
+    def _mouse_control(self):
+        mouse_control = QCheckBoxPlayback("Tune with Mouse")
+        mouse_control.setChecked(True)
+        def change_mouse_control():
+            self.controller.apply_plot_options(mouse_tune = mouse_control.isChecked())
+        mouse_control.clicked.connect(change_mouse_control)
+        
+        return mouse_control
+
     def _center_freq(self):
         cfreq = QtGui.QLabel('Center:')
         self._cfreq = cfreq
@@ -189,6 +163,7 @@ class FrequencyControls(QtGui.QWidget):
         freq_edit.setSuffix(' MHz')
         self._freq_edit = freq_edit
         def freq_change():
+            self.start_stop_changed = False
             self.controller.apply_settings(center=freq_edit.value() * M)
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self.controller.apply_device_settings(freq = freq_edit.value() * M)
@@ -201,6 +176,7 @@ class FrequencyControls(QtGui.QWidget):
         bw_edit = QDoubleSpinBoxPlayback()
         bw_edit.setSuffix(' MHz')
         def freq_change():
+            self.start_stop_changed = False
             self.controller.apply_settings(span=bw_edit.value() * M)
         bw_edit.editingFinished.connect(freq_change)
         self._bw_edit = bw_edit
@@ -212,9 +188,10 @@ class FrequencyControls(QtGui.QWidget):
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' MHz')
         def freq_change():
-            fstart = freq.value() * M
-            fstop = self.gui_state.center + self.gui_state.span / 2.0
-            fstop = max(fstop, fstart + self.dut_prop.TUNING_RESOLUTION)
+            self.start_stop_changed = True
+            fstart = float(freq.value() * M)
+            fstop = float(self._fstop_edit.value() * M)
+            fstop = float(max(fstop, fstart + self.dut_prop.TUNING_RESOLUTION))
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
@@ -229,9 +206,11 @@ class FrequencyControls(QtGui.QWidget):
         freq = QDoubleSpinBoxPlayback()
         freq.setSuffix(' MHz')
         def freq_change():
-            fstart = self.gui_state.center - self.gui_state.span / 2.0
-            fstop = freq.value() * M
-            fstart = min(fstart, fstop - self.dut_prop.TUNING_RESOLUTION)
+            self.start_stop_changed = True
+            fstart = float(self._fstart_edit.value() * M)
+            fstop = float(freq.value() * M)
+            fstart = float(min(fstart, fstop - self.dut_prop.TUNING_RESOLUTION))
+
             self.controller.apply_settings(
                 center = (fstop + fstart) / 2.0,
                 span = (fstop - fstart),
@@ -251,19 +230,19 @@ class FrequencyControls(QtGui.QWidget):
         self._rbw_box = rbw_box
         return rbw_label, rbw_box
 
-
     def _update_freq_edit(self):
         """
         update the spin boxes from self.gui_state
         """
-        center = float(self.gui_state.center) / M
-        span = float(self.gui_state.span) / M
-        self._fstop_edit.quiet_update(value=center + span / 2)
-        self._fstart_edit.quiet_update(value=center - span / 2)
+        center = float(self.gui_state.center / M)
+        span = float(self.gui_state.span / M)
         self._freq_edit.quiet_update(value=center)
         self._bw_edit.quiet_update(value=span)
-
+        if not self.start_stop_changed:
+            self._fstop_edit.quiet_update(value=center + span / 2)
+            self._fstart_edit.quiet_update(value=center - span / 2)
         self._updating_values = False
+        self.start_stop_changed = False
 
     def reset_freq_bounds(self):
             self.start_freq = None
@@ -312,20 +291,6 @@ class FrequencyControls(QtGui.QWidget):
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
             self._rbw_box.setCurrentIndex(self.dut_prop.DEFAULT_RBW_INDEX)
-
-    def _update_modes(self, include_sweep=True, current_mode=None):
-        modes = []
-        if current_mode:
-            current_mode = MODE_TO_TEXT[current_mode]
-        if include_sweep:
-
-            modes.extend(self.dut_prop.SPECA_MODES)
-            if not self.controller.developer_mode:
-                modes.remove('Sweep ZIF')
-        modes.extend(self.dut_prop.RFE_MODES)
-
-        self._mode.quiet_update((MODE_TO_TEXT[m] for m in modes), current_mode)
-        self._mode.setEnabled(True)
 
     def showEvent(self, event):
         self.activateWindow()

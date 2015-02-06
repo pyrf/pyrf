@@ -127,7 +127,7 @@ class TraceControls(QtGui.QWidget):
 
         draw = QtGui.QComboBox()
         draw.setToolTip("Select data source")
-        for i, val in enumerate(['Live', 'Max', 'Min', 'Average', 'Off']):
+        for i, val in enumerate(['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']):
             draw.addItem(val)
         draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
         def draw_changed(index):
@@ -408,16 +408,9 @@ class TraceControls(QtGui.QWidget):
         if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
             return
         min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1])) + marker.data_index
-
-        right_pow = pow_data[min_index:max_index]
-
-        # calculate noise floor level by averaging the maximum 80% of the fft
-        noise_floor = np.mean(np.sort(right_pow)[int(len(right_pow) * ( 0.8)):-1])
-
-        peak_values = np.ma.masked_less(right_pow, noise_floor + self.plot_state.peak_threshold).compressed()
-        if len(peak_values) == 0:
-            return
-        marker.data_index = np.where(pow_data==(peak_values[1 if len(peak_values) > 1 else 0]))[0]
+        min_index += 1
+        right_pow = max(pow_data[min_index:max_index])
+        marker.data_index = np.where(pow_data==right_pow)[0]
 
     def _find_left_peak(self, num):
         """
@@ -442,15 +435,9 @@ class TraceControls(QtGui.QWidget):
             return
 
         min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
-        left_pow = pow_data[min_index:max_index]
-
-        # calculate noise floor level by averaging the maximum 80% of the fft
-        noise_floor = np.mean(np.sort(left_pow)[int(len(left_pow) * ( 0.8)):-1])
-
-        peak_values = np.ma.masked_less(left_pow, noise_floor + self.plot_state.peak_threshold).compressed()
-        if len(peak_values) == 0:
-            return
-        marker.data_index = np.where(pow_data==(peak_values[-2 if len(peak_values) > 1 else -1]))[0]
+        left_pow = max(pow_data[min_index:max_index])
+        min_index -= 1
+        marker.data_index = np.where(pow_data==left_pow)[0]
 
     def showEvent(self, event):
         self.activateWindow()

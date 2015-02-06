@@ -13,7 +13,7 @@ from PySide import QtGui, QtCore
 import numpy as np
 import math
 import glob
-
+import time
 from pkg_resources import parse_version, require
 
 from pyrf.gui import colors
@@ -35,7 +35,7 @@ from pyrf.gui.amplitude_controls import AmplitudeControls
 from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 from pyrf.gui.measurements_widget import MeasurementControls
-
+from pyrf.gui.capture_widget import CaptureControls
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
     ('&Spectrogram', 'waterfall_plot', False),
@@ -45,7 +45,6 @@ VIEW_OPTIONS = [
 DEVELOPER_OPTIONS = [
     ('Show &Attenuated Edges', 'show_attenuated_edges', False),
     ('Show &Sweep Steps', 'show_sweep_steps', False),
-    ('&Free Plot Adjustment', 'free_plot_adjustment', False),
     ('&IQ Offset Correction', 'dsp.correct_phase', True),
     ('&DC Offset', 'dsp.hide_differential_dc_offset', True),
     ('Apply &Spectral Inversion', 'dsp.apply_spec_inv', True),
@@ -155,14 +154,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def start_recording(self):
         self.stop_action.setDisabled(False)
-        names = glob.glob('recording-*.vrt')
-        last_index = -1
-        for n in names:
-            try:
-                last_index = max(last_index, int(n[10:-4]))
-            except ValueError:
-                pass
-        filename = 'recording-%04d.vrt' % (last_index + 1)
+        filename = time.strftime('recording-%Y-%m-%d-%H%M%S')
+        names = glob.glob(filename + '*.vrt')
+        if (filename + '.vrt') in names:
+            count = names.count(filename)
+            filename += '(%d)' % count
+        filename += '.vrt'
         record_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "Create Recording",
             filename,
@@ -189,16 +186,13 @@ class MainWindow(QtGui.QMainWindow):
             self.start_playback(playback_filename)
 
     def start_csv(self):
+        filename = time.strftime('csv-%Y-%m-%d-%H%M%S')
+        names = glob.glob(filename + '*.csv')
 
-        names = glob.glob('csv-*.csv')
-        last_index = -1
-        for n in names:
-            try:
-                last_index = max(last_index, int(n[4:-4]))
-
-            except ValueError:
-                pass
-        filename = 'csv-%04d.csv' % (last_index + 1)
+        if (filename + '.csv') in names:
+            count = names.count(filename)
+            filename += '(%d)' % count
+        filename += '.csv'
         playback_filename, file_type = QtGui.QFileDialog.getSaveFileName(self,
             "CSV File", filename, "CSV File (*.csv)")
 
@@ -218,6 +212,7 @@ class MainWindow(QtGui.QMainWindow):
         self.device_info.setDisabled(False)
         self._device_address = playback_filename
         self.controller.set_device(playback_filename=playback_filename)
+        self.setWindowTitle('PyRF RTSA: ' + __version__ +' Playback Recording: ' + playback_filename)
         self.show()
 
     def device_changed(self, dut):
@@ -385,6 +380,8 @@ class MainPanel(QtGui.QWidget):
             self.update_span_label()
 
     def plot_changed(self, state, changed):
+        if 'marker_dragged' in changed:
+            self.update_marker_labels()
         self.plot_state = state
 
     def show_labels(self):
@@ -451,9 +448,11 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(
             self._measurement_controls(), "Measurement Control")
         self._add_docking_controls(
+            self._capture_controls(), "Capture Control")
+        self._add_docking_controls(
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
-        self._add_docking_controls(self._trace_controls(), "Plot Control")
+        self._add_docking_controls(self._trace_controls(), "Trace Control")
 
         self._grid = grid
         self.setLayout(grid)
@@ -514,10 +513,10 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets.append(self.measure_group)
         return self.measure_group
 
-    def _dsp_controls(self):
-        self._dsp_group = DSPWidget()
-        self.control_widgets.append(self._dsp_group)
-        return self._dsp_group
+    def _capture_controls(self):
+        self.capture_group = CaptureControls(self.controller)
+        self.control_widgets.append(self.capture_group)
+        return self.capture_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
@@ -587,10 +586,9 @@ class MainPanel(QtGui.QWidget):
         self.xdata = np.linspace(fstart, fstop, len(power))
         self.update_trace()
         self.update_marker()
-        self.update_diff()
+        self.update_marker_labels()
         self.update_channel_power()
-        if (not self.controller.applying_user_xrange() and
-                not self.controller.get_options()['free_plot_adjustment']):
+        if (not self.controller.applying_user_xrange() and self.plot_state['mouse_tune']):
             self._plot.center_view(fstart,
                                    fstop)
 
@@ -655,14 +653,23 @@ class MainPanel(QtGui.QWidget):
 
     def update_marker(self):
             num = 1
+            for marker in self._plot.markers:
+                if marker.enabled:
+                    trace = self._plot.traces[marker.trace_index]
+                    if not trace.blank:
+                        marker.update_pos(trace.freq_range, trace.data)
+
+    def update_marker_labels(self):
+            num = 1
             for marker, marker_label in zip(self._plot.markers, self.marker_labels):
                 if marker.enabled:
                     trace = self._plot.traces[marker.trace_index]
                     marker_label.show()
-                    if not trace.blank:
-
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
+                    if marker.data_index is None:
+                        marker.data_index = int(len(trace.data) / 2)
                         marker.update_pos(trace.freq_range, trace.data)
+                    if not trace.blank:
+                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
                         if self.gui_state.rfe_mode() == 'HDR':
                             marker_text = 'M%d: %0.8f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
                                                                            trace.data[marker.data_index])
@@ -674,6 +681,7 @@ class MainPanel(QtGui.QWidget):
                         self._mask_label.show()
                 else:
                     marker_label.hide()
+            self.update_diff()
 
     def update_diff(self):
 
