@@ -49,9 +49,11 @@ class SpecAController(QtCore.QObject):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
+
         self._plot_options = plotState
         self._marker_options = markerState
         self._trace_options = traceState
+
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -550,6 +552,10 @@ class SpecAController(QtCore.QObject):
         
         self.marker_change.emit(self._marker_options.keys(), dict(self._marker_options), self._marker_options[0].keys())
         self.trace_change.emit(self._trace_options.keys(), dict(self._trace_options), self._trace_options[0].keys())
+
+        # apply plot options
+        self.plot_change.emit(dict(self._plot_options),
+            self._plot_options.keys())
 
     def apply_options(self, **kwargs):
         """

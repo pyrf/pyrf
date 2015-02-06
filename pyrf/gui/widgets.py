@@ -6,6 +6,9 @@ import pyqtgraph as pg
 from pyrf.gui import colors
 from pyrf.gui import fonts
 from pyrf.units import M, G
+from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
+                                              decay_fn_EXPONENTIAL)
+
 class QComboBoxPlayback(QtGui.QComboBox):
     """
     QComboBox with playback features
@@ -124,19 +127,21 @@ class QDoubleSpinBoxPlayback(QtGui.QDoubleSpinBox):
         rval = super(QDoubleSpinBoxPlayback, self).stepBy(steps)
         self.editingFinished.emit()
 
-class SpectralWidget(QtGui.QWidget):
+class PlotWindowWidget(QtGui.QWidget):
     """
     A widget based from the Qt widget with a layout that represents the Fstart/Fstop and Fcenter
-    if the curret spectral plot
+    of the given plot window
     """
 
-    def __init__(self, controller):
-        super(SpectralWidget, self).__init__()
+    def __init__(self, controller, plot, grad = False):
+        super(PlotWindowWidget, self).__init__()
 
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
-
+        controller.plot_change.connect(self.plot_changed)
+        self._plot = plot
+        self._grad = grad
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
         self._build_layout()
@@ -144,36 +149,36 @@ class SpectralWidget(QtGui.QWidget):
     def _create_controls(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
 
-        self._fstart_label = QtGui.QLabel('FSTART')
-        self._fstart_label.setSizePolicy(sizePolicy)
-        self._fstart_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._fstart_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        self._fstop_label = QtGui.QLabel('FSTOP')
-        self._fstop_label.setSizePolicy(sizePolicy)
-        self._fstop_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._fstop_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        self._fcenter_label = QtGui.QLabel('FCENTER')
+        self._fcenter_label = QtGui.QLabel('Center')
         self._fcenter_label.setSizePolicy(sizePolicy)
         self._fcenter_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._fcenter_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._mask_label = QtGui.QLabel()
-        self._mask_label.setStyleSheet('background-color: black')
-        self.window = pg.PlotWidget()
+        self._rbw_label = QtGui.QLabel('RBW: ')
+        self._rbw_label.setSizePolicy(sizePolicy)
+        self._rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._rbw_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._span_label = QtGui.QLabel('Span')
+        self._span_label.setSizePolicy(sizePolicy)
+        self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        self._span_label.setAlignment(QtCore.Qt.AlignCenter)
 
     def _build_layout(self):
         
         grid = self.layout()
-        grid.setSpacing(0)
-        grid.setHorizontalSpacing(0)
 
-        grid.addWidget(self.window, 0, 0, 1, 4)
-        grid.addWidget(self._mask_label, 1, 0, 1, 4)
-        grid.addWidget(self._fstart_label, 1, 1, 1, 1)
+        if self._grad:
+            grid.addWidget(self._plot.gradient_editor)
+        else:
+            grid.setColumnMinimumWidth(0, 20)
+
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
-        grid.addWidget(self._fstop_label, 1, 3, 1, 1)
+        grid.addWidget(self._rbw_label, 1, 1, 1, 1)
+        grid.addWidget(self._span_label, 1, 3, 1, 1)
+
+        grid.addWidget(self._plot, 0, 1, 1, 4)
+        self.resize_widget()
 
     def device_changed(self, dut):
         self.dut_prop = dut.properties
@@ -186,14 +191,34 @@ class SpectralWidget(QtGui.QWidget):
                 center = state.center
             else:
                 center = self.dut_prop.MAX_TUNABLE[state.rfe_mode()]
-            fstart = center - (state.span/ 2)
-            fstop = center + (state.span / 2)
             if int(center) > G:
                 unit = 'GHz'
                 div = G
             else:
                 unit = 'MHz'
                 div = M
-            self._fstart_label.setText('Fstart (%s): %0.4f' % (unit, fstart / div))
-            self._fcenter_label.setText('Fcenter (%s): %0.4f' % (unit, center / div))
-            self._fstop_label.setText('Fstop (%s): %0.4f' % (unit, fstop / div))
+            self._fcenter_label.setText('Center: %0.4f %s' % (center / div, unit))
+            self.update_span_label()
+
+        if 'rbw' in changed:
+            self.update_rbw_label()
+
+    def plot_changed(self, state, changed):
+        self.plot_state = state
+
+    def update_rbw_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._rbw_label.setText("RBW: %0.2f Hz" % (self.gui_state.rbw))
+        else:
+            self._rbw_label.setText("RBW: %0.2f kHz" % (self.gui_state.rbw / 1e3))
+
+    def update_span_label(self):
+        rfe_mode = self.gui_state.rfe_mode()
+        if rfe_mode == 'HDR':
+            self._span_label.setText("Span: %0.2f kHz" % (self.gui_state.span / 1e3))
+        else:
+            self._span_label.setText("Span: %0.2f MHz" % (self.gui_state.span/ M))
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

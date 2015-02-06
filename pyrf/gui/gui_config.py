@@ -27,6 +27,7 @@ for t ,c  in zip(labels.TRACES, colors.TRACE_COLORS):
 
 
 plotState =  {'cont_cap_mode': True,
-              'mouse_tune': True}
-
+              'mouse_tune': True,
+              'ref_level': 0,
+              'db_div': 15}
 

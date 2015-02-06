@@ -157,7 +157,7 @@ class Trace(object):
         self.average_factor = 5
     def clear(self):
         for c in self.curves:
-            self.plot_area.window.removeItem(c)
+            self.plot_area.spectral_plot.removeItem(c)
         self.curves = []
     def clear_data(self):
         self.average_list = []
@@ -212,17 +212,17 @@ class Trace(object):
             edge_color = tuple([c / 3 for c in self.color])
             for start_bin, run_length in usable_bins:
                 if start_bin > i:
-                    c = self.plot_area.window.plot(x=xdata[i:start_bin+1],
+                    c = self.plot_area.spectral_plot.plot(x=xdata[i:start_bin+1],
                         y=self.data[i:start_bin+1], pen=edge_color)
                     self.curves.append(c)
                     i = start_bin
                 if run_length:
-                    c = self.plot_area.window.plot(x=xdata[i:i+run_length],
+                    c = self.plot_area.spectral_plot.plot(x=xdata[i:i+run_length],
                         y=self.data[i:i+run_length], pen=self.color)
                     self.curves.append(c)
                     i = i + run_length - 1
             if i < len(xdata):
-                c = self.plot_area.window.plot(x=xdata[i:], y=self.data[i:],
+                c = self.plot_area.spectral_plot.plot(x=xdata[i:], y=self.data[i:],
                     pen=edge_color)
                 self.curves.append(c)
         else:
@@ -235,7 +235,7 @@ class Trace(object):
             if sweep_segments is None:
                 sweep_segments = [len(self.data)]
             for run in sweep_segments:
-                c = self.plot_area.window.plot(x=xdata[i:i + run],
+                c = self.plot_area.spectral_plot.plot(x=xdata[i:i + run],
                     y=self.data[i:i + run],
                     pen=self.color if odd else alternate_color)
                 self.curves.append(c)
@@ -248,7 +248,7 @@ class Marker(object):
     """
     shape = 'd'
     size = 25
-    def __init__(self,plot_area, marker_name, color, controller, delta = False):
+    def __init__(self, plot_area, marker_name, color, controller, delta = False):
 
         self.name = marker_name
         self.delta = delta
@@ -287,6 +287,7 @@ class Marker(object):
             self.controller.apply_marker_options(self.name, ['hovering'], [False])
         self.cursor_line.sigHoveringFinished.connect(not_hovering)
 
+
     def dragged(self):
         # determine freq of drag
         freq = self.cursor_line.value()
@@ -299,14 +300,14 @@ class Marker(object):
         self.controller.apply_marker_options(self.name, ['hovering', 'freq'], [True, self.freq_pos])
         
     def remove_marker(self):
-        self._plot.window.removeItem(self.marker_plot)
-        self._plot.window.removeItem(self.cursor_line)
-        self._plot.window.removeItem(self.text_box)
+        self._plot.removeItem(self.marker_plot)
+        self._plot.removeItem(self.cursor_line)
+        self._plot.removeItem(self.text_box)
 
     def add_marker(self):
-        self._plot.window.addItem(self.marker_plot)
-        self._plot.window.addItem(self.cursor_line)
-        self._plot.window.addItem(self.text_box)
+        self._plot.addItem(self.marker_plot)
+        self._plot.addItem(self.cursor_line)
+        self._plot.addItem(self.text_box)
 
     def enable(self):
 
@@ -357,10 +358,10 @@ class Marker(object):
     def update_pos(self, xdata, ydata):
 
         # calculate scale offset for marker
-        scale = np.abs( max(self._plot.view_box.viewRange()[1]) - min(self._plot.view_box.viewRange()[1])) * 0.01
+        scale = np.abs( max(self._plot.getViewBox().viewRange()[1]) - min(self._plot.getViewBox().viewRange()[1])) * 0.01
         self.marker_plot.clear()
-        self._plot.window.removeItem(self.marker_plot)
-        self._plot.window.addItem(self.marker_plot)
+        self._plot.removeItem(self.marker_plot)
+        self._plot.addItem(self.marker_plot)
 
         if len(xdata) <= 0 or len(ydata) <= 0:
             return
