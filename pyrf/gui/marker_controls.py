@@ -50,13 +50,11 @@ class MarkerWidget(QtGui.QWidget):
 
 
         self.freq = QDoubleSpinBoxPlayback()
-        self.freq.setSuffix(' Hz')
+        self.freq.setSuffix(' MHz')
         self.freq.setRange(0, 20e12)
         def freq_change():
-            self.controller.apply_marker_options(self.name, ['freq'], [self.freq.value()])
+            self.controller.apply_marker_options(self.name, ['freq'], [self.freq.value() * M])
         self.freq.editingFinished.connect(freq_change)
-
-        self.power = QtGui.QLabel('dB')
 
         self.add_delta = QtGui.QPushButton('Add Delta')
 
@@ -77,19 +75,14 @@ class MarkerWidget(QtGui.QWidget):
         def new_dtrace():
             self.controller.apply_marker_options(self.name, ['dtrace'], [int(self.dtrace.currentText())])
         self.dtrace.currentIndexChanged.connect(new_dtrace)
-        self.dtrace.setMaximumWidth(40)
         self.dtrace_label = QtGui.QLabel(' Delta Trace:')
-        self.dtrace_label.setMaximumWidth(30)
 
         self.dfreq = QDoubleSpinBoxPlayback()
-        self.dfreq.setSuffix(' Hz')
-        self.dfreq.setRange(0, 20e12)
-        self.dfreq.setMaximumWidth(120)
+        self.dfreq.setSuffix(' MHz')
+        self.dfreq.setRange(-125, 125)
         def dfreq_change():
-            self.controller.apply_marker_options(self.name, ['dfreq'], [self.dfreq.value()])
+            self.controller.apply_marker_options(self.name, ['dfreq'], [self._marker_state[self.name]['freq'] + (self.dfreq.value() * M)])
         self.dfreq.editingFinished.connect(dfreq_change)
-        self.dpower = QtGui.QLabel('dB')
-        self.dpower.setMaximumWidth(50)
 
     def _build_layout(self):
         grid = self.layout()
@@ -103,12 +96,10 @@ class MarkerWidget(QtGui.QWidget):
             show(self.remove_marker, 0, 0, 1, 1)
             show(self.trace, 0, 1, 1, 1)
             show(self.freq, 0, 2, 1, 1)
-            show(self.power, 0, 3, 1, 1)
             if d:
                 show(self.remove_delta, 1, 0, 1, 1)
                 show(self.dtrace, 1, 1, 1, 1)
                 show(self.dfreq,  1, 2, 1, 1)
-                show(self.dpower, 1, 3, 1, 1)
             else:
                 show(self.add_delta, 1, 0, 1, 1)
 
@@ -135,20 +126,16 @@ class MarkerWidget(QtGui.QWidget):
     def marker_changed(self, marker, state, changed):
         self._marker_state = state
         if marker == self.name:
-            if 'power' in changed:
-                self.power.setText('%0.2f dB' % state[marker]['power'])
-
-            if 'dpower' in changed:
-                self.dpower.setText('%0.2f dB' % state[marker]['dpower'])
-
             if 'enabled' in changed or 'delta' in changed:
                 self._build_layout()
 
             if 'freq' in changed:
-                self.freq.quiet_update(value = state[marker]['freq'])
+                if state[marker]['freq'] is not None:
+                    self.freq.quiet_update(value = (state[marker]['freq'] / M))
 
             if 'dfreq' in changed:
-                self.dfreq.quiet_update(value = state[marker]['dfreq'])
+                if state[marker]['dfreq'] is not None:
+                    self.dfreq.quiet_update(value = ((state[marker]['dfreq'] - state[marker]['freq']) / M) )
 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
@@ -295,19 +282,19 @@ class MarkerTable(QtGui.QWidget):
         power.setSizePolicy(sizePolicy)
         power.setStyleSheet('color: %s' % colors.WHITE)
 
-        delta_freq = QtGui.QLabel('Delta Frequency')
+        delta_freq = QtGui.QLabel('Delta Frequency Position')
         delta_freq.setSizePolicy(sizePolicy)
         delta_freq.setStyleSheet('color: %s' % colors.WHITE)
 
-        delta_power = QtGui.QLabel('Delta Power')
+        delta_power = QtGui.QLabel('Delta Power Position')
         delta_power.setSizePolicy(sizePolicy)
         delta_power.setStyleSheet('color: %s' % colors.WHITE)
 
-        diff_freq = QtGui.QLabel('Diff Frequency')
+        diff_freq = QtGui.QLabel('Delta Frequency')
         diff_freq.setSizePolicy(sizePolicy)
         diff_freq.setStyleSheet('color: %s' % colors.WHITE)
 
-        diff_power = QtGui.QLabel('Diff Power')
+        diff_power = QtGui.QLabel('Delta Power')
         diff_power.setSizePolicy(sizePolicy)
         diff_power.setStyleSheet('color: %s' % colors.WHITE)
 
