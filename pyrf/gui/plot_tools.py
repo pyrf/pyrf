@@ -347,6 +347,12 @@ class Marker(object):
                     self.draw_color = colors.MARKER_HOVER
                 else:
                     self.draw_color = self.color
+            if 'peak' in changed:
+                self.find_peak()
+            if 'peak_right' in changed:
+                self.find_right_peak()
+            if 'peak_left' in changed:
+                self.find_left_peak()
     
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
@@ -373,7 +379,7 @@ class Marker(object):
         if xdata[0] <= self.freq_pos <= xdata[-1]:
             # find index of nearest frequency
             index = np.argmin(np.abs(xdata - self.freq_pos))
-            self.ypos = np.max(ydata[index - 5: index + 5])
+            self.ypos = np.max(ydata[max(0, index - 5): min(len(self.ydata) - 1, index + 5)])
         else:
             self.ypos = 0
         self.xdata = xdata
@@ -400,6 +406,82 @@ class Marker(object):
         
     def update_state_power(self):
         self.controller.apply_marker_options(self.name, ['power'], [self.ypos])
+
+    def find_peak(self):
+        """
+        move the marker to the maximum point of the spectrum
+        """
+        # do nothing if there is no data
+        if len(self.xdata) == 0 or len(self.ydata) == 0:
+            return
+        # retrieve the min/max x-axis of the current window
+        window_freq = self._plot.getViewBox().viewRange()[0]
+        data_range = self.xdata
+        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
+            return
+
+        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
+
+        peak_value = np.max(self.ydata[min_index:max_index])
+        data_index = np.where(self.ydata==peak_value)[0]
+        self.freq_pos = self.xdata[data_index]
+
+    def find_right_peak(self):
+        """
+        move the selected marker to the next peak on the right
+        """
+        # do nothing if there is no data
+        if len(self.xdata) == 0 or len(self.ydata) == 0:
+            return
+
+        # retrieve the min/max x-axis of the current window
+        window_freq = self._plot.getViewBox().viewRange()[0]
+
+        if self.freq_pos >= max(window_freq):
+            return
+
+        min_index = np.min(np.where(self.xdata >= self.freq_pos)) + 4
+        max_index = len(self.xdata) - 1
+
+        # determine if edge is reached
+        if min_index >= max_index:
+            return
+
+        data_index = np.where(self.ydata == max(self.ydata[min_index:max_index]))[0]
+        new_pos = self.xdata[data_index]
+        if new_pos > max(self.xdata):
+            return
+        else:
+            self.freq_pos = new_pos
+
+    def find_left_peak(self):
+        """
+        move the selected marker to the next peak on the left
+        """
+        # do nothing if there is no data
+        if len(self.xdata) == 0 or len(self.ydata) == 0:
+            return
+
+        # retrieve the min/max x-axis of the current window
+        window_freq = self._plot.getViewBox().viewRange()[0]
+
+        if self.freq_pos >= max(window_freq):
+            return
+
+        min_index = 0
+        max_index = np.min(np.where(self.xdata >= self.freq_pos)) - 4
+
+        # determine if edge is reached
+        if max_index <= 0:
+            return
+
+        data_index = np.where(self.ydata == max(self.ydata[min_index:max_index]))[0]
+        new_pos = self.xdata[data_index]
+        if new_pos > max(self.xdata):
+            return
+        else:
+            self.freq_pos = new_pos
+            
 
 class DeltaMarker(Marker):
     shape = 't'

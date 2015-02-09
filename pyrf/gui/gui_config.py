@@ -13,7 +13,11 @@ for m in labels.MARKERS:
                           'dtrace': labels.TRACES[0],
                           'dfreq': None,
                           'dpower': 0,
-                          'hovering': False}
+                          'hovering': False,
+                          'center': None,
+                          'peak': None,
+                          'peak_left': None,
+                          'peak_right': None}
 
 
 traceState = {}

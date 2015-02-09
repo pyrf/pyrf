@@ -401,7 +401,6 @@ class MainPanel(QtGui.QWidget):
         for c in self.channel_power_labels:
             c.hide()
 
-
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
@@ -433,7 +432,6 @@ class MainPanel(QtGui.QWidget):
             self._amplitude_controls(), "Amplitude Control")
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Trace Control")
-        
 
         self._grid = grid
         self.setLayout(grid)

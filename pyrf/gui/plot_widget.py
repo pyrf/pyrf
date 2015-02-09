@@ -152,10 +152,6 @@ class Plot(QtCore.QObject):
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
 
-        center_pen = pg.mkPen(color = colors.WHITE_NUM, width = 2)
-        self.center_line = pg.InfiniteLine(pos = -100, angle = 90, movable = False, pen = center_pen)
-        self.spectral_plot.addItem(self.center_line)
-
     def connect_plot_controls(self):
         def new_channel_power():
             self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
@@ -298,8 +294,6 @@ class Plot(QtCore.QObject):
         self.spectral_plot.getAxis('left').setTicks([tick_list])
         self.persistence_plot.getAxis('left').setTicks([tick_list])
         
-        self.center_line.setValue(fstart + ((fstop - fstart)/ 2))
-        self.persistence_plot.center_line.setValue(self.gui_state.center)
         self.spectral_plot.getAxis('left').show()
 
     def enable_channel_power(self):

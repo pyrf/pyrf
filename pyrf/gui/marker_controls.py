@@ -48,7 +48,6 @@ class MarkerWidget(QtGui.QWidget):
 
         self.trace_label = QtGui.QLabel('Trace:')
 
-
         self.freq = QDoubleSpinBoxPlayback()
         self.freq.setSuffix(' MHz')
         self.freq.setRange(0, 20e12)
@@ -56,15 +55,14 @@ class MarkerWidget(QtGui.QWidget):
             self.controller.apply_marker_options(self.name, ['freq'], [self.freq.value() * M])
         self.freq.editingFinished.connect(freq_change)
 
-        self.add_delta = QtGui.QPushButton('Add Delta')
+        self.add_delta = QtGui.QPushButton('+ Delta')
 
         def add_delta_clicked():
             self.controller.apply_marker_options(self.name, ['delta'], [True])
             self._build_layout()
         self.add_delta.clicked.connect(add_delta_clicked)
 
-        self.remove_delta = QtGui.QPushButton('Remove Delta')
-        self.remove_delta.setMaximumWidth(75)
+        self.remove_delta = QtGui.QPushButton('- Delta')
         def remove_delta_clicked():
             self.controller.apply_marker_options(self.name, ['delta'], [False])
             self._build_layout()
@@ -83,6 +81,27 @@ class MarkerWidget(QtGui.QWidget):
         def dfreq_change():
             self.controller.apply_marker_options(self.name, ['dfreq'], [self._marker_state[self.name]['freq'] + (self.dfreq.value() * M)])
         self.dfreq.editingFinished.connect(dfreq_change)
+        
+        # control buttons to indicate actions to be taken by markers
+        self.peak = QtGui.QPushButton('Peak')
+        def find_peak():
+            self.controller.apply_marker_options(self.name, ['peak'], [None])
+        self.peak.clicked.connect(find_peak)
+
+        self.peak_left = QtGui.QPushButton('Peak Left')
+        def find_left_peak():
+            self.controller.apply_marker_options(self.name, ['peak_left'], [None])
+        self.peak_left.clicked.connect(find_left_peak)
+
+        self.peak_right = QtGui.QPushButton('Peak Right')
+        def find_right_peak():
+            self.controller.apply_marker_options(self.name, ['peak_right'], [None])
+        self.peak_right.clicked.connect(find_right_peak)
+
+        self.center = QtGui.QPushButton('Center')
+        def center_marker():
+            self.controller.apply_marker_options(self.name, ['center'], [None])
+        self.center.clicked.connect(center_marker)
 
     def _build_layout(self):
         grid = self.layout()
@@ -102,11 +121,15 @@ class MarkerWidget(QtGui.QWidget):
                 show(self.dfreq,  1, 2, 1, 1)
             else:
                 show(self.add_delta, 1, 0, 1, 1)
+            show(self.peak_left, 2, 0, 1, 1)
+            show(self.peak, 2, 1, 1, 1)
+            show(self.peak_right,  2, 2, 1, 1)
+            show(self.center,  2, 3, 1, 1)
 
         def remove_marker():
-            show(self.add_marker, 0, 0, 1, 1)
             show(QtGui.QLabel(), 0, 1, 1, 8)
-        
+            show(self.add_marker, 0, 0, 1, 1)
+
         d = self._marker_state[self.name]['delta']
         if self._marker_state[self.name]['enabled']: 
             # if marker's current trace is disabled, assign marker to next trace
@@ -122,6 +145,7 @@ class MarkerWidget(QtGui.QWidget):
                 add_marker(d)
         else:
             remove_marker()
+        self.resize_widget()
 
     def marker_changed(self, marker, state, changed):
         self._marker_state = state
@@ -147,6 +171,9 @@ class MarkerWidget(QtGui.QWidget):
                     if not state[trace]['enabled']:
                         self.controller.apply_marker_options(m, ['enabled', 'delta'], [False, False])
         self._update_trace_combo()
+
+    def resize_widget(self):
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Minimum)
 
     def _update_trace_combo(self):
         available_colors = []
@@ -183,7 +210,7 @@ class MarkerControls(QtGui.QWidget):
         for m in MARKERS:
             self._marker_widgets[m] = MarkerWidget(self.controller, m)
             self._tab.addTab(self._marker_widgets[m], str(m + 1))
-        
+
         grid = self.layout()
         grid.addWidget(self._tab, 0, 0, 1, 1)
         self.resize_widget()
@@ -346,8 +373,10 @@ class MarkerTable(QtGui.QWidget):
         if state[marker]['enabled']:
             if 'freq' in changed:
                 self._marker_rows[marker].freq.setText('%0.2f MHz' % (state[marker]['freq'] / M))
+
             if 'power' in changed:
                 self._marker_rows[marker].power.setText('%0.2f dB  ' % state[marker]['power'])
+
             if 'dfreq' in changed or 'dpower' in changed:
                 freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
                 pow_diff = np.abs(state[marker]['dpower'] - state[marker]['power'])
@@ -355,10 +384,13 @@ class MarkerTable(QtGui.QWidget):
                 self._marker_rows[marker].delta_power.setText('%0.2f dB' % state[marker]['dpower'])
                 self._marker_rows[marker].diff_freq.setText('%0.2f MHz' % (freq_diff / M))
                 self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
+
             if 'trace' in changed:
                 self._update_label_color(marker)
+
             if 'dtrace' in changed:
                 self._update_label_color(marker)
+
             if 'hovering' in changed:
                 self._update_label_color(marker)
 
