@@ -274,26 +274,34 @@ class MarkerTable(QtGui.QWidget):
 
     def _create_marker_row(self, m):
         sizePolicy = QtGui.QSizePolicy()
+        sizePolicy.setHorizontalPolicy(QtGui.QSizePolicy.Maximum)
         name = QtGui.QLabel('%d' % (m + 1))
         name.setSizePolicy(sizePolicy)
 
         freq = QtGui.QLabel()
         freq.setSizePolicy(sizePolicy)
+        freq.setMinimumWidth(80)
 
         power = QtGui.QLabel()
         power.setSizePolicy(sizePolicy)
+        power.setMinimumWidth(80)
 
         delta_freq = QtGui.QLabel()
         delta_freq.setSizePolicy(sizePolicy)
+        delta_freq.setMinimumWidth(80)
 
         delta_power = QtGui.QLabel()
         delta_power.setSizePolicy(sizePolicy)
+        delta_power.setMinimumWidth(80)
 
         diff_freq = QtGui.QLabel()
         diff_freq.setSizePolicy(sizePolicy)
+        diff_freq.setMinimumWidth(80)
 
         diff_power = QtGui.QLabel()
         diff_power.setSizePolicy(sizePolicy)
+        diff_power.setMinimumWidth(80)
+
         return MarkerTableRow(name, freq, power, delta_freq, delta_power, diff_freq, diff_power)
 
     def _create_marker_header(self):
@@ -415,4 +423,4 @@ class MarkerTable(QtGui.QWidget):
         self._trace_state = state
 
     def resize_widget(self):
-        self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
+        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Maximum)
