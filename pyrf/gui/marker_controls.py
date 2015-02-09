@@ -100,7 +100,7 @@ class MarkerWidget(QtGui.QWidget):
 
         self.center = QtGui.QPushButton('Center')
         def center_marker():
-            self.controller.apply_marker_options(self.name, ['center'], [None])
+            self.controller.apply_settings(center = self.freq.value() * M)
         self.center.clicked.connect(center_marker)
 
     def _build_layout(self):
