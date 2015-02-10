@@ -13,7 +13,7 @@ from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
 from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
                                               decay_fn_EXPONENTIAL)
-from pyrf.gui.plot_tools import Marker, Trace, InfiniteLine, triggerControl
+from pyrf.gui.plot_tools import Marker, DeltaMarker, Trace, InfiniteLine, triggerControl
 from pyrf.units import M
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
@@ -52,6 +52,8 @@ class Plot(QtCore.QObject):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
+        controller.capture_receive.connect(self.capture_received)
+
         self.plot_state = {}
 
         self.spectral_plot = pg.PlotWidget()
@@ -122,9 +124,10 @@ class Plot(QtCore.QObject):
         self.traces[0].write = True
 
         self.markers = []
+        self.deltas = []
         for name in labels.MARKERS:
-            self.markers.append(Marker(self, name, colors.WHITE_NUM, self.controller))
-
+            self.markers.append(Marker(self.spectral_plot, name, colors.WHITE_NUM, self.controller))
+            self.deltas.append(DeltaMarker(self.spectral_plot, name, colors.WHITE_NUM, self.controller,  delta = True))
         self.waterfall_data = WaterfallModel(max_len=600)
 
         # initialize waterfall window
@@ -149,9 +152,6 @@ class Plot(QtCore.QObject):
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
-        center_pen = pg.mkPen(color = colors.WHITE_NUM, width = 2)
-        self.center_line = pg.InfiniteLine(pos = -100, angle = 90, movable = False, pen = center_pen)
-        self.spectral_plot.addItem(self.center_line)
 
     def connect_plot_controls(self):
         def new_channel_power():
@@ -270,10 +270,10 @@ class Plot(QtCore.QObject):
         for t in ticks:
             if t in (ticks[1], ticks[-2]):
                 if t == ticks[1]:
-                    tick_num = ticks[0]
+                    tick_num = self.gui_state.center - (self.gui_state.span / 2)
                     str = 'Start'
                 else:
-                    tick_num = ticks[-1]
+                    tick_num = self.gui_state.center + (self.gui_state.span / 2)
                     str = 'Stop'
                 if tick_num > 1e9:
                     units = 'GHz'
@@ -281,7 +281,7 @@ class Plot(QtCore.QObject):
                 else:
                     units = 'MHz'
                     div = 1e6
-                text = ('%s: %0.4f %s' % (str, tick_num / div, units))
+                text = ('%s: %0.5f %s' % (str, tick_num / div, units))
             else:
                 text = ''
             tick_list.append((t, text))
@@ -297,9 +297,7 @@ class Plot(QtCore.QObject):
             tick_list.append((t, "% 0.1f" % t ))
         self.spectral_plot.getAxis('left').setTicks([tick_list])
         self.persistence_plot.getAxis('left').setTicks([tick_list])
-
-        self.center_line.setValue(self.gui_state.center)
-        self.persistence_plot.center_line.setValue(self.gui_state.center)
+        
         self.spectral_plot.getAxis('left').show()
 
     def enable_channel_power(self):
@@ -319,7 +317,6 @@ class Plot(QtCore.QObject):
         self.spectral_plot.removeItem(self.channel_power_region)
 
     def add_trigger(self,fstart, fstop, amplitude):
-
         if not self._trig_enable:
             self.spectral_plot.addItem(self.trigger_control)
             self.spectral_plot.addItem(self.trigger_control.fstart_line)
@@ -346,11 +343,43 @@ class Plot(QtCore.QObject):
             float(fstop),
             padding=0)
 
+    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
+        """
+        :param state: SpecAState when capture was requested
+        :param fstart: lowest frequency included in data in Hz
+        :param fstop: highest frequency included in data in Hz
+        :param raw: raw samples (None if not available)
+        :param power: power spectrum
+        :param usable: usable bins from power (None when sweeping)
+        :param segments: bin segments from power (None when not sweeping)
+        """
+        self.pow_data = power
+        self.xdata = np.linspace(fstart, fstop, len(power))
+        self.usable_bins = usable
+        self.sweep_segments = segments
+        self.update_trace()
+        self.update_marker(self.markers)
+        self.update_marker(self.deltas)
+
+    def update_trace(self):
+        for trace in self.traces:
+            trace.update_curve(
+                self.xdata,
+                self.pow_data,
+                self.usable_bins,
+                self.sweep_segments)
+
+    def update_marker(self, mset):
+        for marker in mset:
+            trace = self.traces[marker.trace_index]
+            if not trace.blank:
+                marker.update_data(trace.freq_range, trace.data)
+                if marker.enabled:
+                    marker.update_pos(trace.freq_range, trace.data)
+
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
-        self.persistence_plot.reset_plot()
-        self.persistence_plot.setYRange(min_level, ref_level)
 
     def grid(self,state):
         self.spectral_plot.showGrid(True,True)
@@ -362,12 +391,11 @@ class Plot(QtCore.QObject):
                                             (-250, '-200'), (-250, '-200')]])
     def update_markers(self):
         for m in self.markers:
+            trace = self.traces[m.trace_index]
             if m.enabled:
-                trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
 
     def update_iq_plots(self, data):
-        
         trace = self.traces[0]
         if not (trace.write or trace.max_hold or trace.min_hold or trace.store):
             return

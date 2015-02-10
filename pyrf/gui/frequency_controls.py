@@ -288,7 +288,7 @@ class FrequencyControls(QtGui.QWidget):
                 unit = 'Hz'
                 div = 1
             else:
-                unit = 'KHz'
+                unit = 'kHz'
                 div = 1000
             if 'Sweep' in speca_mode:
                 min_rbw = self.dut_prop.FULL_BW[rfe_mode] / 16384

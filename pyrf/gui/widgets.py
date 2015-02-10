@@ -33,6 +33,33 @@ class QComboBoxPlayback(QtGui.QComboBox):
                 self.setCurrentIndex(i)
         self.blockSignals(b)
 
+    def quiet_update_pixel(self, colors, name, select_item = None):
+        """
+        Update all the item colors
+
+        :param items: a list of tuple containing the colors
+        :param select_item: the string to select, if None then attempt
+            to select the same string currently selected in the new list
+            of items, if not present select the first item.
+        """
+
+        if select_item is None:
+            select_item = 0
+        block = self.blockSignals(True)
+        self.clear()
+        for n, c in zip(name, colors):
+
+            button_icon = QtGui.QIcon()
+            color = QtGui.QColor()
+            r, g, b = c
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(50, 50)
+            pixmap.fill(color)
+            button_icon.addPixmap(pixmap)
+            self.addItem(button_icon, str(n))
+            if n == select_item:
+                self.setCurrentIndex(select_item)
+        self.blockSignals(block)
     def playback_value(self, value):
         """
         Remove all items but value and disable the control
@@ -137,16 +164,6 @@ class PlotWindowWidget(QtGui.QWidget):
         self._span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
         self._span_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        self._div_label = QtGui.QLabel('Div')
-        self._div_label.setSizePolicy(sizePolicy)
-        self._div_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._div_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        self._sweep_label = QtGui.QLabel('Sweep Rate')
-        self._sweep_label.setSizePolicy(sizePolicy)
-        self._sweep_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        self._sweep_label.setAlignment(QtCore.Qt.AlignCenter)
-
     def _build_layout(self):
         
         grid = self.layout()
@@ -159,9 +176,6 @@ class PlotWindowWidget(QtGui.QWidget):
         grid.addWidget(self._fcenter_label, 1, 2, 1, 1)
         grid.addWidget(self._rbw_label, 1, 1, 1, 1)
         grid.addWidget(self._span_label, 1, 3, 1, 1)
-
-        grid.addWidget(self._sweep_label, 2, 1, 1, 1)
-        grid.addWidget(self._div_label, 2, 3, 1, 1)
 
         grid.addWidget(self._plot, 0, 1, 1, 4)
         self.resize_widget()
@@ -191,22 +205,18 @@ class PlotWindowWidget(QtGui.QWidget):
 
     def plot_changed(self, state, changed):
         self.plot_state = state
-        if 'db_div' in changed:
-            self._div_label.setText('Db/Div: % 0.1f' % state['db_div'])
-        if 'sweep_rate' in changed:
-            self._sweep_label.setText('Sweep Rate: % 0.4f Sec' % state['sweep_rate'])
 
     def update_rbw_label(self):
         rfe_mode = self.gui_state.rfe_mode()
         if rfe_mode == 'HDR':
             self._rbw_label.setText("RBW: %0.2f Hz" % (self.gui_state.rbw))
         else:
-            self._rbw_label.setText("RBW: %0.2f KHz" % (self.gui_state.rbw / 1e3))
+            self._rbw_label.setText("RBW: %0.2f kHz" % (self.gui_state.rbw / 1e3))
 
     def update_span_label(self):
         rfe_mode = self.gui_state.rfe_mode()
         if rfe_mode == 'HDR':
-            self._span_label.setText("Span: %0.2f KHz" % (self.gui_state.span / 1e3))
+            self._span_label.setText("Span: %0.2f kHz" % (self.gui_state.span / 1e3))
         else:
             self._span_label.setText("Span: %0.2f MHz" % (self.gui_state.span/ M))
 
