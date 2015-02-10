@@ -159,8 +159,6 @@ class PersistencePlotWidget(pg.PlotWidget):
                 self._data_model.sigNewDataRow.connect(self.onNewModelData)
             except AttributeError:
                 raise ValueError("data_model must be a WaterfallModel") #for now
-        center_pen = pg.mkPen(color = colors.WHITE_NUM, width = 2)
-        self.center_line = pg.InfiniteLine(pos = 2450e6, angle = 90, movable = False, pen = center_pen)
 
         self._reset_requested = False
 
@@ -196,9 +194,6 @@ class PersistencePlotWidget(pg.PlotWidget):
                 self._persistent_img.qimage.fill(bg)
     
     def _UpdatePersistentImage(self):
-
-        # remove center line
-        self.removeItem(self.center_line)
 
         #safety check: if we have zero height or width we can't make an image...
         if min(self.size().toTuple()) <= 0:
@@ -291,7 +286,6 @@ class PersistencePlotWidget(pg.PlotWidget):
         
         #we clear every time, so need to re-add the image every time...
         self.addItem(self._persistent_img, ignoreBounds = True)
-        self.addItem(self.center_line)
         self._persistent_img.setRect(pg.QtCore.QRectF(x, y, width, height))
     
     def plot(self, *args, **kwargs):

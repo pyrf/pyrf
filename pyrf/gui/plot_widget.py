@@ -376,8 +376,6 @@ class Plot(QtCore.QObject):
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
-        self.persistence_plot.reset_plot()
-        self.persistence_plot.setYRange(min_level, ref_level)
 
     def grid(self,state):
         self.spectral_plot.showGrid(True,True)
