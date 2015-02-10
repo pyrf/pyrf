@@ -20,7 +20,6 @@ for m in labels.MARKERS:
                           'peak_right': None,
                           'unit': 'MHz'}
 
-
 traceState = {}
 for t ,c  in zip(labels.TRACES, colors.TRACE_COLORS): 
     if t == labels.TRACES[0]:

@@ -24,6 +24,9 @@ class MarkerWidget(QtGui.QWidget):
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
         controller.trace_change.connect(self.trace_changed)
+        controller.device_change.connect(self.device_changed)
+        controller.state_change.connect(self.state_changed)
+
         self._marker_state = markerState
         self._trace_state = traceState
         self.create_controls()
@@ -56,12 +59,17 @@ class MarkerWidget(QtGui.QWidget):
         self.trace_label = QtGui.QLabel('Trace:')
 
         self.freq = QDoubleSpinBoxPlayback()
-        self.freq.setRange(0, 20e12)
         self.freq.setSingleStep(1)
         def freq_change():
             factor = UNIT_MAGNITUDE[self._marker_state[self.name]['unit']]
-            print self.freq.value() * factor
-            self.controller.apply_marker_options(self.name, ['freq'], [self.freq.value() * factor])
+            new_freq = self.freq.value() * factor
+            fstart = self.gui_state.center - (self.gui_state.span / 2)
+            fstop = self.gui_state.center + (self.gui_state.span / 2)
+            if new_freq < fstart:
+                new_freq = fstart
+            elif new_freq > fstop:
+                new_freq = fstop
+            self.controller.apply_marker_options(self.name, ['freq'], [new_freq])
         self.freq.editingFinished.connect(freq_change)
         self.freq.setMaximumWidth(100)
         self.add_delta = QtGui.QPushButton('+ Delta')
@@ -87,10 +95,17 @@ class MarkerWidget(QtGui.QWidget):
         self.dtrace_label = QtGui.QLabel(' Delta Trace:')
 
         self.dfreq = QDoubleSpinBoxPlayback()
-        self.dfreq.setRange(-125, 125)
+
         def dfreq_change():
             factor = UNIT_MAGNITUDE[self._marker_state[self.name]['unit']]
-            self.controller.apply_marker_options(self.name, ['dfreq'], [self._marker_state[self.name]['freq'] + (self.dfreq.value() * factor)])
+            new_freq = self._marker_state[self.name]['freq'] + (self.dfreq.value() * factor)
+            fstart = self.gui_state.center - (self.gui_state.span / 2)
+            fstop = self.gui_state.center + (self.gui_state.span / 2)
+            if new_freq < fstart:
+                new_freq = fstart
+            elif new_freq > fstop:
+                new_freq = fstop
+            self.controller.apply_marker_options(self.name, ['dfreq'], [new_freq])
         self.dfreq.editingFinished.connect(dfreq_change)
         self.dfreq.setMaximumWidth(100)
 
@@ -177,6 +192,18 @@ class MarkerWidget(QtGui.QWidget):
             remove_marker()
         self.resize_widget()
 
+    def device_changed(self, dut):
+        self.dut_prop = dut.properties
+
+    def state_changed(self, state, changed):
+        self.gui_state = state
+        if 'span' in changed or 'center' in changed:
+            factor = UNIT_MAGNITUDE[self._marker_state[self.name]['unit']]
+            fstart = state.center - (state.span / 2)
+            fstop = state.center + (state.span / 2)
+            self.freq.setRange(fstart / factor, fstop / factor)
+            self.dfreq.setRange(-1 * state.span / factor, state.span / factor)
+
     def marker_changed(self, marker, state, changed):
         self._marker_state = state
         if marker == self.name:
@@ -187,10 +214,12 @@ class MarkerWidget(QtGui.QWidget):
             if 'freq' in changed:
                 if state[marker]['freq'] is not None:
                     self.freq.quiet_update(value = (state[marker]['freq'] / factor))
+                if state[marker]['delta']:
+                    self.dfreq.quiet_update(value = ((state[marker]['dfreq'] - state[marker]['freq']) / factor))
 
             if 'dfreq' in changed:
-                if state[marker]['dfreq'] is not None:
-                    self.dfreq.quiet_update(value = ((state[marker]['dfreq'] - state[marker]['freq']) / factor) )
+                if state[marker]['delta']:
+                    self.dfreq.quiet_update(value = ((state[marker]['dfreq'] - state[marker]['freq']) / factor))
             if 'unit' in changed:
                 
                 self.unit.quiet_update(UNITS, state[marker]['unit'])
