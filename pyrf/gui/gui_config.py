@@ -17,7 +17,8 @@ for m in labels.MARKERS:
                           'center': None,
                           'peak': None,
                           'peak_left': None,
-                          'peak_right': None}
+                          'peak_right': None,
+                          'unit': 'MHz'}
 
 
 traceState = {}
