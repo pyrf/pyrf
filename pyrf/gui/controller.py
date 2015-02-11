@@ -16,7 +16,7 @@ from pyrf.util import (compute_usable_bins, adjust_usable_fstart_fstop,
 
 logger = logging.getLogger(__name__)
 
-PLAYBACK_STEP_MSEC = 100
+PLAYBACK_STEP_MSEC = 1
 
 class SpecAController(QtCore.QObject):
     """
@@ -44,7 +44,7 @@ class SpecAController(QtCore.QObject):
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
     window_change = QtCore.Signal(dict, list)
-    marker_change = QtCore.Signal(int, list, list)
+    marker_change = QtCore.Signal(int, dict, list)
     trace_change = QtCore.Signal(int, list, list)
 
 
@@ -553,12 +553,18 @@ class SpecAController(QtCore.QObject):
 
         state = SpecAState.from_json_object(state_json, playback)
         self._state_changed(state, changed)
-        
-        # apply marker state
-        self.marker_change.emit(self._marker_options.keys(), dict(self._marker_options), self._marker_options[0].keys())
-        
-        # apply trace state
+
+       # apply trace state
         self.trace_change.emit(self._trace_options.keys(), dict(self._trace_options), self._trace_options[0].keys())
+
+        # apply marker state
+        changes = self._marker_options[0].keys()
+        # disable peak left/right and center
+        changes.remove('peak')
+        changes.remove('peak_left')
+        changes.remove('peak_right')
+        changes.remove('center')
+        self.marker_change.emit(0, dict(self._marker_options), changes)
 
         # apply plot state
         self.plot_change.emit(dict(self._plot_options),
@@ -688,6 +694,16 @@ class SpecAController(QtCore.QObject):
         config.add_section('window_options')
         for p in self._window_options:
             config.set('window_options', p, str(self._window_options[p]))
+
+        config.add_section('marker_options')
+        for p in self._marker_options:
+            for s in self._marker_options[p]:
+                config.set('marker_options', '%s-%s' % (str(p), s), str(self._marker_options[p][s]))
+        
+        config.add_section('trace_options')
+        for p in self._trace_options:
+            for s in self._trace_options[p]:
+                config.set('trace_options', '%s-%s' % (str(p), s), str(self._trace_options[p][s]))
         config.write(cfgfile)
         cfgfile.close()
 
@@ -698,13 +714,13 @@ class SpecAController(QtCore.QObject):
         device_options = {'device_settings': {'trigger': {}}}
         options = {}
         window_options = {}
+        marker_options = markerState
+        trace_options = traceState
         state = self._state.to_json_object()
 
         for p in config.options('plot_options'):
             if p in self._plot_options:
                 plot_options[p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options[p])))
-            elif p in self._plot_options['traces']:
-                plot_options['traces'][p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options['traces'][p])))
 
         self.plot_change.emit(dict(plot_options), plot_options.keys())
 
@@ -721,6 +737,12 @@ class SpecAController(QtCore.QObject):
 
         for p in config.options('window_options'):
             window_options[p] = decode_config_type(config.get('window_options', p), str(type(self._window_options[p])))
+        
+        for p in config.options('marker_options'):
+            name = int(p.split('-')[0])
+            property = p.split('-')[1]
+            self._marker_options[name][property] = decode_config_type(config.get('marker_options', p), str(type(self._marker_options[name][property])))
+
         state = SpecAState(self._state, **device_options)
         self._apply_complete_settings(device_options, False)
         self.apply_options(**options)

@@ -256,10 +256,6 @@ class TraceControls(QtGui.QWidget):
 
     def plot_changed(self, state, changed):
         self.plot_state = state
-        if 'traces' in changed:
-            for num, t in enumerate(self._plot.traces):
-                t.color = self.plot_state['traces']['trace' + str(num + 1)]
-                self._update_trace_widget_color(self._traces[num], t.color)
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments

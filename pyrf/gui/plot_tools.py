@@ -313,18 +313,11 @@ class Marker(object):
 
         self.enabled = True
         self.add_marker()
-        if self.freq_pos is None:
-            self.freq_pos = self.xdata[int(len(self.xdata) / 2)]
         self.controller.apply_plot_options(marker_dragged = True)
-        if self.delta:
-            self.controller.apply_marker_options(self.name, ['dfreq'], [self.freq_pos])
-        else:
-            self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def disable(self):
         self.enabled = False
         self.remove_marker()
-        self.freq_pos = None
 
     def marker_changed(self, marker, state, changed):
 
@@ -340,7 +333,6 @@ class Marker(object):
                 else:
                     self.disable()
             if 'freq' in changed:
-                if not self.coursor_dragged and self.enabled:
                     self.freq_pos = state[marker]['freq']
             if 'hovering' in changed:
                 if state[marker]['hovering']:

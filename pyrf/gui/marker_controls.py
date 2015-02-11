@@ -454,12 +454,13 @@ class MarkerTable(QtGui.QWidget):
                 self._marker_rows[marker].power.setText('%0.2f dBm' % state[marker]['power'])
 
             if 'dfreq' in changed or 'dpower' in changed:
-                freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
-                pow_diff = np.abs(state[marker]['dpower'] - state[marker]['power'])
-                self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
-                self._marker_rows[marker].delta_power.setText('%0.2f dBm' % state[marker]['dpower'])
-                self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
-                self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
+                if state[marker]['delta']:
+                    freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
+                    pow_diff = np.abs(state[marker]['dpower'] - state[marker]['power'])
+                    self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
+                    self._marker_rows[marker].delta_power.setText('%0.2f dBm' % state[marker]['dpower'])
+                    self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
+                    self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
 
             if 'trace' in changed:
                 self._update_label_color(marker)

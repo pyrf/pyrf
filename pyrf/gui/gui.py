@@ -502,6 +502,7 @@ class MainPanel(QtGui.QWidget):
         self._toggle_actions[title.lower().replace(' ', '_')] = toggle_action
         self._main_window.view_menu.addAction(toggle_action)
         self.control_widgets[title.lower().replace(' ', '_')] = dock
+
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
