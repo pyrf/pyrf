@@ -25,7 +25,7 @@ class MeasurementControls(QtGui.QWidget):
         self._channel_power = QCheckBoxPlayback("Channel Power")
         self._channel_power.setToolTip("Enable Channel Power Measurement")
 
-        self._horizontal_cursor = QCheckBoxPlayback("Horizontal Cursor")
+        self._horizontal_cursor = QCheckBoxPlayback("Cursor Line")
         self._horizontal_cursor.setToolTip("Enable Horizontal Cursor on reference Plot")
 
         self._cursor_spinbox = QDoubleSpinBoxPlayback()
@@ -36,12 +36,11 @@ class MeasurementControls(QtGui.QWidget):
     def _build_layout(self):
         grid = self.layout()
         clear_layout(grid)
-        grid.addWidget(self._channel_power, 0, 0, 1, 1)
+        grid.setVerticalSpacing(1)
+        grid.addWidget(self._horizontal_cursor, 0, 0, 1,1)
+        grid.addWidget(self._cursor_spinbox, 0, 1, 1,1)
 
-        grid.addWidget(self._horizontal_cursor, 0, 1, 1,1)
-        grid.addWidget(self._cursor_spinbox, 0, 2, 1,1)
-
-        grid.setRowStretch(1, 1) # expand empty space at the bottom
+        grid.addWidget(self._channel_power, 0, 2, 1, 1)
         self.resize_widget()
 
     def _connect_controls(self):

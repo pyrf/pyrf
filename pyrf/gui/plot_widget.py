@@ -7,7 +7,7 @@ from PySide import QtCore
 from pyrf.gui import colors
 from pyrf.gui import labels
 from pyrf.gui import fonts
-from pyrf.gui.widgets import SpectralWidget
+from pyrf.gui.widgets import PlotWindowWidget
 from pyrf.gui.amplitude_controls import PLOT_TOP, PLOT_BOTTOM
 from pyrf.gui.waterfall_widget import (WaterfallModel,
                                        ThreadedWaterfallPlotWidget)
@@ -31,12 +31,14 @@ IQ_PLOT_XMAX = 1
 ZIF_BITS = 2**13
 CONST_POINTS = 512
 
+LNEG_NUM = -9e10
+TICK_REDRAW_DELAY = 200
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
                                      "mode"
                                      ])
-
+NUMBER_OF_TICKS = 11
 class Plot(QtCore.QObject):
     """
     Class to hold plot widget, as well as all the plot items (curves, marker_arrows,etc)
@@ -52,34 +54,35 @@ class Plot(QtCore.QObject):
         controller.plot_change.connect(self.plot_changed)
         self.plot_state = {}
 
-        # initialize main fft window
-        self.spectral_window = SpectralWidget(controller)
-        self.window = self.spectral_window.window
+        self.spectral_plot = pg.PlotWidget()
+        # initialize main fft plot
+        self.spectral_window = PlotWindowWidget(controller, self.spectral_plot)
 
-        self.window.setMenuEnabled(False)
+        self.spectral_plot.setMenuEnabled(False)
+
+        self.view_box = self.spectral_plot.plotItem.getViewBox()
+        # initialize the y-axis of the plot
+        self.spectral_plot.setYRange(PLOT_BOTTOM, PLOT_TOP)
+        labelStyle = fonts.AXIS_LABEL_FONT
 
         def widget_range_changed(widget, ranges):
             if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
-                # HDR mode has a tuning resolution almost the same as its usable bandwidth, making the tuning mouse tuning annoying to use
+
+                # HDR mode has a tuning resolution almost the same as its usabl
                 if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
                     return
             if not hasattr(ranges, '__getitem__'):
                 return  # we're not intereted in QRectF updates
             self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
 
-        self.window.sigRangeChanged.connect(widget_range_changed)
+        self.spectral_plot.sigRangeChanged.connect(widget_range_changed)
 
-        self.view_box = self.window.plotItem.getViewBox()
-
-        # initialize the y-axis of the plot
-        self.window.setYRange(PLOT_BOTTOM, PLOT_TOP)
-        labelStyle = fonts.AXIS_LABEL_FONT
-
-        self.window.setLabel('left', 'Power', 'dBm', **labelStyle)
-        self.window.setLabel('top')
-        self.window.setLabel('bottom', 'Frequency', 'Hz', **labelStyle)
-
-        # horizontal cursor line
+        self.spectral_plot.setLabel('left', 'Power', 'dBm', **labelStyle)
+        self.spectral_plot.setLabel('top', ' ')
+        self.spectral_plot.getAxis('top').setLabel(title = ' ', units = None)
+        self.spectral_plot.getAxis('top').setPen(colors.BLACK_NUM)
+        self.spectral_plot.setLabel('bottom')
+        self.spectral_plot.getAxis('left').hide()
         cursor_pen = pg.mkPen(color = colors.YELLOW_NUM, width = 2)
         self.cursor_line = pg.InfiniteLine(pos = -100, angle = 0, movable = True, pen = cursor_pen)
 
@@ -124,22 +127,31 @@ class Plot(QtCore.QObject):
 
         self.waterfall_data = WaterfallModel(max_len=600)
 
+        # initialize waterfall window
         self.waterfall_window = ThreadedWaterfallPlotWidget(
             self.waterfall_data,
             scale_limits=(PLOT_YMIN, PLOT_YMAX),
             max_frame_rate_fps=30,
             mouse_move_crosshair=False,
             )
-        self.persistence_window = PersistencePlotWidget(
+
+         # initialize persistence window
+        self.persistence_plot = PersistencePlotWidget(
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
-        self.persistence_window.getAxis('bottom').setScale(1e-9)
-        self.persistence_window.showGrid(True, True)
-
+        self.persistence_plot.showGrid(True, True)
+        self.persistence_plot.setLabel('top', ' ')
+        self.persistence_plot.getAxis('top').setLabel(title = ' ', units = None)
+        self.persistence_plot.getAxis('top').setPen(colors.BLACK_NUM)
+        self.persistence_window = PlotWindowWidget(controller, self.persistence_plot, grad = True)
 
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
+        center_pen = pg.mkPen(color = colors.WHITE_NUM, width = 2)
+        self.center_line = pg.InfiniteLine(pos = -100, angle = 90, movable = False, pen = center_pen)
+        self.spectral_plot.addItem(self.center_line)
+
     def connect_plot_controls(self):
         def new_channel_power():
             self.controller.apply_plot_options(channel_power_region = self.channel_power_region.getRegion())
@@ -152,17 +164,19 @@ class Plot(QtCore.QObject):
                                                         'fstop': self.trigger_control.fstop,
                                                         'amplitude': self.trigger_control.amplitude})
         def new_y_axis():
-            self.controller.apply_plot_options(y_axis = self.view_box.viewRange()[1])
+            self.controller.apply_plot_options(ref_level = max(self.view_box.viewRange()[1]))
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChanged.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
         self.trigger_control.sigNewTriggerRange.connect(new_trigger)
-        self.window.sigYRangeChanged.connect(new_y_axis)
+        self.spectral_plot.sigYRangeChanged.connect(new_y_axis)
+
     def device_changed(self, dut):
         self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
         self.gui_state = state
+
         if 'device_settings.trigger' in changed:
             fstart = state.device_settings['trigger']['fstart']
             fstop = state.device_settings['trigger']['fstop']
@@ -182,6 +196,7 @@ class Plot(QtCore.QObject):
                         m.add_marker(self)
 
         if 'center' in changed or 'span' in changed:
+            self.delayed_tick_update()
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
             for trace in self.traces:
@@ -193,39 +208,95 @@ class Plot(QtCore.QObject):
                                                         'fstop': self.trigger_control.fstop,
                                                         'amplitude': self.trigger_control.amplitude})
                 self.remove_trigger()
-                self.persistence_window.reset_plot()
+                self.persistence_plot.reset_plot()
             if fstart > float(min(self.channel_power_region.getRegion())) or fstop < float(max(self.channel_power_region.getRegion())):
                 self.move_channel_power(fstart + state.span / 4, fstop - state.span / 4)
 
         if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
-            self.persistence_window.reset_plot()
+            self.persistence_plot.reset_plot()
 
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self.remove_trigger()
-
+        if 'fshift' in changed:
+            self.delayed_tick_update()
     def plot_changed(self, state, changed):
 
         self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
-                self.window.addItem(self.cursor_line)
+                self.spectral_plot.addItem(self.cursor_line)
             else:
-                self.window.removeItem(self.cursor_line)
+                self.spectral_plot.removeItem(self.cursor_line)
+
         if 'channel_power' in changed:
             if state['channel_power']:
                 self.enable_channel_power()
             else:
                 self.disable_channel_power()
+
         if 'horizontal_cursor_value' in changed:
             self.cursor_line.setValue(state['horizontal_cursor_value'])
+
         if 'channel_power_region' in changed:
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
-        if 'y_axis' in changed:
-            self.window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
-            self.persistence_window.setYRange(state['y_axis'][0] , state['y_axis'][1], padding = 0)
+
+        if 'ref_level' in changed or 'db_div' in changed:
+            b = self.spectral_plot.blockSignals(True)
+            self.spectral_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)) , state['ref_level'], padding = 0)
+            self.persistence_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)), state['ref_level'], padding = 0)
+            self.spectral_plot.blockSignals(b)
+            self.delayed_tick_update()
+
+    def delayed_tick_update(self):
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_axis_ticks)
+        self.timer.setSingleShot(True)
+        self.timer.start(TICK_REDRAW_DELAY)
+
+    def update_axis_ticks(self):
+
+        self.spectral_plot.getAxis('left').hide()
+        fstart = min(self.view_box.viewRange()[0])
+        fstop = max(self.view_box.viewRange()[0])
+        ticks = np.linspace(fstart, fstop, NUMBER_OF_TICKS)
+        tick_list = []
+        for t in ticks:
+            if t in (ticks[1], ticks[-2]):
+                if t == ticks[1]:
+                    tick_num = self.gui_state.center - (self.gui_state.span / 2)
+                    str = 'Start'
+                else:
+                    tick_num = self.gui_state.center + (self.gui_state.span / 2)
+                    str = 'Stop'
+                if tick_num > 1e9:
+                    units = 'GHz'
+                    div = 1e9
+                else:
+                    units = 'MHz'
+                    div = 1e6
+                text = ('%s: %0.5f %s' % (str, tick_num / div, units))
+            else:
+                text = ''
+            tick_list.append((t, text))
+        self.spectral_plot.getAxis('bottom').setTicks([tick_list])
+        self.persistence_plot.getAxis('bottom').setTicks([tick_list])
+
+        # update left axis ticks
+        min_pow = min(self.view_box.viewRange()[1])
+        max_pow = max(self.view_box.viewRange()[1])
+        ticks = np.linspace(min_pow, max_pow, NUMBER_OF_TICKS)
+        tick_list = []
+        for t in ticks:
+            tick_list.append((t, "% 0.1f" % t ))
+        self.spectral_plot.getAxis('left').setTicks([tick_list])
+        self.persistence_plot.getAxis('left').setTicks([tick_list])
+        
+        self.center_line.setValue(fstart + ((fstop - fstart)/ 2))
+        self.persistence_plot.center_line.setValue(self.gui_state.center)
+        self.spectral_plot.getAxis('left').show()
 
     def enable_channel_power(self):
         for t in self.traces:
@@ -233,7 +304,7 @@ class Plot(QtCore.QObject):
         fstart = self.gui_state.center - (self.gui_state.span / 4)
         fstop = self.gui_state.center + (self.gui_state.span / 4)
         self.move_channel_power(fstart, fstop)
-        self.window.addItem(self.channel_power_region)
+        self.spectral_plot.addItem(self.channel_power_region)
 
     def move_channel_power(self, fstart, fstop):
         self.channel_power_region.setRegion([(fstart),float(fstop)])
@@ -241,32 +312,32 @@ class Plot(QtCore.QObject):
     def disable_channel_power(self):
         for t in self.traces:
             t.calc_channel_power = False
-        self.window.removeItem(self.channel_power_region)
+        self.spectral_plot.removeItem(self.channel_power_region)
 
     def add_trigger(self,fstart, fstop, amplitude):
 
         if not self._trig_enable:
-            self.window.addItem(self.trigger_control)
-            self.window.addItem(self.trigger_control.fstart_line)
-            self.window.addItem(self.trigger_control.fstop_line)
-            self.window.addItem(self.trigger_control.amplitude_line)
+            self.spectral_plot.addItem(self.trigger_control)
+            self.spectral_plot.addItem(self.trigger_control.fstart_line)
+            self.spectral_plot.addItem(self.trigger_control.fstop_line)
+            self.spectral_plot.addItem(self.trigger_control.amplitude_line)
             self._trig_enable = True
         self.trigger_control.resize_trigger(fstart,
                                              fstop,
                                              amplitude)
 
     def remove_trigger(self):
-        self.window.removeItem(self.trigger_control)
-        self.window.removeItem(self.trigger_control.fstart_line)
-        self.window.removeItem(self.trigger_control.fstop_line)
-        self.window.removeItem(self.trigger_control.amplitude_line)
+        self.spectral_plot.removeItem(self.trigger_control)
+        self.spectral_plot.removeItem(self.trigger_control.fstart_line)
+        self.spectral_plot.removeItem(self.trigger_control.fstop_line)
+        self.spectral_plot.removeItem(self.trigger_control.amplitude_line)
         self._trig_enable = False
 
     def center_view(self, fstart, fstop):
-        b = self.window.blockSignals(True)
-        self.window.setXRange(float(fstart), float(fstop), padding=0)
-        self.window.blockSignals(b)
-        self.persistence_window.setXRange(
+        b = self.spectral_plot.blockSignals(True)
+        self.spectral_plot.setXRange(float(fstart), float(fstop), padding=0)
+        self.spectral_plot.blockSignals(b)
+        self.persistence_plot.setXRange(
             float(fstart),
             float(fstop),
             padding=0)
@@ -274,26 +345,22 @@ class Plot(QtCore.QObject):
     def update_waterfall_levels(self, min_level, ref_level):
         if self.waterfall_window is not None:
             self.waterfall_window.set_lookup_levels(min_level, ref_level)
-        self.persistence_window.reset_plot()
-        self.persistence_window.setYRange(min_level, ref_level)
+        self.persistence_plot.reset_plot()
+        self.persistence_plot.setYRange(min_level, ref_level)
 
     def grid(self,state):
-        self.window.showGrid(state,state)
-        self.window.getAxis('bottom').setPen(colors.GREY_NUM)
-        self.window.getAxis('bottom').setGrid(200)
-        self.window.getAxis('left').setPen(colors.GREY_NUM)
-        self.window.getAxis('left').setGrid(200)
-        self.window.getAxis('top').setTicks([[(-200, '-200'), (-200, '-200'),
+        self.spectral_plot.showGrid(True,True)
+        self.spectral_plot.getAxis('bottom').setPen(colors.GREY_NUM)
+        self.spectral_plot.getAxis('bottom').setGrid(200)
+        self.spectral_plot.getAxis('left').setPen(colors.GREY_NUM)
+        self.spectral_plot.getAxis('left').setGrid(200)
+        self.spectral_plot.getAxis('top').setTicks([[(-200, '-200'), (-200, '-200'),
                                             (-250, '-200'), (-250, '-200')]])
     def update_markers(self):
         for m in self.markers:
             if m.enabled:
                 trace = self.traces[m.trace_index]
                 m.update_pos(trace.freq_range, trace.data)
-
-    def get_trigger_region(self):
-        print self.trigger_control.pos()
-        print self.trigger_control.size()
 
     def update_iq_plots(self, data):
         

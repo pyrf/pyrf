@@ -68,6 +68,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, dut_address=None, playback_filename=None,
             developer_menu=False):
         super(MainWindow, self).__init__()
+
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
         WINDOW_HEIGHT = max(screen.height() * 0.6, MINIMUM_HEIGHT)
@@ -75,13 +76,19 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller = SpecAController(developer_menu)
         self.controller.device_change.connect(self.device_changed)
+
         self.init_menu_bar(developer_menu)
         self.initUI(dut_address, playback_filename)
 
+        self.update_timer = QtCore.QTimer()
+        self.update_timer.timeout.connect(self.update_title)
+        self.update_timer.start(100)
+
     def initUI(self, dut_address, playback_filename):
         self.mainPanel = MainPanel(self.controller, self)
-
-        self.setWindowTitle('PyRF RTSA: ' + __version__)
+        self._device_address = dut_address
+        self._device_id = None
+        self.update_title()
         self.setCentralWidget(self.mainPanel)
         if dut_address:
             self.open_device(dut_address, True)
@@ -211,9 +218,21 @@ class MainWindow(QtGui.QMainWindow):
         self.stop_action.setDisabled(True)
         self.device_info.setDisabled(False)
         self._device_address = playback_filename
+        self.update_title()
         self.controller.set_device(playback_filename=playback_filename)
-        self.setWindowTitle('PyRF RTSA: ' + __version__ +' Playback Recording: ' + playback_filename)
         self.show()
+
+    def update_title(self):
+        if self._device_id is None:
+            manufacutrer = ''
+        else:
+            manufacutrer = (self._device_id.split(',') + ['', '', ''])[0]
+
+        current_time = time.strftime('%Y/%m/%d %I:%M:%S %p')
+        spaces = ''
+        for x in range(int(self.size().width() / 15)):
+            spaces += ' '
+        self.setWindowTitle((manufacutrer + '  %s' % current_time)+ spaces + 'PyRF RTSA %s Connected To: %s' % (__version__ , self._device_address))
 
     def device_changed(self, dut):
         if not dut:
@@ -248,7 +267,8 @@ Firmware version: %s'''.strip() % (
         dut = WSA(connector=TwistedConnector(self._get_reactor()))
         yield dut.connect(name)
         self._device_address = name
-        self.setWindowTitle('PyRF RTSA %s Connected To: %s' % (__version__ , name))
+        self.dut_prop = dut.properties
+        
         if hasattr(dut.properties, 'MINIMUM_FW_VERSION') and parse_version(
                 dut.fw_version) < parse_version(dut.properties.MINIMUM_FW_VERSION):
             too_old = QtGui.QMessageBox()
@@ -284,7 +304,6 @@ class MainPanel(QtGui.QWidget):
         controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
-
         self._main_window = main_window
 
         self.ref_level = 0
@@ -303,15 +322,13 @@ class MainPanel(QtGui.QWidget):
         self._vrt_context = {}
         self.initUI()
         self.disable_controls()
-        self.plot_state = None
-
         self._waterfall_range = None, None, None
 
         self.options_changed(controller.get_options(),
             ['iq_plots', 'waterfall_plot', 'persistence_plot'])
+        self.start_time = time.time()
 
     def device_changed(self, dut):
-        self.plot_state = gui_config.PlotState(dut.properties)
         self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
         self.enable_controls()
@@ -327,7 +344,6 @@ class MainPanel(QtGui.QWidget):
         if 'mode' in changed:
             rfe_mode = state.rfe_mode()
             self._update_iq_plot_visibility()
-            self.update_rbw_label()
             if rfe_mode in ('DD', 'IQIN'):
                 freq = self.dut_prop.MIN_TUNABLE[rfe_mode]
                 full_bw = self.dut_prop.FULL_BW[rfe_mode]
@@ -373,20 +389,12 @@ class MainPanel(QtGui.QWidget):
                 WINDOW_HEIGHT = max(screen.height() * 0.7, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
-        if 'rbw' in changed:
-            self.update_rbw_label()
-
-        if 'span' in changed:
-            self.update_span_label()
-
     def plot_changed(self, state, changed):
         if 'marker_dragged' in changed:
             self.update_marker_labels()
         self.plot_state = state
 
     def show_labels(self):
-        self._rbw_label.show()
-        self._span_label.show()
         self._diff_label.show()
         self._mask_label.show()
         for m in self.marker_labels:
@@ -395,8 +403,6 @@ class MainPanel(QtGui.QWidget):
             c.show()
 
     def hide_labels(self):
-        self._rbw_label.hide()
-        self._span_label.hide()
         self._diff_label.hide()
         self._mask_label.hide()
         for m in self.marker_labels:
@@ -404,24 +410,10 @@ class MainPanel(QtGui.QWidget):
         for c in self.channel_power_labels:
             c.hide()
 
-    def update_rbw_label(self):
-        rfe_mode = self.gui_state.rfe_mode()
-        if rfe_mode == 'HDR':
-            self._rbw_label.setText("RBW:\n%0.2f Hz" % (self.gui_state.rbw))
-        else:
-            self._rbw_label.setText("RBW:\n%0.2f KHz" % (self.gui_state.rbw / 1e3))
-
-    def update_span_label(self):
-        rfe_mode = self.gui_state.rfe_mode()
-        if rfe_mode == 'HDR':
-            self._span_label.setText("SPAN:\n%0.2f KHz" % (self.gui_state.span / 1e3))
-        else:
-            self._span_label.setText("SPAN:\n%0.2f MHz" % (self.gui_state.span/ M))
-
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
-        self.plot_width = 11
+        self.plot_width = 13
 
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
@@ -430,16 +422,14 @@ class MainPanel(QtGui.QWidget):
         self._mask_label.setStyleSheet('background-color: black')
 
         self.marker_labels = []
-        marker_label, delta_label, diff_label, rbw_label, span_label = self._marker_labels()
+        marker_label, delta_label, diff_label = self._marker_labels()
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 15, 11)
+        grid.addWidget(self._mask_label, 0, 0, 15, self.plot_width)
         grid.addWidget(marker_label, 0, 3, 1, 2)
         grid.addWidget(delta_label, 0, 5, 1, 2)
         grid.addWidget(diff_label , 0, 7, 1, 2)
-        grid.addWidget(self._rbw_label, 0, 0, 1, 2)
-        grid.addWidget(self._span_label, 0, 9, 1, 2)
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
-        x = 2
+        x = 1
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
@@ -475,8 +465,6 @@ class MainPanel(QtGui.QWidget):
             vsplit.addWidget(self._plot.waterfall_window)
         
         persist = QtGui.QHBoxLayout()
-        # FIXME: reaching too far into plot..
-        persist.addWidget(self._plot.persistence_window.gradient_editor)
         persist.addWidget(self._plot.persistence_window)
         persist_widget = QtGui.QWidget()
         persist_widget.setLayout(persist)
@@ -534,27 +522,16 @@ class MainPanel(QtGui.QWidget):
         delta_label.setAlignment(QtCore.Qt.AlignLeft)
         delta_label.setSizePolicy(sizePolicy)
 
-        span_label = QtGui.QLabel('')
-        span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        span_label.setAlignment(QtCore.Qt.AlignLeft)
-        span_label.setSizePolicy(sizePolicy)
-
-        rbw_label = QtGui.QLabel('')
-        rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-        rbw_label.setAlignment(QtCore.Qt.AlignRight)
-        rbw_label.setSizePolicy(sizePolicy)
-
         diff_label = QtGui.QLabel('')
         diff_label.setAlignment(QtCore.Qt.AlignLeft)
         diff_label.setSizePolicy(sizePolicy)
 
         self._diff_label = diff_label
-        self._rbw_label = rbw_label
-        self._span_label = span_label
+
         self.marker_labels.append(marker_label)
 
         self.marker_labels.append(delta_label)
-        return marker_label,delta_label, diff_label, rbw_label, span_label
+        return marker_label,delta_label, diff_label
 
     def _channel_power_labels(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
@@ -564,7 +541,9 @@ class MainPanel(QtGui.QWidget):
         for color in colors.TRACE_COLORS:
             label = QtGui.QLabel('')
             label.setSizePolicy(sizePolicy)
+            label.setAlignment(QtCore.Qt.AlignLeft)
             label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + color))
+            label.setMinimumWidth(200)
             self.channel_power_labels.append(label)
         return self.channel_power_labels
 
@@ -601,6 +580,8 @@ class MainPanel(QtGui.QWidget):
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
 
+        self.controller.apply_plot_options(sweep_rate =  time.time() - self.start_time)
+        self.start_time = time.time()
 
     def options_changed(self, options, changed):
         self.iq_plots_enabled = options['iq_plots']
@@ -721,6 +702,7 @@ class MainPanel(QtGui.QWidget):
                 label.setText('')
 
     def enable_controls(self):
+
         for item in self.control_widgets:
             item.setEnabled(True)
 

@@ -3,7 +3,6 @@ from distutils.version import StrictVersion, LooseVersion
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
 
-
 def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
@@ -87,9 +86,9 @@ class WSA4000Properties(object):
         }
     SPECA_MODES = ['Sweep ZIF']
 
-
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
+    manufacturer = 'THINKRF'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
     TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 0
