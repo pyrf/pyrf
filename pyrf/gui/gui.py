@@ -539,7 +539,7 @@ class MainPanel(QtGui.QWidget):
         return self._amplitude_group
 
     def _trace_controls(self):
-        self._trace_group = TraceControls(self.controller, self._plot)
+        self._trace_group = TraceControls(self.controller)
         return self._trace_group
 
     def _measurement_controls(self):

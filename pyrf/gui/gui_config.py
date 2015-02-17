@@ -39,12 +39,12 @@ for m in labels.MARKERS:
 traceState = {}
 for t ,c  in zip(labels.TRACES, colors.TRACE_COLORS): 
     if t == labels.TRACES[0]:
-        enable = True
+        mode = 'Live'
     else:
-        enable = False
-    traceState[t] = {'enabled': enable,
-                    'color': c,
+        mode = 'Off'
+    traceState[t] = {'color': c,
                     'pause': False,
-                    'mode': 'Live',
-                    'clear': None}
+                    'mode': mode,
+                    'clear': 'None',
+                    'average': 5}
 

@@ -153,13 +153,16 @@ class Trace(object):
         self.plot_area = plot_area
         self.average_list = []
         self.average_factor = 5
+
     def clear(self):
         for c in self.curves:
             self.plot_area.spectral_plot.removeItem(c)
         self.curves = []
+
     def clear_data(self):
         self.average_list = []
         self.data = None
+
     def update_average_factor(self, factor):
         self.average_factor = factor
         self.average_list = []
@@ -174,7 +177,8 @@ class Trace(object):
                         self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
 
     def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
-        if self.store or self.blank:
+
+        if self.blank or self.store:
             return
 
         self.freq_range = xdata
@@ -244,10 +248,19 @@ class Trace(object):
         if trace == self.name:
             if 'color' in changed:
                 self.color = state[trace]['color']
-            if 'enabled' in changed:
-                self.blank = not state[trace]['enabled']
             if 'clear' in changed:
                 self.clear_data()
+            if 'pause' in changed:
+                self.store = state[trace]['pause']
+            if 'mode' in changed:
+                if state[trace]['mode'] == 'Off':
+                    self.blank = True
+                    self.clear_data()
+                    self.clear()
+                else:
+                    self.blank = False
+            if 'average' in changed:
+                self.update_average_factor(state[trace]['average'])
 
 class Marker(object):
     """

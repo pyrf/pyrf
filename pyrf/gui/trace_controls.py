@@ -47,16 +47,14 @@ class TraceControls(QtGui.QWidget):
     can be used to control the FFT plot's traces
     :param name: The name of the groupBox
     """
-    def __init__(self, controller, plot):
+    def __init__(self, controller):
         super(TraceControls, self).__init__()
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
         controller.trace_change.connect(self.trace_changed)
-        controller.capture_receive.connect(self.capture_received)
         self._trace_state = traceState
-        self._plot = plot
         self.setStyleSheet(GROUP_BOX_FONT)
 
         self.setLayout(QtGui.QGridLayout())
@@ -109,9 +107,8 @@ class TraceControls(QtGui.QWidget):
         hold.setToolTip("Pause trace updating")
 
         def hold_clicked():
-            self._store_trace(num, hold.isChecked())
+            self.controller.apply_trace_options(num, ['pause'], [hold.isChecked()])
         hold.clicked.connect(hold_clicked)
-
         clear = QtGui.QPushButton("Clear Trace")
         clear.setToolTip("Refresh the data of the trace")
 
@@ -126,8 +123,7 @@ class TraceControls(QtGui.QWidget):
         average_edit.setValue(DEFAULT_AVERAGE_FACTOR)
 
         def average_changed():
-            trace = self._plot.traces[num]
-            trace.update_average_factor(average_edit.value())
+            self.controller.apply_trace_options(num, ['average'], [average_edit.value()])
         average_edit.valueChanged.connect(average_changed)
         average_edit.hide()
 
@@ -137,7 +133,7 @@ class TraceControls(QtGui.QWidget):
         def add_trace_clicked():
             draw.setCurrentIndex(DEFAULT_TRACE)
             draw_changed(DEFAULT_TRACE)
-            self.controller.apply_trace_options(num, ['enabled'], [True])
+            self.controller.apply_trace_options(num, ['mode'], ['Live'])
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -149,7 +145,7 @@ class TraceControls(QtGui.QWidget):
 
         def remove_trace_clicked():
             self.blank_trace(num)
-            self.controller.apply_trace_options(num, ['enabled'], [False])
+            self.controller.apply_trace_options(num, ['mode'], ['Off'])
             self._build_layout()
         remove_trace.clicked.connect(remove_trace_clicked)
 
@@ -210,7 +206,7 @@ class TraceControls(QtGui.QWidget):
             return row + 1
         row = 0
         for trace_index, widgets in enumerate(self._traces):
-            if not self._trace_state[trace_index]['enabled']:
+            if self._trace_state[trace_index]['mode'] == 'Off':
                 row = add_trace_off_widgets(widgets, row)
                 continue
             row = add_trace_widgets(widgets, row)
@@ -239,9 +235,7 @@ class TraceControls(QtGui.QWidget):
                 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
-        if 'enabled' in changed:
-            self._build_layout()
-        
+       
         if 'color' in changed:
             color = state[trace]['color']
             self._update_banner_color(self._traces[trace].icon, 
@@ -258,6 +252,8 @@ class TraceControls(QtGui.QWidget):
             if mode == 'Average':
                 self._traces[trace].average_label.show()
                 self._traces[trace].average_edit.show()
+            elif mode == 'Off' or mode == 'Live':
+                self._build_layout()
             else:
                 self._traces[trace].average_label.hide()
                 self._traces[trace].average_edit.hide()
@@ -271,94 +267,6 @@ class TraceControls(QtGui.QWidget):
 
     def plot_changed(self, state, changed):
         self.plot_state = state
-
-    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
-        # save x,y data for marker adjustments
-        self.pow_data = power
-        self.xdata = np.linspace(fstart, fstop, len(power))
-
-    def blank_trace(self, num):
-        """
-        disable the selected trace
-        """
-        trace = self._plot.traces[num]
-        trace.clear()
-        trace.data = None
-
-    def _store_trace(self, num, store):
-        """
-        store the current trace's data
-        """
-        self._plot.traces[num].store = bool(store)
-
-    def _find_peak(self, num):
-        """
-        move the selected marker to the maximum point of the spectrum
-        """
-        marker = self._plot.markers[num]
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        data_range = self.xdata
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
-
-        trace = self._plot.traces[marker.trace_index]
-        peak_value = np.max(trace.data[min_index:max_index])
-        marker.data_index = np.where(trace.data==peak_value)[0]
-
-    def _find_right_peak(self, num):
-        """
-        move the selected marker to the next peak on the right
-        """
-        marker = self._plot.markers[num]
-        trace = self._plot.traces[marker.trace_index]
-        pow_data = trace.data
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        if marker.data_index is None:
-            marker.data_index = len(pow_data) / 2
-        data_range = self.xdata[marker.data_index:-1]
-
-        if len(data_range) == 0:
-            return
-
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1])) + marker.data_index
-        min_index += 1
-        right_pow = max(pow_data[min_index:max_index])
-        marker.data_index = np.where(pow_data==right_pow)[0]
-
-    def _find_left_peak(self, num):
-        """
-        move the selected marker to the next peak on the left
-        """
-        marker = self._plot.markers[num]
-        trace = self._plot.traces[marker.trace_index]
-        pow_data = trace.data
-        # enable the marker if it is not already enabled
-        if not marker.enabled:
-            self._marker_check.click()
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        if marker.data_index is None:
-            marker.data_index = len(pow_data) / 2
-        data_range = self.xdata[0:marker.data_index]
-
-        if len(data_range) == 0:
-            return
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
-        left_pow = max(pow_data[min_index:max_index])
-        min_index -= 1
-        marker.data_index = np.where(pow_data==left_pow)[0]
 
     def showEvent(self, event):
         self.activateWindow()

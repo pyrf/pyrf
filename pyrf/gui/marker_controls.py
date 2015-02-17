@@ -178,7 +178,7 @@ class MarkerWidget(QtGui.QWidget):
         d = self._marker_state[self.name]['delta']
         if self._marker_state[self.name]['enabled']: 
             # if marker's current trace is disabled, assign marker to next trace
-            if not self._trace_state[self._marker_state[self.name]['trace']]['enabled']:
+            if self._trace_state[self._marker_state[self.name]['trace']]['mode'] == 'Off':
                 if w.trace.count() == 0:
                     # if no trace is enabled, disable marker
                     remove_marker()
@@ -237,9 +237,10 @@ class MarkerWidget(QtGui.QWidget):
 
         for m in self._marker_state:
             if self._marker_state[m]['trace'] == trace:
-                if 'enabled' in changed:
+                if 'mode' in changed:
+                
                     # disable marker if trace is disabled
-                    if not state[trace]['enabled']:
+                    if state[trace]['mode'] == 'Off':
                         self.controller.apply_marker_options(m, ['enabled', 'delta'], [False, False])
         self._update_trace_combo()
 
@@ -250,7 +251,7 @@ class MarkerWidget(QtGui.QWidget):
         available_colors = []
         trace_name = []
         for n, t in zip(TRACES, sorted(self._trace_state)):
-            if self._trace_state[t]['enabled']:
+            if not self._trace_state[t]['mode'] == 'Off':
                 available_colors.append(self._trace_state[t]['color'])
                 trace_name.append(n)
             index = self._marker_state[self.name]['trace']
