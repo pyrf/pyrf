@@ -520,11 +520,13 @@ class DeltaMarker(Marker):
                     self.draw_color = self.color
 
     def state_changed(self, state, changed):
-        # if hasattr(self, '_gui_state'):
-            # if 'center' in changed:
-                # freq_change = self._gui_state.center - state.center
-                # self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos - freq_change])
-        self._gui_state = state
+        if hasattr(self, '_gui_state'):
+            if 'center' in changed:
+                freq_change = self._gui_state.center - state.center
+                self.controller.apply_marker_options(self.name, ['dfreq'], [self.freq_pos - freq_change])
+                self._gui_state = state
+        else:
+            self._gui_state = state
 
     def dragged(self):
         # determine freq of drag
