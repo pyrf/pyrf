@@ -124,7 +124,7 @@ class AmplitudeControls(QtGui.QWidget):
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(False)
                 self._db_div.setEnabled(False)
-            elif state.device_settings['iq_output_path'] == 'CONNECTOR':
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._max_level.setEnabled(True)
                 self._db_div.setEnabled(True)
 

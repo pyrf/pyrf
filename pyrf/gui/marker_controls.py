@@ -63,8 +63,8 @@ class MarkerWidget(QtGui.QWidget):
         def freq_change():
             factor = UNIT_MAGNITUDE[self._marker_state[self.name]['unit']]
             new_freq = self.freq.value() * factor
-            fstart = self.gui_state.center - (self.gui_state.span / 2)
-            fstop = self.gui_state.center + (self.gui_state.span / 2)
+            fstart = self._gui_state.center - (self._gui_state.span / 2)
+            fstop = self._gui_state.center + (self._gui_state.span / 2)
             if new_freq < fstart:
                 new_freq = fstart
             elif new_freq > fstop:
@@ -99,8 +99,8 @@ class MarkerWidget(QtGui.QWidget):
         def dfreq_change():
             factor = UNIT_MAGNITUDE[self._marker_state[self.name]['unit']]
             new_freq = self._marker_state[self.name]['freq'] + (self.dfreq.value() * factor)
-            fstart = self.gui_state.center - (self.gui_state.span / 2)
-            fstop = self.gui_state.center + (self.gui_state.span / 2)
+            fstart = self._gui_state.center - (self._gui_state.span / 2)
+            fstop = self._gui_state.center + (self._gui_state.span / 2)
             if new_freq < fstart:
                 new_freq = fstart
             elif new_freq > fstop:
@@ -196,7 +196,7 @@ class MarkerWidget(QtGui.QWidget):
         self.dut_prop = dut.properties
 
     def state_changed(self, state, changed):
-        self.gui_state = state
+        self._gui_state = state
         if 'span' in changed or 'center' in changed:
             factor = UNIT_MAGNITUDE[self._marker_state[self.name]['unit']]
             fstart = state.center - (state.span / 2)
@@ -221,7 +221,10 @@ class MarkerWidget(QtGui.QWidget):
                 if state[marker]['delta']:
                     self.dfreq.quiet_update(value = ((state[marker]['dfreq'] - state[marker]['freq']) / factor))
             if 'unit' in changed:
-                
+                fstart = self._gui_state.center - (self._gui_state.span / 2)
+                fstop = self._gui_state.center + (self._gui_state.span / 2)
+                self.freq.setRange(fstart / factor, fstop / factor)
+                self.dfreq.setRange(-1 * self._gui_state.span / factor, self._gui_state.span / factor)
                 self.unit.quiet_update(UNITS, state[marker]['unit'])
                 self.dunit.quiet_update(UNITS, state[marker]['unit'])
                 if self._marker_state[self.name]['enabled']:
@@ -324,6 +327,7 @@ class MarkerTable(QtGui.QWidget):
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
         controller.trace_change.connect(self.trace_changed)
+        controller.state_change.connect(self.state_changed)
         self._marker_state = markerState
         self._trace_state = traceState
         
@@ -476,7 +480,13 @@ class MarkerTable(QtGui.QWidget):
                     freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
                     self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
                     self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
-                
+
+    def state_changed(self, state, changed):
+        if 'device_settings.iq_output_path' in changed:
+            if state.device_settings['iq_output_path'] == 'CONNECTOR':
+                self.setVisible(False)
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
+                self.setVisible(True)
 
     def _update_label_color(self, marker):
             if self._marker_state[marker]['hovering']:

@@ -115,6 +115,7 @@ class Plot(QtCore.QObject):
         for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
             trace = Trace(
                 self,
+                self.controller,
                 trace_name,
                 trace_color,
                 blank=True,

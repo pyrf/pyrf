@@ -555,7 +555,8 @@ class SpecAController(QtCore.QObject):
         self._state_changed(state, changed)
 
        # apply trace state
-        self.trace_change.emit(self._trace_options.keys(), dict(self._trace_options), self._trace_options[0].keys())
+        for t in self._trace_options:
+            self.trace_change.emit(t, dict(self._trace_options), self._trace_options[0].keys())
 
         # apply marker state
         changes = self._marker_options[0].keys()
@@ -564,7 +565,8 @@ class SpecAController(QtCore.QObject):
         changes.remove('peak_left')
         changes.remove('peak_right')
         changes.remove('center')
-        self.marker_change.emit(0, dict(self._marker_options), changes)
+        for m in self._marker_options:
+            self.marker_change.emit(m, dict(self._marker_options), changes)
 
         # apply plot state
         self.plot_change.emit(dict(self._plot_options),
@@ -577,7 +579,6 @@ class SpecAController(QtCore.QObject):
     def apply_options(self, **kwargs):
         """
         Apply menu options and signal the change
-
         :param kwargs: keyword arguments of the dsp options
         """
         self._options.update(kwargs)
@@ -714,8 +715,7 @@ class SpecAController(QtCore.QObject):
         device_options = {'device_settings': {'trigger': {}}}
         options = {}
         window_options = {}
-        marker_options = markerState
-        trace_options = traceState
+
         state = self._state.to_json_object()
 
         for p in config.options('plot_options'):
@@ -742,6 +742,10 @@ class SpecAController(QtCore.QObject):
             name = int(p.split('-')[0])
             property = p.split('-')[1]
             self._marker_options[name][property] = decode_config_type(config.get('marker_options', p), str(type(self._marker_options[name][property])))
+        for p in config.options('trace_options'):
+            name = int(p.split('-')[0])
+            property = p.split('-')[1]
+            self._trace_options[name][property] = decode_config_type(config.get('trace_options', p), str(type(self._trace_options[name][property])))
 
         state = SpecAState(self._state, **device_options)
         self._apply_complete_settings(device_options, False)

@@ -43,5 +43,8 @@ for t ,c  in zip(labels.TRACES, colors.TRACE_COLORS):
     else:
         enable = False
     traceState[t] = {'enabled': enable,
-                    'color': c}
+                    'color': c,
+                    'pause': False,
+                    'mode': 'Live',
+                    'clear': None}
 

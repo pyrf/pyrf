@@ -411,6 +411,7 @@ class MainPanel(QtGui.QWidget):
                 self._main_window.setMinimumHeight(0)
                 self.resize(0,0)
                 self._main_window.resize(0,0)
+                self.mask_label.setVisible(False) 
             else:
                 # show plots
                 self._plot_layout.show()
@@ -423,6 +424,7 @@ class MainPanel(QtGui.QWidget):
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
                 WINDOW_HEIGHT = max(screen.height() * 0.7, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+                self.mask_label.setVisible(True) 
 
     def plot_changed(self, state, changed):
         self.plot_state = state

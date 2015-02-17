@@ -5,13 +5,17 @@ from pyrf.gui import labels
 from pyrf.gui import colors
 from pyrf.gui.util import hide_layout
 from pyrf.gui.fonts import GROUP_BOX_FONT
-from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback)
+from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback, QComboBoxPlayback)
+from pyrf.gui.gui_config import traceState
 import numpy as np
 
 REMOVE_BUTTON_WIDTH = 10
 MAX_AVERAGE_FACTOR = 1000
 DEFAULT_AVERAGE_FACTOR = 5
 DEFAULT_TRACE = 0 # 0 indicates LIVE
+
+TRACE_MODES = ['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']
+
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     color_button
@@ -19,7 +23,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     hold
     clear
     average_label
-    average
+    average_edit
     add
     remove
     """)):
@@ -51,7 +55,7 @@ class TraceControls(QtGui.QWidget):
         controller.plot_change.connect(self.plot_changed)
         controller.trace_change.connect(self.trace_changed)
         controller.capture_receive.connect(self.capture_received)
-
+        self._trace_state = traceState
         self._plot = plot
         self.setStyleSheet(GROUP_BOX_FONT)
 
@@ -71,67 +75,34 @@ class TraceControls(QtGui.QWidget):
         :returns: a TraceWidgets namedtuple
         """
         icon = QtGui.QLabel()
-        def update_banner_color(r, g, b):
-            color = QtGui.QColor()
-            color.setRgb(r, g, b)
-            pixmap = QtGui.QPixmap(320, 2)
-            pixmap.fill(color)
-            icon.setPixmap(pixmap)
+
         r, g, b = colors.TRACE_COLORS[num]
-        update_banner_color(r, g, b)
-        button_icon = QtGui.QIcon()
+        self._update_banner_color(icon, r, g, b)
 
         color_button = QtGui.QPushButton()
-        def update_button_color(r, g, b):
-            color = QtGui.QColor()
-            color.setRgb(r, g, b)
-            pixmap = QtGui.QPixmap(50, 50)
-            pixmap.fill(color)
-            button_icon.addPixmap(pixmap)
-            color_button.setIcon(button_icon)
         r, g, b = colors.TRACE_COLORS[num]
-        update_button_color(r, g, b)
+        self._update_button_color(color_button, r, g, b)
 
         def custom_color_clicked():
             color = QtGui.QColorDialog.getColor()
             # Don't update if color chosen is black
             if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
-                update_banner_color(color.red(), color.green(), color.blue())
-                update_button_color(color.red(), color.green(), color.blue())
-                self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                self._update_banner_color(icon, color.red(), color.green(), color.blue())
+                self._update_button_color(color_button, color.red(), color.green(), color.blue())
+                color = (color.red(), color.green(), color.blue())
                 trace_colors = {}
-                for n,t  in enumerate(self._plot.traces):
-                    if n == num:
-                        trace_colors['trace' + str(n + 1)] = (color.red(), color.green(), color.blue())
-                    else:
-                        trace_colors['trace' + str(n + 1)] = self._plot.traces[n].color
-                self.controller.apply_trace_options(num, ['color'], [self._plot.traces[num].color])
+                self.controller.apply_trace_options(num, ['color'], [color])
 
         color_button.clicked.connect(custom_color_clicked)
 
-        draw = QtGui.QComboBox()
+        draw = QComboBoxPlayback()
         draw.setToolTip("Select data source")
-        for i, val in enumerate(['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']):
+        for i, val in enumerate(TRACE_MODES):
             draw.addItem(val)
-        draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
+        draw.setCurrentIndex(num)
 
         def draw_changed(index):
-            trace = self._plot.traces[num]
-            # FIXME: why so many exclusive bools?
-            trace.write = index == 0
-            trace.max_hold = index == 1
-            trace.min_hold = index == 2
-            trace.average = index == 3
-            trace.blank = index == 4
-            if index == 3:
-                average_label.show()
-                average_edit.show()
-            else:
-                average_label.hide()
-                average_edit.hide()
-
-            if index == 4:  # 'Off'
-                return remove_trace_clicked()
+            self.controller.apply_trace_options(num, ['mode'], [draw.currentText()])
         draw.currentIndexChanged.connect(draw_changed)
 
         hold = QtGui.QCheckBox("Pause")
@@ -145,8 +116,7 @@ class TraceControls(QtGui.QWidget):
         clear.setToolTip("Refresh the data of the trace")
 
         def clear_clicked():
-            trace = self._plot.traces[num]
-            trace.clear_data()
+            self.controller.apply_trace_options(num, ['clear'], [None])
         clear.clicked.connect(clear_clicked)
 
         average_label = QtGui.QLabel("Captures:")
@@ -187,6 +157,23 @@ class TraceControls(QtGui.QWidget):
                             average_label, average_edit,
                             add_trace, remove_trace)
 
+    def _update_banner_color(self, icon, r, g, b):
+            color = QtGui.QColor()
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(320, 2)
+            pixmap.fill(color)
+            icon.setPixmap(pixmap)
+            return icon
+
+    def _update_button_color(self, color_button, r, g, b):
+            button_icon = QtGui.QIcon()
+            color = QtGui.QColor()
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(50, 50)
+            pixmap.fill(color)
+            button_icon.addPixmap(pixmap)
+            color_button.setIcon(button_icon)
+            return color_button
 
     def _build_layout(self):
         """
@@ -209,10 +196,10 @@ class TraceControls(QtGui.QWidget):
             row = row + 1
 
             show(trace_widgets.average_label, row, 1, 1, 2)
-            show(trace_widgets.average, row, 3, 1, 2)
-            if trace_widgets.draw.currentText() != 'Average':
+            show(trace_widgets.average_edit, row, 3, 1, 2)
+            if self._trace_state[trace_index]['mode'] != 'Average':
                 trace_widgets.average_label.hide()
-                trace_widgets.average.hide()
+                trace_widgets.average_edit.hide()
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
@@ -222,9 +209,8 @@ class TraceControls(QtGui.QWidget):
             show(trace_widgets.add, row, 1, 1, 2)
             return row + 1
         row = 0
-        for trace_index, (trace, widgets) in enumerate(
-                zip(self._plot.traces, self._traces)):
-            if trace.blank:
+        for trace_index, widgets in enumerate(self._traces):
+            if not self._trace_state[trace_index]['enabled']:
                 row = add_trace_off_widgets(widgets, row)
                 continue
             row = add_trace_widgets(widgets, row)
@@ -253,6 +239,35 @@ class TraceControls(QtGui.QWidget):
                 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
+        if 'enabled' in changed:
+            self._build_layout()
+        
+        if 'color' in changed:
+            color = state[trace]['color']
+            self._update_banner_color(self._traces[trace].icon, 
+                                    color[0], 
+                                    color[1],
+                                    color[2])
+            self._update_button_color(self._traces[trace].color_button,
+                                    color[0], 
+                                    color[1],
+                                    color[2])
+        if 'mode' in changed:
+            mode = state[trace]['mode']
+            self._traces[trace].draw.quiet_update(TRACE_MODES, mode)
+            if mode == 'Average':
+                self._traces[trace].average_label.show()
+                self._traces[trace].average_edit.show()
+            else:
+                self._traces[trace].average_label.hide()
+                self._traces[trace].average_edit.hide()
+        if 'pause' in changed:
+            check_state = QtCore.Qt.CheckState()
+            if state[trace]['pause']:
+                check_state = QtCore.Qt.CheckState(2)
+            else:
+                check_state = QtCore.Qt.CheckState(0)
+            self._traces[trace].hold.setCheckState(check_state)
 
     def plot_changed(self, state, changed):
         self.plot_state = state
