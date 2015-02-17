@@ -22,7 +22,6 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     average
     add
     remove
-    add_marker
     """)):
     """
     :param icon: color icon
@@ -34,26 +33,8 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     :param average: average captures spinbox
     :param add: "+ trace" button
     :param remove: "- trace" button
-    :param add_marker: "+ marker" button for adding a marker to this trace
     """
     __slots__ = []
-
-class MarkerWidgets(namedtuple('MarkerWidgets', """
-    marker
-    center
-    peak_left
-    peak
-    peak_right
-    remove
-    """)):
-    """
-    :param marker: marker name radio button assigned to button_group
-    :param center: "center" button
-    :param peak_left: "peak left" button
-    :param peak: "peak" button
-    :param peak_right: "peak right" button
-    :param remove: "- marker" button
-    """
     __slots = []
 
 class TraceControls(QtGui.QWidget):
@@ -67,11 +48,11 @@ class TraceControls(QtGui.QWidget):
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
+        controller.trace_change.connect(self.trace_changed)
         controller.capture_receive.connect(self.capture_received)
 
         self._plot = plot
         self.setStyleSheet(GROUP_BOX_FONT)
-        self._marker_trace = None
 
         self.setLayout(QtGui.QGridLayout())
         self._create_controls()
@@ -81,12 +62,6 @@ class TraceControls(QtGui.QWidget):
         self._traces = []
         for num in range(len(colors.TRACE_COLORS)):
             self._traces.append(self._create_trace_widgets(num))
-
-        self._markers = []
-        self._marker_group = QtGui.QButtonGroup()
-        for num in (0, 1):
-            self._markers.append(self._create_marker_widgets(num,
-                self._marker_group))
 
     def _create_trace_widgets(self, num):
         """
@@ -122,7 +97,8 @@ class TraceControls(QtGui.QWidget):
             if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
                 update_banner_color(color.red(), color.green(), color.blue())
                 update_button_color(color.red(), color.green(), color.blue())
-                trace = self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                self._plot.traces[num].color = (color.red(), color.green(), color.blue())
+                self.controller.apply_trace_options(num, ['color'], [self._plot.traces[num].color])
         color_button.clicked.connect(custom_color_clicked)
 
         draw = QtGui.QComboBox()
@@ -178,6 +154,7 @@ class TraceControls(QtGui.QWidget):
         def add_trace_clicked():
             draw.setCurrentIndex(DEFAULT_TRACE)
             draw_changed(DEFAULT_TRACE)
+            self.controller.apply_trace_options(num, ['enabled'], [True])
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -188,80 +165,13 @@ class TraceControls(QtGui.QWidget):
         remove_trace.setToolTip("Disable this trace")
         def remove_trace_clicked():
             self.blank_trace(num)
+            self.controller.apply_trace_options(num, ['enabled'], [False])
             self._build_layout()
         remove_trace.clicked.connect(remove_trace_clicked)
 
-        add_marker = QtGui.QPushButton("+ Marker")
-        add_marker.setToolTip("Add a marker to this trace")
-        def add_marker_clicked():
-            m = 0 if not self._plot.markers[0].enabled else 1
-            self._plot.markers[m].enable(self._plot)
-            self._plot.markers[m].trace_index = num
-            if m == 0:
-                self.controller.apply_plot_options(marker0 = True)
-            else:
-                self.controller.apply_plot_options(marker1 = True)
-            self._build_layout()
-
-        add_marker.clicked.connect(add_marker_clicked)
-
         return TraceWidgets(icon, color_button, draw, hold, clear,
                             average_label, average_edit,
-                            add_trace, remove_trace, add_marker)
-
-    def _create_marker_widgets(self, num, button_group):
-        """
-        :param num: index of this marker (currently 0 or 1)
-        :param button_group: QButtonGroup for the marker radio buttons
-
-        :returns: a MarkerWidgets namedtuple
-
-        """
-        label = QtGui.QLabel("M%d:" % (num + 1))
-
-        center = QtGui.QPushButton("Center")
-        center.setToolTip("Center the frequency on this marker")
-        def center_clicked():
-            marker = self._plot.markers[num]
-            if marker.enabled:
-                self.controller.apply_settings(center=
-                    self.xdata[marker.data_index])
-                marker.data_index = len(self.pow_data)/2
-        center.clicked.connect(center_clicked)
-
-        peak_left = QtGui.QPushButton("Peak Left")
-        peak_left.setToolTip("Find peak left of the marker")
-        def peak_left_clicked():
-            self._find_left_peak(num)
-        peak_left.clicked.connect(peak_left_clicked)
-
-        peak = QtGui.QPushButton("Peak")
-        peak.setToolTip("Find the peak of the selected spectrum")
-        def peak_clicked():
-            self._find_peak(num)
-        peak.clicked.connect(peak_clicked)
-
-        peak_right = QtGui.QPushButton("Peak Right")
-        peak_right.setToolTip("Find peak right of the marker")
-        def peak_right_clicked():
-            self._find_right_peak(num)
-        peak_right.clicked.connect(peak_right_clicked)
-
-        remove_marker = QtGui.QPushButton("- Marker")
-        remove_marker.setMinimumWidth(REMOVE_BUTTON_WIDTH)
-        remove_marker.setToolTip("Remove this marker")
-        def remove_marker_clicked():
-            alt_mark = not num
-            if num == 0:
-                self.controller.apply_plot_options(marker0 = False)
-            else:
-                self.controller.apply_plot_options(marker1 = False)
-            self._plot.markers[num].disable(self._plot)
-            self._build_layout()
-        remove_marker.clicked.connect(remove_marker_clicked)
-
-        return MarkerWidgets(label, center, peak_left, peak, peak_right,
-            remove_marker)
+                            add_trace, remove_trace)
 
     def _build_layout(self):
         """
@@ -273,7 +183,7 @@ class TraceControls(QtGui.QWidget):
             grid.addWidget(widget, y, x, h, w)
             widget.show()
 
-        def add_trace_widgets(trace_widgets, row, extra=False):
+        def add_trace_widgets(trace_widgets, row):
             show(trace_widgets.icon, row, 0, 1, 7)
             row = row + 1
             show(trace_widgets.color_button, row, 0, 1, 1)
@@ -288,8 +198,6 @@ class TraceControls(QtGui.QWidget):
             if trace_widgets.draw.currentText() != 'Average':
                 trace_widgets.average_label.hide()
                 trace_widgets.average.hide()
-            if extra:
-                show(trace_widgets.add_marker, row, 5, 1, 2)
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
@@ -298,33 +206,13 @@ class TraceControls(QtGui.QWidget):
             show(trace_widgets.color_button, row, 0, 1, 1)
             show(trace_widgets.add, row, 1, 1, 2)
             return row + 1
-
-        def add_marker_widgets(marker_widgets, row):
-            show(marker_widgets.marker, row, 0, 3,3)
-            show(marker_widgets.peak, row, 1, 1, 2)
-            show(marker_widgets.center, row, 3, 1, 2)
-            show(marker_widgets.remove, row, 5, 1, 2)
-            row = row + 1
-            show(marker_widgets.peak_left, row, 1, 1, 2)
-            show(marker_widgets.peak_right, row, 3, 1, 2)
-            return row + 1
-
-        extra_markers = any(not m.enabled for m in self._plot.markers)
-
         row = 0
         for trace_index, (trace, widgets) in enumerate(
                 zip(self._plot.traces, self._traces)):
             if trace.blank:
                 row = add_trace_off_widgets(widgets, row)
                 continue
-            row = add_trace_widgets(widgets, row, extra_markers)
-
-            trace_markers = [
-                i for (i, marker) in enumerate(self._plot.markers)
-                if marker.enabled and marker.trace_index == trace_index]
-            if trace_markers:
-                for tm in trace_markers:
-                    row = add_marker_widgets(self._markers[tm], row)
+            row = add_trace_widgets(widgets, row)
 
         grid.setColumnStretch(0, 4)
         grid.setColumnStretch(1, 4)
@@ -347,6 +235,9 @@ class TraceControls(QtGui.QWidget):
                 self.setEnabled(False)
             else:
                 self.setEnabled(True)
+                
+    def trace_changed(self, trace, state, changed):
+        self._trace_state = state
 
     def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
         # save x,y data for marker adjustments
@@ -360,9 +251,6 @@ class TraceControls(QtGui.QWidget):
         trace = self._plot.traces[num]
         trace.clear()
         trace.data = None
-        for marker in self._plot.markers:
-            if marker.trace_index == num:
-                marker.disable(self._plot)
 
     def _store_trace(self, num, store):
         """

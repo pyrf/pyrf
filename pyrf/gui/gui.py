@@ -36,6 +36,8 @@ from pyrf.gui.discovery_widget import DiscoveryWidget
 from pyrf.gui.trace_controls import TraceControls
 from pyrf.gui.measurements_widget import MeasurementControls
 from pyrf.gui.capture_widget import CaptureControls
+from pyrf.gui.marker_controls import MarkerControls, MarkerTable
+
 VIEW_OPTIONS = [
     ('&IQ Plots', 'iq_plots', False),
     ('&Spectrogram', 'waterfall_plot', False),
@@ -378,7 +380,6 @@ class MainPanel(QtGui.QWidget):
             else:
                 # show plots
                 self._plot_layout.show()
-                self.show_labels()
                 # resize window
                 for x in range(self.plot_width):
                     self._grid.setColumnMinimumWidth(x, 300)
@@ -390,23 +391,13 @@ class MainPanel(QtGui.QWidget):
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
 
     def plot_changed(self, state, changed):
-        if 'marker_dragged' in changed:
-            self.update_marker_labels()
         self.plot_state = state
 
     def show_labels(self):
-        self._diff_label.show()
-        self._mask_label.show()
-        for m in self.marker_labels:
-            m.show()
         for c in self.channel_power_labels:
             c.show()
 
     def hide_labels(self):
-        self._diff_label.hide()
-        self._mask_label.hide()
-        for m in self.marker_labels:
-            m.hide()
         for c in self.channel_power_labels:
             c.hide()
 
@@ -418,16 +409,13 @@ class MainPanel(QtGui.QWidget):
         for x in range(self.plot_width):
             grid.setColumnMinimumWidth(x, 300)
 
-        self._mask_label = QtGui.QLabel()
-        self._mask_label.setStyleSheet('background-color: black')
-
-        self.marker_labels = []
-        marker_label, delta_label, diff_label = self._marker_labels()
+        self.mask_label = QtGui.QLabel()
+        self.mask_label.setStyleSheet('background-color: rgb(0,0,0)')
+        grid.addWidget(self.mask_label, 0, 0, 15, self.plot_width)
+        marker_table = MarkerTable(self.controller)
         channel_power_labels = self._channel_power_labels()
-        grid.addWidget(self._mask_label, 0, 0, 15, self.plot_width)
-        grid.addWidget(marker_label, 0, 3, 1, 2)
-        grid.addWidget(delta_label, 0, 5, 1, 2)
-        grid.addWidget(diff_label , 0, 7, 1, 2)
+        grid.addWidget(marker_table, 0, 0, 1, self.plot_width)
+
         grid.addWidget(self._plot_layout(), 1, 0, 14, self.plot_width)
         x = 1
         for label in channel_power_labels:
@@ -437,6 +425,7 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(self._freq_controls(), "Frequency Control")
         self._add_docking_controls(
             self._measurement_controls(), "Measurement Control")
+        self._add_docking_controls(self._marker_controls(), "Marker Control", True)
         self._add_docking_controls(
             self._capture_controls(), "Capture Control")
         self._add_docking_controls(
@@ -447,12 +436,12 @@ class MainPanel(QtGui.QWidget):
         self._grid = grid
         self.setLayout(grid)
 
-    def _add_docking_controls(self, widget, title):
+    def _add_docking_controls(self, widget, title, hide = False):
         dock = QtGui.QDockWidget(title, self)
         dock.setAllowedAreas(
-            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+            QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
         dock.setWidget(widget)
-        # FIXME we should be doing this in the MainWindow
+
         self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
         self._main_window.view_menu.addAction(dock.toggleViewAction())
 
@@ -510,32 +499,32 @@ class MainPanel(QtGui.QWidget):
         self._dev_group = DeviceControls(self.controller)
         self.control_widgets.append(self._dev_group)
         return self._dev_group
+        
+    def _marker_controls(self):
+        self.marker_group = MarkerControls(self.controller, self._plot)
+        self.control_widgets.append(self.marker_group)
+        return self.marker_group
 
     def _marker_labels(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
 
-        marker_label = QtGui.QLabel('')
-        marker_label.setAlignment(QtCore.Qt.AlignLeft)
-        marker_label.setSizePolicy(sizePolicy)
+        span_label = QtGui.QLabel('')
+        span_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        span_label.setAlignment(QtCore.Qt.AlignLeft)
+        span_label.setSizePolicy(sizePolicy)
 
-        delta_label = QtGui.QLabel('')
-        delta_label.setAlignment(QtCore.Qt.AlignLeft)
-        delta_label.setSizePolicy(sizePolicy)
+        rbw_label = QtGui.QLabel('')
+        rbw_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
+        rbw_label.setAlignment(QtCore.Qt.AlignRight)
+        rbw_label.setSizePolicy(sizePolicy)
 
-        diff_label = QtGui.QLabel('')
-        diff_label.setAlignment(QtCore.Qt.AlignLeft)
-        diff_label.setSizePolicy(sizePolicy)
+        self._rbw_label = rbw_label
+        self._span_label = span_label
 
-        self._diff_label = diff_label
-
-        self.marker_labels.append(marker_label)
-
-        self.marker_labels.append(delta_label)
-        return marker_label,delta_label, diff_label
+        return  rbw_label, span_label
 
     def _channel_power_labels(self):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
-
         self.channel_power_labels = []
 
         for color in colors.TRACE_COLORS:
@@ -559,14 +548,10 @@ class MainPanel(QtGui.QWidget):
         """
         self.raw_data = raw
         self.pow_data = power
-        self.usable_bins = usable
-        self.sweep_segments = segments
 
         self.xdata = np.linspace(fstart, fstop, len(power))
-        self.update_trace()
-        self.update_marker()
-        self.update_marker_labels()
         self.update_channel_power()
+
         if (not self.controller.applying_user_xrange() and self.plot_state['mouse_tune']):
             self._plot.center_view(fstart,
                                    fstop)
@@ -618,82 +603,12 @@ class MainPanel(QtGui.QWidget):
             else:
                 ww.hide()
 
-    def update_trace(self):
-        for trace in self._plot.traces:
-            trace.update_curve(
-                self.xdata,
-                self.pow_data,
-                self.usable_bins,
-                self.sweep_segments)
-
     def update_iq(self):
-
         if not self.raw_data:
                 return
         self._plot.update_iq_plots(self.raw_data)
 
-    def update_marker(self):
-            num = 1
-            for marker in self._plot.markers:
-                if marker.enabled:
-                    trace = self._plot.traces[marker.trace_index]
-                    if not trace.blank:
-                        marker.update_pos(trace.freq_range, trace.data)
-
-    def update_marker_labels(self):
-            num = 1
-            for marker, marker_label in zip(self._plot.markers, self.marker_labels):
-                if marker.enabled:
-                    trace = self._plot.traces[marker.trace_index]
-                    marker_label.show()
-                    if marker.data_index is None:
-                        marker.data_index = int(len(trace.data) / 2)
-                        marker.update_pos(trace.freq_range, trace.data)
-                    if not trace.blank:
-                        marker_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + marker.draw_color))
-                        if self.gui_state.rfe_mode() == 'HDR':
-                            marker_text = 'M%d: %0.8f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
-                                                                           trace.data[marker.data_index])
-                        else:
-                            marker_text = 'M%d: %0.2f MHz \n %0.2f dBm' % (num, trace.freq_range[marker.data_index]/1e6, 
-                                                                                   trace.data[marker.data_index])
-                        num += 1
-                        marker_label.setText(marker_text)
-                        self._mask_label.show()
-                else:
-                    marker_label.hide()
-            self.update_diff()
-
-    def update_diff(self):
-
-        num_markers = 0
-        traces = []
-        data_indices = []
-        for marker in self._plot.markers:
-
-            if marker.enabled == True:
-                num_markers += 1
-                traces.append(self._plot.traces[marker.trace_index])
-                data_indices.append(marker.data_index)
-
-        if num_markers == len(labels.MARKERS):
-
-            self._diff_label.show()
-
-            freq_diff = np.abs((traces[0].freq_range[data_indices[0]]/1e6) - (traces[1].freq_range[data_indices[1]]/1e6))
-
-            power_diff = np.abs((traces[0].data[data_indices[0]]) - (traces[1].data[data_indices[1]]))
-            self._diff_label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + colors.GREY_NUM))
-            if self.gui_state.rfe_mode() == 'HDR':
-                delta_text = 'Delta: %0.8f KHz \n %0.2f dB' % (freq_diff * 1000, power_diff )
-            else:
-                delta_text = 'Delta: %0.1f MHz \n %0.2f dB' % (freq_diff, power_diff )
-            self._diff_label.setText(delta_text)
-        else:
-            self._diff_label.hide()
-
     def update_channel_power(self):
-
         for label, trace in zip(self.channel_power_labels, self._plot.traces):
             if trace.calc_channel_power and not trace.blank:
                 label.setStyleSheet(fonts.MARKER_LABEL_FONT % (colors.BLACK_NUM + trace.color))

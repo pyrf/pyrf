@@ -1,19 +1,37 @@
 import util
 import numpy as np
-from pyrf.gui import colors
-from pyrf.config import TriggerSettings, TRIGGER_TYPE_LEVEL, TRIGGER_TYPE_NONE
-from pyrf.units import M
+from pyrf.gui import colors, labels
 
-class PlotState(object):
-    """
-    Class to hold all the GUI's plot states
-    """
 
-    def __init__(self,
-            device_properties,
-            ):
+markerState = {}
+for m in labels.MARKERS:
+    markerState[m] =  { 'enabled': False,
+                          'freq': None,
+                          'power': -60,
+                          'trace': labels.TRACES[0],
+                          'delta': False,
+                          'dtrace': labels.TRACES[0],
+                          'dfreq': None,
+                          'dpower': 0,
+                          'hovering': False,
+                          'center': None,
+                          'peak': None,
+                          'peak_left': None,
+                          'peak_right': None,
+                          'unit': 'MHz'}
 
-        # plot paramaterss
-        self.grid = False
-        self.freq_range = None
-        self.peak_threshold = 2
+traceState = {}
+for t ,c  in zip(labels.TRACES, colors.TRACE_COLORS): 
+    if t == labels.TRACES[0]:
+        enable = True
+    else:
+        enable = False
+    traceState[t] = {'enabled': enable,
+                    'color': c}
+
+
+plotState =  {'cont_cap_mode': True,
+              'mouse_tune': True,
+              'ref_level': 0,
+              'db_div': 15}
+

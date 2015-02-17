@@ -33,6 +33,33 @@ class QComboBoxPlayback(QtGui.QComboBox):
                 self.setCurrentIndex(i)
         self.blockSignals(b)
 
+    def quiet_update_pixel(self, colors, name, select_item = None):
+        """
+        Update all the item colors
+
+        :param items: a list of tuple containing the colors
+        :param select_item: the string to select, if None then attempt
+            to select the same string currently selected in the new list
+            of items, if not present select the first item.
+        """
+
+        if select_item is None:
+            select_item = 0
+        block = self.blockSignals(True)
+        self.clear()
+        for n, c in zip(name, colors):
+
+            button_icon = QtGui.QIcon()
+            color = QtGui.QColor()
+            r, g, b = c
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(50, 50)
+            pixmap.fill(color)
+            button_icon.addPixmap(pixmap)
+            self.addItem(button_icon, str(n))
+            if n == select_item:
+                self.setCurrentIndex(select_item)
+        self.blockSignals(block)
     def playback_value(self, value):
         """
         Remove all items but value and disable the control
