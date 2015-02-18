@@ -1,0 +1,6 @@
+build/
+dist/
+*.pyc
+MANIFEST
+pyrf.egg-info/
+*.spec
