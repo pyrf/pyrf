@@ -214,8 +214,8 @@ class Plot(QtCore.QObject):
             if fstart > float(min(self.channel_power_region.getRegion())) or fstop < float(max(self.channel_power_region.getRegion())):
                 self.move_channel_power(fstart + state.span / 4, fstop - state.span / 4)
 
-        if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
-            self.persistence_plot.reset_plot()
+        # if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
+            # self.persistence_plot.reset_plot()
 
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:

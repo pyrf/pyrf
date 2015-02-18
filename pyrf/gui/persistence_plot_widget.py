@@ -265,8 +265,11 @@ class PersistencePlotWidget(pg.PlotWidget):
                                              self._img_array)
         
         #Add the shiny new signal...
-        self._img_array += new_img_array
-        
+        if len(self._img_array) != len(new_img_array):
+            self._img_array = new_img_array
+        else:
+            self._img_array += new_img_array
+
         #Ensure we don't oversaturate...
         self._img_array = self._img_array.clip(0, 1)
         
