@@ -381,7 +381,8 @@ class Marker(object):
     def update_pos(self, xdata, ydata):
 
         # calculate scale offset for marker
-        scale = np.abs( max(self._plot.getViewBox().viewRange()[1]) - min(self._plot.getViewBox().viewRange()[1])) * 0.01
+        height = np.abs( max(self._plot.getViewBox().viewRange()[1]) - min(self._plot.getViewBox().viewRange()[1]))
+        scale =  height * 0.01
         self.marker_plot.clear()
         self._plot.removeItem(self.marker_plot)
         self._plot.addItem(self.marker_plot)
@@ -418,7 +419,8 @@ class Marker(object):
         else:
             text = str(self.name + 1)
         self.text_box.setText(text)
-        self.text_box.setPos(self.freq_pos, self.ypos + (8 * scale))
+        y_pos = self.ypos + (0.05 * height)
+        self.text_box.setPos(self.freq_pos, y_pos)
         self.update_state_power()
         
     def update_state_power(self):

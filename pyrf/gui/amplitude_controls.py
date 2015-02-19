@@ -63,7 +63,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._db_div.setValue(PLOT_BOTTOM)
         self._db_div.setSuffix(" dB")
         self._db_div.setSingleStep(PLOT_STEP)
-        self._div_label = QtGui.QLabel('dB/Div: ')
+        self._div_label = QtGui.QLabel('dB/div: ')
 
         self._reference_offset = QtGui.QLabel("Offset")
         self._reference_offset.setToolTip("Add a reference offset to all plots")
