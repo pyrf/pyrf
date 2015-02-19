@@ -489,6 +489,10 @@ class MainPanel(QtGui.QWidget):
 
     def _add_docking_controls(self, widget, title):
 
+        def title_to_key(title):
+        # function to convert title to dict key
+            return title.lower().replace(' ', '_')
+
         dock = QtGui.QDockWidget(title, self)
         dock.setAllowedAreas(
             QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
@@ -497,13 +501,13 @@ class MainPanel(QtGui.QWidget):
         self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
         toggle_action = dock.toggleViewAction()
         def _dock_change():
-            dict = {title.lower().replace(' ', '_'): toggle_action.isChecked()}
-            self.controller.apply_window_options(**dict)
+            window_name = {title_to_key(title): toggle_action.isChecked()}
+            self.controller.apply_window_options(**window_name)
 
         toggle_action.toggled.connect(_dock_change)
-        self._toggle_actions[title.lower().replace(' ', '_')] = toggle_action
+        self._toggle_actions[title_to_key(title)] = toggle_action
         self._main_window.view_menu.addAction(toggle_action)
-        self.control_widgets[title.lower().replace(' ', '_')] = dock
+        self.control_widgets[title_to_key(title)] = dock
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()

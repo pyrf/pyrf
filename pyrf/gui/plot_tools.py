@@ -212,6 +212,7 @@ class Trace(object):
             i = 0
             edge_color = tuple([c / 3 for c in self.color])
             for start_bin, run_length in usable_bins:
+
                 if start_bin > i:
                     c = self.plot_area.spectral_plot.plot(x=xdata[i:start_bin+1],
                         y=self.data[i:start_bin+1], pen=edge_color)
