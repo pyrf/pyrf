@@ -452,10 +452,9 @@ class MarkerTable(QtGui.QWidget):
         if state[marker]['enabled']:
             unit = state[marker]['unit']
             factor = UNIT_MAGNITUDE[unit]
-            if 'freq' in changed:
-                self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
 
-            if 'power' in changed:
+            if 'freq' in changed or 'power' in changed:
+                self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
                 self._marker_rows[marker].power.setText('%0.2f dBm' % state[marker]['power'])
 
             if 'dfreq' in changed or 'dpower' in changed:
@@ -475,6 +474,7 @@ class MarkerTable(QtGui.QWidget):
 
             if 'hovering' in changed:
                 self._update_label_color(marker)
+
             if 'unit' in changed:
                 self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
                 if state[marker]['delta']:
