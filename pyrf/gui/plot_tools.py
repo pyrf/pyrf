@@ -424,7 +424,11 @@ class Marker(object):
         self.update_state_power()
         
     def update_state_power(self):
-        self.controller.apply_marker_options(self.name, ['power'], [self.ypos])
+        if self.ypos == 0:
+            power = None
+        else:
+            power = self.ypos
+        self.controller.apply_marker_options(self.name, ['power'], [power])
 
     def find_peak(self):
         """

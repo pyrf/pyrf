@@ -455,7 +455,10 @@ class MarkerTable(QtGui.QWidget):
 
             if 'freq' in changed or 'power' in changed:
                 self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
-                self._marker_rows[marker].power.setText('%0.2f dBm' % state[marker]['power'])
+                if state[marker]['power'] is None:
+                    self._marker_rows[marker].power.setText('---')
+                else:
+                    self._marker_rows[marker].power.setText('%0.2f dBm' % state[marker]['power'])
 
             if 'dfreq' in changed or 'dpower' in changed:
                 if state[marker]['delta']:
