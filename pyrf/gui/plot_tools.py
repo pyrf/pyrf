@@ -547,7 +547,11 @@ class DeltaMarker(Marker):
         self.controller.apply_marker_options(self.name, ['hovering', 'dfreq'], [True, self.freq_pos])
 
     def update_state_power(self):
-        self.controller.apply_marker_options(self.name, ['dpower'], [self.ypos])
+        if self.ypos == 0:
+            power = None
+        else:
+            power = self.ypos
+        self.controller.apply_marker_options(self.name, ['dpower'], [power])
         
 class InfiniteLine(pg.InfiniteLine):
     """

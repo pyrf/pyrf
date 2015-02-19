@@ -37,7 +37,8 @@ class MarkerWidget(QtGui.QWidget):
 
         self.add_marker = QtGui.QPushButton('+ Marker')
         def add_clicked():
-            self.controller.apply_marker_options(self.name, ['enabled'], [True])
+            self.controller.apply_marker_options(self.name, ['enabled', 'freq'], [True, self._gui_state.center])
+
             self._build_layout()
         self.add_marker.clicked.connect(add_clicked)
         self.add_marker.setMaximumWidth(60)
@@ -75,7 +76,7 @@ class MarkerWidget(QtGui.QWidget):
         self.add_delta = QtGui.QPushButton('+ Delta')
 
         def add_delta_clicked():
-            self.controller.apply_marker_options(self.name, ['delta'], [True])
+            self.controller.apply_marker_options(self.name, ['delta', 'dfreq'], [True, self._gui_state.center])
             self._build_layout()
         self.add_delta.clicked.connect(add_delta_clicked)
         self.add_delta.setMaximumWidth(60)
@@ -463,11 +464,18 @@ class MarkerTable(QtGui.QWidget):
             if 'dfreq' in changed or 'dpower' in changed:
                 if state[marker]['delta']:
                     freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
-                    pow_diff = np.abs(state[marker]['dpower'] - state[marker]['power'])
                     self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
-                    self._marker_rows[marker].delta_power.setText('%0.2f dBm' % state[marker]['dpower'])
                     self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
-                    self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
+                    if state[marker]['dpower'] is None:
+                        self._marker_rows[marker].delta_power.setText('---')
+                        self._marker_rows[marker].diff_power.setText('---')
+                    else:
+                        self._marker_rows[marker].delta_power.setText('%0.2f dBm' % state[marker]['dpower'])
+                        if state[marker]['power'] is None:
+                            self._marker_rows[marker].diff_power.setText('---')
+                        else:
+                            pow_diff = np.abs(state[marker]['dpower'] - state[marker]['power'])
+                            self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
 
             if 'trace' in changed:
                 self._update_label_color(marker)
