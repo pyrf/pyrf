@@ -720,32 +720,32 @@ class SpecAController(QtCore.QObject):
 
         for p in config.options('plot_options'):
             if p in self._plot_options:
-                plot_options[p] = decode_config_type(config.get('plot_options', p),str(type(self._plot_options[p])))
+                plot_options[p] = decode_config_type(config.get('plot_options', p), self._plot_options[p])
 
         self.plot_change.emit(dict(plot_options), plot_options.keys())
 
         for s in config.options('device_options'):
             if s in state:
-                device_options[s] = decode_config_type(config.get('device_options', s), str(type(state[s])))
+                device_options[s] = decode_config_type(config.get('device_options', s), state[s])
             elif s in state['device_settings']:
-                device_options['device_settings'][s] = decode_config_type(config.get('device_options', s), str(type(state['device_settings'][s])))
+                device_options['device_settings'][s] = decode_config_type(config.get('device_options', s), state['device_settings'][s])
             elif s in state['device_settings']['trigger']:
-                device_options['device_settings']['trigger'][s] = decode_config_type(config.get('device_options', s), str(type(state['device_settings']['trigger'][s])))
+                device_options['device_settings']['trigger'][s] = decode_config_type(config.get('device_options', s), state['device_settings']['trigger'][s])
 
         for p in config.options('options'):
-            options[p] = decode_config_type(config.get('options', p), str(type(self._options[p])))
+            options[p] = decode_config_type(config.get('options', p), self._options[p])
 
         for p in config.options('window_options'):
-            window_options[p] = decode_config_type(config.get('window_options', p), str(type(self._window_options[p])))
+            window_options[p] = decode_config_type(config.get('window_options', p), self._window_options[p])
         
         for p in config.options('marker_options'):
             name = int(p.split('-')[0])
             property = p.split('-')[1]
-            self._marker_options[name][property] = decode_config_type(config.get('marker_options', p), str(type(self._marker_options[name][property])))
+            self._marker_options[name][property] = decode_config_type(config.get('marker_options', p), self._marker_options[name][property])
         for p in config.options('trace_options'):
             name = int(p.split('-')[0])
             property = p.split('-')[1]
-            self._trace_options[name][property] = decode_config_type(config.get('trace_options', p), str(type(self._trace_options[name][property])))
+            self._trace_options[name][property] = decode_config_type(config.get('trace_options', p), self._trace_options[name][property])
 
         state = SpecAState(self._state, **device_options)
         self._apply_complete_settings(device_options, False)
