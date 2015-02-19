@@ -195,8 +195,8 @@ class Plot(QtCore.QObject):
                                 amplitude)
                 for m in self.markers:
                     if m.enabled:
-                        m.remove_marker(self)
-                        m.add_marker(self)
+                        m.remove_marker()
+                        m.add_marker()
 
         if 'center' in changed or 'span' in changed:
 

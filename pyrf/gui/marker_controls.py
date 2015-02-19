@@ -463,7 +463,7 @@ class MarkerTable(QtGui.QWidget):
 
             if 'dfreq' in changed or 'dpower' in changed:
                 if state[marker]['delta']:
-                    freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
+                    freq_diff = state[marker]['dfreq'] - state[marker]['freq']
                     self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
                     self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
                     if state[marker]['dpower'] is None:
