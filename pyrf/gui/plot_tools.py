@@ -129,7 +129,7 @@ class triggerControl(pg.ROI):
         else:
             self.currentPen = self.pen
         self.update()
-
+ 
 class Trace(object):
     """
     Class to represent a trace in the plot
@@ -448,6 +448,7 @@ class Marker(object):
         peak_value = np.max(self.ydata[min_index:max_index])
         data_index = np.where(self.ydata==peak_value)[0]
         self.freq_pos = self.xdata[data_index]
+        self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def find_right_peak(self):
         """
@@ -476,6 +477,7 @@ class Marker(object):
             return
         else:
             self.freq_pos = new_pos
+        self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def find_left_peak(self):
         """
@@ -504,7 +506,8 @@ class Marker(object):
             return
         else:
             self.freq_pos = new_pos
-            
+
+        self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
 class DeltaMarker(Marker):
     shape = 't'
