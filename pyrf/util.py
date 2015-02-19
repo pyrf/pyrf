@@ -58,14 +58,9 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     pass_band_center += fshift / full_bw
     start0 = int((pass_band_center - float(usable_bw) / full_bw / 2)
         * points)
-    if rfe_mode != 'ZIF':
-        run0 = int(points * float(usable_bw) / full_bw)
-        usable_bins = [(start0, run0)]
-    else:
-        run0 = int(points * float(usable_bw) / full_bw)
-        start1 = start0 + int(run0 / 2 ) + 2
-        usable_bins = [(start0, start1 - start0 - 3),
-            (start1, run0 - (start1 - start0))]
+
+    run0 = int(points * float(usable_bw) / full_bw)
+    usable_bins = [(start0, run0)]
 
     for i, (start, run) in enumerate(usable_bins):
         if start < 0:
