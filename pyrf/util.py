@@ -128,19 +128,19 @@ def decode_config_type(config_str, str_type):
     returns config_str value based on str_type
     """
 
-    if str_type == 'bool':
+    if isinstance(str_type, bool):
         value = (config_str == 'True')
-    elif str_type == 'int':
+    elif isinstance(str_type, int):
         value = int(config_str)
-    elif  str_type == 'float':
+    elif  isinstance(str_type, float):
         value = float(config_str)
-    elif  str_type == 'long':
+    elif  isinstance(str_type, long):
         value = long(config_str)
-    elif  str_type == 'str':
+    elif  isinstance(str_type, str):
         value = config_str
-    elif str_type == 'list':
+    elif isinstance(str_type, list):
         value = [int(i) for i in (config_str[1:-2].split(','))]
-    elif str_type == 'tuple':
+    elif isinstance(str_type, tuple):
         # for tuple, remove type, then remove brackets, then split by ',' and final convert to float tuple
         try:
             value = tuple([float(i) for i in (config_str[1:-1].split(','))])
