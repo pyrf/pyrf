@@ -32,7 +32,7 @@ ZIF_BITS = 2**13
 CONST_POINTS = 512
 
 LNEG_NUM = -9e10
-TICK_REDRAW_DELAY = 200
+TICK_REDRAW_DELAY = 1000
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
@@ -152,6 +152,7 @@ class Plot(QtCore.QObject):
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
+        self.delayed_tick_update()
 
     def connect_plot_controls(self):
         def new_channel_power():
@@ -198,7 +199,7 @@ class Plot(QtCore.QObject):
                         m.add_marker(self)
 
         if 'center' in changed or 'span' in changed:
-            self.delayed_tick_update()
+
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
             for trace in self.traces:
@@ -214,15 +215,12 @@ class Plot(QtCore.QObject):
             if fstart > float(min(self.channel_power_region.getRegion())) or fstop < float(max(self.channel_power_region.getRegion())):
                 self.move_channel_power(fstart + state.span / 4, fstop - state.span / 4)
 
-        # if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
-            # self.persistence_plot.reset_plot()
+        if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
+            self.persistence_plot.reset_plot()
 
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self.remove_trigger()
-
-        if 'fshift' in changed:
-            self.delayed_tick_update()
 
     def plot_changed(self, state, changed):
 
@@ -252,12 +250,11 @@ class Plot(QtCore.QObject):
             self.spectral_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)) , state['ref_level'], padding = 0)
             self.persistence_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)), state['ref_level'], padding = 0)
             self.spectral_plot.blockSignals(b)
-            self.delayed_tick_update()
 
     def delayed_tick_update(self):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_axis_ticks)
-        self.timer.setSingleShot(True)
+        self.timer.setSingleShot(False)
         self.timer.start(TICK_REDRAW_DELAY)
 
     def update_axis_ticks(self):
@@ -271,6 +268,8 @@ class Plot(QtCore.QObject):
             if t in (ticks[1], ticks[-2]):
                 if t == ticks[1]:
                     tick_num = self.gui_state.center - (self.gui_state.span / 2)
+                    if tick_num < self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]:
+                        tick_num = self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]
                     str = 'Start'
                 else:
                     tick_num = self.gui_state.center + (self.gui_state.span / 2)
