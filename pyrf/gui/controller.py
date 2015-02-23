@@ -465,7 +465,6 @@ class SpecAController(QtCore.QObject):
         # make sure resolution of center are the same as the device's tunning resolution
         center = float(np.round(state.center, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
         state = SpecAState(state, center=center)
-
         if not state.sweeping():
             # force span to correct value for the mode given
             if state.decimation > 1:
@@ -473,6 +472,11 @@ class SpecAController(QtCore.QObject):
                     / state.decimation * self._dut.properties.DECIMATED_USABLE)
             else:
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
+
+            if not state.rfe_mode() in self._dut.properties.TUNABLE_MODES:
+                center = self._dut.properties.MAX_TUNABLE[state.rfe_mode()]
+                state = SpecAState(state, center=center)
+
             state = SpecAState(state, span=span)
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:
@@ -494,7 +498,6 @@ class SpecAController(QtCore.QObject):
 
         if self._recording_file:
             self._dut.inject_recording_state(state.to_json_object())
-
         self.state_change.emit(state, changed)
 
     def apply_device_settings(self, **kwargs):
@@ -737,7 +740,7 @@ class SpecAController(QtCore.QObject):
 
         for p in config.options('window_options'):
             window_options[p] = decode_config_type(config.get('window_options', p), self._window_options[p])
-        
+
         for p in config.options('marker_options'):
             name = int(p.split('-')[0])
             property = p.split('-')[1]

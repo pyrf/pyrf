@@ -69,7 +69,13 @@ class FrequencyControls(QtGui.QWidget):
                 self._fstart_edit.setEnabled(not state.playback)
                 self._fstop_edit.setEnabled(not state.playback)
                 self._bw_edit.setEnabled(not state.playback)
+            elif state.rfe_mode() in self.dut_prop.TUNABLE_MODES:
+                self._fstart_edit.setEnabled(False)
+                self._fstop_edit.setEnabled(False)
+                self._bw_edit.setEnabled(False)
+            
             else:
+                self._freq_edit.setEnabled(False)
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
@@ -78,26 +84,27 @@ class FrequencyControls(QtGui.QWidget):
             min_tunable = float(self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
             max_tunable = float(self.dut_prop.MAX_TUNABLE[state.rfe_mode()])
             tuning_res = float(self.dut_prop.TUNING_RESOLUTION)
+            if state.rfe_mode() in self.dut_prop.TUNABLE_MODES:
+                # XXX tuning_res is used here as an approximation of
+                # "smallest reasonable span"
+                self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
+                self._fstart_edit.quiet_update(
+                    min_tunable / M, (max_tunable - tuning_res) / M)
+                self._fstop_edit.quiet_update(
+                    (min_tunable + tuning_res) / M, max_tunable / M)
+                self._bw_edit.quiet_update(
+                    tuning_res / M, (max_tunable - min_tunable) / M)
 
-            # XXX tuning_res is used here as an approximation of
-            # "smallest reasonable span"
-            self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
-            self._fstart_edit.quiet_update(
-                min_tunable / M, (max_tunable - tuning_res) / M)
-            self._fstop_edit.quiet_update(
-                (min_tunable + tuning_res) / M, max_tunable / M)
-            self._bw_edit.quiet_update(
-                tuning_res / M, (max_tunable - min_tunable) / M)
-
+            else:
+                self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
+                self._fstart_edit.quiet_update(
+                    (min_tunable - state.span) / M, (max_tunable + state.span) / M)
+                self._fstop_edit.quiet_update(
+                    (min_tunable - state.span) / M, (max_tunable + state.span) / M)
+                self._bw_edit.quiet_update(
+                    (min_tunable - state.span) / M, (max_tunable + state.span) / M)
             enable_disable_edit_boxes()
             self._update_rbw_options()
-
-            if min_tunable == max_tunable:
-                self._freq_edit.setEnabled(False)
-                self._fstep_box.setEnabled(False)
-            else:
-                self._freq_edit.setEnabled(True)
-                self._fstep_box.setEnabled(True)
 
         if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
@@ -244,9 +251,10 @@ class FrequencyControls(QtGui.QWidget):
         span = float(self.gui_state.span / M)
         self._freq_edit.quiet_update(value=center)
         self._bw_edit.quiet_update(value=span)
+        print center - span / 2, center + span / 2
         if not self.start_stop_changed:
-            self._fstop_edit.quiet_update(value=center + span / 2)
-            self._fstart_edit.quiet_update(value=center - span / 2)
+            self._fstop_edit.quiet_update(value= center + span / 2)
+            self._fstart_edit.quiet_update(value= center - span / 2)
         self._updating_values = False
         self.start_stop_changed = False
 
