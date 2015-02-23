@@ -251,7 +251,6 @@ class FrequencyControls(QtGui.QWidget):
         span = float(self.gui_state.span / M)
         self._freq_edit.quiet_update(value=center)
         self._bw_edit.quiet_update(value=span)
-        print center - span / 2, center + span / 2
         if not self.start_stop_changed:
             self._fstop_edit.quiet_update(value= center + span / 2)
             self._fstart_edit.quiet_update(value= center - span / 2)
