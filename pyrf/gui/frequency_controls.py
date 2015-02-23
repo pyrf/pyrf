@@ -98,7 +98,7 @@ class FrequencyControls(QtGui.QWidget):
             else:
                 self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
                 self._fstart_edit.quiet_update(
-                    (min_tunable - state.span) / M, (max_tunable + state.span) / M)
+                    tuning_res / M, (max_tunable + state.span) / M)
                 self._fstop_edit.quiet_update(
                     (min_tunable - state.span) / M, (max_tunable + state.span) / M)
                 self._bw_edit.quiet_update(
@@ -247,10 +247,14 @@ class FrequencyControls(QtGui.QWidget):
         """
         update the spin boxes from self.gui_state
         """
-        center = float(self.gui_state.center / M)
+        if self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
+            center = float(self.gui_state.center / M)
+        else:
+            center = self.dut_prop.MAX_TUNABLE[self.gui_state.rfe_mode()] / M
         span = float(self.gui_state.span / M)
         self._freq_edit.quiet_update(value=center)
         self._bw_edit.quiet_update(value=span)
+        
         if not self.start_stop_changed:
             self._fstop_edit.quiet_update(value= center + span / 2)
             self._fstart_edit.quiet_update(value= center - span / 2)

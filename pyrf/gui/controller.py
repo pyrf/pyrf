@@ -473,10 +473,6 @@ class SpecAController(QtCore.QObject):
             else:
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
 
-            if not state.rfe_mode() in self._dut.properties.TUNABLE_MODES:
-                center = self._dut.properties.MAX_TUNABLE[state.rfe_mode()]
-                state = SpecAState(state, center=center)
-
             state = SpecAState(state, span=span)
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:

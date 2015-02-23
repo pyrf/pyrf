@@ -271,9 +271,14 @@ class Plot(QtCore.QObject):
                     tick_num = self.gui_state.center - (self.gui_state.span / 2)
                     if tick_num < self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()] and self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
                         tick_num = self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]
+                    else:
+                        tick_num = max(fstart, self.dut_prop.TUNING_RESOLUTION)
                     str = 'Start'
                 else:
-                    tick_num = self.gui_state.center + (self.gui_state.span / 2)
+                    if self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
+                        tick_num = self.gui_state.center + (self.gui_state.span / 2)
+                    else:
+                        tick_num = self.gui_state.span
                     str = 'Stop'
                 if tick_num > 1e9:
                     units = 'GHz'
