@@ -9,8 +9,8 @@ plotState = {'cont_cap_mode': True,
               'horizontal_cursor': False,
               'horizontal_cursor_value': -100,
               'mouse_tune': True,
-              'ref_level': 0,
-              'db_div': 15}
+              'ref_level': 0.0,
+              'db_div': 15.0}
 
 windowOptions = {'frequency_control': True,
               'measurement_control': True,
