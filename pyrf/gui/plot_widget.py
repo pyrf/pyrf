@@ -72,9 +72,10 @@ class Plot(QtCore.QObject):
                 # HDR mode has a tuning resolution almost the same as its usabl
                 if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
                     return
-            if not hasattr(ranges, '__getitem__'):
-                return  # we're not intereted in QRectF updates
-            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
+                if not hasattr(ranges, '__getitem__'):
+                    return  # we're not intereted in QRectF updates
+                self.user_xrange_change.emit(max(ranges[0][0], self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]),
+                                            min(ranges[0][1], self.dut_prop.MAX_TUNABLE[self.gui_state.rfe_mode()]))
 
         self.spectral_plot.sigRangeChanged.connect(widget_range_changed)
 
