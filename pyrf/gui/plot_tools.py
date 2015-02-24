@@ -447,7 +447,7 @@ class Marker(object):
 
         peak_value = np.max(self.ydata[min_index:max_index])
         data_index = np.where(self.ydata==peak_value)[0]
-        self.freq_pos = self.xdata[data_index]
+        self.freq_pos = self.xdata[data_index][0]
         self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def find_right_peak(self):
@@ -476,7 +476,7 @@ class Marker(object):
         if new_pos > max(self.xdata):
             return
         else:
-            self.freq_pos = new_pos
+            self.freq_pos = new_pos[0]
         self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def find_left_peak(self):
@@ -501,7 +501,7 @@ class Marker(object):
             return
 
         data_index = np.where(self.ydata == max(self.ydata[min_index:max_index]))[0]
-        new_pos = self.xdata[data_index]
+        new_pos = self.xdata[data_index][0]
         if new_pos > max(self.xdata):
             return
         else:
