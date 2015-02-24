@@ -177,9 +177,14 @@ class FrequencyControls(QtGui.QWidget):
         self._freq_edit = freq_edit
         def freq_change():
             self.start_stop_changed = False
-            self.controller.apply_settings(center=freq_edit.value() * M)
+            center = freq_edit.value() * M
+            min_tunable = self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]
+            start_freq = center - (self.gui_state.span / 2)
+            if start_freq < min_tunable:
+                center = min_tunable + (self.gui_state.span / 2)
+            self.controller.apply_settings(center=center)
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.controller.apply_device_settings(freq = freq_edit.value() * M)
+                self.controller.apply_device_settings(freq =center)
         freq_edit.editingFinished.connect(freq_change)
         return cfreq, freq_edit
 
