@@ -623,7 +623,6 @@ class MainPanel(QtGui.QWidget):
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
 
-        self.controller.apply_plot_options(sweep_rate =  time.time() - self.start_time)
         self.start_time = time.time()
 
     def options_changed(self, options, changed):

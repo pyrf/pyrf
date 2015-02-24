@@ -13,16 +13,31 @@ class QComboBoxPlayback(QtGui.QComboBox):
     """
     QComboBox with playback features
     """
-    def quiet_update(self, items, select_item=None):
+    def quiet_update(self, items=None, select_item=None):
         """
         Update all the items and select a new item in the combo box
         without sending any signals
 
-        :param items: a list of strings to added to the combo box
+        :param items: a list of strings to added to the combo box, if None,
+                then attempt to update the current index to the select_item
         :param select_item: the string to select, if None then attempt
             to select the same string currently selected in the new list
             of items, if not present select the first item.
         """
+        # if nothing is passed return
+        if items is None and select_item is None:
+            return
+        
+        # if no new items are passed, select the required item (select_item)
+        if items is None:
+            b = self.blockSignals(True)
+            for i in range(self.count()):
+                if self.itemText(i) == select_item:
+                    self.setCurrentIndex(i)
+                    self.blockSignals(b)
+                    return
+
+        # if new items are passed
         if select_item is None:
             select_item = self.currentText()
         b = self.blockSignals(True)

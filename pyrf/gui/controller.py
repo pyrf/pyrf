@@ -190,7 +190,6 @@ class SpecAController(QtCore.QObject):
             return
         self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
-        # device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
         self._dut.pll_reference(device_set['pll_reference'])
@@ -566,10 +565,6 @@ class SpecAController(QtCore.QObject):
         changes.remove('center')
         for m in self._marker_options:
             self.marker_change.emit(m, dict(self._marker_options), changes)
-
-        # apply plot state
-        self.plot_change.emit(dict(self._plot_options),
-            self._plot_options.keys())
 
         # apply window state
         self.window_change.emit(dict(self._window_options),

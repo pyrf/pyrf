@@ -160,6 +160,8 @@ class DeviceControls(QtGui.QWidget):
         self._build_layout(self.dut_prop)
 
     def state_changed(self, state, changed):
+        if not hasattr(self, 'gui_state'):
+            self.gui_state = state
 
         if state.playback:
             # for playback simply update everything on every state change

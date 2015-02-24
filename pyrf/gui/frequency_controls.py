@@ -106,6 +106,9 @@ class FrequencyControls(QtGui.QWidget):
             enable_disable_edit_boxes()
             self._update_rbw_options()
 
+        if 'rbw' in changed:
+            self._update_rbw_selected()
+
         if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
 
@@ -313,3 +316,22 @@ class FrequencyControls(QtGui.QWidget):
                 ["%0.2f " % (float(p) / div) + unit for p in self._rbw_values])
 
             self._rbw_box.setCurrentIndex(self.dut_prop.DEFAULT_RBW_INDEX)
+
+    def _update_rbw_selected(self):
+        """
+        update the selected RBW without changing items that are currently populated
+        """
+        if hasattr(self, 'gui_state'):
+            rfe_mode = self.gui_state.rfe_mode()
+            speca_mode = self.gui_state.mode
+
+            self._rbw_values = self.dut_prop.RBW_VALUES[rfe_mode]
+            if rfe_mode == 'HDR':
+                unit = 'Hz'
+                div = 1
+            else:
+                unit = 'kHz'
+                div = 1000
+
+            self._rbw_box.quiet_update(select_item = 
+                "%0.2f " % (float(self.gui_state.rbw) / div) + unit)

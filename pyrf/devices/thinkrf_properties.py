@@ -187,7 +187,7 @@ class WSA5000_220Properties(object):
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450 * M,
-        'rbw': 122070,
+        'rbw': 122070.0,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
         'fshift': 0,
