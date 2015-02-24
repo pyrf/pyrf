@@ -16,6 +16,10 @@ UNIT_MAGNITUDE = {'GHz': 1e9,
                   'MHz': 1e6,
                   'kHz': 1e3,
                   'Hz': 1}
+UNIT_DECIMAL = {'GHz': 11,
+                  'MHz': 8,
+                  'kHz': 5,
+                  'Hz': 2}
 
 class MarkerWidget(QtGui.QWidget):
     def __init__(self, controller, name):
@@ -224,6 +228,12 @@ class MarkerWidget(QtGui.QWidget):
             if 'unit' in changed:
                 fstart = self._gui_state.center - (self._gui_state.span / 2)
                 fstop = self._gui_state.center + (self._gui_state.span / 2)
+
+                # update number of decimal places
+                self.freq.setDecimals(UNIT_DECIMAL[state[marker]['unit']])
+                self.dfreq.setDecimals(UNIT_DECIMAL[state[marker]['unit']])
+
+                # update the range
                 self.freq.setRange(fstart / factor, fstop / factor)
                 self.dfreq.setRange(-1 * self._gui_state.span / factor, self._gui_state.span / factor)
                 self.unit.quiet_update(UNITS, state[marker]['unit'])
