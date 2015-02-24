@@ -215,7 +215,7 @@ class MarkerWidget(QtGui.QWidget):
             factor = UNIT_MAGNITUDE[state[marker]['unit']]
             if 'enabled' in changed or 'delta' in changed:
                 self._build_layout()
-                
+
             if 'freq' in changed:
                 if state[marker]['freq'] is not None:
                     self.freq.quiet_update(value = (state[marker]['freq'] / factor))

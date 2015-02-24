@@ -69,11 +69,14 @@ class FrequencyControls(QtGui.QWidget):
                 self._fstart_edit.setEnabled(not state.playback)
                 self._fstop_edit.setEnabled(not state.playback)
                 self._bw_edit.setEnabled(not state.playback)
+                self._freq_edit.setEnabled(not state.playback)
+
             elif state.rfe_mode() in self.dut_prop.TUNABLE_MODES:
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
-            
+                self._freq_edit.setEnabled(True)
+
             else:
                 self._freq_edit.setEnabled(False)
                 self._fstart_edit.setEnabled(False)
