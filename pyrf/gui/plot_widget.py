@@ -268,11 +268,10 @@ class Plot(QtCore.QObject):
         for t in ticks:
             if t in (ticks[1], ticks[-2]):
                 if t == ticks[1]:
-                    tick_num = self.gui_state.center - (self.gui_state.span / 2)
-                    if tick_num < self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()] and self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
-                        tick_num = self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]
+                    if  self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
+                        tick_num = self.gui_state.center - (self.gui_state.span / 2)
                     else:
-                        tick_num = max(fstart, self.dut_prop.TUNING_RESOLUTION)
+                        tick_num = 0
                     str = 'Start'
                 else:
                     if self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
