@@ -3,14 +3,28 @@ from pyrf.gui import colors
 from pyrf.gui import labels
 import util
 from pyrf.gui import colors, labels
+PERSISTENCE_GRADIENT = [(0.00, ( 0, 0, 0, 255)),
+                                  (0.15, (  0,   0, 255, 255)),
+                                  (0.33, (  0, 255, 255, 255)),
+                                  (0.66, (255, 255,   0, 255)),
+                                  (1.00, (255,   0,   0, 255))]
 
+WATERFALL_GRADIENT = [(0, ( 0, 0, 0, 255)),
+                                  (0.3, (  0,   0, 255, 255)),
+                                  (0.55, (  0, 255, 255, 255)),
+                                  (0.66, (255, 255,   0, 255)),
+                                  (0.75, (255,   0,   0, 255))]
+                        
 plotState = {'cont_cap_mode': True,
               'mouse_tune': True,
               'horizontal_cursor': False,
               'horizontal_cursor_value': -100,
               'mouse_tune': True,
               'ref_level': 0.0,
-              'db_div': 15.0}
+              'db_div': 15.0,
+              'persist_ticks': PERSISTENCE_GRADIENT,
+              'waterfall_ticks': WATERFALL_GRADIENT
+              }
 
 windowOptions = {'frequency_control': True,
               'measurement_control': True,

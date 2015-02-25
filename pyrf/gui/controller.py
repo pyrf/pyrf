@@ -566,6 +566,10 @@ class SpecAController(QtCore.QObject):
         for m in self._marker_options:
             self.marker_change.emit(m, dict(self._marker_options), changes)
 
+        # apply plot state
+        self.plot_change.emit(dict(self._plot_options),
+            self._plot_options.keys())
+
         # apply window state
         self.window_change.emit(dict(self._window_options),
             self._window_options.keys())
@@ -597,7 +601,6 @@ class SpecAController(QtCore.QObject):
     def apply_marker_options(self, marker, changed, value):
         """
         Apply marker changes and signal the change
-
         :param marker: marker affected by change
         :param changed: a list of the changes which occurred
         :param value: a list of values corresponding to the changes
@@ -745,3 +748,7 @@ class SpecAController(QtCore.QObject):
         self._apply_complete_settings(device_options, False)
         self.apply_options(**options)
         self.apply_window_options(**window_options)
+        
+        # add config to inform plot options that a config has been laoded
+        plot_options['config'] = True
+        self.apply_plot_options(**plot_options)

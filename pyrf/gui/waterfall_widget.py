@@ -21,21 +21,6 @@ pg.setConfigOption('useWeave', False)
 DLOG_ENABLED = False
 DLOG_start_time = None
 
-#inject a familiar color scheme into pyqtgraph...
-# - this makes it available in the stock gradient editor schemes.
-# - we also want it at the top of the gradient editors... there's no stock
-#    way in python to insert at the top of an ordereddict, so we rebuild it.
-newGradients = collections.OrderedDict()
-newGradients["waterfall"] = {'ticks': [(0, ( 0, 0, 0, 255)),
-                                  (0.3, (  0,   0, 255, 255)),
-                                  (0.55, (  0, 255, 255, 255)),
-                                  (0.66, (255, 255,   0, 255)),
-                                  (0.75, (255,   0,   0, 255))],
-                        'mode': 'rgb'}
-for k, v in pg.graphicsItems.GradientEditorItem.Gradients.iteritems():
-    newGradients[k] = v
-pg.graphicsItems.GradientEditorItem.Gradients = newGradients
-
 def dlog(msg):
     """Simple debug logging function."""
     if DLOG_ENABLED:
@@ -886,6 +871,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
     sigMouseClicked = QtCore.Signal(float, float, object, object) #(xval, yval, hslice, vslice)
     
     def __init__(self,
+                 controller,
                  data_model,
                  parent = None, #Qt parent
                  scale_limits = None, #(min_val, max_val) or None (autoscale to data)
@@ -913,7 +899,9 @@ class WaterfallPlotWidget(QtGui.QWidget):
                 msg = ("If scale_limits is specified, it must be a tuple like "
                        "(black_level, white_level)")
                 raise ValueError(msg)
-        
+        self.controller = controller
+        controller.plot_change.connect(self.plot_changed)
+
         self._scale_limits = scale_limits
         self._show_ge = show_gradient_editor
         self._vertical_stretch = vertical_stretch
@@ -936,11 +924,10 @@ class WaterfallPlotWidget(QtGui.QWidget):
         )
         
         if self._show_ge:
-            self._gradient_editor = pg.GradientWidget(parent = self,
+            self.gradient_editor = pg.GradientWidget(parent = self,
                                                       orientation = "left")
-            self._gradient_editor.setStyleSheet('background-color: black')
-            self._gradient_editor.loadPreset('waterfall')
-        
+            self.gradient_editor.setStyleSheet('background-color: black')
+
         #configure the widgets...
         #self._plot_widget.addItem(self._wf_img)
         #self._wf_img.setLookupTable(self._get_lut)
@@ -949,7 +936,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         hbox = QtGui.QHBoxLayout(self)
         #hbox.addWidget(self._plot_widget)
         if self._show_ge:
-            hbox.addWidget(self._gradient_editor)
+            hbox.addWidget(self.gradient_editor)
         hbox.addWidget(self._wf_img)
         
         #Configure the background image renderer (but don't start it yet)...
@@ -960,7 +947,27 @@ class WaterfallPlotWidget(QtGui.QWidget):
                                                  max_frame_rate_fps)
         
         #connect signals...
+        self.gradient_initalized = False
         self._connect_signals()
+
+    def plot_changed(self, state, changed):
+
+        if 'waterfall_ticks' in changed:
+
+            if 'config' in changed or not self.gradient_initalized:
+                b = False
+                self.gradient_initalized = True
+            else:
+                b = self.gradient_editor.blockSignals(True)
+            grad = {'ticks': state['waterfall_ticks'], 'mode': 'rgb'}
+            self.gradient_editor.addPreset( 'config', grad)
+            self.gradient_editor.loadPreset( 'config')
+            # if not hasattr(self, 'plot_state'):
+                # lut = self.gradient_editor.getLookupTable(self._LUT_PTS)
+                # self._renderer.setLookupTable(lut)
+            self.gradient_editor.blockSignals(b)
+
+        self.plot_state = state
         
     def onImageRendered(self):
         """This stub only exists to enable convenient synchronization with
@@ -991,9 +998,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         #Make any adjustments (eg: redraw) needed when the color lookup table
         #changes...
         if self._show_ge:
-            self._gradient_editor.sigGradientChanged.connect(
-                self._onGradientChange
-            )
+            self.gradient_editor.sigGradientChangeFinished.connect(self._onGradientChange)
         
         #Hook up mouse movement handling...
         self._wf_img.sigMouseMoved.connect(self._onImageMouseMove)
@@ -1069,7 +1074,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         
 
     def _get_lut(self):
-        lut = self._gradient_editor.getLookupTable(self._LUT_PTS)
+        lut = self.gradient_editor.getLookupTable(self._LUT_PTS)
         self._latest_lut = lut
         return lut
     
@@ -1081,9 +1086,9 @@ class WaterfallPlotWidget(QtGui.QWidget):
         """
         self._renderer.setLookupTable(lut)
         
-    def _onGradientChange(self, gradient_editor_item):
-        assert isinstance(gradient_editor_item, pg.GradientEditorItem)
-        lut = gradient_editor_item.getLookupTable(self._LUT_PTS)
+    def _onGradientChange(self):
+        self.controller.apply_plot_options(waterfall_ticks = self.gradient_editor.saveState()['ticks'])
+        lut = self.gradient_editor.getLookupTable(self._LUT_PTS)
         self._renderer.setLookupTable(lut)
     
     def _onNewDataRow(self, data_row_tuple):

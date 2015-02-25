@@ -143,7 +143,6 @@ class AmplitudeControls(QtGui.QWidget):
 
     def plot_changed(self, state, changed):
         self.plot_state = state
-
         if 'ref_level' in changed:
             self._max_level.quiet_update(value = state['ref_level'])
         if 'db_div' in changed:

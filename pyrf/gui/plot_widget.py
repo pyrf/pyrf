@@ -3,6 +3,7 @@ import platform
 import pyqtgraph as pg
 import numpy as np
 from PySide import QtCore
+import collections
 
 from pyrf.gui import colors
 from pyrf.gui import labels
@@ -132,7 +133,7 @@ class Plot(QtCore.QObject):
         self.waterfall_data = WaterfallModel(max_len=600)
 
         # initialize waterfall window
-        self.waterfall_window = ThreadedWaterfallPlotWidget(
+        self.waterfall_window = ThreadedWaterfallPlotWidget(self.controller,
             self.waterfall_data,
             scale_limits=(PLOT_YMIN, PLOT_YMAX),
             max_frame_rate_fps=30,
@@ -140,7 +141,7 @@ class Plot(QtCore.QObject):
             )
 
          # initialize persistence window
-        self.persistence_plot = PersistencePlotWidget(
+        self.persistence_plot = PersistencePlotWidget(controller,
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
 
@@ -225,7 +226,6 @@ class Plot(QtCore.QObject):
 
     def plot_changed(self, state, changed):
 
-        self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
                 self.spectral_plot.addItem(self.cursor_line)
@@ -251,6 +251,16 @@ class Plot(QtCore.QObject):
             self.spectral_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)) , state['ref_level'], padding = 0)
             self.persistence_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)), state['ref_level'], padding = 0)
             self.spectral_plot.blockSignals(b)
+
+        if 'persist_ticks' in changed:
+            if not 'config' in changed:
+                b = self.persistence_plot.gradient_editor.blockSignals(True)
+            else:
+                b = False
+            grad = {'ticks': state['persist_ticks'], 'mode': 'rgb'}
+            self.persistence_plot.gradient_editor.addPreset( 'config', grad)
+            self.persistence_plot.gradient_editor.loadPreset( 'config')
+            self.persistence_plot.gradient_editor.blockSignals(b)
 
     def delayed_tick_update(self):
         self.timer = QtCore.QTimer()
