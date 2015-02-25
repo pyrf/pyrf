@@ -293,7 +293,15 @@ class MarkerControls(QtGui.QWidget):
         for m in MARKERS:
             self._marker_widgets[m] = MarkerWidget(self.controller, m)
             self._tab.addTab(self._marker_widgets[m], str(m + 1))
+        def current_tab_changed():
+            tab = self._tab.currentIndex()
+            for m in self._marker_state:
+                if m == tab:
+                    self.controller.apply_marker_options(m, ['tab'], [True])
+                else:
+                    self.controller.apply_marker_options(m, ['tab'], [False])
 
+        self._tab.currentChanged.connect(current_tab_changed)
         grid = self.layout()
         grid.addWidget(self._tab, 0, 0, 1, 1)
         self.resize_widget()
@@ -493,9 +501,6 @@ class MarkerTable(QtGui.QWidget):
             if 'dtrace' in changed:
                 self._update_label_color(marker)
 
-            if 'hovering' in changed:
-                self._update_label_color(marker)
-
             if 'unit' in changed:
                 self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
                 if state[marker]['delta']:
@@ -511,24 +516,27 @@ class MarkerTable(QtGui.QWidget):
                 self.setVisible(True)
 
     def _update_label_color(self, marker):
-            if self._marker_state[marker]['hovering']:
-                color = self._trace_state[self._marker_state[marker]['trace']]['color']
-                dcolor = self._trace_state[self._marker_state[marker]['dtrace']]['color']
-            else:
-                color = colors.WHITE_NUM
-                dcolor = colors.WHITE_NUM
+            color = self._trace_state[self._marker_state[marker]['trace']]['color']
+            dcolor = self._trace_state[self._marker_state[marker]['dtrace']]['color']
+            diff_color = colors.WHITE_NUM
+
             color_str = 'rgb(%s, %s, %s)' % (color[0], color[1], color[2])
             dcolor_str = 'rgb(%s, %s, %s)' % (dcolor[0], dcolor[1], dcolor[2])
+            diff_color_str = 'rgb(%s, %s, %s)' % (diff_color[0], diff_color[1], diff_color[2])
             self._marker_rows[marker].name.setStyleSheet('color: %s' % color_str)
             self._marker_rows[marker].freq.setStyleSheet('color: %s' % color_str)
             self._marker_rows[marker].power.setStyleSheet('color: %s' % color_str)
-            self._marker_rows[marker].diff_freq.setStyleSheet('color: %s' % color_str)
-            self._marker_rows[marker].diff_power.setStyleSheet('color: %s' % color_str)
+            self._marker_rows[marker].diff_freq.setStyleSheet('color: %s' % diff_color_str)
+            self._marker_rows[marker].diff_power.setStyleSheet('color: %s' % diff_color_str)
             self._marker_rows[marker].delta_freq.setStyleSheet('color: %s' % dcolor_str)
             self._marker_rows[marker].delta_power.setStyleSheet('color: %s' % dcolor_str)
 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
+        if 'color' in changed:
+            for m in self._marker_state:
+                if self._marker_state[m]['trace'] == trace:
+                    self._update_label_color(m)
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Maximum)

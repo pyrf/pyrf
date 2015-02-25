@@ -358,8 +358,8 @@ class Marker(object):
                     self.disable()
             if 'freq' in changed:
                     self.freq_pos = state[marker]['freq']
-            if 'hovering' in changed:
-                if state[marker]['hovering']:
+            if 'hovering' in changed or 'tab' in changed:
+                if state[marker]['hovering'] or state[marker]['tab']:
                     self.draw_color = colors.MARKER_HOVER
                 else:
                     self.draw_color = self.color
@@ -369,7 +369,7 @@ class Marker(object):
                 self.find_right_peak()
             if 'peak_left' in changed:
                 self.find_left_peak()
-    
+
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
 
@@ -405,11 +405,13 @@ class Marker(object):
         self.xdata = xdata
         self.ydata = ydata
 
-        if not self.coursor_dragged:
-            self.cursor_line.setValue(self.freq_pos)
-            brush_color = self.draw_color + (20,)
-        else:
+        if  self.coursor_dragged or  self._marker_state[self.name]['tab']:
             brush_color = self.draw_color
+            self.cursor_line.setValue(self.freq_pos)
+        else:
+
+            brush_color = self.draw_color + (20,)
+
         
         self.marker_plot.addPoints(x = [self.freq_pos],
                                    y = [self.ypos + scale],
@@ -420,9 +422,10 @@ class Marker(object):
             text = '*' + str(self.name + 1)
         else:
             text = str(self.name + 1)
-        t = '<font size="12" font face="verdana" color="white">%s</font>' % text
+        color_txt = 'rgb%s' % str(self.draw_color)
+        t = '<font size="12" font face="verdana" bgcolor="%s">%s</font>' % (color_txt, text)
         self.text_box.setHtml(t)
-        y_pos = self.ypos + (0.05 * height)
+        y_pos = self.ypos + (0.1 * height)
         self.text_box.setPos(self.freq_pos, y_pos)
         self.update_state_power()
         
@@ -531,10 +534,8 @@ class DeltaMarker(Marker):
             if 'dfreq' in changed:
                 if not self.coursor_dragged:
                     self.freq_pos = state[marker]['dfreq']
-
-            if 'hovering' in changed:
-
-                if state[marker]['hovering']:
+            if 'hovering' in changed or 'tab' in changed:
+                if state[marker]['hovering'] or state[marker]['tab']:
                     self.draw_color = colors.MARKER_HOVER
                 else:
                     self.draw_color = self.color

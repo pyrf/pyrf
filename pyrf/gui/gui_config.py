@@ -43,6 +43,7 @@ for m in labels.MARKERS:
                           'dfreq': 2450000000.0,
                           'dpower': 0.0,
                           'hovering': False,
+                          'tab': True,
                           'center': None,
                           'peak': None,
                           'peak_left': None,
