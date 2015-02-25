@@ -225,7 +225,7 @@ class Plot(QtCore.QObject):
                 self.remove_trigger()
 
     def plot_changed(self, state, changed):
-
+        self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
                 self.spectral_plot.addItem(self.cursor_line)

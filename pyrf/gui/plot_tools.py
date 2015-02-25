@@ -295,7 +295,9 @@ class Marker(object):
         self.cursor_line.setHoverPen(pg.mkPen((0,0,0, 0), width = 40))
 
         self.cursor_line.sigDragged.connect(self.dragged)
+        
         self.text_box = pg.TextItem(text = '12312444')
+        # self.text_box.setFont("font-size: 30px;")
         def hovering():
             self.coursor_dragged = True
             self.draw_color = colors.MARKER_HOVER
@@ -418,7 +420,8 @@ class Marker(object):
             text = '*' + str(self.name + 1)
         else:
             text = str(self.name + 1)
-        self.text_box.setText(text)
+        t = '<font size="12" font face="verdana" color="white">%s</font>' % text
+        self.text_box.setHtml(t)
         y_pos = self.ypos + (0.05 * height)
         self.text_box.setPos(self.freq_pos, y_pos)
         self.update_state_power()

@@ -484,7 +484,7 @@ class MarkerTable(QtGui.QWidget):
                         if state[marker]['power'] is None:
                             self._marker_rows[marker].diff_power.setText('---')
                         else:
-                            pow_diff = np.abs(state[marker]['dpower'] - state[marker]['power'])
+                            pow_diff = state[marker]['dpower'] - state[marker]['power']
                             self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
 
             if 'trace' in changed:
