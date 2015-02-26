@@ -472,8 +472,12 @@ class MarkerTable(QtGui.QWidget):
             unit = state[marker]['unit']
             factor = UNIT_MAGNITUDE[unit]
 
+            decimals = "{0:.%df}" % UNIT_DECIMAL[state[marker]['unit']]
+            freq = decimals.format(state[marker]['freq'] / factor)
+            dfreq = decimals.format(state[marker]['dfreq'] / factor)
+            freq_diff = decimals.format(state[marker]['dfreq'] - state[marker]['freq'] / factor)
             if 'freq' in changed or 'power' in changed:
-                self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
+                self._marker_rows[marker].freq.setText('%s %s' % (freq, unit))
                 if state[marker]['power'] is None:
                     self._marker_rows[marker].power.setText('---')
                 else:
@@ -481,9 +485,8 @@ class MarkerTable(QtGui.QWidget):
 
             if 'dfreq' in changed or 'dpower' in changed:
                 if state[marker]['delta']:
-                    freq_diff = state[marker]['dfreq'] - state[marker]['freq']
-                    self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
-                    self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
+                    self._marker_rows[marker].delta_freq.setText('%s %s' % (dfreq, unit))
+                    self._marker_rows[marker].diff_freq.setText('%s %s' % (freq_diff, unit))
                     if state[marker]['dpower'] is None:
                         self._marker_rows[marker].delta_power.setText('---')
                         self._marker_rows[marker].diff_power.setText('---')
@@ -502,11 +505,10 @@ class MarkerTable(QtGui.QWidget):
                 self._update_label_color(marker)
 
             if 'unit' in changed:
-                self._marker_rows[marker].freq.setText('%0.2f %s' % (state[marker]['freq'] / factor, unit))
+                self._marker_rows[marker].freq.setText('%s %s' % (freq, unit))
                 if state[marker]['delta']:
-                    freq_diff = np.abs(state[marker]['dfreq'] - state[marker]['freq'])
-                    self._marker_rows[marker].delta_freq.setText('%0.2f %s' % (state[marker]['dfreq'] / factor, unit))
-                    self._marker_rows[marker].diff_freq.setText('%0.2f %s' % (freq_diff / factor, unit))
+                    self._marker_rows[marker].delta_freq.setText('%s %s' % (dfreq, unit))
+                    self._marker_rows[marker].diff_freq.setText('%s %s' % (freq_diff, unit))
 
     def state_changed(self, state, changed):
         if 'device_settings.iq_output_path' in changed:
