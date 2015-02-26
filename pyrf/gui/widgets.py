@@ -1,13 +1,13 @@
 """
 General-purpose widgets
 """
+from collections import OrderedDict
 from PySide import QtGui, QtCore
 import pyqtgraph as pg
 from pyrf.gui import colors
 from pyrf.gui import fonts
 from pyrf.units import M, G
-from pyrf.gui.persistence_plot_widget import (PersistencePlotWidget,
-                                              decay_fn_EXPONENTIAL)
+
 
 class QComboBoxPlayback(QtGui.QComboBox):
     """
@@ -237,3 +237,49 @@ class PlotWindowWidget(QtGui.QWidget):
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
+
+GRADIENTS = OrderedDict([
+    ('thermal', {'ticks': [(0.3333, (185, 0, 0, 255)), (0.6666, (255, 220, 0, 255)), (1, (255, 255, 255, 255)), (0, (0, 0, 0, 255))], 'mode': 'rgb'}),
+    ('flame', {'ticks': [(0.2, (7, 0, 220, 255)), (0.5, (236, 0, 134, 255)), (0.8, (246, 246, 0, 255)), (1.0, (255, 255, 255, 255)), (0.0, (0, 0, 0, 255))], 'mode': 'rgb'}),
+    ('yellowy', {'ticks': [(0.0, (0, 0, 0, 255)), (0.2328863796753704, (32, 0, 129, 255)), (0.8362738179251941, (255, 255, 0, 255)), (0.5257586450247, (115, 15, 255, 255)), (1.0, (255, 255, 255, 255))], 'mode': 'rgb'} ),
+    ('bipolar', {'ticks': [(0.0, (0, 255, 255, 255)), (1.0, (255, 255, 0, 255)), (0.5, (0, 0, 0, 255)), (0.25, (0, 0, 255, 255)), (0.75, (255, 0, 0, 255))], 'mode': 'rgb'}),
+    ('spectrum', {'ticks': [(1.0, (255, 0, 255, 255)), (0.0, (255, 0, 0, 255))], 'mode': 'hsv'}),
+    ('cyclic', {'ticks': [(0.0, (255, 0, 4, 255)), (1.0, (255, 0, 0, 255))], 'mode': 'hsv'}),
+    ('greyclip', {'ticks': [(0.0, (0, 0, 0, 255)), (0.99, (255, 255, 255, 255)), (1.0, (255, 0, 0, 255))], 'mode': 'rgb'}),
+    ('grey', {'ticks': [(0.0, (0, 0, 0, 255)), (1.0, (255, 255, 255, 255))], 'mode': 'rgb'}),
+])
+
+class PlotGradientWidget(pg.GradientWidget):
+    """
+    A pg gradient widget with the ability to load/add preset gradients
+    """
+
+    def __init__(self, parent,orientation):
+        super(PlotGradientWidget, self).__init__()
+        self.gradients = GRADIENTS
+        self.orientation = orientation
+        self.setOrientation(orientation)
+
+    def loadPreset(self, name):
+        """
+        Load a predefined gradient.
+
+        """
+        # TODO: provide image with names of defined gradients
+        self.restoreState(self.gradients[name])
+
+    def addPreset(self, name, gradient):
+        """
+        Add a gradient to the list of predefined gradients.
+
+        ===============  =================================================================================
+        **Arguments:**
+        name            Name of the new preset gradient
+        gradient        Dict containing new gradient
+                        Keys must include:
+                            - 'mode': hsv or rgb
+                            - 'ticks': a list of tuples (pos, (r,g,b,a))
+
+        ===============  =================================================================================
+        """
+        self.gradients[name] = gradient

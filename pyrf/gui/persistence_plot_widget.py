@@ -11,6 +11,7 @@ import pyqtgraph as pg
 from waterfall_widget import WaterfallModel
 
 from pyrf.gui import colors
+from pyrf.gui.widgets import PlotGradientWidget
 
 DECAY_TYPE_LINEAR_WITH_DATA = "linear_data_decay"
 
@@ -129,7 +130,7 @@ class PersistencePlotWidget(pg.PlotWidget):
         #We will always have a gradient editor for providing our LUT, but it
         #may not be visible. It can be referenced for layout, though... just grab
         #it after initializing the PersistencePlotWidget.
-        self.gradient_editor = pg.GradientWidget(parent = self,
+        self.gradient_editor = PlotGradientWidget(parent = self,
                                                  orientation = "left")
         self.gradient_editor.setStyleSheet('background-color: black')
 

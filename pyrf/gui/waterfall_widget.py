@@ -11,7 +11,7 @@ from PySide import QtGui, QtCore
 import pyqtgraph as pg
 import pyqtgraph.functions as pgfuncs
 import numpy as np
-
+from pyrf.gui.widgets import PlotGradientWidget
 FRAME_WAIT_TIMEOUT_s = 0.2
 CROSSHAIR_FPS = 10.0
 
@@ -924,7 +924,7 @@ class WaterfallPlotWidget(QtGui.QWidget):
         )
         
         if self._show_ge:
-            self.gradient_editor = pg.GradientWidget(parent = self,
+            self.gradient_editor = PlotGradientWidget(parent = self,
                                                       orientation = "left")
             self.gradient_editor.setStyleSheet('background-color: black')
 
