@@ -1,7 +1,7 @@
 import math
 
 from pyrf.vrt import I_ONLY
-
+from ast import literal_eval
 def read_data_and_context(dut, points=1024):
     """
     Initiate capture of one data packet, wait for and return data packet
@@ -58,14 +58,9 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     pass_band_center += fshift / full_bw
     start0 = int((pass_band_center - float(usable_bw) / full_bw / 2)
         * points)
-    if rfe_mode != 'ZIF':
-        run0 = int(points * float(usable_bw) / full_bw)
-        usable_bins = [(start0, run0)]
-    else:
-        run0 = int(points * float(usable_bw) / full_bw)
-        start1 = start0 + int(run0 / 2 ) + 2
-        usable_bins = [(start0, start1 - start0 - 3),
-            (start1, run0 - (start1 - start0))]
+
+    run0 = int(points * float(usable_bw) / full_bw)
+    usable_bins = [(start0, run0)]
 
     for i, (start, run) in enumerate(usable_bins):
         if start < 0:
@@ -127,3 +122,31 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
     trim_bins = [(s - left_bin, r) for (s, r) in usable_bins]
 
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop
+
+def decode_config_type(config_str, str_type):
+    """
+    returns config_str value based on str_type
+    """
+
+    if isinstance(str_type, bool):
+        value = (config_str == 'True')
+    elif isinstance(str_type, int):
+        value = int(config_str)
+    elif  isinstance(str_type, float):
+        value = float(config_str)
+    elif  isinstance(str_type, long):
+        value = long(config_str)
+    elif  isinstance(str_type, str):
+        value = config_str
+    elif isinstance(str_type, list):
+            value = literal_eval(config_str)
+
+    elif isinstance(str_type, tuple):
+        # for tuple, remove type, then remove brackets, then split by ',' and final convert to float tuple
+        try:
+            value = tuple([float(i) for i in (config_str[1:-1].split(','))])
+        except ValueError:
+            value = tuple([int(i) for i in (config_str[1:-1].split(','))])
+    else:
+        value = config_str
+    return value

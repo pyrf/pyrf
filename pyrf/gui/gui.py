@@ -105,6 +105,10 @@ class MainWindow(QtGui.QMainWindow):
         open_action.triggered.connect(self.open_device_dialog)
         play_action = QtGui.QAction('&Playback Recording', self)
         play_action.triggered.connect(self.open_playback_dialog)
+        save_config_action = QtGui.QAction('&Save Settings', self)
+        save_config_action.triggered.connect(self.save_configuration)
+        load_config_action = QtGui.QAction('&Load Settings', self)
+        load_config_action.triggered.connect(self.load_configuration)
         self.record_action = QtGui.QAction('Start &Recording', self)
         self.record_action.triggered.connect(self.start_recording)
         self.record_action.setDisabled(True)
@@ -127,6 +131,9 @@ class MainWindow(QtGui.QMainWindow):
         file_menu.addAction(open_action)
         file_menu.addAction(play_action)
         file_menu.addSeparator()
+        file_menu.addAction(load_config_action)
+        file_menu.addAction(save_config_action)
+        file_menu.addSeparator()
         file_menu.addAction(self.record_action)
         file_menu.addAction(self.stop_action)
         file_menu.addAction(self.start_csv_export)
@@ -146,9 +153,11 @@ class MainWindow(QtGui.QMainWindow):
             return action
 
         self.view_menu = menubar.addMenu('&View')
+        self.option_actions = {}
         for text, option, default in VIEW_OPTIONS:
-            self.view_menu.addAction(checkbox_action(
-                self.controller.apply_options, text, option, default))
+            self.option_actions[option] = checkbox_action(self.controller.apply_options, text, option, default)
+            self.view_menu.addAction(self.option_actions[option])
+
         self.view_menu.addSeparator()
 
         if developer_menu:
@@ -162,7 +171,7 @@ class MainWindow(QtGui.QMainWindow):
             in VIEW_OPTIONS + DEVELOPER_OPTIONS))
 
     def start_recording(self):
-        self.stop_action.setDisabled(False)
+
         filename = time.strftime('recording-%Y-%m-%d-%H%M%S')
         names = glob.glob(filename + '*.vrt')
         if (filename + '.vrt') in names:
@@ -175,10 +184,13 @@ class MainWindow(QtGui.QMainWindow):
             "VRT Packet Capture Files (*.vrt)",
             )
         if record_filename:
+            self.stop_action.setDisabled(False)
+            self.record_action.setDisabled(True)
             self.controller.start_recording(record_filename)
 
     def stop_recording(self):
         self.stop_action.setDisabled(True)
+        self.record_action.setDisabled(False)
         self.controller.stop_recording()
 
     def open_device_dialog(self):
@@ -188,10 +200,10 @@ class MainWindow(QtGui.QMainWindow):
         self.discovery_widget.show()
 
     def open_playback_dialog(self):
-        self.controller.set_device(None)
         playback_filename, file_type = QtGui.QFileDialog.getOpenFileName(self,
             "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
         if playback_filename:
+            self.controller.set_device(None)
             self.start_playback(playback_filename)
 
     def start_csv(self):
@@ -223,6 +235,31 @@ class MainWindow(QtGui.QMainWindow):
         self.update_title()
         self.controller.set_device(playback_filename=playback_filename)
         self.show()
+
+    def save_configuration(self):
+        filename = time.strftime('config-%Y-%m-%d-%H%M%S')
+        names = glob.glob(filename + '*.config')
+
+        if (filename + '.config') in names:
+            count = names.count(filename)
+            filename += '(%d)' % count
+        filename += '.config'
+        cfilename, file_type = QtGui.QFileDialog.getSaveFileName(self,
+                                                                "PyRF Configuration File", 
+                                                                filename, 
+                                                                "PyRF Configuration File (*.config)")
+        if cfilename == '':
+            return
+        self.controller.save_settings(cfilename)
+
+    def load_configuration(self):
+        cfilename, file_type = QtGui.QFileDialog.getOpenFileName(self,
+                                                                "PyRF Configuration File", 
+                                                                None, 
+                                                                "PyRF Configuration File (*.config)")
+        if cfilename == '':
+            return
+        self.controller.load_settings(cfilename)
 
     def update_title(self):
         if self._device_id is None:
@@ -306,11 +343,12 @@ class MainPanel(QtGui.QWidget):
         controller.plot_change.connect(self.plot_changed)
         controller.capture_receive.connect(self.capture_received)
         controller.options_change.connect(self.options_changed)
+        controller.window_change.connect(self.window_changed)
         self._main_window = main_window
 
         self.ref_level = 0
         self.dut = None
-        self.control_widgets = []
+        self.control_widgets = {}
         super(MainPanel, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.setMinimumWidth(MINIMUM_WIDTH)
@@ -331,7 +369,6 @@ class MainPanel(QtGui.QWidget):
         self.start_time = time.time()
 
     def device_changed(self, dut):
-        self.trace_group.plot_state = self.plot_state
         self.dut_prop = dut.properties
         self.enable_controls()
 
@@ -377,6 +414,7 @@ class MainPanel(QtGui.QWidget):
                 self._main_window.setMinimumHeight(0)
                 self.resize(0,0)
                 self._main_window.resize(0,0)
+                self.mask_label.setVisible(False) 
             else:
                 # show plots
                 self._plot_layout.show()
@@ -389,9 +427,22 @@ class MainPanel(QtGui.QWidget):
                 WINDOW_WIDTH = max(screen.width() * 0.7, MINIMUM_WIDTH)
                 WINDOW_HEIGHT = max(screen.height() * 0.7, MINIMUM_HEIGHT)
                 self._main_window.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
+                self.mask_label.setVisible(True) 
 
     def plot_changed(self, state, changed):
         self.plot_state = state
+
+    def window_changed(self, state, changed):
+        """
+        signal handler for window changes
+        :param state: new windowState object
+        :param changed: list of attribute names changed
+        """
+        for win in changed:
+            if not self.control_widgets[win].isVisible() and state[win]:
+                self.control_widgets[win].show()
+            if self.control_widgets[win].isVisible() and not state[win]:
+                self.control_widgets[win].close()
 
     def show_labels(self):
         for c in self.channel_power_labels:
@@ -421,11 +472,17 @@ class MainPanel(QtGui.QWidget):
         for label in channel_power_labels:
             grid.addWidget(label, 1, x, 1, 2)
             x += 3
+        self._init_docking_widgets()
 
+        self._grid = grid
+        self.setLayout(grid)
+
+    def _init_docking_widgets(self):
+        self._toggle_actions = {}
         self._add_docking_controls(self._freq_controls(), "Frequency Control")
         self._add_docking_controls(
             self._measurement_controls(), "Measurement Control")
-        self._add_docking_controls(self._marker_controls(), "Marker Control", True)
+        self._add_docking_controls(self._marker_controls(), "Marker Control")
         self._add_docking_controls(
             self._capture_controls(), "Capture Control")
         self._add_docking_controls(
@@ -433,17 +490,27 @@ class MainPanel(QtGui.QWidget):
         self._add_docking_controls(self._device_controls(), "Device Control")
         self._add_docking_controls(self._trace_controls(), "Trace Control")
 
-        self._grid = grid
-        self.setLayout(grid)
+    def _add_docking_controls(self, widget, title):
 
-    def _add_docking_controls(self, widget, title, hide = False):
+        def title_to_key(title):
+        # function to convert title to dict key
+            return title.lower().replace(' ', '_')
+
         dock = QtGui.QDockWidget(title, self)
         dock.setAllowedAreas(
             QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
         dock.setWidget(widget)
 
         self._main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
-        self._main_window.view_menu.addAction(dock.toggleViewAction())
+        toggle_action = dock.toggleViewAction()
+        def _dock_change():
+            window_name = {title_to_key(title): toggle_action.isChecked()}
+            self.controller.apply_window_options(**window_name)
+
+        toggle_action.toggled.connect(_dock_change)
+        self._toggle_actions[title_to_key(title)] = toggle_action
+        self._main_window.view_menu.addAction(toggle_action)
+        self.control_widgets[title_to_key(title)] = dock
 
     def _plot_layout(self):
         vsplit = QtGui.QSplitter()
@@ -452,7 +519,7 @@ class MainPanel(QtGui.QWidget):
 
         if self._plot.waterfall_window:
             vsplit.addWidget(self._plot.waterfall_window)
-        
+
         persist = QtGui.QHBoxLayout()
         persist.addWidget(self._plot.persistence_window)
         persist_widget = QtGui.QWidget()
@@ -472,37 +539,31 @@ class MainPanel(QtGui.QWidget):
 
     def _freq_controls(self):
         self._freq_group = FrequencyControls(self.controller)
-        self.control_widgets.append(self._freq_group)
         return self._freq_group
 
     def _amplitude_controls(self):
         self._amplitude_group = AmplitudeControls(self.controller, self._plot)
-        self.control_widgets.append(self._amplitude_group)
         return self._amplitude_group
 
     def _trace_controls(self):
-        self.trace_group = TraceControls(self.controller, self._plot)
-        self.control_widgets.append(self.trace_group)
-        return self.trace_group
+        self._trace_group = TraceControls(self.controller)
+        return self._trace_group
 
     def _measurement_controls(self):
-        self.measure_group = MeasurementControls(self.controller)
-        self.control_widgets.append(self.measure_group)
-        return self.measure_group
+        self._measure_group = MeasurementControls(self.controller)
+        return self._measure_group
 
     def _capture_controls(self):
-        self.capture_group = CaptureControls(self.controller)
-        self.control_widgets.append(self.capture_group)
-        return self.capture_group
+        self._capture_group = CaptureControls(self.controller)
+        return self._capture_group
 
     def _device_controls(self):
         self._dev_group = DeviceControls(self.controller)
-        self.control_widgets.append(self._dev_group)
+
         return self._dev_group
         
     def _marker_controls(self):
         self.marker_group = MarkerControls(self.controller, self._plot)
-        self.control_widgets.append(self.marker_group)
         return self.marker_group
 
     def _marker_labels(self):
@@ -565,7 +626,6 @@ class MainPanel(QtGui.QWidget):
                 self._waterfall_range = (fstart, fstop, len(power))
             self._plot.waterfall_data.add_row(power)
 
-        self.controller.apply_plot_options(sweep_rate =  time.time() - self.start_time)
         self.start_time = time.time()
 
     def options_changed(self, options, changed):
@@ -575,15 +635,18 @@ class MainPanel(QtGui.QWidget):
 
         if 'iq_plots' in changed:
             self._update_iq_plot_visibility()
+            self._main_window.option_actions['iq_plots'].setChecked(options['iq_plots'])
 
         ww = self._plot.waterfall_window
         if 'waterfall_plot' in changed and ww:
+            self._main_window.option_actions['waterfall_plot'].setChecked(options['waterfall_plot'])
             if self.waterfall_plot_enabled:
                 ww.show()
             else:
                 ww.hide()
 
         if 'persistence_plot' in changed:
+            self._main_window.option_actions['persistence_plot'].setChecked(options['persistence_plot'])
             self.persist_widget.setVisible(self.persistence_plot_enabled)
 
     def _update_iq_plot_visibility(self):
@@ -619,10 +682,9 @@ class MainPanel(QtGui.QWidget):
     def enable_controls(self):
 
         for item in self.control_widgets:
-            item.setEnabled(True)
-
+            self.control_widgets[item].setEnabled(True)
 
     def disable_controls(self):
         for item in self.control_widgets:
-            item.setEnabled(False)
+            self.control_widgets[item].setEnabled(False)
 

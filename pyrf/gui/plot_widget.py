@@ -3,6 +3,7 @@ import platform
 import pyqtgraph as pg
 import numpy as np
 from PySide import QtCore
+import collections
 
 from pyrf.gui import colors
 from pyrf.gui import labels
@@ -32,7 +33,7 @@ ZIF_BITS = 2**13
 CONST_POINTS = 512
 
 LNEG_NUM = -9e10
-TICK_REDRAW_DELAY = 200
+TICK_REDRAW_DELAY = 1000
 PERSISTENCE_RESETTING_CHANGES = set(["center",
                                      "device_settings.attenuator",
                                      #"rbw",  <-- signal is the same area
@@ -69,13 +70,13 @@ class Plot(QtCore.QObject):
 
         def widget_range_changed(widget, ranges):
             if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
-
                 # HDR mode has a tuning resolution almost the same as its usabl
                 if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
                     return
-            if not hasattr(ranges, '__getitem__'):
-                return  # we're not intereted in QRectF updates
-            self.user_xrange_change.emit(ranges[0][0], ranges[0][1])
+                if not hasattr(ranges, '__getitem__'):
+                    return  # we're not intereted in QRectF updates
+                self.user_xrange_change.emit(max(ranges[0][0], self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]),
+                                            min(ranges[0][1], self.dut_prop.MAX_TUNABLE[self.gui_state.rfe_mode()]))
 
         self.spectral_plot.sigRangeChanged.connect(widget_range_changed)
 
@@ -115,6 +116,7 @@ class Plot(QtCore.QObject):
         for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
             trace = Trace(
                 self,
+                self.controller,
                 trace_name,
                 trace_color,
                 blank=True,
@@ -131,7 +133,7 @@ class Plot(QtCore.QObject):
         self.waterfall_data = WaterfallModel(max_len=600)
 
         # initialize waterfall window
-        self.waterfall_window = ThreadedWaterfallPlotWidget(
+        self.waterfall_window = ThreadedWaterfallPlotWidget(self.controller,
             self.waterfall_data,
             scale_limits=(PLOT_YMIN, PLOT_YMAX),
             max_frame_rate_fps=30,
@@ -139,9 +141,10 @@ class Plot(QtCore.QObject):
             )
 
          # initialize persistence window
-        self.persistence_plot = PersistencePlotWidget(
+        self.persistence_plot = PersistencePlotWidget(controller,
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
+
         self.persistence_plot.showGrid(True, True)
         self.persistence_plot.setLabel('top', ' ')
         self.persistence_plot.getAxis('top').setLabel(title = ' ', units = None)
@@ -151,6 +154,7 @@ class Plot(QtCore.QObject):
         self.trigger_control = triggerControl()
         self.connect_plot_controls()
         self.update_waterfall_levels(PLOT_BOTTOM, PLOT_TOP)
+        self.delayed_tick_update()
 
     def connect_plot_controls(self):
         def new_channel_power():
@@ -165,6 +169,7 @@ class Plot(QtCore.QObject):
                                                         'amplitude': self.trigger_control.amplitude})
         def new_y_axis():
             self.controller.apply_plot_options(ref_level = max(self.view_box.viewRange()[1]))
+
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChanged.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
@@ -192,11 +197,11 @@ class Plot(QtCore.QObject):
                                 amplitude)
                 for m in self.markers:
                     if m.enabled:
-                        m.remove_marker(self)
-                        m.add_marker(self)
+                        m.remove_marker()
+                        m.add_marker()
 
         if 'center' in changed or 'span' in changed:
-            self.delayed_tick_update()
+
             fstart = state.center - (state.span / 2)
             fstop = state.center + (state.span / 2)
             for trace in self.traces:
@@ -218,17 +223,15 @@ class Plot(QtCore.QObject):
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self.remove_trigger()
-        if 'fshift' in changed:
-            self.delayed_tick_update()
-    def plot_changed(self, state, changed):
 
+    def plot_changed(self, state, changed):
         self.plot_state = state
         if 'horizontal_cursor' in changed:
             if state['horizontal_cursor']:
                 self.spectral_plot.addItem(self.cursor_line)
             else:
                 self.spectral_plot.removeItem(self.cursor_line)
-
+        
         if 'channel_power' in changed:
             if state['channel_power']:
                 self.enable_channel_power()
@@ -242,18 +245,30 @@ class Plot(QtCore.QObject):
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
+                if 'config' in changed:
+                    self.move_channel_power(min(state['channel_power_region']), 
+                                            max(state['channel_power_region']))
 
         if 'ref_level' in changed or 'db_div' in changed:
             b = self.spectral_plot.blockSignals(True)
             self.spectral_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)) , state['ref_level'], padding = 0)
             self.persistence_plot.setYRange(state['ref_level'] - (state['db_div'] * (NUMBER_OF_TICKS - 1)), state['ref_level'], padding = 0)
             self.spectral_plot.blockSignals(b)
-            self.delayed_tick_update()
+
+        if 'persist_ticks' in changed:
+            if not 'config' in changed:
+                b = self.persistence_plot.gradient_editor.blockSignals(True)
+            else:
+                b = False
+            grad = {'ticks': state['persist_ticks'], 'mode': 'rgb'}
+            self.persistence_plot.gradient_editor.addPreset( 'config', grad)
+            self.persistence_plot.gradient_editor.loadPreset( 'config')
+            self.persistence_plot.gradient_editor.blockSignals(b)
 
     def delayed_tick_update(self):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_axis_ticks)
-        self.timer.setSingleShot(True)
+        self.timer.setSingleShot(False)
         self.timer.start(TICK_REDRAW_DELAY)
 
     def update_axis_ticks(self):
@@ -266,10 +281,16 @@ class Plot(QtCore.QObject):
         for t in ticks:
             if t in (ticks[1], ticks[-2]):
                 if t == ticks[1]:
-                    tick_num = self.gui_state.center - (self.gui_state.span / 2)
+                    if  self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
+                        tick_num = self.gui_state.center - (self.gui_state.span / 2)
+                    else:
+                        tick_num = 0
                     str = 'Start'
                 else:
-                    tick_num = self.gui_state.center + (self.gui_state.span / 2)
+                    if self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
+                        tick_num = self.gui_state.center + (self.gui_state.span / 2)
+                    else:
+                        tick_num = self.gui_state.span
                     str = 'Stop'
                 if tick_num > 1e9:
                     units = 'GHz'
@@ -301,7 +322,8 @@ class Plot(QtCore.QObject):
             t.calc_channel_power = True
         fstart = self.gui_state.center - (self.gui_state.span / 4)
         fstop = self.gui_state.center + (self.gui_state.span / 4)
-        self.move_channel_power(fstart, fstop)
+        if not 'config' in self.plot_state:
+            self.move_channel_power(fstart, fstop)
         self.spectral_plot.addItem(self.channel_power_region)
 
     def move_channel_power(self, fstart, fstop):

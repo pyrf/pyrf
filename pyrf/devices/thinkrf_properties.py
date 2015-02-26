@@ -71,9 +71,9 @@ class WSA4000Properties(object):
 
     SPECA_DEFAULTS = {
         'mode': 'ZIF',
-        'center': 2450 * M,
+        'center': 2450.0 * M,
         'rbw': 122070,
-        'span': 125 * M,
+        'span': 125.0 * M,
         'decimation': 1,
         'fshift': 0,
         'device_settings': {
@@ -183,23 +183,23 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    DEFAULT_SPECA_SPAN = 125 * M
+    DEFAULT_SPECA_SPAN = 125.0 * M
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450 * M,
-        'rbw': 122070,
+        'rbw': 122070.0,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
         'fshift': 0,
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25,
+            'hdr_gain': 25.0,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
-                        'fstart': 2440 * M,
-                        'fstop': 2460 * M,
-                        'amplitude': -100},
+                        'fstart': 2440.0 * M,
+                        'fstop': 2460.0 * M,
+                        'amplitude': -100.0},
             },
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',

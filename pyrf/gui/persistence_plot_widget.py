@@ -11,22 +11,7 @@ import pyqtgraph as pg
 from waterfall_widget import WaterfallModel
 
 from pyrf.gui import colors
-
-#inject a familiar color scheme into pyqtgraph...
-# - this makes it available in the stock gradient editor schemes.
-# - we also want it at the top of the gradient editors... there's no stock
-#    way in python to insert at the top of an ordereddict, so we rebuild it.
-newGradients = collections.OrderedDict()
-newGradients["rycb"] = {'ticks': [(0.00, ( 0, 0, 0, 255)),
-                                  (0.15, (  0,   0, 255, 255)),
-                                  (0.33, (  0, 255, 255, 255)),
-                                  (0.66, (255, 255,   0, 255)),
-                                  (1.00, (255,   0,   0, 255))],
-                        'mode': 'rgb'}
-for k, v in pg.graphicsItems.GradientEditorItem.Gradients.iteritems():
-    newGradients[k] = v
-pg.graphicsItems.GradientEditorItem.Gradients = newGradients
-
+from pyrf.gui.widgets import PlotGradientWidget
 
 DECAY_TYPE_LINEAR_WITH_DATA = "linear_data_decay"
 
@@ -46,7 +31,6 @@ def decay_fn_EXPONENTIAL(t_now, t_prev, decay_args, img_data):
     decay_frac = 0.5 ** (t_delta / half_life)
     img_data *= decay_frac
     return img_data
-
 
 def decay_fn_LINEAR(t_now, t_prev, decay_args, img_data):
     #t is either in time or is the number of arrays. We'll call this 'ticks'.
@@ -112,7 +96,7 @@ class _PersistentImage(pg.ImageItem):
 
 class PersistencePlotWidget(pg.PlotWidget):
     """Persistence plot widget."""
-    def __init__(self, parent=None, background='default',
+    def __init__(self, controller, parent=None, background='default',
                  decay_timing = DECAY_WITH_DATA,
                  decay_fn = decay_fn_LINEAR,
                  decay_args = [10, ], #10 arrays until 0.5 decay (20 for full)
@@ -123,7 +107,8 @@ class PersistencePlotWidget(pg.PlotWidget):
 
         #grab the rgb of the background color for palette matching later...
         self._bg_color = self.backgroundBrush().color().toTuple()[:3]
-
+        self.controller = controller
+        controller.plot_change.connect(self.plot_changed)
         self.setMenuEnabled(False)
         self.plotItem.getViewBox().setMouseEnabled(x = False, y = False)
 
@@ -145,11 +130,11 @@ class PersistencePlotWidget(pg.PlotWidget):
         #We will always have a gradient editor for providing our LUT, but it
         #may not be visible. It can be referenced for layout, though... just grab
         #it after initializing the PersistencePlotWidget.
-        self.gradient_editor = pg.GradientWidget(parent = self,
+        self.gradient_editor = PlotGradientWidget(parent = self,
                                                  orientation = "left")
         self.gradient_editor.setStyleSheet('background-color: black')
-        self.gradient_editor.loadPreset("rycb") #we injected this scheme
-        self.gradient_editor.sigGradientChanged.connect(self._onGradientChange)
+
+        self.gradient_editor.sigGradientChangeFinished.connect(self._onGradientChange)
         self._LUT_PTS = 256
         self._latest_lut = self._get_lut()
         
@@ -164,7 +149,11 @@ class PersistencePlotWidget(pg.PlotWidget):
 
         self._init_complete = True
 
+    def plot_changed(self, state, changed):
+        self.plot_state = state
+
     def _onGradientChange(self):
+        self.controller.apply_plot_options(persist_ticks = self.gradient_editor.saveState()['ticks'])
         if self._persistent_img:
             self._persistent_img.setLookupTable(self._get_lut())
     
@@ -265,8 +254,11 @@ class PersistencePlotWidget(pg.PlotWidget):
                                              self._img_array)
         
         #Add the shiny new signal...
-        self._img_array += new_img_array
-        
+        if len(self._img_array) != len(new_img_array):
+            self._img_array = new_img_array
+        else:
+            self._img_array += new_img_array
+
         #Ensure we don't oversaturate...
         self._img_array = self._img_array.clip(0, 1)
         

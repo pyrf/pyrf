@@ -14,6 +14,7 @@ class FrequencyControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
 
         grid = QtGui.QGridLayout()
 
@@ -68,7 +69,16 @@ class FrequencyControls(QtGui.QWidget):
                 self._fstart_edit.setEnabled(not state.playback)
                 self._fstop_edit.setEnabled(not state.playback)
                 self._bw_edit.setEnabled(not state.playback)
+                self._freq_edit.setEnabled(not state.playback)
+
+            elif state.rfe_mode() in self.dut_prop.TUNABLE_MODES:
+                self._fstart_edit.setEnabled(False)
+                self._fstop_edit.setEnabled(False)
+                self._bw_edit.setEnabled(False)
+                self._freq_edit.setEnabled(True)
+
             else:
+                self._freq_edit.setEnabled(False)
                 self._fstart_edit.setEnabled(False)
                 self._fstop_edit.setEnabled(False)
                 self._bw_edit.setEnabled(False)
@@ -77,26 +87,27 @@ class FrequencyControls(QtGui.QWidget):
             min_tunable = float(self.dut_prop.MIN_TUNABLE[state.rfe_mode()])
             max_tunable = float(self.dut_prop.MAX_TUNABLE[state.rfe_mode()])
             tuning_res = float(self.dut_prop.TUNING_RESOLUTION)
+            if state.rfe_mode() in self.dut_prop.TUNABLE_MODES:
+                # XXX tuning_res is used here as an approximation of
+                # "smallest reasonable span"
+                self._fstart_edit.quiet_update(
+                    min_tunable / M, (max_tunable - tuning_res) / M)
+            else:
+                # if cannot tune, set minimum of fstart label to 0
+                self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
+                self._fstart_edit.quiet_update(
+                    0, (max_tunable + state.span) / M)
 
-            # XXX tuning_res is used here as an approximation of
-            # "smallest reasonable span"
-            self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
-            self._fstart_edit.quiet_update(
-                min_tunable / M, (max_tunable - tuning_res) / M)
             self._fstop_edit.quiet_update(
-                (min_tunable + tuning_res) / M, max_tunable / M)
+                (min_tunable - state.span) / M, (max_tunable + state.span) / M)
             self._bw_edit.quiet_update(
-                tuning_res / M, (max_tunable - min_tunable) / M)
-
+                (min_tunable - state.span) / M, (max_tunable + state.span) / M)
+            self._freq_edit.quiet_update(min_tunable / M, max_tunable / M)
             enable_disable_edit_boxes()
             self._update_rbw_options()
 
-            if min_tunable == max_tunable:
-                self._freq_edit.setEnabled(False)
-                self._fstep_box.setEnabled(False)
-            else:
-                self._freq_edit.setEnabled(True)
-                self._fstep_box.setEnabled(True)
+        if 'rbw' in changed:
+            self._update_rbw_selected()
 
         if any(x in changed for x in ('center', 'span', 'decimation', 'mode')):
             self._update_freq_edit()
@@ -119,6 +130,10 @@ class FrequencyControls(QtGui.QWidget):
             elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._rbw_box.setEnabled(True)
 
+    def plot_changed(self, state, changed):
+        if 'mouse_tune' in changed:
+            self._mouse_cbox.setChecked(state['mouse_tune'])
+
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)
 
@@ -136,6 +151,7 @@ class FrequencyControls(QtGui.QWidget):
         steps.addItem("50 MHz")
         steps.addItem("100 MHz")
         self.fstep = float(steps.currentText().split()[0])
+
         def freq_step_change():
             self.fstep = float(steps.currentText().split()[0])
             self._freq_edit.setSingleStep(self.fstep)
@@ -153,8 +169,8 @@ class FrequencyControls(QtGui.QWidget):
         def change_mouse_control():
             self.controller.apply_plot_options(mouse_tune = mouse_control.isChecked())
         mouse_control.clicked.connect(change_mouse_control)
-        
-        return mouse_control
+        self._mouse_cbox = mouse_control
+        return self._mouse_cbox
 
     def _center_freq(self):
         cfreq = QtGui.QLabel('Center:')
@@ -164,9 +180,14 @@ class FrequencyControls(QtGui.QWidget):
         self._freq_edit = freq_edit
         def freq_change():
             self.start_stop_changed = False
-            self.controller.apply_settings(center=freq_edit.value() * M)
+            center = freq_edit.value() * M
+            min_tunable = self.dut_prop.MIN_TUNABLE[self.gui_state.rfe_mode()]
+            start_freq = center - (self.gui_state.span / 2)
+            if start_freq < min_tunable:
+                center = min_tunable + (self.gui_state.span / 2)
+            self.controller.apply_settings(center=center)
             if self.gui_state.device_settings['iq_output_path'] == 'CONNECTOR':
-                self.controller.apply_device_settings(freq = freq_edit.value() * M)
+                self.controller.apply_device_settings(freq =center)
         freq_edit.editingFinished.connect(freq_change)
         return cfreq, freq_edit
 
@@ -234,13 +255,17 @@ class FrequencyControls(QtGui.QWidget):
         """
         update the spin boxes from self.gui_state
         """
-        center = float(self.gui_state.center / M)
+        if self.gui_state.rfe_mode()  in self.dut_prop.TUNABLE_MODES:
+            center = float(self.gui_state.center / M)
+        else:
+            center = self.dut_prop.MAX_TUNABLE[self.gui_state.rfe_mode()] / M
         span = float(self.gui_state.span / M)
         self._freq_edit.quiet_update(value=center)
         self._bw_edit.quiet_update(value=span)
+        
         if not self.start_stop_changed:
-            self._fstop_edit.quiet_update(value=center + span / 2)
-            self._fstart_edit.quiet_update(value=center - span / 2)
+            self._fstop_edit.quiet_update(value= center + span / 2)
+            self._fstart_edit.quiet_update(value= center - span / 2)
         self._updating_values = False
         self.start_stop_changed = False
 
@@ -292,5 +317,21 @@ class FrequencyControls(QtGui.QWidget):
 
             self._rbw_box.setCurrentIndex(self.dut_prop.DEFAULT_RBW_INDEX)
 
-    def showEvent(self, event):
-        self.activateWindow()
+    def _update_rbw_selected(self):
+        """
+        update the selected RBW without changing items that are currently populated
+        """
+        if hasattr(self, 'gui_state'):
+            rfe_mode = self.gui_state.rfe_mode()
+            speca_mode = self.gui_state.mode
+
+            self._rbw_values = self.dut_prop.RBW_VALUES[rfe_mode]
+            if rfe_mode == 'HDR':
+                unit = 'Hz'
+                div = 1
+            else:
+                unit = 'kHz'
+                div = 1000
+
+            self._rbw_box.quiet_update(select_item = 
+                "%0.2f " % (float(self.gui_state.rbw) / div) + unit)

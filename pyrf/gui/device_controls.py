@@ -5,6 +5,10 @@ from pyrf.gui.util import clear_layout
 from pyrf.gui.widgets import (QComboBoxPlayback, QCheckBoxPlayback,
     QDoubleSpinBoxPlayback)
 
+DIGITIZER_PATH_STRING = {'DIGITIZER': 'Digitizer',
+                  'CONNECTOR': 'Connector'}
+PLL_REF_STRING = {'EXT': 'External',
+                  'INT': 'Internal'}
 class DeviceControls(QtGui.QWidget):
     """
     A widget based from the Qt QGroupBox widget with a layout containing widgets that
@@ -18,6 +22,7 @@ class DeviceControls(QtGui.QWidget):
         self.controller = controller
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
+        controller.window_change.connect(self.window_changed)
 
         self._create_controls()
         self.setLayout(QtGui.QGridLayout())
@@ -145,7 +150,7 @@ class DeviceControls(QtGui.QWidget):
         self._antenna_box.currentIndexChanged.connect(new_antenna)
         self._gain_box.currentIndexChanged.connect(new_gain)
         self._dec_box.currentIndexChanged.connect(new_dec)
-        self._fshift_edit.valueChanged.connect(new_freq_shift)
+        self._fshift_edit.editingFinished.connect(new_freq_shift)
         self._ifgain_box.valueChanged.connect(new_ifgain)
         self._iq_output_box.currentIndexChanged.connect(new_iq_path)
         self._pll_box.currentIndexChanged.connect(new_pll_reference)
@@ -155,6 +160,8 @@ class DeviceControls(QtGui.QWidget):
         self._build_layout(self.dut_prop)
 
     def state_changed(self, state, changed):
+        if not hasattr(self, 'gui_state'):
+            self.gui_state = state
 
         if state.playback:
             # for playback simply update everything on every state change
@@ -176,11 +183,6 @@ class DeviceControls(QtGui.QWidget):
             self._iq_output_box.quiet_update(["Digitizer", "Connector"])
             self._iq_output_box.setEnabled(True)
 
-        if 'device_settings.trigger' in changed:
-            if state.device_settings['trigger']['type'] == 'None':
-                if self._level_trigger.isChecked():
-                    self._level_trigger.click()
-
         if 'mode' in changed:
             if state.sweeping():
                 self._dec_box.setEnabled(False)
@@ -190,19 +192,23 @@ class DeviceControls(QtGui.QWidget):
                     state.rfe_mode()] is not None
                 self._dec_box.setEnabled(decimation_available)
                 self._fshift_edit.setEnabled(decimation_available)
-            fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
-            self._fshift_edit.setRange(-fshift_max, fshift_max)
+                fshift_max = self.dut_prop.FULL_BW[state.rfe_mode()] / M
+                self._fshift_edit.setRange(-fshift_max, fshift_max)
+
+        if 'decimation' in changed:
+            self._dec_box.quiet_update(self._dec_values, str(state.decimation))
+
+        if 'fshift' in changed:
+
+            self._fshift_edit.quiet_update(value = state.fshift / M)
 
         if 'device_settings.iq_output_path' in changed:
+            self._iq_output_box.quiet_update(["Digitizer", "Connector"], DIGITIZER_PATH_STRING[state.device_settings['iq_output_path']])
             if 'CONNECTOR' == state.device_settings['iq_output_path']:
                 # remove all digitizer controls
                 self._dec_box.setEnabled(False)
                 self._fshift_edit.setEnabled(False)
                 self._fshift_label.setEnabled(False)
-                self._level_trigger.setEnabled(False)
-                self._trig_fstart.setEnabled(False)
-                self._trig_fstop.setEnabled(False)
-                self._trig_amp.setEnabled(False)
 
             elif 'DIGITIZER' == state.device_settings['iq_output_path']:
                 # enable digitizer controls
@@ -210,12 +216,17 @@ class DeviceControls(QtGui.QWidget):
                     self._dec_box.setEnabled(True)
                     self._fshift_edit.setEnabled(True)
                     self._fshift_label.setEnabled(True)
-                    self._trig_fstart.setEnabled(True)
-                    self._trig_fstop.setEnabled(True)
-                    self._trig_amp.setEnabled(True)
-                    self._level_trigger.setEnabled(True)
 
+        if 'device_settings.pll_reference' in changed:
+            self._pll_box.quiet_update(["Internal", "External"], PLL_REF_STRING[state.device_settings['pll_reference']])
         self.gui_state = state
+
+    def window_changed(self, state, changed):
+        if 'device_control' in changed:
+            if state['device_control']:
+                self.show()
+            else:
+                self.close()
 
     def resize_widget(self):
         self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Maximum)

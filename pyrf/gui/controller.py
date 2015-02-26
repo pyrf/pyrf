@@ -1,21 +1,22 @@
 import logging
+import ConfigParser
 
 from PySide import QtCore
 import numpy as np  # FIXME: move sweep playback out of here
 from datetime import datetime
 from pyrf.sweep_device import SweepDevice
 from pyrf.capture_device import CaptureDevice
-from pyrf.gui.gui_config import plotState, markerState, traceState
+from pyrf.gui.gui_config import windowOptions, plotState, markerState, traceState
 from pyrf.gui.state import SpecAState
 from pyrf.numpy_util import compute_fft
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.playback import Playback
 from pyrf.util import (compute_usable_bins, adjust_usable_fstart_fstop,
-    trim_to_usable_fstart_fstop)
+    trim_to_usable_fstart_fstop, decode_config_type)
 
 logger = logging.getLogger(__name__)
 
-PLAYBACK_STEP_MSEC = 100
+PLAYBACK_STEP_MSEC = 1
 
 class SpecAController(QtCore.QObject):
     """
@@ -42,18 +43,21 @@ class SpecAController(QtCore.QObject):
     capture_receive = QtCore.Signal(SpecAState, float, float, object, object, object, object)
     options_change = QtCore.Signal(dict, list)
     plot_change = QtCore.Signal(dict, list)
-    marker_change = QtCore.Signal(int, list, list)
+    window_change = QtCore.Signal(dict, list)
+    marker_change = QtCore.Signal(int, dict, list)
     trace_change = QtCore.Signal(int, list, list)
+
 
     def __init__(self, developer_mode = False):
         super(SpecAController, self).__init__()
         self._dsp_options = {}
         self._options = {}
 
+
+        self._window_options = windowOptions
         self._plot_options = plotState
         self._marker_options = markerState
         self._trace_options = traceState
-
         self.developer_mode = developer_mode
         self.was_sweeping = False
 
@@ -186,7 +190,6 @@ class SpecAController(QtCore.QObject):
             return
         self._apply_pending_user_xrange()
         device_set = dict(self._state.device_settings)
-        # device_set.pop('pll_reference')
         device_set.pop('iq_output_path')
         device_set.pop('trigger')
         self._dut.pll_reference(device_set['pll_reference'])
@@ -461,7 +464,6 @@ class SpecAController(QtCore.QObject):
         # make sure resolution of center are the same as the device's tunning resolution
         center = float(np.round(state.center, -1 * int(np.log10(self._dut.properties.TUNING_RESOLUTION))))
         state = SpecAState(state, center=center)
-
         if not state.sweeping():
             # force span to correct value for the mode given
             if state.decimation > 1:
@@ -469,6 +471,7 @@ class SpecAController(QtCore.QObject):
                     / state.decimation * self._dut.properties.DECIMATED_USABLE)
             else:
                 span = self._dut.properties.USABLE_BW[state.rfe_mode()]
+
             state = SpecAState(state, span=span)
             changed = [x for x in changed if x != 'span']
             if not self._state or span != self._state.span:
@@ -490,7 +493,6 @@ class SpecAController(QtCore.QObject):
 
         if self._recording_file:
             self._dut.inject_recording_state(state.to_json_object())
-
         self.state_change.emit(state, changed)
 
     def apply_device_settings(self, **kwargs):
@@ -549,18 +551,32 @@ class SpecAController(QtCore.QObject):
 
         state = SpecAState.from_json_object(state_json, playback)
         self._state_changed(state, changed)
-        
-        self.marker_change.emit(self._marker_options.keys(), dict(self._marker_options), self._marker_options[0].keys())
-        self.trace_change.emit(self._trace_options.keys(), dict(self._trace_options), self._trace_options[0].keys())
 
-        # apply plot options
+       # apply trace state
+        for t in self._trace_options:
+            self.trace_change.emit(t, dict(self._trace_options), self._trace_options[0].keys())
+
+        # apply marker state
+        changes = self._marker_options[0].keys()
+        # disable peak left/right and center
+        changes.remove('peak')
+        changes.remove('peak_left')
+        changes.remove('peak_right')
+        changes.remove('center')
+        for m in self._marker_options:
+            self.marker_change.emit(m, dict(self._marker_options), changes)
+
+        # apply plot state
         self.plot_change.emit(dict(self._plot_options),
             self._plot_options.keys())
+
+        # apply window state
+        self.window_change.emit(dict(self._window_options),
+            self._window_options.keys())
 
     def apply_options(self, **kwargs):
         """
         Apply menu options and signal the change
-
         :param kwargs: keyword arguments of the dsp options
         """
         self._options.update(kwargs)
@@ -585,7 +601,6 @@ class SpecAController(QtCore.QObject):
     def apply_marker_options(self, marker, changed, value):
         """
         Apply marker changes and signal the change
-
         :param marker: marker affected by change
         :param changed: a list of the changes which occurred
         :param value: a list of values corresponding to the changes
@@ -613,6 +628,16 @@ class SpecAController(QtCore.QObject):
     def get_options(self):
         return dict(self._options)
 
+    def apply_window_options(self, **kwargs):
+        """
+        Apply window options and signal the change
+
+        :param kwargs: keyword arguments of the window options
+        """
+        self._window_options.update(kwargs)
+        self.window_change.emit(dict(self._window_options),
+            kwargs.keys())
+
     def enable_user_xrange_control(self, enable):
         self._user_xrange_control_enabled = enable
         if not enable:
@@ -624,3 +649,106 @@ class SpecAController(QtCore.QObject):
 
     def applying_user_xrange(self):
         return self._applying_user_xrange
+
+    def save_settings(self, dir):
+        cfgfile = open(dir,'w')
+        config = ConfigParser.SafeConfigParser()
+        state = self._state.to_json_object()
+
+        config.add_section('device_options')
+        for s in state:
+            if 'dict' in str(type(state[s])):
+                for k in state[s]:
+                    if 'dict' in str(type(state[s][k])):
+                        for j in state[s][k]:
+                            option = j
+                            value = state[s][k][j]
+                            config.set('device_options', option, str(value))
+                    else:
+                        option = k
+                        value = state[s][k]
+                        config.set('device_options', option, str(value))
+                continue
+
+            else:
+                option = s
+                value = state[s]
+            config.set('device_options', option, str(value))
+
+        config.add_section('plot_options')
+        for p in self._plot_options:
+            if 'dict' in str(type(self._plot_options[p])):
+                for l in self. _plot_options[p]:
+                    option = l
+                    value = str(self._plot_options[p][l])
+                    config.set('plot_options', option, value)
+                continue
+            config.set('plot_options', p, str(self._plot_options[p]))
+
+        config.add_section('options')
+        for p in self._options:
+            config.set('options', p, str(self._options[p]))
+
+        config.add_section('window_options')
+        for p in self._window_options:
+            config.set('window_options', p, str(self._window_options[p]))
+
+        config.add_section('marker_options')
+        for p in self._marker_options:
+            for s in self._marker_options[p]:
+                config.set('marker_options', '%s-%s' % (str(p), s), str(self._marker_options[p][s]))
+        
+        config.add_section('trace_options')
+        for p in self._trace_options:
+            for s in self._trace_options[p]:
+                config.set('trace_options', '%s-%s' % (str(p), s), str(self._trace_options[p][s]))
+        config.write(cfgfile)
+        cfgfile.close()
+
+    def load_settings(self, dir):
+        config = ConfigParser.SafeConfigParser()
+        config.read(dir)
+        plot_options = {'traces':{}}
+        device_options = {'device_settings': {'trigger': {}}}
+        options = {}
+        window_options = {}
+
+        state = self._state.to_json_object()
+
+        for p in config.options('plot_options'):
+            if p in self._plot_options:
+                plot_options[p] = decode_config_type(config.get('plot_options', p), self._plot_options[p])
+
+        self.plot_change.emit(dict(plot_options), plot_options.keys())
+
+        for s in config.options('device_options'):
+            if s in state:
+                device_options[s] = decode_config_type(config.get('device_options', s), state[s])
+            elif s in state['device_settings']:
+                device_options['device_settings'][s] = decode_config_type(config.get('device_options', s), state['device_settings'][s])
+            elif s in state['device_settings']['trigger']:
+                device_options['device_settings']['trigger'][s] = decode_config_type(config.get('device_options', s), state['device_settings']['trigger'][s])
+
+        for p in config.options('options'):
+            options[p] = decode_config_type(config.get('options', p), self._options[p])
+
+        for p in config.options('window_options'):
+            window_options[p] = decode_config_type(config.get('window_options', p), self._window_options[p])
+
+        for p in config.options('marker_options'):
+            name = int(p.split('-')[0])
+            property = p.split('-')[1]
+            self._marker_options[name][property] = decode_config_type(config.get('marker_options', p), self._marker_options[name][property])
+        for p in config.options('trace_options'):
+            name = int(p.split('-')[0])
+            property = p.split('-')[1]
+            self._trace_options[name][property] = decode_config_type(config.get('trace_options', p), self._trace_options[name][property])
+
+        state = SpecAState(self._state, **device_options)
+        self._apply_complete_settings(device_options, False)
+        self.apply_options(**options)
+        self.apply_window_options(**window_options)
+        
+        # add config to inform plot options that a config has been laoded
+        plot_options['config'] = True
+        self.apply_plot_options(**plot_options)
