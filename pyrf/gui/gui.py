@@ -171,7 +171,7 @@ class MainWindow(QtGui.QMainWindow):
             in VIEW_OPTIONS + DEVELOPER_OPTIONS))
 
     def start_recording(self):
-        self.stop_action.setDisabled(False)
+
         filename = time.strftime('recording-%Y-%m-%d-%H%M%S')
         names = glob.glob(filename + '*.vrt')
         if (filename + '.vrt') in names:
@@ -184,10 +184,13 @@ class MainWindow(QtGui.QMainWindow):
             "VRT Packet Capture Files (*.vrt)",
             )
         if record_filename:
+            self.stop_action.setDisabled(False)
+            self.record_action.setDisabled(True)
             self.controller.start_recording(record_filename)
 
     def stop_recording(self):
         self.stop_action.setDisabled(True)
+        self.record_action.setDisabled(False)
         self.controller.stop_recording()
 
     def open_device_dialog(self):
@@ -197,7 +200,6 @@ class MainWindow(QtGui.QMainWindow):
         self.discovery_widget.show()
 
     def open_playback_dialog(self):
-
         playback_filename, file_type = QtGui.QFileDialog.getOpenFileName(self,
             "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
         if playback_filename:
