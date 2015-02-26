@@ -197,10 +197,11 @@ class MainWindow(QtGui.QMainWindow):
         self.discovery_widget.show()
 
     def open_playback_dialog(self):
-        self.controller.set_device(None)
+
         playback_filename, file_type = QtGui.QFileDialog.getOpenFileName(self,
             "Play Recording", None, "VRT Packet Capture Files (*.vrt)")
         if playback_filename:
+            self.controller.set_device(None)
             self.start_playback(playback_filename)
 
     def start_csv(self):
