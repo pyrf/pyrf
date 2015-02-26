@@ -231,7 +231,7 @@ class Plot(QtCore.QObject):
                 self.spectral_plot.addItem(self.cursor_line)
             else:
                 self.spectral_plot.removeItem(self.cursor_line)
-
+        
         if 'channel_power' in changed:
             if state['channel_power']:
                 self.enable_channel_power()
@@ -245,6 +245,9 @@ class Plot(QtCore.QObject):
             for t in self.traces:
                 t.channel_power_range = state['channel_power_region']
                 t.compute_channel_power()
+                if 'config' in changed:
+                    self.move_channel_power(min(state['channel_power_region']), 
+                                            max(state['channel_power_region']))
 
         if 'ref_level' in changed or 'db_div' in changed:
             b = self.spectral_plot.blockSignals(True)
@@ -319,7 +322,8 @@ class Plot(QtCore.QObject):
             t.calc_channel_power = True
         fstart = self.gui_state.center - (self.gui_state.span / 4)
         fstop = self.gui_state.center + (self.gui_state.span / 4)
-        self.move_channel_power(fstart, fstop)
+        if not 'config' in self.plot_state:
+            self.move_channel_power(fstart, fstop)
         self.spectral_plot.addItem(self.channel_power_region)
 
     def move_channel_power(self, fstart, fstop):
