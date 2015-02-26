@@ -475,7 +475,7 @@ class MarkerTable(QtGui.QWidget):
             decimals = "{0:.%df}" % UNIT_DECIMAL[state[marker]['unit']]
             freq = decimals.format(state[marker]['freq'] / factor)
             dfreq = decimals.format(state[marker]['dfreq'] / factor)
-            freq_diff = decimals.format(state[marker]['dfreq'] - state[marker]['freq'] / factor)
+            freq_diff = decimals.format((state[marker]['dfreq'] - state[marker]['freq']) / factor)
             if 'freq' in changed or 'power' in changed:
                 self._marker_rows[marker].freq.setText('%s %s' % (freq, unit))
                 if state[marker]['power'] is None:
