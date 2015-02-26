@@ -446,10 +446,11 @@ class MarkerTable(QtGui.QWidget):
             show(w.name, n, 1, 1, 1)
             show(w.freq, n, 2, 1, 1)
             show(w.power, n, 3, 1, 1)
-            show( w.delta_freq,  n, 4, 1, 1)
-            show(w.delta_power, n, 5, 1, 1)
-            show(w.diff_freq, n, 6, 1, 1)
-            show(w.diff_power, n, 7, 1, 1)
+            if d:
+                show( w.delta_freq,  n, 4, 1, 1)
+                show(w.delta_power, n, 5, 1, 1)
+                show(w.diff_freq, n, 6, 1, 1)
+                show(w.diff_power, n, 7, 1, 1)
 
         for n, m in enumerate(sorted(self._marker_rows)):
             w = self._marker_rows[m]
@@ -459,12 +460,12 @@ class MarkerTable(QtGui.QWidget):
                 add_marker(w, h, n + 1, d)
             else:
                 continue
-            
+
         self.resize_widget()
 
     def marker_changed(self, marker, state, changed):
         self._marker_state = state
-        if  'enabled' in changed:
+        if  'enabled' in changed or 'delta' in changed:
             self._build_layout()
             self._update_label_color(marker)
 
@@ -497,7 +498,11 @@ class MarkerTable(QtGui.QWidget):
                         else:
                             pow_diff = state[marker]['dpower'] - state[marker]['power']
                             self._marker_rows[marker].diff_power.setText('%0.2f dB' % pow_diff)
-
+                else:
+                    self._marker_rows[marker].delta_freq.setText('')
+                    self._marker_rows[marker].diff_freq.setText('')
+                    self._marker_rows[marker].delta_power.setText('')
+                    self._marker_rows[marker].diff_power.setText('')
             if 'trace' in changed:
                 self._update_label_color(marker)
 

@@ -141,14 +141,14 @@ class Trace(object):
         self.store = False
         self.data = None
         self.raw_packet = None
-        self.freq_range = None
+        self.freq_range = [0.0, 0.0]
         self.controller = controller
         controller.trace_change.connect(self.trace_changed)
         self.color = trace_color
 
         self.calc_channel_power = False
         self.channel_power = 0
-        self.channel_power_range = []
+        self.channel_power_range = [0.0, 0.0]
         self.curves = []
         self.plot_area = plot_area
         self.average_list = []
