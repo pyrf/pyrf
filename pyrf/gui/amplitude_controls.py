@@ -26,6 +26,8 @@ class AmplitudeControls(QtGui.QWidget):
         controller.device_change.connect(self.device_changed)
         controller.state_change.connect(self.state_changed)
         controller.plot_change.connect(self.plot_changed)
+        controller.window_change.connect(self.window_changed)
+
         self._plot = plot
 
         grid = QtGui.QGridLayout()
@@ -101,6 +103,7 @@ class AmplitudeControls(QtGui.QWidget):
         self._build_layout(self.dut_prop)
 
     def state_changed(self, state, changed):
+
         if state.playback:
             self._atten_box.playback_value(
                 state.device_settings.get('attenuator', False))
@@ -121,9 +124,22 @@ class AmplitudeControls(QtGui.QWidget):
             if state.device_settings['iq_output_path'] == 'CONNECTOR':
                 self._max_level.setEnabled(False)
                 self._db_div.setEnabled(False)
-            elif state.device_settings['iq_output_path'] == 'CONNECTOR':
+            elif state.device_settings['iq_output_path'] == 'DIGITIZER':
                 self._max_level.setEnabled(True)
                 self._db_div.setEnabled(True)
+
+        if 'device_settings.hdr_gain' in changed:
+            self._hdr_gain_box.quiet_update(value=state.device_settings['hdr_gain'])
+
+        if 'device_settings.attenuator' in changed:
+            self._atten_box.setChecked(state.device_settings['attenuator'])
+
+    def window_changed(self, state, changed):
+        if 'amplitude_control' in changed:
+            if state['amplitude_control']:
+                self.show()
+            else:
+                self.close()
 
     def plot_changed(self, state, changed):
         self.plot_state = state

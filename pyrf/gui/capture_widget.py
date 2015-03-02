@@ -201,6 +201,8 @@ class CaptureControls(QtGui.QWidget):
             else:
                 self._level_trigger.setEnabled(True)
 
+            self._update_modes(current_mode = state.mode)
+
     def plot_changed(self, state, changed):
         if 'cont_cap_mode' in changed:
             if not state['cont_cap_mode']:

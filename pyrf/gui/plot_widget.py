@@ -69,7 +69,6 @@ class Plot(QtCore.QObject):
 
         def widget_range_changed(widget, ranges):
             if hasattr(self, 'gui_state') and hasattr(self, 'plot_state'):
-
                 # HDR mode has a tuning resolution almost the same as its usabl
                 if self.gui_state.mode == 'HDR' or not self.plot_state['mouse_tune']:
                     return
@@ -115,6 +114,7 @@ class Plot(QtCore.QObject):
         for trace_name, trace_color in zip(labels.TRACES, colors.TRACE_COLORS):
             trace = Trace(
                 self,
+                self.controller,
                 trace_name,
                 trace_color,
                 blank=True,
@@ -142,6 +142,7 @@ class Plot(QtCore.QObject):
         self.persistence_plot = PersistencePlotWidget(
             decay_fn=decay_fn_EXPONENTIAL,
             data_model=self.waterfall_data)
+
         self.persistence_plot.showGrid(True, True)
         self.persistence_plot.setLabel('top', ' ')
         self.persistence_plot.getAxis('top').setLabel(title = ' ', units = None)
@@ -165,6 +166,7 @@ class Plot(QtCore.QObject):
                                                         'amplitude': self.trigger_control.amplitude})
         def new_y_axis():
             self.controller.apply_plot_options(ref_level = max(self.view_box.viewRange()[1]))
+
         # update trigger settings when ever a line is changed
         self.channel_power_region.sigRegionChanged.connect(new_channel_power)
         self.cursor_line.sigPositionChangeFinished.connect(new_cursor_value)
@@ -212,14 +214,16 @@ class Plot(QtCore.QObject):
             if fstart > float(min(self.channel_power_region.getRegion())) or fstop < float(max(self.channel_power_region.getRegion())):
                 self.move_channel_power(fstart + state.span / 4, fstop - state.span / 4)
 
-        if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
-            self.persistence_plot.reset_plot()
+        # if set(changed).intersection(PERSISTENCE_RESETTING_CHANGES):
+            # self.persistence_plot.reset_plot()
 
         if 'mode' in changed:
             if state.mode not in self.dut_prop.LEVEL_TRIGGER_RFE_MODES:
                 self.remove_trigger()
+
         if 'fshift' in changed:
             self.delayed_tick_update()
+
     def plot_changed(self, state, changed):
 
         self.plot_state = state

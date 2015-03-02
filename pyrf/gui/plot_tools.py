@@ -135,17 +135,15 @@ class Trace(object):
     Class to represent a trace in the plot
     """
 
-    def __init__(self,plot_area, trace_name, trace_color, blank = False, write = False):
+    def __init__(self,plot_area, controller, trace_name, trace_color, blank = False, write = False):
         self.name = trace_name
-        self.max_hold = False
-        self.min_hold = False
         self.blank = blank
-        self.write = write
         self.store = False
-        self.average = False
         self.data = None
         self.raw_packet = None
         self.freq_range = None
+        self.controller = controller
+        controller.trace_change.connect(self.trace_changed)
         self.color = trace_color
 
         self.calc_channel_power = False
@@ -155,13 +153,16 @@ class Trace(object):
         self.plot_area = plot_area
         self.average_list = []
         self.average_factor = 5
+
     def clear(self):
         for c in self.curves:
             self.plot_area.spectral_plot.removeItem(c)
         self.curves = []
+
     def clear_data(self):
         self.average_list = []
         self.data = None
+
     def update_average_factor(self, factor):
         self.average_factor = factor
         self.average_list = []
@@ -176,25 +177,25 @@ class Trace(object):
                         self.channel_power = calculate_channel_power(self.data[min_bin:max_bin])
 
     def update_curve(self, xdata, ydata, usable_bins, sweep_segments):
-        if self.store or self.blank:
+
+        if self.blank or self.store:
             return
 
         self.freq_range = xdata
-
-        if self.max_hold:
+        if self._trace_state[self.name]['mode'] == 'Max Hold':
             if (self.data is None or len(self.data) != len(ydata)):
                 self.data = ydata
             self.data = np.maximum(self.data,ydata)
 
-        elif self.min_hold:
+        elif self._trace_state[self.name]['mode'] == 'Min Hold':
             if (self.data is None or len(self.data) != len(ydata)):
                 self.data = ydata
             self.data = np.minimum(self.data,ydata)
 
-        elif self.write:
+        elif self._trace_state[self.name]['mode'] == 'Live':
             self.data = ydata
 
-        elif self.average:
+        elif self._trace_state[self.name]['mode'] == 'Average':
             if len(self.average_list) >= self.average_factor:
                 self.average_list.pop(0)
             if self.average_list:
@@ -211,6 +212,7 @@ class Trace(object):
             i = 0
             edge_color = tuple([c / 3 for c in self.color])
             for start_bin, run_length in usable_bins:
+
                 if start_bin > i:
                     c = self.plot_area.spectral_plot.plot(x=xdata[i:start_bin+1],
                         y=self.data[i:start_bin+1], pen=edge_color)
@@ -242,6 +244,25 @@ class Trace(object):
                 i = i + run
                 odd = not odd
 
+    def trace_changed(self, trace, state, changed):
+        self._trace_state = state
+        if trace == self.name:
+            if 'color' in changed:
+                self.color = state[trace]['color']
+            if 'clear' in changed:
+                self.clear_data()
+            if 'pause' in changed:
+                self.store = state[trace]['pause']
+            if 'mode' in changed:
+                if state[trace]['mode'] == 'Off':
+                    self.blank = True
+                    self.clear_data()
+                    self.clear()
+                else:
+                    self.blank = False
+            if 'average' in changed:
+                self.update_average_factor(state[trace]['average'])
+
 class Marker(object):
     """
     Class to represent a marker on the plot
@@ -267,6 +288,7 @@ class Marker(object):
         self.controller = controller
         controller.marker_change.connect(self.marker_changed)
         controller.trace_change.connect(self.trace_changed)
+        controller.state_change.connect(self.state_changed)
 
         self.cursor_pen = pg.mkPen((0,0,0,0), width = 40)
         self.cursor_line = InfiniteLine(pen = self.cursor_pen, pos = -100, angle = 90, movable = True)
@@ -313,18 +335,11 @@ class Marker(object):
 
         self.enabled = True
         self.add_marker()
-        if self.freq_pos is None:
-            self.freq_pos = self.xdata[int(len(self.xdata) / 2)]
         self.controller.apply_plot_options(marker_dragged = True)
-        if self.delta:
-            self.controller.apply_marker_options(self.name, ['dfreq'], [self.freq_pos])
-        else:
-            self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos])
 
     def disable(self):
         self.enabled = False
         self.remove_marker()
-        self.freq_pos = None
 
     def marker_changed(self, marker, state, changed):
 
@@ -340,7 +355,6 @@ class Marker(object):
                 else:
                     self.disable()
             if 'freq' in changed:
-                if not self.coursor_dragged and self.enabled:
                     self.freq_pos = state[marker]['freq']
             if 'hovering' in changed:
                 if state[marker]['hovering']:
@@ -356,7 +370,16 @@ class Marker(object):
     
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
-                    
+
+    def state_changed(self, state, changed):
+        if hasattr(self, '_gui_state'):
+            if 'center' in changed:
+                freq_change = self._gui_state.center - state.center
+                self.controller.apply_marker_options(self.name, ['freq'], [self.freq_pos - freq_change])
+                self._gui_state = state
+        else:
+            self._gui_state = state
+
     def update_data(self, xdata, ydata):
         self.xdata = xdata
         self.ydata = ydata
@@ -509,7 +532,16 @@ class DeltaMarker(Marker):
                     self.draw_color = colors.MARKER_HOVER
                 else:
                     self.draw_color = self.color
-            # print self.draw_color
+
+    def state_changed(self, state, changed):
+        if hasattr(self, '_gui_state'):
+            if 'center' in changed:
+                freq_change = self._gui_state.center - state.center
+                self.controller.apply_marker_options(self.name, ['dfreq'], [self.freq_pos - freq_change])
+                self._gui_state = state
+        else:
+            self._gui_state = state
+
     def dragged(self):
         # determine freq of drag
         self.freq_pos  = self.cursor_line.value()

@@ -5,13 +5,17 @@ from pyrf.gui import labels
 from pyrf.gui import colors
 from pyrf.gui.util import hide_layout
 from pyrf.gui.fonts import GROUP_BOX_FONT
-from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback)
+from pyrf.gui.widgets import (QCheckBoxPlayback, QDoubleSpinBoxPlayback, QComboBoxPlayback)
+from pyrf.gui.gui_config import traceState
 import numpy as np
 
 REMOVE_BUTTON_WIDTH = 10
 MAX_AVERAGE_FACTOR = 1000
 DEFAULT_AVERAGE_FACTOR = 5
 DEFAULT_TRACE = 0 # 0 indicates LIVE
+
+TRACE_MODES = ['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']
+
 class TraceWidgets(namedtuple('TraceWidgets', """
     icon
     color_button
@@ -19,7 +23,7 @@ class TraceWidgets(namedtuple('TraceWidgets', """
     hold
     clear
     average_label
-    average
+    average_edit
     add
     remove
     """)):
@@ -43,15 +47,14 @@ class TraceControls(QtGui.QWidget):
     can be used to control the FFT plot's traces
     :param name: The name of the groupBox
     """
-    def __init__(self, controller, plot):
+    def __init__(self, controller):
         super(TraceControls, self).__init__()
 
         self.controller = controller
         controller.state_change.connect(self.state_changed)
+        controller.plot_change.connect(self.plot_changed)
         controller.trace_change.connect(self.trace_changed)
-        controller.capture_receive.connect(self.capture_received)
-
-        self._plot = plot
+        self._trace_state = traceState
         self.setStyleSheet(GROUP_BOX_FONT)
 
         self.setLayout(QtGui.QGridLayout())
@@ -70,72 +73,47 @@ class TraceControls(QtGui.QWidget):
         :returns: a TraceWidgets namedtuple
         """
         icon = QtGui.QLabel()
-        def update_banner_color(r, g, b):
-            color = QtGui.QColor()
-            color.setRgb(r, g, b)
-            pixmap = QtGui.QPixmap(320, 2)
-            pixmap.fill(color)
-            icon.setPixmap(pixmap)
+
         r, g, b = colors.TRACE_COLORS[num]
-        update_banner_color(r, g, b)
-        button_icon = QtGui.QIcon()
+        self._update_banner_color(icon, r, g, b)
 
         color_button = QtGui.QPushButton()
-        def update_button_color(r, g, b):
-            color = QtGui.QColor()
-            color.setRgb(r, g, b)
-            pixmap = QtGui.QPixmap(50, 50)
-            pixmap.fill(color)
-            button_icon.addPixmap(pixmap)
-            color_button.setIcon(button_icon)
         r, g, b = colors.TRACE_COLORS[num]
-        update_button_color(r, g, b)
+        self._update_button_color(color_button, r, g, b)
 
         def custom_color_clicked():
             color = QtGui.QColorDialog.getColor()
             # Don't update if color chosen is black
             if not (color.red(), color.green(), color.blue()) == colors.BLACK_NUM:
-                update_banner_color(color.red(), color.green(), color.blue())
-                update_button_color(color.red(), color.green(), color.blue())
-                self._plot.traces[num].color = (color.red(), color.green(), color.blue())
-                self.controller.apply_trace_options(num, ['color'], [self._plot.traces[num].color])
+                self._update_banner_color(icon, color.red(), color.green(), color.blue())
+                self._update_button_color(color_button, color.red(), color.green(), color.blue())
+                color = (color.red(), color.green(), color.blue())
+                trace_colors = {}
+                self.controller.apply_trace_options(num, ['color'], [color])
+
         color_button.clicked.connect(custom_color_clicked)
 
-        draw = QtGui.QComboBox()
+        draw = QComboBoxPlayback()
         draw.setToolTip("Select data source")
-        for i, val in enumerate(['Live', 'Max Hold', 'Min Hold', 'Average', 'Off']):
+        for i, val in enumerate(TRACE_MODES):
             draw.addItem(val)
-        draw.setCurrentIndex(num)  # default draw 0: Live, 1: Max, 2: Min
-        def draw_changed(index):
-            trace = self._plot.traces[num]
-            # FIXME: why so many exclusive bools?
-            trace.write = index == 0
-            trace.max_hold = index == 1
-            trace.min_hold = index == 2
-            trace.average = index == 3
-            trace.blank = index == 4
-            if index == 3:
-                average_label.show()
-                average_edit.show()
-            else:
-                average_label.hide()
-                average_edit.hide()
+        draw.setCurrentIndex(num)
 
-            if index == 4:  # 'Off'
-                return remove_trace_clicked()
+        def draw_changed(index):
+            self.controller.apply_trace_options(num, ['mode'], [draw.currentText()])
         draw.currentIndexChanged.connect(draw_changed)
 
         hold = QtGui.QCheckBox("Pause")
         hold.setToolTip("Pause trace updating")
-        def hold_clicked():
-            self._store_trace(num, hold.isChecked())
-        hold.clicked.connect(hold_clicked)
 
+        def hold_clicked():
+            self.controller.apply_trace_options(num, ['pause'], [hold.isChecked()])
+        hold.clicked.connect(hold_clicked)
         clear = QtGui.QPushButton("Clear Trace")
         clear.setToolTip("Refresh the data of the trace")
+
         def clear_clicked():
-            trace = self._plot.traces[num]
-            trace.clear_data()
+            self.controller.apply_trace_options(num, ['clear'], [None])
         clear.clicked.connect(clear_clicked)
 
         average_label = QtGui.QLabel("Captures:")
@@ -143,18 +121,19 @@ class TraceControls(QtGui.QWidget):
         average_edit = QtGui.QSpinBox()
         average_edit.setRange(2, MAX_AVERAGE_FACTOR)
         average_edit.setValue(DEFAULT_AVERAGE_FACTOR)
+
         def average_changed():
-            trace = self._plot.traces[num]
-            trace.update_average_factor(average_edit.value())
+            self.controller.apply_trace_options(num, ['average'], [average_edit.value()])
         average_edit.valueChanged.connect(average_changed)
         average_edit.hide()
 
         add_trace = QtGui.QPushButton("+ Trace")
         add_trace.setToolTip("Enable this trace")
+
         def add_trace_clicked():
             draw.setCurrentIndex(DEFAULT_TRACE)
             draw_changed(DEFAULT_TRACE)
-            self.controller.apply_trace_options(num, ['enabled'], [True])
+            self.controller.apply_trace_options(num, ['mode'], ['Live'])
             if hold.isChecked():  # force hold off
                 hold.click()
             self._build_layout()
@@ -163,15 +142,34 @@ class TraceControls(QtGui.QWidget):
         remove_trace = QtGui.QPushButton("-")
         remove_trace.setMinimumWidth(REMOVE_BUTTON_WIDTH)
         remove_trace.setToolTip("Disable this trace")
+
         def remove_trace_clicked():
             self.blank_trace(num)
-            self.controller.apply_trace_options(num, ['enabled'], [False])
+            self.controller.apply_trace_options(num, ['mode'], ['Off'])
             self._build_layout()
         remove_trace.clicked.connect(remove_trace_clicked)
 
         return TraceWidgets(icon, color_button, draw, hold, clear,
                             average_label, average_edit,
                             add_trace, remove_trace)
+
+    def _update_banner_color(self, icon, r, g, b):
+            color = QtGui.QColor()
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(320, 2)
+            pixmap.fill(color)
+            icon.setPixmap(pixmap)
+            return icon
+
+    def _update_button_color(self, color_button, r, g, b):
+            button_icon = QtGui.QIcon()
+            color = QtGui.QColor()
+            color.setRgb(r, g, b)
+            pixmap = QtGui.QPixmap(50, 50)
+            pixmap.fill(color)
+            button_icon.addPixmap(pixmap)
+            color_button.setIcon(button_icon)
+            return color_button
 
     def _build_layout(self):
         """
@@ -194,10 +192,10 @@ class TraceControls(QtGui.QWidget):
             row = row + 1
 
             show(trace_widgets.average_label, row, 1, 1, 2)
-            show(trace_widgets.average, row, 3, 1, 2)
-            if trace_widgets.draw.currentText() != 'Average':
+            show(trace_widgets.average_edit, row, 3, 1, 2)
+            if self._trace_state[trace_index]['mode'] != 'Average':
                 trace_widgets.average_label.hide()
-                trace_widgets.average.hide()
+                trace_widgets.average_edit.hide()
             return row + 1
 
         def add_trace_off_widgets(trace_widgets, row):
@@ -207,9 +205,8 @@ class TraceControls(QtGui.QWidget):
             show(trace_widgets.add, row, 1, 1, 2)
             return row + 1
         row = 0
-        for trace_index, (trace, widgets) in enumerate(
-                zip(self._plot.traces, self._traces)):
-            if trace.blank:
+        for trace_index, widgets in enumerate(self._traces):
+            if self._trace_state[trace_index]['mode'] == 'Off':
                 row = add_trace_off_widgets(widgets, row)
                 continue
             row = add_trace_widgets(widgets, row)
@@ -238,94 +235,38 @@ class TraceControls(QtGui.QWidget):
                 
     def trace_changed(self, trace, state, changed):
         self._trace_state = state
+       
+        if 'color' in changed:
+            color = state[trace]['color']
+            self._update_banner_color(self._traces[trace].icon, 
+                                    color[0], 
+                                    color[1],
+                                    color[2])
+            self._update_button_color(self._traces[trace].color_button,
+                                    color[0], 
+                                    color[1],
+                                    color[2])
+        if 'mode' in changed:
+            mode = state[trace]['mode']
+            self._traces[trace].draw.quiet_update(TRACE_MODES, mode)
+            if mode == 'Average':
+                self._traces[trace].average_label.show()
+                self._traces[trace].average_edit.show()
+            elif mode == 'Off' or mode == 'Live':
+                self._build_layout()
+            else:
+                self._traces[trace].average_label.hide()
+                self._traces[trace].average_edit.hide()
+        if 'pause' in changed:
+            check_state = QtCore.Qt.CheckState()
+            if state[trace]['pause']:
+                check_state = QtCore.Qt.CheckState(2)
+            else:
+                check_state = QtCore.Qt.CheckState(0)
+            self._traces[trace].hold.setCheckState(check_state)
 
-    def capture_received(self, state, fstart, fstop, raw, power, usable, segments):
-        # save x,y data for marker adjustments
-        self.pow_data = power
-        self.xdata = np.linspace(fstart, fstop, len(power))
-
-    def blank_trace(self, num):
-        """
-        disable the selected trace
-        """
-        trace = self._plot.traces[num]
-        trace.clear()
-        trace.data = None
-
-    def _store_trace(self, num, store):
-        """
-        store the current trace's data
-        """
-        self._plot.traces[num].store = bool(store)
-
-    def _find_peak(self, num):
-        """
-        move the selected marker to the maximum point of the spectrum
-        """
-        marker = self._plot.markers[num]
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        data_range = self.xdata
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
-
-        trace = self._plot.traces[marker.trace_index]
-        peak_value = np.max(trace.data[min_index:max_index])
-        marker.data_index = np.where(trace.data==peak_value)[0]
-
-    def _find_right_peak(self, num):
-        """
-        move the selected marker to the next peak on the right
-        """
-        marker = self._plot.markers[num]
-        trace = self._plot.traces[marker.trace_index]
-        pow_data = trace.data
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        if marker.data_index is None:
-            marker.data_index = len(pow_data) / 2
-        data_range = self.xdata[marker.data_index:-1]
-
-        if len(data_range) == 0:
-            return
-
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1])) + marker.data_index
-        min_index += 1
-        right_pow = max(pow_data[min_index:max_index])
-        marker.data_index = np.where(pow_data==right_pow)[0]
-
-    def _find_left_peak(self, num):
-        """
-        move the selected marker to the next peak on the left
-        """
-        marker = self._plot.markers[num]
-        trace = self._plot.traces[marker.trace_index]
-        pow_data = trace.data
-        # enable the marker if it is not already enabled
-        if not marker.enabled:
-            self._marker_check.click()
-
-        # retrieve the min/max x-axis of the current window
-        window_freq = self._plot.view_box.viewRange()[0]
-        if marker.data_index is None:
-            marker.data_index = len(pow_data) / 2
-        data_range = self.xdata[0:marker.data_index]
-
-        if len(data_range) == 0:
-            return
-        if window_freq[-1] < data_range[0] or window_freq[0] > data_range[-1]:
-            return
-
-        min_index, max_index = np.searchsorted(data_range, (window_freq[0], window_freq[-1]))
-        left_pow = max(pow_data[min_index:max_index])
-        min_index -= 1
-        marker.data_index = np.where(pow_data==left_pow)[0]
+    def plot_changed(self, state, changed):
+        self.plot_state = state
 
     def showEvent(self, event):
         self.activateWindow()
