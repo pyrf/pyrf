@@ -205,7 +205,7 @@ class WSA5000_220Properties(object):
         'device_identifier': 'unknown',
         }
     TUNABLE_MODES = ['ZIF', 'SH', 'SHN', 'HDR']
-    SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
+    SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
 
     MAX_SPP = 32768
 
