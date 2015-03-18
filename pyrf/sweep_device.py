@@ -143,7 +143,10 @@ class SweepDevice(object):
 
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, rbw, mode, min_points)
-        self.rfe_mode = 'SH' if mode == 'SH' else 'ZIF'
+        if 'left' in mode:
+            self.rfe_mode = 'ZIF'
+        else:
+            self.rfe_mode = mode
 
         self.sweep_segments = []
         for ss in self.plan:
@@ -326,8 +329,9 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
     7. bins_keep is the total number of selected bins to keep; for
        single captures bins_run == bins_keep
     """
-    assert mode in ('ZIF left band', 'ZIF', 'SH')
-    rfe_mode = 'SH' if mode == 'SH' else 'ZIF'
+    assert mode in ('ZIF left band', 'ZIF', 'SHN', 'SH')
+    rfe_mode = mode
+
     prop = device.properties
     out = []
     usable2 = prop.USABLE_BW[rfe_mode] / 2.0
@@ -396,7 +400,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
         (bins_keep + bins_pass - 1) % usable_bins + 1) * bin_size + fstart
 
     # adjust points for I-only data
-    if mode == 'SH':
+    if mode == 'SH' or mode == 'SHN':
         points *= 2
 
     assert fcenter % prop.TUNING_RESOLUTION == 0, fcenter
