@@ -3,11 +3,13 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.thinkrf_properties import wsa_properties
-
+from pyrf.util import read_data_and_context, compute_usable_bins, trim_to_usable_fstart_fstop
+from pyrf.numpy_util import compute_fft
 import struct
 import socket
 import select
 import platform
+import numpy as np
 
 DISCOVERY_UDP_PORT = 18331
 _DISCOVERY_QUERY_CODE = 0x93315555
@@ -127,6 +129,43 @@ class WSA(object):
         :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
         yield self.scpiget(":*idn?")
+    
+    def peakfind(self):
+        """
+        Returns frequency and the power level of the maximum spectral point
+        computed using the current settings, Note this function disables
+
+        :returns: (peak_freq, peak_power)
+        """
+        
+        # set the capture mode to block
+        self.abort()
+        self.flush()
+        self.request_read_perm()
+        
+        # grab current WSA config
+        points = self.ppb() * self.spp()
+
+        dec = self.decimation()
+        freq = self.freq()
+
+        fshift = self.fshift()
+        mode = self.rfe_mode()
+        fstart = freq - self.properties.FULL_BW[mode] / 2
+        fstop = freq + self.properties.FULL_BW[mode] / 2
+        usable_bins = compute_usable_bins(self.properties, mode, points, dec, fshift)
+        # read data
+        data, context = read_data_and_context(self, points)
+        
+        pow_data = compute_fft(self, data, context)
+        pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
+                                                                        usable_bins,  
+                                                                        fstart,  
+                                                                        fstop)
+
+        frequencies = np.linspace(fstart, fstop, len(pow_data))
+
+        return (frequencies[np.argmax(pow_data)], max(pow_data))
 
     @sync_async
     def rfe_mode(self, mode=None):
