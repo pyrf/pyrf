@@ -3,7 +3,7 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.thinkrf_properties import wsa_properties
-from pyrf.util import read_data_and_context, compute_usable_bins, trim_to_usable_fstart_fstop
+from pyrf.util import read_data_and_context, compute_usable_bins, trim_to_usable_fstart_fstop, adjust_usable_fstart_fstop
 from pyrf.numpy_util import compute_fft
 import struct
 import socket
@@ -137,12 +137,14 @@ class WSA(object):
 
         :returns: (peak_freq, peak_power)
         """
-        
-        # set the capture mode to block
-        self.abort()
-        self.flush()
+        iq_path = self.iq_output_path()
+        capture_mode = self.capture_mode()
+
+        # if not iq_path == 'DIGITIZER' or not capture_mode == 'BLOCK':
+            # print 'YOU SHOULDNT DO DIS'
+        # get read access
         self.request_read_perm()
-        
+
         # grab current WSA config
         points = self.ppb() * self.spp()
 
@@ -154,9 +156,18 @@ class WSA(object):
         fstart = freq - self.properties.FULL_BW[mode] / 2
         fstop = freq + self.properties.FULL_BW[mode] / 2
         usable_bins = compute_usable_bins(self.properties, mode, points, dec, fshift)
+
         # read data
         data, context = read_data_and_context(self, points)
-        
+        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            self.properties,
+            mode,
+            points,
+            dec,
+            freq,
+            data.spec_inv,
+            usable_bins)
+
         pow_data = compute_fft(self, data, context)
         pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
                                                                         usable_bins,  
@@ -199,6 +210,18 @@ class WSA(object):
             path = buf.strip()
         else:
             self.scpiset(":OUTPUT:IQ:MODE %s" % path)
+        yield path
+
+    @sync_async
+    def capture_mode(self):
+        """
+        This command queries the current capture mode
+
+        :returns: the current capture mode
+        """
+
+        buf = yield self.scpiget(":SYST:CAPTURE:MODE?")
+        path = buf.strip()
         yield path
 
     @sync_async
