@@ -179,7 +179,7 @@ class WSA(object):
                                                                         fstop)
         frequencies = np.linspace(fstart, fstop, len(pow_data))
         peak_points = []
-        for p in sorted(pow_data)[len(pow_data) - n:]:
+        for p in sorted(pow_data, reverse=True)[0:n]:
             peak_points.append((frequencies[np.where(pow_data == p)][0], p))
         return peak_points
 
