@@ -11,6 +11,7 @@ dut.connect(sys.argv[1])
 dut.reset()
 dut.freq(2450e6)
 
-print dut.peakfind()
+a = dut.peakfind(n = 5)
 
-
+for x in a:
+    print x

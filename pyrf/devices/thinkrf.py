@@ -130,12 +130,16 @@ class WSA(object):
         """
         yield self.scpiget(":*idn?")
     
-    def peakfind(self):
+    def peakfind(self, n=1):
         """
         Returns frequency and the power level of the maximum spectral point
         computed using the current settings, Note this function disables
 
-        :returns: (peak_freq, peak_power)
+        :param n: determine the number of peaks to return
+        :returns: [(peak_freq1, peak_power1), 
+                   (peak_freq2, peak_power2)
+                   , ..., 
+                   (peak_freqn, peak_powern)]
         """
         iq_path = self.iq_output_path()
         capture_mode = self.capture_mode()
@@ -173,10 +177,11 @@ class WSA(object):
                                                                         usable_bins,  
                                                                         fstart,  
                                                                         fstop)
-
         frequencies = np.linspace(fstart, fstop, len(pow_data))
-
-        return (frequencies[np.argmax(pow_data)], max(pow_data))
+        peak_points = []
+        for p in sorted(pow_data)[len(pow_data) - n:]:
+            peak_points.append((frequencies[np.where(pow_data == p)][0], p))
+        return peak_points
 
     def measure_noisefloor(self):
         """
