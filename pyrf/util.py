@@ -1,7 +1,7 @@
 import math
 
 from pyrf.vrt import I_ONLY
-
+from ast import literal_eval
 def read_data_and_context(dut, points=1024):
     """
     Initiate capture of one data packet, wait for and return data packet
