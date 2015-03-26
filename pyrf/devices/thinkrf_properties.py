@@ -263,7 +263,10 @@ class WSA5000_427Properties(WSA5000_220Properties):
     # 427 -> increased to 27GHz
     CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 27000*M)
-
+    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'hdr_gain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     MAX_TUNABLE = dict((mode, max(27000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
 
