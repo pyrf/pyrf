@@ -16,14 +16,10 @@ Windows Dependencies
 3. Install Python 2.7.6 (python-2.7.6.msi)
 4. Add the following to the windows PATH ';C:\Python27;C:\Python27\Scripts'
 5. Install Numpy (numpy-1.8.1-win32-superpack-python2.7)
-6. Install Scipy (scipy-0.14.0-win32-superpack-python2.7)
-7. Install Pyside (PySide-1.2.0.win32-py2.7)
-8. Install Pyqtgraph (pyqtgraph-0.9.8.win32)
 9. Install zope.interface (zope.interface-4.1.1.win32-py2.7)
 10. Install twisted (Twisted-14.0.0.win32-py2.7)
 11. Install pywin32 (pywin32-219.win32-py2.7)
 12. Install netifaces (netifaces-0.10.4.win32-py2.7)
-13. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
 14. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
 
 Continue from :ref:`pyrf-installation` below.
@@ -34,8 +30,8 @@ Debian/Ubuntu Dependencies
 Use packaged requirements::
 
    apt-get install python-pyside python-twisted python-numpy \
-   	python-zope.interface python-pip python-scipy python-setuptools \
-   	python-pyqtgraph python-netifaces
+   	python-zope.interface python-setuptools \
+   	 python-netifaces
    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
 
 
@@ -97,30 +93,3 @@ returned from the API.
 To use the asynchronous when a WSA instance is created
 you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
 instance as the connector parameter, as in :ref:`twisted-show-i-q`
-
-
-.. _demo-gui:
-
-PyRF RTSA
----------
-
-.. image:: rtsa-gui.png
-   :alt: rtsa-gui screen shot
-
-.. image:: rtsa-gui-2.png
-   :alt: rtsa-gui screen shot
-
-``rtsa-gui`` is a cross-platform GUI application built with the
-Qt_ toolkit and PySideProject_ bindings for Python.
-
-.. _Qt: http://qt.digia.com/
-.. _PySideProject: http://qt-project.org/wiki/PySide
-
-The GUI may be launched with the command::
-
-  rtsa-gui <hostname> [--reset]
-
-If *hostname* is not specified a dialog will appear asking you to enter one.
-If ``--reset`` is used the WSA will be reset to defaults before the GUI
-appears.
-

@@ -3,7 +3,6 @@ from distutils.version import StrictVersion, LooseVersion
 from pyrf.units import M
 from pyrf.vrt import I_ONLY, IQ
 
-
 def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
@@ -72,9 +71,9 @@ class WSA4000Properties(object):
 
     SPECA_DEFAULTS = {
         'mode': 'ZIF',
-        'center': 2450 * M,
+        'center': 2450.0 * M,
         'rbw': 122070,
-        'span': 125 * M,
+        'span': 125.0 * M,
         'decimation': 1,
         'fshift': 0,
         'device_settings': {
@@ -87,9 +86,9 @@ class WSA4000Properties(object):
         }
     SPECA_MODES = ['Sweep ZIF']
 
-
 class WSA5000_220Properties(object):
     model = 'WSA5000-220'
+    manufacturer = 'THINKRF'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
     TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 0
@@ -184,7 +183,7 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    DEFAULT_SPECA_SPAN = 125 * M
+    DEFAULT_SPECA_SPAN = 125.0 * M
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450 * M,
@@ -195,7 +194,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25,
+            'hdr_gain': 25.0,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
                         'fstart': 2440 * M,
@@ -206,7 +205,7 @@ class WSA5000_220Properties(object):
         'device_identifier': 'unknown',
         }
     TUNABLE_MODES = ['ZIF', 'SH', 'SHN', 'HDR']
-    SPECA_MODES = ['Sweep SH', 'Sweep ZIF']
+    SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
 
     MAX_SPP = 32768
 

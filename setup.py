@@ -25,7 +25,7 @@ setup(
     version=release,
     author='ThinkRF Corporation',
     author_email='support@thinkrf.com',
-    packages=['pyrf', 'pyrf.devices', 'pyrf.connectors', 'pyrf.gui'],
+    packages=['pyrf', 'pyrf.devices', 'pyrf.connectors'],
     url='https://github.com/pyrf/pyrf',
     license='BSD',
     description='API for RF receivers including ThinkRF WSA platforms',
