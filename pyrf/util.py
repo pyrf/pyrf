@@ -28,9 +28,7 @@ def collect_data_and_context(dut):
 
         if pkt.is_data_packet():
             break
-
         context_values.update(pkt.fields)
-
     return pkt, context_values
 
 # avoid breaking pyrf 0.2.x examples:
