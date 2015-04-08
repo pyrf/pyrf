@@ -72,7 +72,9 @@ class CaptureDevice(object):
         :type min_points: int
         """
         prop = self.real_device.properties
-
+        self.real_device.abort()
+        self.real_device.flush()
+        self.real_device.request_read_perm()
         self.configure_device(dict(
             freq=freq,
             rfe_mode=rfe_mode,
