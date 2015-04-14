@@ -33,6 +33,8 @@ def wsa_properties(device_id):
         p = WSA5000_408Properties()
     elif model == 'WSA5000-427':
         p = WSA5000_427Properties()
+    elif model == 'WSA5000-418':
+        p = WSA5000_418Properties()
     else:
         p = WSA5000_220Properties()
 
@@ -95,7 +97,7 @@ class WSA5000_220Properties(object):
     CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 20000*M)
     RFE_ATTENUATION = 20
-    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD', 'IQIN')
+    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD', 'IQIN')
     DEFAULT_SAMPLE_TYPE = {
         'ZIF': IQ,
         'SH': I_ONLY,
@@ -204,7 +206,7 @@ class WSA5000_220Properties(object):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
-    TUNABLE_MODES = ['ZIF', 'SH', 'SHN', 'HDR']
+    TUNABLE_MODES = ['SH', 'SHN', 'ZIF', 'HDR']
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
 
     MAX_SPP = 32768
@@ -230,7 +232,7 @@ class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
     REFLEVEL_ERROR = 0
     # v2 -> hardware revision without SHN mode
-    RFE_MODES = ('ZIF', 'SH', 'HDR', 'DD', 'IQIN')
+    RFE_MODES = ('SH', 'ZIF', 'HDR', 'DD', 'IQIN')
 
 class WSA5000_208Properties(WSA5000_220Properties):
     model = 'WSA5000-208'
@@ -256,14 +258,32 @@ class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
-    RFE_MODES = ('ZIF', 'SH', 'SHN', 'HDR', 'DD')
+    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
 class WSA5000_427Properties(WSA5000_220Properties):
     model = 'WSA5000-427'
     # 427 -> increased to 27GHz
     CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 27000*M)
+    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
 
+    # 427 model has no attenuation
+    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'hdr_gain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     MAX_TUNABLE = dict((mode, max(27000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
 
+class WSA5000_418Properties(WSA5000_220Properties):
+    model = 'WSA5000-418'
+    # 418 -> decreased to 18GHz
+    CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 18000*M)
+    # 427 model has no attenuation
+    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'hdr_gain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+    MAX_TUNABLE = dict((mode, max(27000*M, f))
+        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())

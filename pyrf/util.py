@@ -1,7 +1,7 @@
 import math
 
 from pyrf.vrt import I_ONLY
-
+from ast import literal_eval
 def read_data_and_context(dut, points=1024):
     """
     Initiate capture of one data packet, wait for and return data packet
@@ -28,9 +28,7 @@ def collect_data_and_context(dut):
 
         if pkt.is_data_packet():
             break
-
         context_values.update(pkt.fields)
-
     return pkt, context_values
 
 # avoid breaking pyrf 0.2.x examples:
@@ -144,7 +142,7 @@ def decode_config_type(config_str, str_type):
     elif  isinstance(str_type, str):
         value = config_str
     elif isinstance(str_type, list):
-        value = [int(i) for i in (config_str[1:-2].split(','))]
+            value = literal_eval(config_str)
     elif isinstance(str_type, tuple):
         # for tuple, remove type, then remove brackets, then split by ',' and final convert to float tuple
         try:
