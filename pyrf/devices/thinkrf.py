@@ -3,11 +3,13 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.thinkrf_properties import wsa_properties
-
+from pyrf.util import read_data_and_context, compute_usable_bins, trim_to_usable_fstart_fstop, adjust_usable_fstart_fstop
+from pyrf.numpy_util import compute_fft
 import struct
 import socket
 import select
 import platform
+import numpy as np
 
 DISCOVERY_UDP_PORT = 18331
 _DISCOVERY_QUERY_CODE = 0x93315555
@@ -127,6 +129,103 @@ class WSA(object):
         :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
         yield self.scpiget(":*idn?")
+    
+    def peakfind(self, n=1):
+        """
+        Returns frequency and the power level of the maximum spectral point
+        computed using the current settings, Note this function disables
+
+        :param n: determine the number of peaks to return
+        :returns: [(peak_freq1, peak_power1), 
+                   (peak_freq2, peak_power2)
+                   , ..., 
+                   (peak_freqn, peak_powern)]
+        """
+        iq_path = self.iq_output_path()
+        capture_mode = self.capture_mode()
+
+        if not iq_path == 'DIGITIZER' or not capture_mode == 'BLOCK':
+            raise StandardError("Can't perform peak find while WSA is sweeping or IQ path is not on the WSA ADC")
+        # get read access
+        self.request_read_perm()
+
+        # grab current WSA config
+        points = self.ppb() * self.spp()
+
+        dec = self.decimation()
+        freq = self.freq()
+
+        fshift = self.fshift()
+        mode = self.rfe_mode()
+        fstart = freq - self.properties.FULL_BW[mode] / 2
+        fstop = freq + self.properties.FULL_BW[mode] / 2
+        usable_bins = compute_usable_bins(self.properties, mode, points, dec, fshift)
+
+        # read data
+        data, context = read_data_and_context(self, points)
+        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            self.properties,
+            mode,
+            points,
+            dec,
+            freq,
+            data.spec_inv,
+            usable_bins)
+
+        pow_data = compute_fft(self, data, context)
+        pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
+                                                                        usable_bins,  
+                                                                        fstart,  
+                                                                        fstop)
+        frequencies = np.linspace(fstart, fstop, len(pow_data))
+        peak_points = []
+        for p in sorted(pow_data, reverse=True)[0:n]:
+            peak_points.append((frequencies[np.where(pow_data == p)][0], p))
+        return peak_points
+
+    def measure_noisefloor(self):
+        """
+        returns a power level that represents the top edge of the noisefloor
+        :returns: noise_power
+        """
+        iq_path = self.iq_output_path()
+        capture_mode = self.capture_mode()
+
+        if not iq_path == 'DIGITIZER' or not capture_mode == 'BLOCK':
+            raise StandardError("Can't measure noisefloor while WSA is sweeping or IQ path is not on the WSA ADC")
+        # get read access
+        self.request_read_perm()
+
+        # grab current WSA config
+        points = self.ppb() * self.spp()
+
+        dec = self.decimation()
+        freq = self.freq()
+
+        fshift = self.fshift()
+        mode = self.rfe_mode()
+        fstart = freq - self.properties.FULL_BW[mode] / 2
+        fstop = freq + self.properties.FULL_BW[mode] / 2
+        usable_bins = compute_usable_bins(self.properties, mode, points, dec, fshift)
+
+        # read data
+        data, context = read_data_and_context(self, points)
+        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            self.properties,
+            mode,
+            points,
+            dec,
+            freq,
+            data.spec_inv,
+            usable_bins)
+
+        pow_data = compute_fft(self, data, context)
+        pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
+                                                                        usable_bins,  
+                                                                        fstart,  
+                                                                        fstop)
+        noisefloor = np.mean(sorted(pow_data)[int(len(pow_data) * 0.2):])
+        return noisefloor
 
     @sync_async
     def rfe_mode(self, mode=None):
@@ -160,6 +259,18 @@ class WSA(object):
             path = buf.strip()
         else:
             self.scpiset(":OUTPUT:IQ:MODE %s" % path)
+        yield path
+
+    @sync_async
+    def capture_mode(self):
+        """
+        This command queries the current capture mode
+
+        :returns: the current capture mode
+        """
+
+        buf = yield self.scpiget(":SYST:CAPTURE:MODE?")
+        path = buf.strip()
         yield path
 
     @sync_async
