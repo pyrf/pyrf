@@ -254,9 +254,7 @@ class WSA5000_108Properties(WSA5000_208Properties):
 
 class WSA5000_308Properties(WSA5000_108Properties):
     model = 'WSA5000-308'
-    
-class BNC_RTSA75008_Properties(WSA5000_408Properties):
-    model = 'RTSA7500-8'
+
     manufacturer = 'Berkley Nucleonics'
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
@@ -292,3 +290,6 @@ class WSA5000_418Properties(WSA5000_220Properties):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     MAX_TUNABLE = dict((mode, max(27000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+
+class BNC_RTSA75008_Properties(WSA5000_408Properties):
+    model = 'RTSA7500-8'
