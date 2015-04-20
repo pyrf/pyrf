@@ -12,17 +12,6 @@ def wsa_properties(device_id):
     if model == 'WSA4000':
         return WSA4000Properties()
 
-    # revision numbers jumped backwards when switching to major.minor
-    rev = rev.lstrip('v')
-    if '.' in rev:
-        old_v2 = StrictVersion(rev) < StrictVersion('1.2')
-    else:
-        old_v2 = int(rev) < 3
-
-    if model == 'WSA5000-220' and old_v2:
-        p = WSA5000_220_v2Properties()
-    elif model == 'WSA5000-208' and old_v2:
-        p = WSA5000_208_v2Properties()
     elif model == 'WSA5000-208':
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
