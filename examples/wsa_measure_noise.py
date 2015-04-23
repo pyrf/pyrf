@@ -8,10 +8,10 @@ dut = WSA()
 dut.connect(sys.argv[1])
 
 # setup test conditions
-dut.reset()
-dut.freq(2450e6)
-dut.spp(32768)
+# dut.reset()
+# dut.freq(2450e6)
+# dut.spp(32768)
 
-print dut.measure_noisefloor()
+print dut.measure_noisefloor(rbw = 100e3, average = 1)
 
 
