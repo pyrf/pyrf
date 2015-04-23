@@ -3,8 +3,7 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.thinkrf_properties import wsa_properties
-from pyrf.util import read_data_and_context, compute_usable_bins, trim_to_usable_fstart_fstop, adjust_usable_fstart_fstop
-from pyrf.numpy_util import compute_fft
+from pyrf.util import capture_spectrum
 import struct
 import socket
 import select
@@ -130,12 +129,13 @@ class WSA(object):
         """
         yield self.scpiget(":*idn?")
     
-    def peakfind(self, n=1):
+    def peakfind(self, n=1, rbw=None):
         """
         Returns frequency and the power level of the maximum spectral point
         computed using the current settings, Note this function disables
 
         :param n: determine the number of peaks to return
+        :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
         :returns: [(peak_freq1, peak_power1), 
                    (peak_freq2, peak_power2)
                    , ..., 
@@ -149,43 +149,18 @@ class WSA(object):
         # get read access
         self.request_read_perm()
 
-        # grab current WSA config
-        points = self.ppb() * self.spp()
-
-        dec = self.decimation()
-        freq = self.freq()
-
-        fshift = self.fshift()
-        mode = self.rfe_mode()
-        fstart = freq - self.properties.FULL_BW[mode] / 2
-        fstop = freq + self.properties.FULL_BW[mode] / 2
-        usable_bins = compute_usable_bins(self.properties, mode, points, dec, fshift)
-
-        # read data
-        data, context = read_data_and_context(self, points)
-        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
-            self.properties,
-            mode,
-            points,
-            dec,
-            freq,
-            data.spec_inv,
-            usable_bins)
-
-        pow_data = compute_fft(self, data, context)
-        pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
-                                                                        usable_bins,  
-                                                                        fstart,  
-                                                                        fstop)
+        fstart, fstop, pow_data = capture_spectrum(self, rbw)
         frequencies = np.linspace(fstart, fstop, len(pow_data))
         peak_points = []
         for p in sorted(pow_data, reverse=True)[0:n]:
             peak_points.append((frequencies[np.where(pow_data == p)][0], p))
         return peak_points
 
-    def measure_noisefloor(self):
+    def measure_noisefloor(self, rbw=None):
         """
         returns a power level that represents the top edge of the noisefloor
+        
+        :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
         :returns: noise_power
         """
         iq_path = self.iq_output_path()
@@ -195,35 +170,7 @@ class WSA(object):
             raise StandardError("Can't measure noisefloor while WSA is sweeping or IQ path is not on the WSA ADC")
         # get read access
         self.request_read_perm()
-
-        # grab current WSA config
-        points = self.ppb() * self.spp()
-
-        dec = self.decimation()
-        freq = self.freq()
-
-        fshift = self.fshift()
-        mode = self.rfe_mode()
-        fstart = freq - self.properties.FULL_BW[mode] / 2
-        fstop = freq + self.properties.FULL_BW[mode] / 2
-        usable_bins = compute_usable_bins(self.properties, mode, points, dec, fshift)
-
-        # read data
-        data, context = read_data_and_context(self, points)
-        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
-            self.properties,
-            mode,
-            points,
-            dec,
-            freq,
-            data.spec_inv,
-            usable_bins)
-
-        pow_data = compute_fft(self, data, context)
-        pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
-                                                                        usable_bins,  
-                                                                        fstart,  
-                                                                        fstop)
+        fstart, fstop, pow_data = capture_spectrum(self, rbw)
         noisefloor = np.mean(sorted(pow_data)[int(len(pow_data) * 0.2):])
         return noisefloor
 
@@ -555,10 +502,9 @@ class WSA(object):
         if packets is None:
             number = yield self.scpiget(":TRACE:BLOCK:PACKETS?")
             number = int(number)
+            yield number
         else:
             self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (packets,))
-        yield number
-
 
     @sync_async
     def request_read_perm(self):
