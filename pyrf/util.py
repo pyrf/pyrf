@@ -4,12 +4,12 @@ from pyrf.vrt import I_ONLY
 from ast import literal_eval
 from pyrf.numpy_util import compute_fft
 import numpy as np
-def capture_spectrum(dut, rbw = None):
+def capture_spectrum(dut, rbw = None, average=1):
     """
     Returns the spectral data, and the start frequency, stop frequency corresponding to the 
     WSA's current configuration
     :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
-        
+    :param average: number of capture iterations
     :returns: (fstart, fstop, pow_data)
     where pow_data is a list
     """
@@ -49,26 +49,33 @@ def capture_spectrum(dut, rbw = None):
     fstop = freq + bandwidth/ 2
     usable_bins = compute_usable_bins(dut.properties, mode, points, dec, fshift)
 
-    # read data
-    for p in range(packets):
-        if p == 0:
-            data, context = read_data_and_context(dut, samples)
+    total_pow = []
+    for v in range(average):
+
+        # read data
+        for p in range(packets):
+            if p == 0:
+                data, context = read_data_and_context(dut, samples)
+            else:
+                d, c = read_data_and_context(dut, samples)
+                data.data.np_array = np.concatenate([data.data.np_array, d.data.np_array])
+        
+        # adjust fstart and fstop based on the spectral inversion
+        usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+            dut.properties,
+            mode,
+            points,
+            dec,
+            freq,
+            data.spec_inv,
+            usable_bins)
+        # compute fft
+        pow_data = compute_fft(dut, data, context)
+        if not len(total_pow):
+            total_pow = pow_data
         else:
-            d, c = read_data_and_context(dut, samples)
-            data.data.np_array = np.concatenate([data.data.np_array, d.data.np_array])
-    
-    # adjust fstart and fstop based on the spectral inversion
-    usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
-        dut.properties,
-        mode,
-        points,
-        dec,
-        freq,
-        data.spec_inv,
-        usable_bins)
-    # compute fft
-    pow_data = compute_fft(dut, data, context)
-    
+            total_pow = np.add(total_pow, pow_data)
+    pow_data = total_pow / average
     # trim FFT
     pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
                                                                     usable_bins,  

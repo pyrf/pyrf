@@ -129,13 +129,14 @@ class WSA(object):
         """
         yield self.scpiget(":*idn?")
     
-    def peakfind(self, n=1, rbw=None):
+    def peakfind(self, n=1, rbw=None, average=1):
         """
         Returns frequency and the power level of the maximum spectral point
         computed using the current settings, Note this function disables
 
         :param n: determine the number of peaks to return
         :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
+        :param average: number of capture iterations
         :returns: [(peak_freq1, peak_power1), 
                    (peak_freq2, peak_power2)
                    , ..., 
@@ -149,18 +150,19 @@ class WSA(object):
         # get read access
         self.request_read_perm()
 
-        fstart, fstop, pow_data = capture_spectrum(self, rbw)
+        fstart, fstop, pow_data = capture_spectrum(self, rbw, average)
         frequencies = np.linspace(fstart, fstop, len(pow_data))
         peak_points = []
         for p in sorted(pow_data, reverse=True)[0:n]:
             peak_points.append((frequencies[np.where(pow_data == p)][0], p))
         return peak_points
 
-    def measure_noisefloor(self, rbw=None):
+    def measure_noisefloor(self, rbw=None, average=1):
         """
         returns a power level that represents the top edge of the noisefloor
         
         :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
+        :param average: number of capture iterations
         :returns: noise_power
         """
         iq_path = self.iq_output_path()
@@ -170,7 +172,7 @@ class WSA(object):
             raise StandardError("Can't measure noisefloor while WSA is sweeping or IQ path is not on the WSA ADC")
         # get read access
         self.request_read_perm()
-        fstart, fstop, pow_data = capture_spectrum(self, rbw)
+        fstart, fstop, pow_data = capture_spectrum(self, rbw, average)
         noisefloor = np.mean(sorted(pow_data)[int(len(pow_data) * 0.2):])
         return noisefloor
 
