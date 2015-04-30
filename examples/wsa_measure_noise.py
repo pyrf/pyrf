@@ -12,6 +12,6 @@ dut.connect(sys.argv[1])
 # dut.freq(2450e6)
 # dut.spp(32768)
 
-print dut.measure_noisefloor(rbw = 100e3, average = 1)
+print dut.measure_noisefloor(rbw = 100e3, average = 130)
 
 

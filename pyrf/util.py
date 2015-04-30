@@ -38,8 +38,8 @@ def capture_spectrum(dut, rbw = None, average=1):
         dut.ppb(packets)
     # if no rbw requested, use current point
     else:
-        samples = dut.ppb()
-        packets = dut.spp()
+        samples = dut.spp()
+        packets = dut.ppb()
         points = samples * packets
     rbw = bandwidth / points
     # calculate the usable bins
@@ -51,11 +51,11 @@ def capture_spectrum(dut, rbw = None, average=1):
 
     total_pow = []
     for v in range(average):
-
         # read data
         for p in range(packets):
             if p == 0:
                 data, context = read_data_and_context(dut, samples)
+
             else:
                 d, c = read_data_and_context(dut, samples)
                 data.data.np_array = np.concatenate([data.data.np_array, d.data.np_array])
