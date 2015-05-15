@@ -67,7 +67,6 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     if stream_id == VRT_IFDATA_PSD8:
         # TODO: handle convert_to_dbm option
         power_spectrum = np.array(data, dtype=float)
-
     if apply_spec_inv:
         if spec_inv:  # handle inverted spectrum
             power_spectrum = np.flipud(power_spectrum)
