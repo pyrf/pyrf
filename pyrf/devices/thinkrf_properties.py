@@ -26,6 +26,10 @@ def wsa_properties(device_id):
         p = WSA5000_418Properties()
     elif model == 'RTSA7500-8':
         p = BNC_RTSA75008_Properties()
+    elif model == 'RTSA7500-8B':
+        p = BNC_RTSA75008B_Properties()
+    elif model == 'RTSA7500-27':
+        p = BNC_RTSA750027_Properties()
     else:
         p = WSA5000_220Properties()
 
@@ -236,15 +240,15 @@ class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = []
+    SPECA_MODES = ['Sweep SHN']
     SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
-        mode='SHN')
+        mode='Sweep SHN')
     IQ_OUTPUT_CONNECTOR = False
 
 class WSA5000_308Properties(WSA5000_108Properties):
     model = 'WSA5000-308'
 
-    manufacturer = 'Berkley Nucleonics'
+
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
 
@@ -282,3 +286,12 @@ class WSA5000_418Properties(WSA5000_220Properties):
 
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
     model = 'RTSA7500-8'
+    manufacturer = 'Berkley Nucleonics'
+
+class BNC_RTSA75008B_Properties(WSA5000_308Properties):
+    model = 'RTSA7500-8B'
+    manufacturer = 'Berkley Nucleonics'
+
+class BNC_RTSA750027_Properties(WSA5000_427Properties):
+    model = 'RTSA7500-27'
+    manufacturer = 'Berkley Nucleonics'
