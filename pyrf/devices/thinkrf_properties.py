@@ -281,7 +281,7 @@ class WSA5000_418Properties(WSA5000_220Properties):
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    MAX_TUNABLE = dict((mode, max(27000*M, f))
+    MAX_TUNABLE = dict((mode, max(18000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
 
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
