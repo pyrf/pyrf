@@ -9,9 +9,10 @@ def wsa_properties(device_id):
     """
     mfr, model_rev, serial, firmware = device_id.split(',')
     model, _space, rev = model_rev.partition(' ')
+
     if model == 'WSA4000':
         return WSA4000Properties()
-
+    
     elif model == 'WSA5000-208':
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
@@ -276,12 +277,14 @@ class WSA5000_418Properties(WSA5000_220Properties):
     # 418 -> decreased to 18GHz
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
-    # 427 model has no attenuation
+
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    MAX_TUNABLE = dict((mode, max(18000*M, f))
+
+
+    MAX_TUNABLE = dict((mode, 18000*M)
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
 
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
