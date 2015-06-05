@@ -843,6 +843,51 @@ def discover_wsa(wait_time=0.125):
                         "HOST": host})
     return  wsa_list
 
+
+def cli_chooser():
+
+    while True:
+        # get list of boxes
+        wsalist = discover_wsa(0.250)
+
+        # calc column widths
+        w_modelstring = 0
+        w_serial = 0
+        w_host = 0
+        for wsa in wsalist:
+            modelstring = "%s v%s" % (wsa["MODEL"], wsa["FIRMWARE"])
+
+            if len(modelstring) > w_modelstring: w_modelstring = len(modelstring)
+            if len(wsa["SERIAL"]) > w_serial: w_serial = len(wsa["SERIAL"])
+            if len(wsa["HOST"]) > w_host: w_host = len(wsa["HOST"])
+
+        # now print out the list
+        fmt = "%%d) %%%ds - %%-%ds - %%%ds" % (w_host, w_modelstring, w_serial)
+        index = 1
+        for wsa in wsalist:
+            modelstring = "%s v%s" % (wsa["MODEL"], wsa["FIRMWARE"])
+            print fmt % (index, wsa["HOST"], modelstring, wsa["SERIAL"])
+            index += 1
+        print "r) Refresh"
+        print "q) Abort"
+
+        # get user input
+        choice = raw_input("> ")
+        if choice == "q":
+            return None
+
+        elif choice == 'r':
+            # do nothing
+            pass
+
+        elif (int(choice) >= 1) and (int(choice) < (len(wsalist) + 1)):
+            index = int(choice) - 1
+            return wsalist[index]["HOST"]
+
+        else:
+            print "error: invalid selection: '%s'" % choice
+
+
 # for backwards compatibility
 WSA4000 = WSA
 
