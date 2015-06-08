@@ -230,24 +230,30 @@ class WSA5000_208Properties(WSA5000_220Properties):
 
     MAX_TUNABLE = dict((mode, min(8000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 4025 * M,)
 
 class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = []
+    SPECA_MODES = ['Sweep SHN']
     SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
-        mode='SHN')
+        mode='Sweep SHN')
     IQ_OUTPUT_CONNECTOR = False
 
 class WSA5000_308Properties(WSA5000_108Properties):
     model = 'WSA5000-308'
+
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
+
     RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
 class WSA5000_427Properties(WSA5000_220Properties):
@@ -264,6 +270,10 @@ class WSA5000_427Properties(WSA5000_220Properties):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     MAX_TUNABLE = dict((mode, max(27000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 13250 * M,)
 
 class WSA5000_418Properties(WSA5000_220Properties):
     model = 'WSA5000-418'
@@ -275,5 +285,11 @@ class WSA5000_418Properties(WSA5000_220Properties):
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
+
     MAX_TUNABLE = dict((mode, 18000*M)
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 8750 * M,)
