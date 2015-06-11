@@ -176,10 +176,11 @@ class WSA5000_220Properties(object):
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
     DEFAULT_SPECA_SPAN = 125.0 * M
+    DEFAULT_SWEEP_SPAN = 100 * M
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450.0 * M,
-        'rbw': 122070.0,
+        'rbw': 976.56e3,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
         'fshift': 0.0,
