@@ -9,9 +9,10 @@ def wsa_properties(device_id):
     """
     mfr, model_rev, serial, firmware = device_id.split(',')
     model, _space, rev = model_rev.partition(' ')
+
     if model == 'WSA4000':
         return WSA4000Properties()
-
+    
     elif model == 'WSA5000-208':
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
@@ -24,6 +25,14 @@ def wsa_properties(device_id):
         p = WSA5000_427Properties()
     elif model == 'WSA5000-418':
         p = WSA5000_418Properties()
+    elif model == 'RTSA7500-8':
+        p = BNC_RTSA75008_Properties()
+    elif model == 'RTSA7500-8B':
+        p = BNC_RTSA75008B_Properties()
+    elif model == 'RTSA7500-18':
+        p = BNC_RTSA750018_Properties()
+    elif model == 'RTSA7500-27':
+        p = BNC_RTSA750027_Properties()
     else:
         p = WSA5000_220Properties()
 
@@ -175,22 +184,23 @@ class WSA5000_220Properties(object):
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
     DEFAULT_SPECA_SPAN = 125.0 * M
+    DEFAULT_SWEEP_SPAN = 100 * M
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
-        'center': 2450 * M,
-        'rbw': 122070,
+        'center': 2450.0 * M,
+        'rbw': 976.56e3,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
-        'fshift': 0,
+        'fshift': 0.0,
         'device_settings': {
             'attenuator': True,
             'iq_output_path': 'DIGITIZER',
             'hdr_gain': 25.0,
             'pll_reference': 'INT',
             'trigger': {'type': 'NONE',
-                        'fstart': 2440 * M,
+                        'fstart': 2440.0 * M,
                         'fstop': 2460 * M,
-                        'amplitude': -100},
+                        'amplitude': -100.0},
             },
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
@@ -229,24 +239,30 @@ class WSA5000_208Properties(WSA5000_220Properties):
 
     MAX_TUNABLE = dict((mode, min(8000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 4025 * M,)
 
 class WSA5000_108Properties(WSA5000_208Properties):
     model = 'WSA5000-108'
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = []
+    SPECA_MODES = ['Sweep SHN']
     SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
-        mode='SHN')
+        mode='Sweep SHN')
     IQ_OUTPUT_CONNECTOR = False
 
 class WSA5000_308Properties(WSA5000_108Properties):
     model = 'WSA5000-308'
+
 
 class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
     model = 'WSA5000-208 v2'
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
+
     RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
 class WSA5000_427Properties(WSA5000_220Properties):
@@ -263,16 +279,44 @@ class WSA5000_427Properties(WSA5000_220Properties):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     MAX_TUNABLE = dict((mode, max(27000*M, f))
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 13250 * M,)
 
 class WSA5000_418Properties(WSA5000_220Properties):
     model = 'WSA5000-418'
     # 418 -> decreased to 18GHz
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
-    # 427 model has no attenuation
+
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    MAX_TUNABLE = dict((mode, max(27000*M, f))
+
+
+    MAX_TUNABLE = dict((mode, 18000*M)
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 9.025 * M)
+
+class BNC_RTSA75008_Properties(WSA5000_408Properties):
+    model = 'RTSA7500-8'
+    manufacturer = 'Berkley Nucleonics'
+
+class BNC_RTSA75008B_Properties(WSA5000_308Properties):
+    model = 'RTSA7500-8B'
+    manufacturer = 'Berkley Nucleonics'
+
+class BNC_RTSA750018_Properties(WSA5000_418Properties):
+    model = 'RTSA7500-18'
+    manufacturer = 'Berkley Nucleonics'
+
+class BNC_RTSA750027_Properties(WSA5000_427Properties):
+    model = 'RTSA7500-27'
+    manufacturer = 'Berkley Nucleonics'
+
+
