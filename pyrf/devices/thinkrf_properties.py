@@ -29,6 +29,8 @@ def wsa_properties(device_id):
         p = BNC_RTSA75008_Properties()
     elif model == 'RTSA7500-8B':
         p = BNC_RTSA75008B_Properties()
+    elif model == 'RTSA7500-18':
+        p = BNC_RTSA750018_Properties()
     elif model == 'RTSA7500-27':
         p = BNC_RTSA750027_Properties()
     else:
@@ -293,6 +295,10 @@ class BNC_RTSA75008_Properties(WSA5000_408Properties):
 
 class BNC_RTSA75008B_Properties(WSA5000_308Properties):
     model = 'RTSA7500-8B'
+    manufacturer = 'Berkley Nucleonics'
+
+class BNC_RTSA750018_Properties(WSA5000_418Properties):
+    model = 'RTSA7500-18'
     manufacturer = 'Berkley Nucleonics'
 
 class BNC_RTSA750027_Properties(WSA5000_427Properties):
