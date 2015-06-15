@@ -298,6 +298,11 @@ class WSA5000_418Properties(WSA5000_220Properties):
 
     MAX_TUNABLE = dict((mode, 18000*M)
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    print DEFAULT_SPECA_SPAN
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 9.025 * M)
 
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
     model = 'RTSA7500-8'
@@ -315,8 +320,4 @@ class BNC_RTSA750027_Properties(WSA5000_427Properties):
     model = 'RTSA7500-27'
     manufacturer = 'Berkley Nucleonics'
 
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 8750 * M)
 
