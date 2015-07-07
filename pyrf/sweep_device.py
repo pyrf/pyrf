@@ -268,9 +268,9 @@ class SweepDevice(object):
             variance = abs(freq - closest_freq) / freq_diff
             closest_sat = saturation_values[closest_freq]
             saturation = closest_sat + abs(closest_sat - saturation_values[next_freq]) * variance
-        # if self.device_settings['attenuator']:
-            # saturation += 20
-        print saturation
+        if self.device_settings['attenuator']:
+            saturation += 20
+
         if max(pow_data[start:start + take]) > saturation:
             self.got_saturation = True
         self.bin_arrays.append(pow_data[start:start + take])
