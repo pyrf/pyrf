@@ -185,6 +185,8 @@ class WSA5000_220Properties(object):
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
     DEFAULT_SPECA_SPAN = 125.0 * M
     DEFAULT_SWEEP_SPAN = 100 * M
+    SATURATION_LEVELS = {0: -10,
+                        20e3 * M: -10}
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450.0 * M,
@@ -262,6 +264,14 @@ class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
+    SATURATION_LEVELS = {100.0 * M : -34.0,
+                        1000.0 * M: -32.0,
+                        3000.0 * M: -28.0,
+                        5000.0 * M: -26.0,
+                        7000.0 * M: -21.0,
+                        7500.0 * M: -15.0,
+                        8000.0 * M: -14.0,
+                        8001.0 * M: -14.0}
 
     RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 

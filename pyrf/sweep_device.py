@@ -104,7 +104,8 @@ class SweepDevice(object):
         self.past_end_bytes_discarded = 0
         self.fft_calculation_seconds = 0.0
         self.bin_collection_seconds = 0.0
-
+        self.saturated = False
+        self.got_saturation = False
     def capture_power_spectrum(self,
             fstart, fstop, rbw,
             device_settings=None,
@@ -140,7 +141,7 @@ class SweepDevice(object):
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.request_read_perm()
-
+        self.got_saturation = False
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, rbw, mode, min_points)
         if 'left' in mode:
@@ -163,6 +164,7 @@ class SweepDevice(object):
 
     def _perform_full_sweep(self):
         entries = []
+        
         for ss in self.plan:
             entries.append(ss.to_sweep_entry(self.real_device,
                 self.rfe_mode,
@@ -182,12 +184,15 @@ class SweepDevice(object):
         result = None
         while result is None:
             result = self._vrt_receive(self.real_device.read())
+            
+
         return result
 
     def _start_sweep(self, entries):
         self.real_device.abort()
         self.real_device.flush()
         self.real_device.sweep_clear()
+
         assert entries, "starting sweep with no sweep entries"
         for e in entries:
             self.real_device.sweep_add(e)
@@ -198,6 +203,7 @@ class SweepDevice(object):
         self._ss_index = 0
         self._ss_received = 0
         self.bin_arrays = []
+
         self.real_device.sweep_iterations(0 if self.continuous else 1)
         self.real_device.sweep_start(self._sweep_id)
 
@@ -231,6 +237,8 @@ class SweepDevice(object):
 
         fft_start_time = time.time()
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
+
+
         # collect and compute bins
         collect_start_time = time.time()
         ss = self.plan[self._ss_index]
@@ -245,7 +253,26 @@ class SweepDevice(object):
             if packet.spec_inv:
                 offset = -offset
             start += offset
+        freq = self._vrt_context['rffreq']
+        sat_freqs = self.real_device.properties.SATURATION_LEVELS.keys()
+        saturation_values = self.real_device.properties.SATURATION_LEVELS
 
+        closest_index = np.abs(np.subtract(sat_freqs, freq)).argmin()
+
+        closest_freq = sat_freqs[closest_index]
+        next_freq = sat_freqs[min(closest_index + 1, len(sat_freqs) - 1)]
+        freq_diff = (next_freq - closest_freq)
+        if freq_diff == 0:
+            saturation = saturation_values[closest_freq]
+        else:
+            variance = abs(freq - closest_freq) / freq_diff
+            closest_sat = saturation_values[closest_freq]
+            saturation = closest_sat + abs(closest_sat - saturation_values[next_freq]) * variance
+        # if self.device_settings['attenuator']:
+            # saturation += 20
+        print saturation
+        if max(pow_data[start:start + take]) > saturation:
+            self.got_saturation = True
         self.bin_arrays.append(pow_data[start:start + take])
         self._ss_received += take
         collect_stop_time = time.time()
@@ -269,10 +296,14 @@ class SweepDevice(object):
             self.real_device.abort()
             self.real_device.flush()
 
+
         self.bins = np.concatenate(self.bin_arrays)
         if self.async_callback:
             self.real_device.vrt_callback = None
+            self.saturated = self.got_saturation
+
             self.async_callback(self.fstart, self.fstop, self.bins)
+            self.got_saturation = False
             if self.continuous:
                 self._ss_index = 0
                 self._ss_received = 0
