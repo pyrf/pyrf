@@ -70,6 +70,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     if apply_spec_inv:
         if spec_inv:  # handle inverted spectrum
             power_spectrum = np.flipud(power_spectrum)
+
     if apply_reference:
         noiselevel_offset = reference_level + prop.REFLEVEL_ERROR
         return power_spectrum + noiselevel_offset
@@ -85,9 +86,8 @@ def _decode_data_pkts(data_pkt):
         i_data = np.array(data_pkt.data.numpy_array()[:,0], dtype=float) / 2 ** 13
         q_data = np.array(data_pkt.data.numpy_array()[:,1], dtype=float) / 2 ** 13
 
-    
     if stream_id == VRT_IFDATA_I14:
-        i_data = np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 13
+        i_data = (np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 13)
 
     if stream_id == VRT_IFDATA_I24:
         i_data = np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 23

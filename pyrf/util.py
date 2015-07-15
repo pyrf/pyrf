@@ -234,3 +234,66 @@ def decode_config_type(config_str, str_type):
     else:
         value = config_str
     return value
+    
+def find_saturation(freq, saturation_values, attenuation):
+    """
+    return a saturation value based on the frequency and amount of attenuation
+    :param freq: the freq of interest
+    :param saturation_values: a dict containing the saturation values (keys are frequencies)
+    :param attenuation: the amount of attenuation applied
+    :returns: the closest saturation value corresponding to the frequency
+    """
+    sat_freqs = saturation_values.keys()
+    closest_index = np.abs(np.subtract(sat_freqs, freq)).argmin()
+
+    closest_freq = sat_freqs[closest_index]
+    next_freq = sat_freqs[min(closest_index + 1, len(sat_freqs) - 1)]
+    freq_diff = (next_freq - closest_freq)
+    if freq_diff == 0:
+        saturation = saturation_values[closest_freq]
+    else:
+        variance = abs(freq - closest_freq) / freq_diff
+        closest_sat = saturation_values[closest_freq]
+        saturation = closest_sat + abs(closest_sat - saturation_values[next_freq]) * variance
+    saturation += attenuation
+
+    return saturation
+
+def capture_sweep_spectrum(dut, mode, points, dec = 1, fshift = 0, packets = 1):
+
+    usable_bins = compute_usable_bins(dut.properties, mode, points, dec, fshift)
+
+    total_pow = []
+    samples = int(points / packets)
+    # read data
+    for p in range(packets):
+        if p == 0:
+            data, context = collect_data_and_context(dut)
+
+        else:
+            d, c = collect_data_and_context(dut, samples)
+            data.data.np_array = np.concatenate([data.data.np_array, d.data.np_array])
+    
+    # adjust fstart and fstop based on the spectral inversion
+    usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
+        dut.properties,
+        mode,
+        points,
+        dec,
+        context['rffreq'],
+        data.spec_inv,
+        usable_bins)
+    # compute fft
+    pow_data = compute_fft(dut, data, context)
+    if not len(total_pow):
+        total_pow = pow_data
+    else:
+        total_pow = np.add(total_pow, pow_data)
+    pow_data = total_pow
+    # trim FFT
+    pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
+                                                                    usable_bins,  
+                                                                    fstart,  
+                                                                    fstop)
+
+    return (fstart, fstop, pow_data, context)

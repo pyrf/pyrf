@@ -727,6 +727,20 @@ class WSA(object):
         yield enable
 
     @sync_async
+    def var_attenuator(self, atten_val=None):
+        """
+        This command sets the WSA5000's variable attenuator
+
+        :param atten_val: attenuation value, range: 0-25dB
+        :returns: the current attenuation value
+        """
+        if atten_val is None:
+            atten_val = yield self.scpiget("INP:ATT:VAR?")
+        else:
+            self.scpiset("INP:ATT:VAR %d" % atten_val)
+        yield atten_val
+
+    @sync_async
     def errors(self):
         """
         Flush and return the list of errors from past commands
@@ -763,6 +777,7 @@ class WSA(object):
             'ppb': self.ppb,
             'trigger': self.trigger,
             'attenuator': self.attenuator,
+            'var_attenuator': self.var_attenuator,
             'rfe_mode': self.rfe_mode,
             'iq_output_path': self.iq_output_path,
             'pll_reference': self.pll_reference,

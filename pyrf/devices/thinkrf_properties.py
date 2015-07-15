@@ -168,7 +168,7 @@ class WSA5000_220Properties(object):
         'DD': 0.5,
         }
     DC_OFFSET_BW = 240000 # XXX: an educated guess
-    TUNING_RESOLUTION = 100000
+    TUNING_RESOLUTION = 10
     FSHIFT_AVAILABLE = {
         'ZIF': True,
         'HDR': False,
@@ -185,6 +185,8 @@ class WSA5000_220Properties(object):
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
     DEFAULT_SPECA_SPAN = 125.0 * M
     DEFAULT_SWEEP_SPAN = 100 * M
+    SATURATION_LEVELS = {0: -10,
+                        20e3 * M: -10}
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450.0 * M,
@@ -194,6 +196,7 @@ class WSA5000_220Properties(object):
         'fshift': 0.0,
         'device_settings': {
             'attenuator': True,
+            'var_attenuator': 0.0,
             'iq_output_path': 'DIGITIZER',
             'hdr_gain': 25.0,
             'pll_reference': 'INT',
@@ -209,7 +212,7 @@ class WSA5000_220Properties(object):
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
 
     MAX_SPP = 32768
-
+    P1DB_LEVEL = -5
     SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
     DEFAULT_RBW_INDEX = 4
     RBW_VALUES = {}
@@ -262,6 +265,7 @@ class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
 
 class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
+    SATURATION_LEVEL = -10.0
 
     RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
@@ -271,9 +275,10 @@ class WSA5000_427Properties(WSA5000_220Properties):
     CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 27000*M)
     RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
+    SATURATION_LEVEL = -17.0
 
     # 427 model has no attenuation
-    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -289,8 +294,8 @@ class WSA5000_418Properties(WSA5000_220Properties):
     # 418 -> decreased to 18GHz
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
-
-    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SATURATION_LEVEL = -10.0
+    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -301,7 +306,7 @@ class WSA5000_418Properties(WSA5000_220Properties):
     DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
     SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
         span= DEFAULT_SPECA_SPAN,
-        center = 9.025 * M)
+        center = 9025 * M)
 
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
     model = 'RTSA7500-8'
