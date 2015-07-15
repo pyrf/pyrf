@@ -7,7 +7,7 @@ import numpy as np
 
 from pyrf.numpy_util import compute_fft
 from pyrf.config import SweepEntry
-
+from pyrf.util import find_saturation
 MAXIMUM_SPP = 32*1024
 class SweepStep(namedtuple('SweepStep', '''
         fcenter
@@ -253,24 +253,16 @@ class SweepDevice(object):
             if packet.spec_inv:
                 offset = -offset
             start += offset
+            
+        # determine if there is saturation
         freq = self._vrt_context['rffreq']
-        sat_freqs = self.real_device.properties.SATURATION_LEVELS.keys()
+
         saturation_values = self.real_device.properties.SATURATION_LEVELS
-
-        closest_index = np.abs(np.subtract(sat_freqs, freq)).argmin()
-
-        closest_freq = sat_freqs[closest_index]
-        next_freq = sat_freqs[min(closest_index + 1, len(sat_freqs) - 1)]
-        freq_diff = (next_freq - closest_freq)
-        if freq_diff == 0:
-            saturation = saturation_values[closest_freq]
-        else:
-            variance = abs(freq - closest_freq) / freq_diff
-            closest_sat = saturation_values[closest_freq]
-            saturation = closest_sat + abs(closest_sat - saturation_values[next_freq]) * variance
+        attenuation = 0
         if self.device_settings['attenuator']:
-            saturation += 20
+            attenuation += 20
 
+        saturation = find_saturation(freq, saturation_values, attenuation) 
         if max(pow_data[start:start + take]) > saturation:
             self.got_saturation = True
         self.bin_arrays.append(pow_data[start:start + take])

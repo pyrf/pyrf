@@ -4,6 +4,7 @@ from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop
 from pyrf.vrt import I_ONLY
 from pyrf.vrt import DataPacket
 import numpy as np
+
 class CaptureDeviceError(Exception):
     pass
 
@@ -71,9 +72,11 @@ class CaptureDevice(object):
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         """
+        self.got_saturated = False
         prop = self.real_device.properties
         self.real_device.abort()
         self.real_device.flush()
+        self.device_settings = device_settings
         self.real_device.request_read_perm()
         self.configure_device(dict(
             freq=freq,

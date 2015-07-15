@@ -15,7 +15,7 @@ CENTER_FREQ = 2450 * 1e6
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
 DECIMATION = 1
-RFE_MODE = 'SH'
+RFE_MODE = 'SHz'
 TRIGGER_SET = {'type': 'Level',
                 'fstart': 2400 * 1e6,
                 'fstop': 2500 * 1e6,
