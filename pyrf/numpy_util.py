@@ -10,7 +10,8 @@ def calculate_channel_power(power_spectrum):
     :param power_spectrum: array containing power spectrum to be used for
                             the channel power calculation
     """
-    linear = np.power(10, power_spectrum / 20)
+
+    linear = np.power(10, np.divide(power_spectrum,20))
 
     channel_power = 10 * np.log10(np.sum(np.square(linear)))
     return channel_power

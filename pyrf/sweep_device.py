@@ -253,18 +253,7 @@ class SweepDevice(object):
             if packet.spec_inv:
                 offset = -offset
             start += offset
-            
-        # determine if there is saturation
-        freq = self._vrt_context['rffreq']
 
-        saturation_values = self.real_device.properties.SATURATION_LEVELS
-        attenuation = 0
-        if self.device_settings['attenuator']:
-            attenuation += 20
-
-        saturation = find_saturation(freq, saturation_values, attenuation) 
-        if max(pow_data[start:start + take]) > saturation:
-            self.got_saturation = True
         self.bin_arrays.append(pow_data[start:start + take])
         self._ss_received += take
         collect_stop_time = time.time()

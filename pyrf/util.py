@@ -2,7 +2,7 @@ import math
 
 from pyrf.vrt import I_ONLY
 from ast import literal_eval
-from pyrf.numpy_util import compute_fft
+from pyrf.numpy_util import  compute_fft
 import numpy as np
 def capture_spectrum(dut, rbw = None, average=1):
     """

@@ -185,8 +185,7 @@ class WSA5000_220Properties(object):
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
     DEFAULT_SPECA_SPAN = 125.0 * M
     DEFAULT_SWEEP_SPAN = 100 * M
-    SATURATION_LEVELS = {0: -10,
-                        20e3 * M: -10}
+    SATURATION_LEVEL = -10.0
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450.0 * M,
@@ -287,7 +286,7 @@ class WSA5000_427Properties(WSA5000_220Properties):
     DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
     SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
         span= DEFAULT_SPECA_SPAN,
-        center = 13250 * M,)
+        center = 13525 * M)
 
 class WSA5000_418Properties(WSA5000_220Properties):
     model = 'WSA5000-418'
