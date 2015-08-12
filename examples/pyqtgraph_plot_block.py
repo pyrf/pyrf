@@ -14,8 +14,8 @@ from pyrf.numpy_util import compute_fft
 CENTER_FREQ = 2450 * 1e6 
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
-DECIMATION = 1
-RFE_MODE = 'SHz'
+DECIMATION = 4
+RFE_MODE = 'SH'
 TRIGGER_SET = {'type': 'Level',
                 'fstart': 2400 * 1e6,
                 'fstop': 2500 * 1e6,
@@ -51,6 +51,7 @@ dut.request_read_perm()
 dut.freq(CENTER_FREQ)
 dut.decimation(DECIMATION)
 dut.attenuator(ATTENUATOR)
+# dut.fshift(1e6)
 dut.rfe_mode(RFE_MODE)
 dut.trigger(TRIGGER_SET)
 BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
@@ -79,14 +80,15 @@ def update():
     
     # read data
     data, context = read_data_and_context(dut, SAMPLE_SIZE)
+    print context
     # compute the fft and plot the data
     pow_data = compute_fft(dut, data, context)
     
     # remove DC offset
-    if data.spec_inv:
-        pow_data = pow_data[: -5]
-    else:
-        pow_data = pow_data[:5]
+    # if data.spec_inv:
+        # pow_data = pow_data[: -5]
+    # else:
+        # pow_data = pow_data[:5]
     # update the frequency range (Hz)
     freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
     
