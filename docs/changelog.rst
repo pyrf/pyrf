@@ -1,6 +1,25 @@
 
 Changelog
 ---------
+PyRF 2.8.0
+==========
+
+2015-08-12
+
+* Removed RTSA Instructions from the web page
+
+* Fixed windows installation instructions
+
+* Added capture spectrum function
+
+* Added find peak function
+
+* Added Measure noisefloor function
+
+* Changed default span settings
+
+* Added saturation level value for each device
+
 PyRF 2.7.2
 ==========
 

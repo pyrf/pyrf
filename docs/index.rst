@@ -40,15 +40,6 @@ Links
 * `Documentation for this API <http://www.pyrf.org>`_
 * `WSA4000/WSA5000 Documentation <http://www.thinkrf.com/resources>`_
 
-PyRF RTSA
----------
-
-.. image:: rtsa-gui.png
-   :alt: rtsa-gui screen shot
-
-.. image:: rtsa-gui-2.png
-   :alt: rtsa-gui screen shot
-
 Indices and tables
 ==================
 

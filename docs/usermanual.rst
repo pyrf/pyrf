@@ -14,12 +14,16 @@ Windows Dependencies
 1. Download https://s3.amazonaws.com/ThinkRF/Support-Resources/pyrf-dependencies.zip
 2. Extract the contents of the zipped file
 3. Install Python 2.7.6 (python-2.7.6.msi)
-4. Add the following to the windows PATH ';C:\Python27;C:\Python27\Scripts'
+4. Add the following to the windows PATH ";C:/Python27;C:/Python27/Scripts"
 5. Install Numpy (numpy-1.8.1-win32-superpack-python2.7)
+6. Install Scipy (scipy-0.14.0-win32-superpack-python2.7)
+7. Install Pyside (PySide-1.2.0.win32-py2.7)
+8. Install Pyqtgraph (pyqtgraph-0.9.8.win32)
 9. Install zope.interface (zope.interface-4.1.1.win32-py2.7)
 10. Install twisted (Twisted-14.0.0.win32-py2.7)
 11. Install pywin32 (pywin32-219.win32-py2.7)
 12. Install netifaces (netifaces-0.10.4.win32-py2.7)
+13. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
 14. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
 
 Continue from :ref:`pyrf-installation` below.
