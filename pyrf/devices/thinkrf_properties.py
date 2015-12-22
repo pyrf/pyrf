@@ -212,7 +212,23 @@ class WSA5000_220Properties(object):
 
     MAX_SPP = 32768
     P1DB_LEVEL = -5
-    SAMPLE_SIZES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288]
+    SAMPLE_SIZES = [128, 
+                    128 * 2, 
+                    128 * 4, 
+                    128 * 8, 
+                    128 * 16, 
+                    128 * 32, 
+                    128 * 64, 
+                    128 * 128, 
+                    128 * 256, 
+                    128 * 512, 
+                    128 * 1024, 
+                    128 * 2048, 
+                    128 * 4096,
+                    128 * 8192, 
+                    128 * 16384, 
+                    128 * 32768,
+                    ]
     DEFAULT_RBW_INDEX = 4
     RBW_VALUES = {}
     for mode in RFE_MODES:
@@ -290,6 +306,7 @@ class WSA5000_427Properties(WSA5000_220Properties):
 
 class WSA5000_418Properties(WSA5000_220Properties):
     model = 'WSA5000-418'
+    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
     # 418 -> decreased to 18GHz
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)

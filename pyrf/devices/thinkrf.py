@@ -75,7 +75,6 @@ class WSA(object):
     def connect(self, host):
         """
         connect to a wsa
-
         :param host: the hostname or IP to connect to
         """
         yield self.connector.connect(host)
@@ -189,9 +188,7 @@ class WSA(object):
             buf = yield self.scpiget(":INPUT:MODE?")
             mode = buf.strip()
         else:
-
             self.scpiset(":INPUT:MODE %s" % str(mode))
-
         yield mode
 
     @sync_async
@@ -566,7 +563,6 @@ class WSA(object):
         else:
             yield -1
 
-
     @sync_async
     def read(self):
         """
@@ -582,7 +578,6 @@ class WSA(object):
         :returns: bytes
         """
         return self.connector.raw_read(num)
-
 
     def sweep_add(self, entry):
         """

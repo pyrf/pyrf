@@ -126,13 +126,13 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     """
     if rfe_mode in ('SH', 'SHN') and decimation > 1:
         pass_band_center = dut_prop.PASS_BAND_CENTER['DEC_' + rfe_mode]
-        full_bw = (dut_prop.FULL_BW['DEC_' + rfe_mode] / decimation)
+        full_bw = (dut_prop.FULL_BW['DEC_' + rfe_mode] / (decimation))
     else:
         pass_band_center = dut_prop.PASS_BAND_CENTER[rfe_mode]
         full_bw = dut_prop.FULL_BW[rfe_mode] / decimation
 
     if decimation > 1:
-        usable_bw = full_bw * dut_prop.DECIMATED_USABLE
+        usable_bw = full_bw
     else:
         usable_bw = dut_prop.USABLE_BW[rfe_mode]
 
@@ -159,9 +159,9 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
         usable_bins = [(x/2, y/2) for x, y in usable_bins]
 
     # XXX usable bins for SH + fshift aren't correct yet, so show everything
-    if rfe_mode in ('SH', 'SHN') and fshift:
+    if rfe_mode in ('SH', 'SHN') and decimation > 1:
         usable_bins = [(0, points)]
-
+    
     return usable_bins
 
 

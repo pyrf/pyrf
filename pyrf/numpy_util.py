@@ -97,29 +97,41 @@ def _decode_data_pkts(data_pkt):
 
 def _compute_fft(i_data, q_data, correct_phase,
         hide_differential_dc_offset, convert_to_dbm, apply_window):
-    import numpy as np
+	import numpy as np
 
-    if hide_differential_dc_offset:
-        i_data = i_data - np.mean(i_data)
-        q_data = q_data - np.mean(q_data)
-    if correct_phase:
-        calibrated_q = _calibrate_i_q(i_data, q_data)
-    else:
-        calibrated_q = q_data
-    iq = i_data + 1j * calibrated_q
+	if hide_differential_dc_offset:
+		i_data = i_data - np.mean(i_data)
+		q_data = q_data - np.mean(q_data)
+	if correct_phase:
+		# ======== Modification ========= #
+		calibrated_q, phi_est_sign = _calibrate_i_q(i_data, q_data)
+		# =============================== #
+		iq = i_data + 1j * calibrated_q
+	else:
+		calibrated_q = q_data
+		iq = i_data + 1j * calibrated_q
 
-    if apply_window:
-        iq = iq * np.hanning(len(i_data))
+	if apply_window:
+		iq = iq * np.hanning(len(i_data))
 
-    power_spectrum = np.abs(np.fft.fftshift(np.fft.fft(iq)))/len(i_data)
-    if convert_to_dbm:
-        power_spectrum = 20 * np.log10(power_spectrum)
+	power_spectrum = np.abs(np.fft.fftshift(np.fft.fft(iq)))/len(i_data)
+	
+	if convert_to_dbm:
+		power_spectrum = 20 * np.log10(power_spectrum)
 
-    if hide_differential_dc_offset:
-        median_index = len(power_spectrum) // 2
-        power_spectrum[median_index] = (power_spectrum[median_index - 1]
-            + power_spectrum[median_index + 1]) / 2
-    return power_spectrum
+    # ======== Modification ========= #
+	if phi_est_sign > 0.0 and max(power_spectrum[0:len(power_spectrum)/2]) > max(power_spectrum[len(power_spectrum)/2 + 1:len(power_spectrum) - 1]):
+		power_spectrum = power_spectrum[::-1]
+        
+	elif phi_est_sign < 0.0 and max(power_spectrum[0:len(power_spectrum)/2]) < max(power_spectrum[len(power_spectrum)/2 + 1:len(power_spectrum) - 1]):
+		power_spectrum = power_spectrum[::-1]
+
+	# =============================== #
+	if hide_differential_dc_offset:
+		median_index = len(power_spectrum) // 2
+		power_spectrum[median_index] = (power_spectrum[median_index - 1]
+			+ power_spectrum[median_index + 1]) / 2
+	return power_spectrum
 
 def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
     import numpy as np
@@ -132,19 +144,20 @@ def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
     return power_spectrum
 
 def _calibrate_i_q(i_data, q_data):
-    samples = len(i_data)
+	samples = len(i_data)
 
-    sum_of_squares_i = sum(i_data ** 2)
-    sum_of_squares_q = sum(q_data ** 2)
+	sum_of_squares_i = sum(i_data ** 2)
+	sum_of_squares_q = sum(q_data ** 2)
 
-    amplitude = math.sqrt(sum_of_squares_i * 2 / samples)
-    ratio = math.sqrt(sum_of_squares_i / sum_of_squares_q)
+	alpha = math.sqrt(sum_of_squares_i * 2 / samples)
+	ratio = math.sqrt(sum_of_squares_i / sum_of_squares_q)
 
-    p = (q_data / amplitude) * ratio * (i_data / amplitude)
-
-    sinphi = 2 * sum(p) / samples
-    phi_est = -math.asin(sinphi)
-
-    return (math.sin(phi_est) * i_data + ratio * q_data) / math.cos(phi_est)
-
-
+	p = (q_data / alpha) * ratio * (i_data / alpha)
+	
+	sinphi = 2 * sum(p) / samples
+	phi_est = -math.asin(sinphi)
+	# ======== Modification ========= #
+	phi_est_sign = np.sign(phi_est)
+	
+	return (math.sin(phi_est) * i_data + ratio * q_data) / math.cos(phi_est), phi_est_sign
+	# =============================== #

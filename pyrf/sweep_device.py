@@ -45,7 +45,6 @@ class SweepStep(namedtuple('SweepStep', '''
         # FIXME: this maximum depends on rfe_mode
         if self.points > MAXIMUM_SPP:
             raise SweepDeviceError('large captures not yet supported')
-
         s = SweepEntry(
             fstart=self.fcenter,
             fstop=min(self.fcenter + (self.steps + 0.5) * self.fstep,
@@ -144,10 +143,7 @@ class SweepDevice(object):
         self.got_saturation = False
         self.fstart, self.fstop, self.plan = plan_sweep(self.real_device,
             fstart, fstop, rbw, mode, min_points)
-        if 'left' in mode:
-            self.rfe_mode = 'ZIF'
-        else:
-            self.rfe_mode = mode
+        self.rfe_mode = mode
 
         self.sweep_segments = []
         for ss in self.plan:
@@ -277,7 +273,6 @@ class SweepDevice(object):
             self.real_device.abort()
             self.real_device.flush()
 
-
         self.bins = np.concatenate(self.bin_arrays)
         if self.async_callback:
             self.real_device.vrt_callback = None
@@ -346,13 +341,13 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
 
     prop = device.properties
     out = []
-    usable2 = prop.USABLE_BW[rfe_mode] / 2.0
+    half_usable = prop.USABLE_BW[rfe_mode] / 2.0
     dc_offset2 = prop.DC_OFFSET_BW / 2.0
     full_bw = prop.FULL_BW[rfe_mode]
 
-    fstart = max(prop.MIN_TUNABLE[rfe_mode] - usable2, fstart)
-    fstop = min(prop.MAX_TUNABLE[rfe_mode] + (
-        -dc_offset2 if mode == 'ZIF left band' else usable2), fstop)
+    fstart = max(prop.MIN_TUNABLE[rfe_mode] - half_usable, fstart)
+    if fstop > prop.MAX_TUNABLE[rfe_mode]:
+        fstop = prop.MAX_TUNABLE[rfe_mode]
 
     if fstop <= fstart:
         return (fstart, fstart, [])
@@ -363,14 +358,14 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
     decimation = 1
     bin_size = float(full_bw) / decimation / points
 
-    left_edge = full_bw / 2.0 - usable2
+    left_edge = full_bw / 2.0 - half_usable
     left_bin = math.ceil(left_edge / bin_size)
     fshift = 0 # always preferred
     wasted_left = left_bin * bin_size - left_edge
     if mode == 'ZIF left band':
-        usable_bins = (usable2 - dc_offset2 - wasted_left) // bin_size
+        usable_bins = (half_usable - dc_offset2 - wasted_left) // bin_size
     else:
-        usable_bins = (usable2 - wasted_left) // bin_size * 2
+        usable_bins = (half_usable - wasted_left) // bin_size * 2
 
     # step_size is limited by tuning resolution. usable_bw is limited by
     # bin_size. They won't be exactly equal, but try our best
@@ -381,10 +376,10 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
     usable_bw = usable_bins * bin_size
 
     # start at the next tuning resolution increment left of ideal start
-    fcenter = math.floor((fstart + usable2 - wasted_left)
+    fcenter = math.floor((fstart + half_usable - wasted_left)
         / prop.TUNING_RESOLUTION) * prop.TUNING_RESOLUTION
     fcenter = max(fcenter, prop.MIN_TUNABLE[rfe_mode])
-    bins_pass = int(round((fstart - (fcenter - usable2 + wasted_left))
+    bins_pass = int(round((fstart - (fcenter - half_usable + wasted_left))
         / bin_size))
     # we now have our actual fstart
     fstart = fcenter - bin_size * (points / 2 - left_bin - bins_pass) - fshift
@@ -392,9 +387,9 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
     # calculate steps and bins
     step_limit = (prop.MAX_TUNABLE[rfe_mode] - fcenter) // step_size
     if mode == 'ZIF':
-        right0 = fcenter + usable2 - wasted_left
+        right0 = fcenter + half_usable - wasted_left
     else:  # 'ZIF left band'
-        right_edge = usable2 - usable_bw - wasted_left
+        right_edge = half_usable - usable_bw - wasted_left
         right0 = fcenter - right_edge
     steps = max(1, 1 + math.ceil((float(fstop) - right0) / step_size))
     if steps <= step_limit:
