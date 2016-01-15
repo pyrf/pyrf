@@ -54,9 +54,14 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
                 if low <= freq <= high:
                     break
 
-            if valid_data == I_ONLY:
-                power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
-        power_spectrum = _compute_fft(i_data, q_data, correct_phase,
+        if valid_data == I_ONLY:
+            power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
+        if 'iqswap' in context:
+            iq_swap = context['iqswap']
+            print context['iqswap']
+        else:
+            iq_swap = 0
+        power_spectrum = _compute_fft(i_data, q_data, correct_phase, iq_swap, reference_level,
             hide_differential_dc_offset, convert_to_dbm, apply_window)
 
     if stream_id == VRT_IFDATA_I14:
@@ -95,43 +100,52 @@ def _decode_data_pkts(data_pkt):
 
     return i_data, q_data, stream_id, spec_inv
 
-def _compute_fft(i_data, q_data, correct_phase,
+def _compute_fft(i_data, q_data, correct_phase, iqswapedbit, reference_level,
         hide_differential_dc_offset, convert_to_dbm, apply_window):
-	import numpy as np
+    import numpy as np
 
-	if hide_differential_dc_offset:
-		i_data = i_data - np.mean(i_data)
-		q_data = q_data - np.mean(q_data)
-	if correct_phase:
-		# ======== Modification ========= #
-		calibrated_q, phi_est_sign = _calibrate_i_q(i_data, q_data)
-		# =============================== #
-		iq = i_data + 1j * calibrated_q
-	else:
-		calibrated_q = q_data
-		iq = i_data + 1j * calibrated_q
+    if hide_differential_dc_offset:
+        i_data = i_data - np.mean(i_data)
+        q_data = q_data - np.mean(q_data)
+    if correct_phase:
 
-	if apply_window:
-		iq = iq * np.hanning(len(i_data))
+        calibrated_q, phi_est_sign = _calibrate_i_q(i_data, q_data)
 
-	power_spectrum = np.abs(np.fft.fftshift(np.fft.fft(iq)))/len(i_data)
-	
-	if convert_to_dbm:
-		power_spectrum = 20 * np.log10(power_spectrum)
+        iq = i_data + 1j * calibrated_q
+    else:
+        calibrated_q = q_data
+        iq = i_data + 1j * calibrated_q
 
-    # ======== Modification ========= #
-	if phi_est_sign > 0.0 and max(power_spectrum[0:len(power_spectrum)/2]) > max(power_spectrum[len(power_spectrum)/2 + 1:len(power_spectrum) - 1]):
-		power_spectrum = power_spectrum[::-1]
-        
-	elif phi_est_sign < 0.0 and max(power_spectrum[0:len(power_spectrum)/2]) < max(power_spectrum[len(power_spectrum)/2 + 1:len(power_spectrum) - 1]):
-		power_spectrum = power_spectrum[::-1]
+    if apply_window:
+        iq = iq * np.hanning(len(i_data))
 
-	# =============================== #
-	if hide_differential_dc_offset:
-		median_index = len(power_spectrum) // 2
-		power_spectrum[median_index] = (power_spectrum[median_index - 1]
-			+ power_spectrum[median_index + 1]) / 2
-	return power_spectrum
+    power_spectrum = np.abs(np.fft.fftshift(np.fft.fft(iq)))/len(i_data)
+
+    if convert_to_dbm:
+        power_spectrum = 20 * np.log10(power_spectrum)
+
+    N = len(power_spectrum)
+    EdgeFrange = int(N/7)
+
+    if np.max(power_spectrum[0:EdgeFrange])+reference_level > -50 or np.max(power_spectrum[N - EdgeFrange: N - 1])+reference_level > -50:
+        if iqswapedbit == 0:
+            if phi_est_sign > 0.0 and max(power_spectrum[0:EdgeFrange]) < max(power_spectrum[N - EdgeFrange: N - 1]):
+                power_spectrum = power_spectrum[::-1]
+            elif phi_est_sign < 0.0 and max(power_spectrum[0:EdgeFrange]) > max(power_spectrum[N - EdgeFrange: N - 1]):
+                power_spectrum = power_spectrum[::-1]
+
+        else:
+            if phi_est_sign < 0.0 and max(power_spectrum[0:EdgeFrange]) < max(power_spectrum[N - EdgeFrange: N - 1]):
+                power_spectrum = power_spectrum[::-1]
+
+            elif phi_est_sign > 0.0 and max(power_spectrum[0:EdgeFrange]) > max(power_spectrum[N - EdgeFrange: N - 1]):
+                power_spectrum = power_spectrum[::-1]
+
+    if hide_differential_dc_offset:
+        median_index = len(power_spectrum) // 2
+        power_spectrum[median_index] = (power_spectrum[median_index - 1]
+            + power_spectrum[median_index + 1]) / 2
+    return power_spectrum
 
 def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
     import numpy as np
@@ -144,20 +158,18 @@ def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
     return power_spectrum
 
 def _calibrate_i_q(i_data, q_data):
-	samples = len(i_data)
+    samples = len(i_data)
 
-	sum_of_squares_i = sum(i_data ** 2)
-	sum_of_squares_q = sum(q_data ** 2)
+    sum_of_squares_i = sum(i_data ** 2)
+    sum_of_squares_q = sum(q_data ** 2)
 
-	alpha = math.sqrt(sum_of_squares_i * 2 / samples)
-	ratio = math.sqrt(sum_of_squares_i / sum_of_squares_q)
+    alpha = math.sqrt(sum_of_squares_i * 2 / samples)
+    ratio = math.sqrt(sum_of_squares_i / sum_of_squares_q)
 
-	p = (q_data / alpha) * ratio * (i_data / alpha)
-	
-	sinphi = 2 * sum(p) / samples
-	phi_est = -math.asin(sinphi)
-	# ======== Modification ========= #
-	phi_est_sign = np.sign(phi_est)
-	
-	return (math.sin(phi_est) * i_data + ratio * q_data) / math.cos(phi_est), phi_est_sign
-	# =============================== #
+    p = (q_data / alpha) * ratio * (i_data / alpha)
+
+    sinphi = 2 * sum(p) / samples
+    phi_est = -math.asin(sinphi)
+
+    phi_est_sign = np.sign(phi_est)
+    return (math.sin(phi_est) * i_data + ratio * q_data) / math.cos(phi_est), phi_est_sign

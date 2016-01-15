@@ -42,6 +42,7 @@ class CaptureDevice(object):
         self.packets_per_block = 1
         self.packets_read = 0
         self.points = 0
+
     def configure_device(self, device_settings, force_change = False):
         """
         Configure the device settings on the next capture
@@ -72,7 +73,7 @@ class CaptureDevice(object):
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         """
-        self.got_saturated = False
+
         prop = self.real_device.properties
         self.real_device.abort()
         self.real_device.flush()
