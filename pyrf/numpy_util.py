@@ -58,7 +58,6 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
             power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
         if 'iqswap' in context:
             iq_swap = context['iqswap']
-            print context['iqswap']
         else:
             iq_swap = 0
         power_spectrum = _compute_fft(i_data, q_data, correct_phase, iq_swap, reference_level,

@@ -6,8 +6,6 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 from pyrf.devices.thinkrf import WSA
-from pyrf.util import read_data_and_context
-from pyrf.numpy_util import compute_fft
 
 
 # plot constants
@@ -70,26 +68,21 @@ plot_ymax = 20
 fft_plot.setYRange(plot_ymin ,plot_ymax)
 fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
 
-# disable auto size of the x-y axis
-fft_plot.enableAutoRange('xy', False)
+# enable auto size of the x-y axis
+fft_plot.enableAutoRange('xy', True)
 
 # initialize a curve for the plot 
 curve = fft_plot.plot(pen='g')
+data, context, pow_data = dut.read_data(SAMPLE_SIZE)
+freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
 
 def update():
     global dut, curve, fft_plot, plot_xmin, plot_xmax
-    
+
     # read data
-    data, context = read_data_and_context(dut, SAMPLE_SIZE)
-    # compute the fft and plot the data
-    pow_data = compute_fft(dut, data, context)
-    print context
-    freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
-    
-    # initialize the x-axis of the plot
-    fft_plot.setXRange(plot_xmin,plot_xmax)
-    fft_plot.setLabel('bottom', text= 'Frequency', units = 'Hz', unitPrefix=None)
+    data, context, pow_data = dut.read_data(SAMPLE_SIZE)
     curve.setData(freq_range,pow_data, pen = 'g')
+    fft_plot.enableAutoRange('xy', False)
 
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
