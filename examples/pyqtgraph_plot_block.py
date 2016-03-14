@@ -7,7 +7,6 @@ import sys
 import numpy as np
 from pyrf.devices.thinkrf import WSA
 
-
 # plot constants
 CENTER_FREQ = 2450 * 1e6 
 SAMPLE_SIZE = 1024
@@ -18,11 +17,6 @@ TRIGGER_SET = {'type': 'None',
                 'fstart': 2400 * 1e6,
                 'fstop': 2500 * 1e6,
                 'amplitude': -70}
-
-# connect to WSA device
-dut = WSA()
-ip = sys.argv[1]
-dut.connect(ip)
 
 class MainApplication(pg.GraphicsWindow):
 
@@ -37,10 +31,21 @@ class MainApplication(pg.GraphicsWindow):
             if ok:
                 if '?' not in cmd:
                     dut.scpiset(cmd)
-
+                    
+# connect to WSA device
+dut = WSA()
 win = MainApplication(dut)
 win.resize(1000,600)
 win.setWindowTitle("PYRF FFT Plot Example")
+
+if len(sys.argv) > 1:
+    ip = sys.argv[1]
+else:
+    ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
+                'Enter a hostname or IP address:')
+
+dut.connect(ip)
+
 
 
 # initialize WSA configurations
@@ -87,6 +92,7 @@ def update():
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
 timer.start(0)
+
 
 ## Start Qt event loop unless running in interactive mode or using pyside.
 if __name__ == '__main__':

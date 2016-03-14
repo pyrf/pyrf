@@ -21,6 +21,8 @@ def wsa_properties(device_id):
         p = WSA5000_308Properties()
     elif model == 'WSA5000-408':
         p = WSA5000_408Properties()
+    elif model == 'WSA5000-408P':
+        p = WSA5000_408PProperties()
     elif model == 'WSA5000-427':
         p = WSA5000_427Properties()
     elif model == 'WSA5000-418':
@@ -323,7 +325,27 @@ class WSA5000_418Properties(WSA5000_220Properties):
     SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
         span= DEFAULT_SPECA_SPAN,
         center = 9025 * M)
+        
+class WSA5000_408PProperties(WSA5000_220Properties):
+    model = 'WSA5000-408P'
+    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
+    # 418 -> decreased to 18GHz
+    CAPTURE_FREQ_RANGES = [(50*M, 8000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 8000*M)
+    SATURATION_LEVEL = -10.0
+    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'hdr_gain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
+
+    MAX_TUNABLE = dict((mode, 8000*M)
+        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
+    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 4000 * M)
+        
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
     model = 'RTSA7500-8'
     manufacturer = 'Berkley Nucleonics'
