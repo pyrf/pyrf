@@ -3,6 +3,7 @@ import random
 pi = np.pi
 
 
+
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
@@ -46,7 +47,7 @@ def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
         power_spectrum = 20 * np.log10(power_spectrum)
     return power_spectrum
 
-def compute_fft(dut, data_pkt, context, correct_phase=True,
+def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideband = True,
         hide_differential_dc_offset=True, convert_to_dbm=True, 
         apply_window=True, apply_spec_inv=True, apply_reference=True,ref=None, decimation=1):
     """
@@ -67,7 +68,8 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
     """
 
     i_data, q_data, stream_id, spec_inv = _decode_data_pkts(data_pkt)
-
+    if not 'bandwidth' in context:
+        context['bandwidth'] = 1e9
     if 'reflevel' in context:
         reference_level = context['reflevel']
     else:
@@ -76,13 +78,12 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
 
     if stream_id == VRT_IFDATA_I14Q14:
 
-        decimation = dut.decimation()
         if 'iqswap' in context:
             iq_swap = context['iqswap']
         else:
             iq_swap = 0
-        power_spectrum = _compute_fft(i_data, q_data, correct_phase, iq_swap, context['bandwidth'], decimation,
-            hide_differential_dc_offset, convert_to_dbm, apply_window)
+        power_spectrum = _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
+            hide_differential_dc_offset, convert_to_dbm, apply_window, decimation, iq_swap, context['bandwidth'])
         
     if stream_id == VRT_IFDATA_I14:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
@@ -102,12 +103,12 @@ def compute_fft(dut, data_pkt, context, correct_phase=True,
         return power_spectrum + noiselevel_offset
     return power_spectrum
 
-def _compute_fft(i_data, q_data, correct_phase, iqswapedbit, Rx_Bw,
-        hide_differential_dc_offset, convert_to_dbm, apply_window, decimation):
+def _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
+        hide_differential_dc_offset, convert_to_dbm, apply_window, decimation, iqswapedbit, Rx_Bw):
 
     Nsamp = len(i_data)
     rbw = Rx_Bw/Nsamp
-
+    
     if hide_differential_dc_offset:
         i_data = i_data - np.mean(i_data)
         q_data = q_data - np.mean(q_data)
@@ -116,23 +117,24 @@ def _compute_fft(i_data, q_data, correct_phase, iqswapedbit, Rx_Bw,
         i_data = i_data * np.hanning(len(i_data))
         q_data = q_data * np.hanning(len(q_data))
     
+    
     if correct_phase:
-        phi2_deg = 52
+        phi2_deg = 52   # phase error after which the T.D algorithm is skipped to avoid noise floor jumping
         # Measuring phase error
-        phi1, Phi1_deg = measurePhaseError(i_data, q_data)
-        if decimation <= 32: # F.D
-            if abs(Phi1_deg) < phi2_deg:
+        phi_rad, Phi_deg = measurePhaseError(i_data, q_data)
+        if decimation == 1: # F.D + T.D corrections
+            if abs(Phi_deg) < phi2_deg:
                 # T.D correction
-                i_cal, q_cal = _calibrate_i_q_tarek1(i_data, q_data, phi1)
+                i_cal, q_cal = _calibrate_i_q_tarek1(i_data, q_data, phi_rad)
                 # F.D correction
-                i_data, q_data = imageAttenuation(i_cal, q_cal, rbw, Rx_Bw, iqswapedbit, phi1, decimation)
+                i_data, q_data = imageAttenuation(i_cal, q_cal, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
             else:
                 # F.D correction only at the edges
-                q_data = q_data * np.sqrt(sum(i_data ** 2)/sum(q_data ** 2))  
-                i_data, q_data = imageAttenuation(i_data, q_data, rbw, Rx_Bw, iqswapedbit, phi1, decimation)
+                q_data = q_data * np.sqrt(sum(i_data ** 2)/sum(q_data ** 2))
+                i_data, q_data = imageAttenuation(i_data, q_data, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
         else:
-            # T.D correction only at the decimation level > 32
-            i_data, q_data = _calibrate_i_q_tarek1(i_data, q_data, phi1)
+            # Only T.D correction at the decimation level > 1
+            i_data, q_data = _calibrate_i_q_tarek1(i_data, q_data, phi_rad)
         i_data = i_data - np.mean(i_data)
         q_data = q_data - np.mean(q_data)
 
@@ -153,55 +155,60 @@ def _compute_fft(i_data, q_data, correct_phase, iqswapedbit, Rx_Bw,
 
     return power_spectrum
 
-def _calibrate_i_q_tarek1(i_data, q_data, phi1):
-    print 'got here'
+def _calibrate_i_q_tarek1(i_data, q_data, phi_rad):
+    
     Nsamp = len(i_data)
     # Correcting for gain imbalance
     q_data = q_data * np.sqrt(np.var(i_data)/np.var(q_data))  
     # Correcting for phase error
-    cFactor = (1 / np.cos(phi1)) - 1
-    q_cal = (q_data - i_data * np.sin(phi1)) * cFactor
+    cFactor = (1 / np.cos(phi_rad)) - 1
+    q_cal = (q_data - i_data * np.sin(phi_rad)) * cFactor
     # Recorrecting for gain imbalance
     q_cal = q_cal * np.sqrt(np.var(i_data)/np.var(q_cal))
     return i_data, q_cal
 
 def measurePhaseError(i_data, q_data):
     IQprod = np.inner(i_data,q_data)
-    phi1 = pi/2 - np.arccos(IQprod / (np.sqrt(np.sum(np.square(i_data)) * np.sum(np.square(q_data)))))
-    Phi1_deg = phi1 * 180/pi
-    return phi1, Phi1_deg
+    phi_rad = pi/2 - np.arccos(IQprod / (np.sqrt(np.sum(np.square(i_data)) * np.sum(np.square(q_data)))))
+    Phi_deg = phi_rad * 180/pi
+    return phi_rad, Phi_deg
 
-def imageAttenuation(i_in, q_in, rbw, Rx_Bw, iqswapedbit, phi1, decimation):
+def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw):
     
     Nsamp = len(i_in)
-    BWmax_ndx = int(np.rint(20e6/rbw))					# max BW indices to attenuate
-    chSpacing = int(np.rint(200e3/rbw))					# max BW indices to attenuate
-    BWmin_ndx = int(np.rint(300e3/rbw/decimation))		# min BW indices to attenuate
-    BW_ht_ndx = int(np.rint(100e3/rbw))					# head and tail indices of BW to attenuate
-    Nstep = max(1, np.rint(300e3/rbw))
-    ImgToNoise_thresh = 5;  			                # Image-to-Noise threshold (10)
-    if abs(phi1*180/pi) > 30.0:				            # Image-to-Signal threshold
-        ImgToSig_thresh = 0.005;
+    BWmax_ndx = int(np.rint(20e6/rbw))		    # max BW indices to attenuate
+    if iq_correction_wideband:
+        chSpacing = int(np.rint(1000e3/rbw))    # max channel spacing in case of NB signals
     else:
-        ImgToSig_thresh = 0.05
+        chSpacing = int(np.rint(200e3/rbw))		# max channel spacing in case of WB signals
+    BWmin_ndx = int(np.rint(300e3/rbw))		    # min BW indices to attenuate
+    BW_ht_ndx = int(np.rint(100e3/rbw))		    # head and tail indices of BW to attenuate
+    Nstep = max(1, np.rint(300e3/rbw))
     
     iq = i_in + 1j * q_in
     iq = iq * np.hanning(len(i_in))
     ampl_spectrum = np.fft.fftshift(np.fft.fft(iq))/Nsamp
-
+    
     ampl_spectrum_mag = np.abs(ampl_spectrum)
-    from scipy.interpolate import UnivariateSpline
+    
     p, x = np.histogram(ampl_spectrum_mag, bins=int(len(ampl_spectrum_mag)/Nstep))
     x = x[:-1] + (x[1] - x[0])/2 
-    f = UnivariateSpline(x, p, s=int(len(ampl_spectrum_mag)/Nstep))
     N_ndx = max(enumerate(p),key=lambda x: x[1])[0]
     N = x[N_ndx]
     
-    if np.max(ampl_spectrum_mag) > 20 * N:						# To ensure signal presence
+    ToNoise_thresh = 5 * N;  			        # Relative-to-Noise threshold
+    if abs(Phi_deg) > 30.0:				        # Relative-to-Signal threshold
+        ToMax_thresh = 0.005 * np.max(ampl_spectrum_mag);
+    else:
+        ToMax_thresh = 0.05 * np.max(ampl_spectrum_mag)
+    
+    if np.max(ampl_spectrum_mag) > 10 * N:  # To ensure signal presence (3.16=>10dB, 5.6=>15dB, 10=>20dB, 20=>26dB)
         maxNdx = np.argmax(ampl_spectrum_mag)
-        ind = [i for i,v in enumerate(ampl_spectrum_mag) if v > ImgToNoise_thresh * N and v > ImgToSig_thresh * np.max(ampl_spectrum_mag) and maxNdx-BWmax_ndx < i < maxNdx+BWmax_ndx]
+        ind = [i for i,v in enumerate(ampl_spectrum_mag) if v > ToNoise_thresh and v > ToMax_thresh and maxNdx-BWmax_ndx < i < maxNdx+BWmax_ndx]
         
-        # Removing values beyond channel spacing
+        
+        #Removing values beyond channel spacing
+        j1 = 0; j2 = len(ind)-1
         for i in range(np.argmax(ampl_spectrum_mag[ind]), 0, -1):
             if abs(ind[i] - ind[i-1]) < chSpacing:  j1 = i
             else:   break
@@ -210,41 +217,56 @@ def imageAttenuation(i_in, q_in, rbw, Rx_Bw, iqswapedbit, phi1, decimation):
             else:   break
         ind = ind[j1-1:j2]
         
+        
         if ind != []:
             head = min(ind) - max(3, BW_ht_ndx)
             tail = max(ind) + max(3, BW_ht_ndx)
             ind = filter(lambda x: 0 <= x <= Nsamp, range(head, tail+1))
             midNdx = ind[len(ind)/2]
-            ind_mirror = np.subtract(Nsamp-1,ind)
             
             if Nsamp/2 in ind:
                 if Nsamp/2 in range(midNdx - max(5, BWmin_ndx), midNdx + max(5, BWmin_ndx)):
-                    ind = []
+                    ind = []; att_ind = []
                 else:
                     if midNdx > Nsamp/2:
-                        ind = [v for i,v in enumerate(ind) if v > midNdx]
-                    if midNdx <= Nsamp/2:
-                        ind = [v for i,v in enumerate(ind) if v < midNdx]
-                    ind_mirror = np.subtract(Nsamp-1,ind)
+                        ind_mirror = range(Nsamp-1-max(ind), min(ind))
+                    else:
+                        ind_mirror = range(min(Nsamp-1,max(ind)), Nsamp-1-min(ind))
+                    # ind_mirror = filter(lambda x: x not in ind, ind_mirror)   # Too slow
+            else:
+                ind_mirror = np.subtract(Nsamp-1,ind)
             if ind != []:
                 allIndices = np.concatenate([ind,ind_mirror])
-                if iqswapedbit == 0:
-                    if phi1 > 0:
-                        att_ind = filter(lambda x: x < Nsamp/2, allIndices)
-                    else:
-                        att_ind = filter(lambda x: x > Nsamp/2, allIndices)
-                if iqswapedbit == 1:
-                    if phi1 < 0:
-                        att_ind = filter(lambda x: x < Nsamp/2, allIndices)
-                    else:
-                        att_ind = filter(lambda x: x > Nsamp/2, allIndices)
+                if abs(Phi_deg) > 10:   # added as the zero degree doesn't fall exactly on the center frequency
+                    if iqswapedbit == 0:
+                        if Phi_deg > 0:
+                            att_ind = filter(lambda x: x < Nsamp/2, allIndices)
+                        else:
+                            att_ind = filter(lambda x: x > Nsamp/2, allIndices)
+                    if iqswapedbit == 1:
+                        if Phi_deg < 0:
+                            att_ind = filter(lambda x: x < Nsamp/2, allIndices)
+                        else:
+                            att_ind = filter(lambda x: x > Nsamp/2, allIndices)
+                else:
+                    att_ind = ind_mirror
                 
-                
-                Natt = np.random.normal(0, 15*float(float(len(att_ind))/Nsamp/decimation)*N, len(att_ind)) + 1j * np.random.normal(0, 15*float(float(len(att_ind))/Nsamp/decimation)*N, len(att_ind))
-                
-                ampl_spectrum[att_ind] = (ampl_spectrum[att_ind]/np.abs(ampl_spectrum[att_ind])) * Natt
-                iq = np.fft.ifft(np.fft.fftshift(ampl_spectrum*Nsamp))
-                i_data = np.real(iq); q_data = np.imag(iq)
+                if att_ind != []:
+                    if np.max(att_ind) > Nsamp-1 or np.min(att_ind) <  0:   # the if statement can be removed if it'll be faster
+                        att_ind = range(max(0, min(att_ind)), min(max(att_ind), Nsamp))
+                    
+                    tmparray = np.delete(ampl_spectrum_mag, allIndices)
+                    p, x = np.histogram(tmparray, bins=int(len(tmparray)/Nstep))
+                    N_ndx = max(enumerate(p),key=lambda x: x[1])[0]
+                    N = np.sqrt(2) * x[N_ndx]
+                    
+                    
+                    Natt = np.random.normal(0, N, len(att_ind)) + 1j * np.random.normal(0, N, len(att_ind))
+                    ampl_spectrum[att_ind] = (ampl_spectrum[att_ind]/np.abs(ampl_spectrum[att_ind])) * Natt
+                    iq = np.fft.ifft(np.fft.fftshift(ampl_spectrum*Nsamp))
+                    i_data = np.real(iq); q_data = np.imag(iq)
+                else:
+                    i_data = i_in; q_data = q_in    
             else:
                 i_data = i_in; q_data = q_in
         else:
