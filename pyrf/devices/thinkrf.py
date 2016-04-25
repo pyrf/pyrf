@@ -3,7 +3,8 @@ from pyrf.connectors.blocking import PlainSocketConnector
 from pyrf.connectors.base import sync_async
 from pyrf.vrt import vrt_packet_reader
 from pyrf.devices.thinkrf_properties import wsa_properties
-from pyrf.util import capture_spectrum
+from pyrf.util import capture_spectrum, read_data_and_context
+from pyrf.numpy_util import compute_fft
 import struct
 import socket
 import select
@@ -75,7 +76,6 @@ class WSA(object):
     def connect(self, host):
         """
         connect to a wsa
-
         :param host: the hostname or IP to connect to
         """
         yield self.connector.connect(host)
@@ -189,9 +189,7 @@ class WSA(object):
             buf = yield self.scpiget(":INPUT:MODE?")
             mode = buf.strip()
         else:
-
             self.scpiset(":INPUT:MODE %s" % str(mode))
-
         yield mode
 
     @sync_async
@@ -528,7 +526,15 @@ class WSA(object):
         lockstr = yield self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
         yield lockstr == "1"
 
-
+    def read_data(self, spp):
+        """
+        Check if we have permission to read data.
+        :param spp: the number of samples in a packet
+        :returns: data class, context dictionary, and fft array
+        """
+        data, context = read_data_and_context(self, spp)
+        pow_data = compute_fft(self, data, context)
+        return data, context, pow_data
 
     def eof(self):
         """
@@ -566,7 +572,6 @@ class WSA(object):
         else:
             yield -1
 
-
     @sync_async
     def read(self):
         """
@@ -582,7 +587,6 @@ class WSA(object):
         :returns: bytes
         """
         return self.connector.raw_read(num)
-
 
     def sweep_add(self, entry):
         """

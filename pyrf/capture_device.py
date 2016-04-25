@@ -42,6 +42,7 @@ class CaptureDevice(object):
         self.packets_per_block = 1
         self.packets_read = 0
         self.points = 0
+
     def configure_device(self, device_settings, force_change = False):
         """
         Configure the device settings on the next capture
@@ -72,7 +73,7 @@ class CaptureDevice(object):
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         """
-        self.got_saturated = False
+
         prop = self.real_device.properties
         self.real_device.abort()
         self.real_device.flush()
@@ -89,7 +90,6 @@ class CaptureDevice(object):
         self._data_packets = []
 
         self.points = round(max(min_points, full_bw / rbw))
-
         self.points = 2 ** math.ceil(math.log(self.points, 2))
         if prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
             self.points  *= 2
@@ -122,14 +122,20 @@ class CaptureDevice(object):
             return
         self.packets_read += 1
 
-        self._data_packets.append(packet)
+        if self.packets_read == 1:
+            self.data_packet = packet
+        else:
+            # if packet type changes, skip packet with a different size
+            try:
+                self.data_packet.data.np_array = np.concatenate([self.data_packet.data.np_array, packet.data.np_array])
+            except ValueError:
+                x = 1
         if self.packets_read != self.packets_per_block:
             return
 
-        self._data_packets[0].data.np_array = np.concatenate(tuple([p.data.np_array for p in self._data_packets]))
         data= {
             'context_pkt' : self._vrt_context,
-            'data_pkt' : self._data_packets[0]}
+            'data_pkt' : self.data_packet}
         self.packets_read = 0
 
         rfe_mode = self._device_set['rfe_mode']

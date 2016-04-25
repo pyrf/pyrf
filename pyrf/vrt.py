@@ -26,6 +26,7 @@ CTX_RFOFFSET = (1 << 26)
 CTX_REFERENCELEVEL = (1 << 24)
 CTX_SWEEPID = (1 << 0)
 CTX_STREAMID = (1 << 1)
+CTX_IQSWAP = (1 << 3)
 
 # values captured in a given frequency range
 I_ONLY = 'i_only'
@@ -33,7 +34,6 @@ IQ = 'iq'
 
 class InvalidDataReceived(Exception):
     pass
-
 
 def vrt_packet_reader(raw_read):
     """
@@ -69,8 +69,6 @@ def vrt_packet_reader(raw_read):
     else:
         raise InvalidDataReceived("unknown packet type: %s" % packet_type)
 
-
-
 class ContextPacket(object):
     """
     A Context Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`
@@ -84,6 +82,7 @@ class ContextPacket(object):
         self.ptype = packet_type
         self.count = count
         self.size = size
+
         if has_timestamp:
             (self.stream_id, self.tsi, self.tsf, indicators,
                 ) = struct.unpack(">IIQI", tmpstr[0:20])
@@ -94,7 +93,6 @@ class ContextPacket(object):
             self.tsf = None
             indicators = None
             offset = 4
-
         self.fields = {}
 
         parse = {
@@ -106,7 +104,6 @@ class ContextPacket(object):
 
         if parse:
             parse(indicators, tmpstr[offset:])
-
 
     def _parse_receiver_context(self, indicators, data):
         i = 0
@@ -139,7 +136,6 @@ class ContextPacket(object):
         else:
             self.fields['unknown'] = (indicators, data)
 
-
     def _parse_digitizer_context(self, indicators, data):
         i = 0
 
@@ -164,7 +160,6 @@ class ContextPacket(object):
         else:
             self.fields['unknown'] = (indicators, data)
 
-
     def _parse_custom_context(self, indicators, data):
         i = 0
 
@@ -179,7 +174,10 @@ class ContextPacket(object):
             (value,) = struct.unpack(">I", data[i:i+4])
             self.fields['streamid'] = value
             i += 4
-
+        elif indicators & CTX_IQSWAP:
+            (value,) = struct.unpack(">I", data[i:i+4])
+            self.fields['iqswap'] = value
+            i += 4
         else:
             self.fields['unknown'] = (indicators, data)
 
@@ -190,13 +188,11 @@ class ContextPacket(object):
         except ValueError:
             self.fields['unknown'] = (indicators, data)
 
-
     def is_data_packet(self):
         """
         :returns: False
         """
         return False
-
 
     def is_context_packet(self, ptype=None):
         """
@@ -221,7 +217,6 @@ class ContextPacket(object):
         return ("Context #%02d [%d.%012d, 0x%08x " % (
             self.count, self.tsi, self.tsf, self.stream_id)
             ) + str(self.fields) + "]"
-
 
 class IQData(object):
     """
