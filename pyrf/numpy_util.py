@@ -111,9 +111,6 @@ def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideba
 def _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
         hide_differential_dc_offset, convert_to_dbm, apply_window, decimation, iqswapedbit, Rx_Bw):
 
-    Nsamp = len(i_data)
-    rbw = Rx_Bw/Nsamp
-
     if hide_differential_dc_offset:
         i_data = i_data - np.mean(i_data)
         q_data = q_data - np.mean(q_data)
@@ -131,11 +128,11 @@ def _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
                 # T.D correction
                 i_cal, q_cal = _calibrate_i_q(i_data, q_data, phi_rad)
                 # F.D correction
-                i_data, q_data = image_attenuation(i_cal, q_cal, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
+                i_data, q_data = image_attenuation(i_cal, q_cal, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw)
             else:
                 # F.D correction only at the edges
                 q_data = q_data * np.sqrt(sum(i_data ** 2)/sum(q_data ** 2))
-                i_data, q_data = image_attenuation(i_data, q_data, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
+                i_data, q_data = image_attenuation(i_data, q_data, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw)
         else:
             # Only T.D correction at the decimation level > 1
             i_data, q_data = _calibrate_i_q(i_data, q_data, phi_rad)
@@ -180,9 +177,10 @@ def measure_phase_error(i_data, q_data):
     return phi_rad, Phi_deg
 
 
-def image_attenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw):
+def image_attenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw):
 
     Nsamp = len(i_in)
+    rbw = Rx_Bw/Nsamp
     BWmax_ndx = int(np.rint(20e6/rbw))          # max BW indices to attenuate
     if iq_correction_wideband:
         chSpacing = int(np.rint(1000e3/rbw))    # max channel spacing in case of NB signals
