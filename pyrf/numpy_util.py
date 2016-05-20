@@ -183,13 +183,13 @@ def measurePhaseError(i_data, q_data):
 def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw):
 
     Nsamp = len(i_in)
-    BWmax_ndx = int(np.rint(20e6/rbw))		    # max BW indices to attenuate
+    BWmax_ndx = int(np.rint(20e6/rbw))          # max BW indices to attenuate
     if iq_correction_wideband:
         chSpacing = int(np.rint(1000e3/rbw))    # max channel spacing in case of NB signals
     else:
-        chSpacing = int(np.rint(200e3/rbw))		# max channel spacing in case of WB signals
-    BWmin_ndx = int(np.rint(300e3/rbw))		    # min BW indices to attenuate
-    BW_ht_ndx = int(np.rint(100e3/rbw))		    # head and tail indices of BW to attenuate
+        chSpacing = int(np.rint(200e3/rbw))     # max channel spacing in case of WB signals
+    BWmin_ndx = int(np.rint(300e3/rbw))         # min BW indices to attenuate
+    BW_ht_ndx = int(np.rint(100e3/rbw))         # head and tail indices of BW to attenuate
     Nstep = max(1, np.rint(300e3/rbw))
 
     iq = i_in + 1j * q_in
@@ -203,8 +203,8 @@ def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, R
     N_ndx = max(enumerate(p), key=lambda x: x[1])[0]
     N = x[N_ndx]
 
-    ToNoise_thresh = 5 * N  			        # Relative-to-Noise threshold
-    if abs(Phi_deg) > 30.0:				        # Relative-to-Signal threshold
+    ToNoise_thresh = 5 * N                      # Relative-to-Noise threshold
+    if abs(Phi_deg) > 30.0:                     # Relative-to-Signal threshold
         ToMax_thresh = 0.005 * np.max(ampl_spectrum_mag)
     else:
         ToMax_thresh = 0.05 * np.max(ampl_spectrum_mag)
