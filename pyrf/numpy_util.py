@@ -125,20 +125,20 @@ def _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
     if correct_phase:
         phi2_deg = 52   # phase error after which the T.D algorithm is skipped to avoid noise floor jumping
         # Measuring phase error
-        phi_rad, Phi_deg = measurePhaseError(i_data, q_data)
+        phi_rad, Phi_deg = measure_phase_error(i_data, q_data)
         if decimation == 1:  # F.D + T.D corrections
             if abs(Phi_deg) < phi2_deg:
                 # T.D correction
-                i_cal, q_cal = _calibrate_i_q_tarek1(i_data, q_data, phi_rad)
+                i_cal, q_cal = _calibrate_i_q(i_data, q_data, phi_rad)
                 # F.D correction
-                i_data, q_data = imageAttenuation(i_cal, q_cal, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
+                i_data, q_data = image_attenuation(i_cal, q_cal, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
             else:
                 # F.D correction only at the edges
                 q_data = q_data * np.sqrt(sum(i_data ** 2)/sum(q_data ** 2))
-                i_data, q_data = imageAttenuation(i_data, q_data, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
+                i_data, q_data = image_attenuation(i_data, q_data, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw)
         else:
             # Only T.D correction at the decimation level > 1
-            i_data, q_data = _calibrate_i_q_tarek1(i_data, q_data, phi_rad)
+            i_data, q_data = _calibrate_i_q(i_data, q_data, phi_rad)
         i_data = i_data - np.mean(i_data)
         q_data = q_data - np.mean(q_data)
 
@@ -160,7 +160,7 @@ def _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
     return power_spectrum
 
 
-def _calibrate_i_q_tarek1(i_data, q_data, phi_rad):
+def _calibrate_i_q(i_data, q_data, phi_rad):
 
     Nsamp = len(i_data)
     # Correcting for gain imbalance
@@ -173,14 +173,14 @@ def _calibrate_i_q_tarek1(i_data, q_data, phi_rad):
     return i_data, q_cal
 
 
-def measurePhaseError(i_data, q_data):
+def measure_phase_error(i_data, q_data):
     IQprod = np.inner(i_data, q_data)
     phi_rad = pi/2 - np.arccos(IQprod / (np.sqrt(np.sum(np.square(i_data)) * np.sum(np.square(q_data)))))
     Phi_deg = phi_rad * 180/pi
     return phi_rad, Phi_deg
 
 
-def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw):
+def image_attenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw):
 
     Nsamp = len(i_in)
     BWmax_ndx = int(np.rint(20e6/rbw))          # max BW indices to attenuate
