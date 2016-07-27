@@ -198,6 +198,7 @@ class WSA5000_220Properties(object):
         'device_settings': {
             'attenuator': True,
             'var_attenuator': 0.0,
+            'psfm_gain': 'high',
             'iq_output_path': 'DIGITIZER',
             'hdr_gain': 25.0,
             'pll_reference': 'INT',
@@ -295,7 +296,7 @@ class WSA5000_427Properties(WSA5000_220Properties):
     SATURATION_LEVEL = -17.0
 
     # 427 model has no attenuation
-    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator','psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -313,7 +314,7 @@ class WSA5000_418Properties(WSA5000_220Properties):
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
     SATURATION_LEVEL = -10.0
-    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator', 'psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -333,7 +334,7 @@ class WSA5000_408PProperties(WSA5000_220Properties):
     CAPTURE_FREQ_RANGES = [(50*M, 8000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 8000*M)
     SATURATION_LEVEL = -10.0
-    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator', 'psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
