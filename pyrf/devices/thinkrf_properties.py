@@ -191,13 +191,13 @@ class WSA5000_220Properties(object):
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450.0 * M,
-        'rbw': 976.56e3,
+        'rbw': 1000.0e3,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
         'fshift': 0.0,
         'device_settings': {
             'attenuator': True,
-            'var_attenuator': 0.0,
+            'var_attenuator': 17.0,
             'psfm_gain': 'high',
             'iq_output_path': 'DIGITIZER',
             'hdr_gain': 25.0,
