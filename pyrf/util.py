@@ -1,6 +1,7 @@
 import math
 
 from pyrf.vrt import I_ONLY
+import itertools
 from ast import literal_eval
 from pyrf.numpy_util import  compute_fft
 import numpy as np
@@ -219,7 +220,10 @@ def decode_config_type(config_str, str_type):
     elif isinstance(str_type, int):
         value = int(config_str)
     elif  isinstance(str_type, float):
-        value = float(config_str)
+        try:
+            value = float(config_str)
+        except ValueError:
+            value = None
     elif  isinstance(str_type, long):
         value = long(config_str)
     elif  isinstance(str_type, str):
@@ -298,3 +302,41 @@ def capture_sweep_spectrum(dut, mode, points, dec = 1, fshift = 0, packets = 1):
                                                                     fstop)
 
     return (fstart, fstop, pow_data, context)
+    
+def compute_spp_ppb(samples, properties):
+    """
+    compute the samples per packets and packets per block that give the closest value to 
+    # the input samples
+    :param samples: the number of required samples
+    :param properties: the device properties
+        :returns: the required spp/ppb combo, tuple (spp, ppb)
+    """
+    
+    valid_samples = properties.SAMPLE_SIZES
+
+    # make the input samples the closest it can be to a valid sample value
+    if samples < min(valid_samples):
+        samples = min(valid_samples)
+
+    elif samples > max(valid_samples):
+        samples = max(valid_samples)
+    else:
+        samples = valid_samples[int((float(samples) / float(properties.SPP_MULTIPLE)) - 7)]
+      
+    # determine the required spp, and ppb
+    if samples > properties.MAX_SPP:
+        count = 0
+        spp = samples
+        while spp > properties.MAX_SPP:
+            count += 1
+            spp = (int(spp /properties.SPP_MULTIPLE) * properties.SPP_MULTIPLE) / 2
+        ppb = samples / spp
+        spp = valid_samples[int((float(spp) / float(properties.SPP_MULTIPLE)) - 7)]
+        
+    else: 
+        spp = samples
+        ppb = 1
+    return (spp, ppb)
+    
+    
+    

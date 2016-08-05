@@ -190,7 +190,7 @@ def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, R
     ampl_spectrum = np.fft.fftshift(np.fft.fft(iq))/Nsamp
     
     ampl_spectrum_mag = np.abs(ampl_spectrum)
-    
+
     p, x = np.histogram(ampl_spectrum_mag, bins=int(len(ampl_spectrum_mag)/Nstep))
     x = x[:-1] + (x[1] - x[0])/2 
     N_ndx = max(enumerate(p),key=lambda x: x[1])[0]

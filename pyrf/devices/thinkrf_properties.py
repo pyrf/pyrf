@@ -47,6 +47,16 @@ def wsa_properties(device_id):
         p.LEVEL_TRIGGER_RFE_MODES = []
     return p
 
+def create_sample_size(min, max, multiple):
+    start = min
+    list = [min]
+    curr_spp = min
+    while curr_spp < max:
+        curr_spp = curr_spp + multiple
+        list.append(curr_spp)
+
+    return list
+
 class WSA4000Properties(object):
     model = 'WSA4000'
     REFLEVEL_ERROR = 15.7678
@@ -212,26 +222,13 @@ class WSA5000_220Properties(object):
         }
     TUNABLE_MODES = ['SH', 'SHN', 'ZIF', 'HDR']
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
-
+    MIN_SPP = 256
     MAX_SPP = 32768
+    SPP_MULTIPLE = 32
+    MAX_PPB = 14
+    
+    SAMPLE_SIZES = create_sample_size(MIN_SPP, MAX_SPP * MAX_PPB, SPP_MULTIPLE)
     P1DB_LEVEL = -5
-    SAMPLE_SIZES = [128, 
-                    128 * 2, 
-                    128 * 4, 
-                    128 * 8, 
-                    128 * 16, 
-                    128 * 32, 
-                    128 * 64, 
-                    128 * 128, 
-                    128 * 256, 
-                    128 * 512, 
-                    128 * 1024, 
-                    128 * 2048, 
-                    128 * 4096,
-                    128 * 8192, 
-                    128 * 16384, 
-                    128 * 32768,
-                    ]
     DEFAULT_RBW_INDEX = 4
     RBW_VALUES = {}
     for mode in RFE_MODES:
