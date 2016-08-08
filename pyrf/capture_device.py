@@ -1,6 +1,6 @@
 import math
 
-from pyrf.util import compute_usable_bins, adjust_usable_fstart_fstop, compute_spp_ppb
+from pyrf.util import compute_usable_bins, compute_spp_ppb, adjust_usable_fstart_fstop, compute_spp_ppb
 from pyrf.vrt import I_ONLY
 from pyrf.vrt import DataPacket
 import numpy as np
@@ -85,13 +85,14 @@ class CaptureDevice(object):
             **(device_settings if device_settings else {})), force_change) 
 
         full_bw = prop.FULL_BW[rfe_mode]
-        self.packets_per_block = 1
+
         self._vrt_context = {}
         self._data_packets = []
 
         self.points = round(max(min_points, full_bw / rbw))
 
-        self.points = 2 ** math.ceil(math.log(self.points, 2))
+        self.points, self.packets_per_block = compute_spp_ppb(self.points, prop)
+
         if prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
             self.points  *= 2
             

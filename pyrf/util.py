@@ -311,7 +311,7 @@ def compute_spp_ppb(samples, properties):
     :param properties: the device properties
         :returns: the required spp/ppb combo, tuple (spp, ppb)
     """
-    
+
     valid_samples = properties.SAMPLE_SIZES
 
     # make the input samples the closest it can be to a valid sample value
@@ -322,7 +322,7 @@ def compute_spp_ppb(samples, properties):
         samples = max(valid_samples)
     else:
         samples = valid_samples[int((float(samples) / float(properties.SPP_MULTIPLE)) - 7)]
-      
+
     # determine the required spp, and ppb
     if samples > properties.MAX_SPP:
         count = 0
