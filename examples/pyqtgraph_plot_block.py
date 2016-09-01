@@ -9,14 +9,10 @@ from pyrf.devices.thinkrf import WSA
 
 # plot constants
 CENTER_FREQ = 2450 * 1e6 
-SAMPLE_SIZE = 1024
+SAMPLE_SIZE = 384
 ATTENUATOR = 0
-DECIMATION = 4
-RFE_MODE = 'ZIF'
-TRIGGER_SET = {'type': 'None',
-                'fstart': 2400 * 1e6,
-                'fstop': 2500 * 1e6,
-                'amplitude': -70}
+DECIMATION = 1
+RFE_MODE = 'SH'
 
 class MainApplication(pg.GraphicsWindow):
 
@@ -31,7 +27,7 @@ class MainApplication(pg.GraphicsWindow):
             if ok:
                 if '?' not in cmd:
                     dut.scpiset(cmd)
-                    
+
 # connect to WSA device
 dut = WSA()
 win = MainApplication(dut)
@@ -54,10 +50,8 @@ dut.request_read_perm()
 dut.freq(CENTER_FREQ)
 dut.decimation(DECIMATION)
 dut.attenuator(ATTENUATOR)
-
 dut.rfe_mode(RFE_MODE)
 
-dut.trigger(TRIGGER_SET)
 BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
 # initialize plot
 fft_plot = win.addPlot(title="Power Vs. Frequency")
@@ -86,6 +80,7 @@ def update():
 
     # read data
     data, context, pow_data = dut.read_data(SAMPLE_SIZE)
+    print len(pow_data)
     curve.setData(freq_range,pow_data, pen = 'g')
     fft_plot.enableAutoRange('xy', False)
 
