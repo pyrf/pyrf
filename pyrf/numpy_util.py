@@ -277,3 +277,50 @@ def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, R
     q_data = q_data - np.mean(q_data)
           
     return i_data, q_data
+
+def calculate_occupied_bw(pow_data, span, occupied_perc):
+    """
+    Return the occupied bandwidth of a give spectrum, and occupied percentage
+
+    :param pow_data: spectral data to be analyzed
+    :type pow_data: list
+    :param occupied_perc: 
+    :type occupied_perc: 
+
+    :returns: float value of the occupied bandwidth
+    """
+    # calculate center bin
+    import time
+    pow_list = list(pow_data)
+
+    total_points = len(pow_list)
+    mid_point = int(total_points/ 2) 
+
+    # offset the value of the spectrum, so the minimum is 0, to prevent negative numbers from offseting the channel power calculation
+    min_offset = np.abs(min(pow_list))
+    pow_list= (pow_list + min_offset) * 5
+
+    # calculate total channel power
+    total_channel_power = calculate_channel_power(pow_list)
+    perc_power = (occupied_perc / 100.0) * total_channel_power
+
+    bisect_val = 1
+    prev_bisect = -1
+    # calculate channel power at center point, while incrementing i on each loop to increase span of calculation
+    while True:
+        # print bisect_val, total_points
+        section_power = calculate_channel_power(pow_list[mid_point - bisect_val : mid_point + bisect_val])
+
+        if section_power > perc_power:
+            break
+
+        if section_power < perc_power:
+            prev_bisect = bisect_val
+            bisect_val  = bisect_val + max(1, int(total_points / 1300))
+    
+    # calculate occupied bandwidth
+    occupied_bw = (float(2 * bisect_val) / float(total_points)) * span
+
+    
+
+    return occupied_bw
