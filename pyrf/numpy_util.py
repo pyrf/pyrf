@@ -290,11 +290,13 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     :returns: float value of the occupied bandwidth
     """
     # calculate center bin
-    import time
     pow_list = list(pow_data)
-
+    
     total_points = len(pow_list)
     mid_point = int(total_points/ 2) 
+
+    # the number of segments to jump seperate the spectrum
+    num_divisions = 1500
 
     # offset the value of the spectrum, so the minimum is 0, to prevent negative numbers from offseting the channel power calculation
     min_offset = np.abs(min(pow_list))
@@ -316,11 +318,9 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
 
         if section_power < perc_power:
             prev_bisect = bisect_val
-            bisect_val  = bisect_val + max(1, int(total_points / 1300))
+            bisect_val  = bisect_val + max(1, int(total_points / num_divisions))
     
     # calculate occupied bandwidth
     occupied_bw = (float(2 * bisect_val) / float(total_points)) * span
-
-    
 
     return occupied_bw
