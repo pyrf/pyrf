@@ -327,7 +327,7 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     return occupied_bw
 
 def calibrate_time_domain(power_spectrum, data_pkt):
-        """
+    """
     Return a list of the calibrated time domain data
 
     :param pow_data: spectral data of the time domain data
