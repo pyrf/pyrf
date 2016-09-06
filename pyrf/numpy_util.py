@@ -284,9 +284,10 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
 
     :param pow_data: spectral data to be analyzed
     :type pow_data: list
-    :param occupied_perc: 
-    :type occupied_perc: 
-
+    :param span: span of the given spectrum (Hz) 
+    :type float: 
+    :param occupied_perc: Percentage of the power to be measured
+    :type float: 
     :returns: float value of the occupied bandwidth
     """
     # calculate center bin
@@ -324,3 +325,33 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     occupied_bw = (float(2 * bisect_val) / float(total_points)) * span
 
     return occupied_bw
+
+def calibrate_time_domain(power_spectrum, data_pkt):
+        """
+    Return a list of the calibrated time domain data
+
+    :param pow_data: spectral data of the time domain data
+    :type pow_data: list
+    :param data_pkt: WSA VRT data packet
+    :type pyrf.vrt.DataPacket: 
+    :returns: list containing the calibrated data
+    """
+    i_data, q_data, stream_id, spec_inv = _decode_data_pkts(data_pkt)
+    
+    # Time domain data calibration
+    if stream_id in (VRT_IFDATA_I14, VRT_IFDATA_I24):
+            td_data = i_data -np.mean(i_data)
+            complex_coefficient = 1
+    
+    if stream_id == VRT_IFDATA_I14Q14:
+        td_data = i_data + 1j * q_data
+        td_data = td_data - np.mean(td_data)
+        complex_coefficient = 2
+
+    P_FD_Ln = 10**(power_spectrum/10)
+    P_FD_av = np.mean(P_FD_Ln[2:-2])
+    
+    v_volt = td_data * np.sqrt(P_FD_av/np.var(td_data)) * 50 * np.sqrt(complex_coefficient*len(td_data)/128.0)
+
+    return v_volt
+     
