@@ -47,6 +47,16 @@ def wsa_properties(device_id):
         p.LEVEL_TRIGGER_RFE_MODES = []
     return p
 
+def create_sample_size(min, max, multiple):
+    start = min
+    list = [min]
+    curr_spp = min
+    while curr_spp < max:
+        curr_spp = curr_spp + multiple
+        list.append(curr_spp)
+
+    return list
+
 class WSA4000Properties(object):
     model = 'WSA4000'
     REFLEVEL_ERROR = 15.7678
@@ -191,13 +201,14 @@ class WSA5000_220Properties(object):
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
         'center': 2450.0 * M,
-        'rbw': 976.56e3,
+        'rbw': 1000.0e3,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
         'fshift': 0.0,
         'device_settings': {
             'attenuator': True,
-            'var_attenuator': 0.0,
+            'var_attenuator': 17.0,
+            'psfm_gain': 'high',
             'iq_output_path': 'DIGITIZER',
             'hdr_gain': 25.0,
             'pll_reference': 'INT',
@@ -211,26 +222,13 @@ class WSA5000_220Properties(object):
         }
     TUNABLE_MODES = ['SH', 'SHN', 'ZIF', 'HDR']
     SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
-
+    MIN_SPP = 256
     MAX_SPP = 32768
+    SPP_MULTIPLE = 32
+    MAX_PPB = 14
+    
+    SAMPLE_SIZES = create_sample_size(MIN_SPP, MAX_SPP * MAX_PPB, SPP_MULTIPLE)
     P1DB_LEVEL = -5
-    SAMPLE_SIZES = [128, 
-                    128 * 2, 
-                    128 * 4, 
-                    128 * 8, 
-                    128 * 16, 
-                    128 * 32, 
-                    128 * 64, 
-                    128 * 128, 
-                    128 * 256, 
-                    128 * 512, 
-                    128 * 1024, 
-                    128 * 2048, 
-                    128 * 4096,
-                    128 * 8192, 
-                    128 * 16384, 
-                    128 * 32768,
-                    ]
     DEFAULT_RBW_INDEX = 4
     RBW_VALUES = {}
     for mode in RFE_MODES:
@@ -295,7 +293,7 @@ class WSA5000_427Properties(WSA5000_220Properties):
     SATURATION_LEVEL = -17.0
 
     # 427 model has no attenuation
-    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator','psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -313,7 +311,7 @@ class WSA5000_418Properties(WSA5000_220Properties):
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
     SATURATION_LEVEL = -10.0
-    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator', 'psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
@@ -333,7 +331,7 @@ class WSA5000_408PProperties(WSA5000_220Properties):
     CAPTURE_FREQ_RANGES = [(50*M, 8000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 8000*M)
     SATURATION_LEVEL = -10.0
-    SWEEP_SETTINGS = ['var_attenuator', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+    SWEEP_SETTINGS = ['var_attenuator', 'psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']

@@ -322,7 +322,31 @@ class WSA(object):
             self.scpiset(":INPUT:GAIN:RF %s\n" % gain)
 
         yield gain.lower()
+    
+    @sync_async
+    def psfm_gain(self, gain = None):
+        GAIN_STATE = {('1', '1'): 'high',
+                      ('1', '0'): 'medium',
+                      ('0', '0'): 'low'}
+        GAIN_SET = {v: k for k, v in GAIN_STATE.items()}
+        """
+        This command sets or queries one of the PSFM gain stages.
 
+        :param gain: sets the gain value of the amplifiers, note the
+        gain values have to be either 'high', 'medium', 'low'
+        :returns: the RF gain value
+        """
+        if gain is None:
+            gain1 = yield self.scpiget(":INP:GAIN? 1")
+            gain2 = yield self.scpiget(":INP:GAIN? 2")
+            gain = GAIN_STATE[(gain1[0], gain2[0])]
+        else:
+            state = GAIN_SET[gain.lower()]
+            self.scpiset(":INPUT:GAIN 1 %s\n" % state[0])
+            self.scpiset(":INPUT:GAIN 2 %s\n" % state[1])
+
+        yield gain
+        
     @sync_async
     def ifgain(self, gain=None):
         """
@@ -773,6 +797,7 @@ class WSA(object):
             'freq': self.freq,
             'antenna': self.antenna,
             'gain': self.gain,
+            'psfm_gain': self.psfm_gain,
             'hdr_gain': self.hdr_gain,
             'ifgain': self.ifgain,
             'fshift': self.fshift,

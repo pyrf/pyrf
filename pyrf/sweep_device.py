@@ -110,7 +110,7 @@ class SweepDevice(object):
             device_settings=None,
             mode='ZIF',
             continuous=False,
-            min_points=32):
+            min_points=256):
         """
         Initiate a capture of power spectral density by
         setting up a sweep list and starting a single sweep.
@@ -289,7 +289,7 @@ class SweepDevice(object):
 
 
 
-def plan_sweep(device, fstart, fstop, rbw, mode, min_points=32):
+def plan_sweep(device, fstart, fstop, rbw, mode, min_points=256):
     """
     :param device: a device class or instance such as
                    :class:`pyrf.devices.thinkrf.WSA`
