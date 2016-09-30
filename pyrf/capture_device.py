@@ -90,16 +90,12 @@ class CaptureDevice(object):
         self._data_packets = []
 
         self.points = round(max(min_points, full_bw / rbw))
-
-        self.points, self.packets_per_block = compute_spp_ppb(self.points, prop)
-
         if prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
             self.points  *= 2
-            
-        if self.points > prop.MAX_SPP:
-            self.packets_per_block = self.points / prop.MAX_SPP
-            self.points = prop.MAX_SPP
+        self.points, self.packets_per_block = compute_spp_ppb(self.points, prop)
 
+
+        
         fshift = self._device_set.get('fshift', 0)
         decimation = self._device_set.get('decimation', 1)
         self.usable_bins = compute_usable_bins(prop, rfe_mode, (self.points * self.packets_per_block),
@@ -118,7 +114,6 @@ class CaptureDevice(object):
         return result
 
     def read_data(self, packet):
-
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
             return
@@ -133,6 +128,7 @@ class CaptureDevice(object):
             except ValueError:
                 x = 1
         if self.packets_read != self.packets_per_block:
+
             return
 
         data= {
