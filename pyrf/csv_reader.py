@@ -59,7 +59,7 @@ class CSVReader(object):
         for p in range(points - 1):
             data = self._file.readline()
             pow_data.append(float(data))
-        time_stamp = data_header[5]
+        self.time_stamp = data_header[5]
         if self.async_callback is None:
             return (start, stop, pow_data)
         else:
