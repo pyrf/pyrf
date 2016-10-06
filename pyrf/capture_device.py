@@ -89,7 +89,8 @@ class CaptureDevice(object):
         self._vrt_context = {}
         self._data_packets = []
 
-        self.points = round(max(min_points, full_bw / rbw))
+        self.points = round(full_bw / rbw)
+        self.points = round(max(min_points, self.points))
         if prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
             self.points  *= 2
         self.points, self.packets_per_block = compute_spp_ppb(self.points, prop)

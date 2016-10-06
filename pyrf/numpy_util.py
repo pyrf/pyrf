@@ -290,6 +290,10 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     :type float: 
     :returns: float value of the occupied bandwidth
     """
+
+    # 100% of the occupied bandwidth is the full span
+    if occupied_perc >= 100.0:
+        return span
     # calculate center bin
     pow_list = list(pow_data)
     
