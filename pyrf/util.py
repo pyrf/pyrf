@@ -321,7 +321,7 @@ def compute_spp_ppb(samples, properties):
     elif samples > max(valid_samples):
         samples = max(valid_samples)
     else:
-        samples = valid_samples[int((float(samples) / float(properties.SPP_MULTIPLE)) - 7)]
+        samples = min(valid_samples, key=lambda x:abs(x-samples))
 
     # determine the required spp, and ppb
     if samples > properties.MAX_SPP:
