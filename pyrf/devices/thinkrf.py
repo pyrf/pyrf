@@ -763,9 +763,18 @@ class WSA(object):
         :returns: the current attenuation value
         """
         if atten_val is None:
-            atten_val = yield self.scpiget("INP:ATT:VAR?")
+
+            if 'WSA5500' in self.properties.model :
+                atten_val = yield self.scpiget(":INPUT:ATTENUATOR?")
+            else:
+                atten_val = yield self.scpiget("INP:ATT:VAR?")
+
         else:
-            self.scpiset("INP:ATT:VAR %d" % atten_val)
+            print self.properties.model
+            if 'WSA5500' in self.properties.model :
+                atten_val = yield self.scpiget(":INPUT:ATTENUATOR %0.2f" % atten_val)
+            else:
+                self.scpiset("INP:ATT:VAR %d" % atten_val)
         yield atten_val
 
     @sync_async
