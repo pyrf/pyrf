@@ -9,7 +9,7 @@ from pyrf.devices.thinkrf import WSA
 
 # plot constants
 CENTER_FREQ = 2450 * 1e6 
-SAMPLE_SIZE = 384
+SAMPLE_SIZE = 1024
 ATTENUATOR = 0
 DECIMATION = 1
 RFE_MODE = 'SH'
@@ -80,7 +80,7 @@ def update():
 
     # read data
     data, context, pow_data = dut.read_data(SAMPLE_SIZE)
-    print len(pow_data)
+
     curve.setData(freq_range,pow_data, pen = 'g')
     fft_plot.enableAutoRange('xy', False)
 
