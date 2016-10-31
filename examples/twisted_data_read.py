@@ -15,7 +15,7 @@ import twisted.python.log
 CENTER_FREQ = 2450 * 1e6 
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
-DECIMATION = 4
+DECIMATION = 1
 RFE_MODE = 'ZIF'
 TRIGGER_SET = {'type': 'None',
                 'fstart': 2400 * 1e6,
@@ -26,6 +26,10 @@ TRIGGER_SET = {'type': 'None',
 dut = WSA()
 ip = sys.argv[1]
 dut = WSA(connector=TwistedConnector(reactor))
+
+class VRT_PRINTER():
+    def print_packet(self, packet):
+        print packet
 
 @defer.inlineCallbacks
 def show_i_q():
@@ -40,25 +44,21 @@ def show_i_q():
     yield dut.attenuator(ATTENUATOR)
 
     yield dut.trigger(TRIGGER_SET)
-    dut.connector.vrt_callback = receive_vrt
+    printer = VRT_PRINTER()
+    
+    dut.connector.vrt_callback = printer.print_packet
+    
     # capture 1 packet
-    yield dut.capture(1024, 1)
-context = {}
-
-def receive_vrt(packet):
-    # read until I get 1 data packet
-    global context, dut
-    if not packet.is_data_packet():
-        context.update(packet.fields)
-        return
-    else:
-        pow_data = compute_fft(dut, packet, context)
-        print pow_data
-        dut.capture(SAMPLE_SIZE, 1)
-        
-
+    yield dut.stream_start()
     
-    
+def stopStreaming():
+    print 'stopped stream'
+    dut.stream_stop()
+    dut.flush()
+
+import atexit
+atexit.register(stopStreaming)
+
 d = show_i_q()
 d.addErrback(twisted.python.log.err)
 reactor.run()

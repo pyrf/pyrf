@@ -353,11 +353,12 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=256):
         return (fstart, fstart, [])
 
     points = full_bw / rbw
-    points = int(max(min_points, 2 ** math.ceil(math.log(points, 2))))
-
+    
+    points = int(32 * round(float(points)/32))
+    
     decimation = 1
     bin_size = float(full_bw) / decimation / points
-
+    
     left_edge = full_bw / 2.0 - half_usable
     left_bin = math.ceil(left_edge / bin_size)
     fshift = 0 # always preferred
@@ -409,6 +410,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=256):
     # adjust points for I-only data
     if mode == 'SH' or mode == 'SHN':
         points *= 2
+        points = int(max(min_points, points))
 
     assert fcenter % prop.TUNING_RESOLUTION == 0, fcenter
     assert step_size > 0 and step_size % prop.TUNING_RESOLUTION == 0, step_size

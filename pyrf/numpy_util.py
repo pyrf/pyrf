@@ -117,7 +117,6 @@ def _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
         i_data = i_data * np.hanning(len(i_data))
         q_data = q_data * np.hanning(len(q_data))
     
-    
     if correct_phase:
         phi2_deg = 52   # phase error after which the T.D algorithm is skipped to avoid noise floor jumping
         # Measuring phase error
@@ -174,12 +173,12 @@ def measurePhaseError(i_data, q_data):
     return phi_rad, Phi_deg
 
 def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, Rx_Bw, rbw):
-    
     Nsamp = len(i_in)
-    BWmax_ndx = int(np.rint(20e6/rbw))		    # max BW indices to attenuate
     if iq_correction_wideband:
+        BWmax_ndx = int(np.rint(20e6/rbw))		    # max BW indices to attenuate
         chSpacing = int(np.rint(1000e3/rbw))    # max channel spacing in case of NB signals
     else:
+        BWmax_ndx = int(np.rint(1e6/rbw))		    # max BW indices to attenuate
         chSpacing = int(np.rint(200e3/rbw))		# max channel spacing in case of WB signals
     BWmin_ndx = int(np.rint(300e3/rbw))		    # min BW indices to attenuate
     BW_ht_ndx = int(np.rint(100e3/rbw))		    # head and tail indices of BW to attenuate
@@ -290,6 +289,10 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     :type float: 
     :returns: float value of the occupied bandwidth
     """
+
+    # 100% of the occupied bandwidth is the full span
+    if occupied_perc >= 100.0:
+        return span
     # calculate center bin
     pow_list = list(pow_data)
     
