@@ -59,7 +59,6 @@ class SweepEntry(object):
             fstep=100000000,
             fshift=0,
             decimation=0,
-            antenna=1,
             gain="vlow",
             ifgain=0,
             hdr_gain=-10,
@@ -73,12 +72,12 @@ class SweepEntry(object):
             level_amplitude=-100,
             attenuator=True,
             rfe_mode='ZIF'):
+
         self.fstart = fstart
         self.fstop = fstop
         self.fstep = fstep
         self.fshift = fshift
         self.decimation = decimation
-        self.antenna = antenna
         self.gain = gain
         self.ifgain = ifgain
         self.spp = spp
@@ -99,7 +98,6 @@ class SweepEntry(object):
             + "\tfstep: %d\n" % self.fstep
             + "\tfshift: %d\n" % self.fshift
             + "\tdecimation: %d\n" % self.decimation
-            + "\tantenna: %d\n" % self.antenna
             + "\tgain: %s\n" % self.gain
             + "\tifgain: %d\n" % self.ifgain
             + "\tspp/ppb: %d/%d\n" % (self.spp, self.ppb)

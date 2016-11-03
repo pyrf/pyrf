@@ -294,7 +294,7 @@ class WSA5500_408Properties(WSA5000_408Properties):
     model = 'WSA5500-408'
     RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'var_attenuator', 'hdr_gain', 'spp', 'ppb',
+        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
