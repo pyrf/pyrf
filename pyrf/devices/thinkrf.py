@@ -303,25 +303,6 @@ class WSA(object):
             value = 1
 
         yield value
-
-    @sync_async
-    def gain(self, gain=None):
-        """
-        This command sets or queries RFE quantized gain configuration.
-        The RF front end (RFE) of the WSA consists of multiple quantized
-        gain stages. The gain corresponding to each user-selectable setting
-        has been pre-calculated for either optimal sensitivity or linearity.
-        The parameter defines the total quantized gain of the RFE.
-
-        :param gain: 'high', 'medium', 'low' or 'vlow' to set; None to query
-        :returns: the RF gain value
-        """
-        if gain is None:
-            gain = yield self.scpiget("INPUT:GAIN:RF?")
-        else:
-            self.scpiset(":INPUT:GAIN:RF %s\n" % gain)
-
-        yield gain.lower()
     
     @sync_async
     def psfm_gain(self, gain = None):
@@ -399,22 +380,6 @@ class WSA(object):
         else:
             self.scpiset(":INPUT:FILTER:PRESELECT %d" % int(enable))
         yield enable
-
-    @sync_async
-    def antenna(self, number=None):
-        """
-        This command selects and queries the active antenna port.
-
-        :param number: 1 or 2 to set; None to query
-        :returns: active antenna port
-        """
-        if number is None:
-            number = yield self.scpiget(":INPUT:ANTENNA?")
-            number = int(number)
-        else:
-            self.scpiset(":INPUT:ANTENNA %d" % number)
-        yield number
-
 
     def reset(self):
         """
@@ -626,13 +591,10 @@ class WSA(object):
         self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
         self.scpiset(":sweep:entry:freq:shift %d" % (entry.fshift))
         self.scpiset(":sweep:entry:decimation %d" % (entry.decimation))
-        if 'antenna' in self.properties.SWEEP_SETTINGS:
-            self.scpiset(":sweep:entry:antenna %d" % (entry.antenna))
-        if 'gain' in self.properties.SWEEP_SETTINGS:
-            self.scpiset(":sweep:entry:gain:rf %s" % (entry.gain))
         if 'attenuator' in self.properties.SWEEP_SETTINGS:
-            self.scpiset(":sweep:entry:attenuator %s" % (
-                1 if entry.attenuator else 0))
+            self.scpiset(":sweep:entry:attenuator %0.2f" % (
+                entry.attenuator))
+
         self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
@@ -739,7 +701,7 @@ class WSA(object):
         yield self.scpiget(":TRACE:STREAM:STATUS?")
 
     @sync_async
-    def attenuator(self, enable=None):
+    def attenuator(self,  atten_val=None):
         """
         This command enables, disables or queries the WSA's RFE 20
         dB attenuation.
@@ -747,12 +709,17 @@ class WSA(object):
         :param enable: True or False to set; None to query
         :returns: the current attenuator state
         """
-        if enable is None:
-            enable = yield self.scpiget(":INPUT:ATTENUATOR?")
-            enable = bool(int(enable))
+
+        if  atten_val is None:
+            atten_val = yield self.scpiget(":INPUT:ATTENUATOR?")
+            if 'WSA5500' not in self.properties.model :
+                atten_val = bool(int( atten_val))
         else:
-            self.scpiset(":INPUT:ATTENUATOR %s" % (1 if enable else 0))
-        yield enable
+            if 'WSA5500' in self.properties.model :
+                atten_val = yield self.scpiset(":INPUT:ATTENUATOR %0.2f" % atten_val)
+            else:
+                self.scpiset(":INPUT:ATTENUATOR %s" % (1 if atten_val else 0))
+        yield atten_val
 
     @sync_async
     def var_attenuator(self, atten_val=None):
@@ -764,16 +731,8 @@ class WSA(object):
         """
         if atten_val is None:
 
-            if 'WSA5500' in self.properties.model :
-                atten_val = yield self.scpiget(":INPUT:ATTENUATOR?")
-            else:
                 atten_val = yield self.scpiget("INP:ATT:VAR?")
-
         else:
-            print self.properties.model
-            if 'WSA5500' in self.properties.model :
-                atten_val = yield self.scpiget(":INPUT:ATTENUATOR %0.2f" % atten_val)
-            else:
                 self.scpiset("INP:ATT:VAR %d" % atten_val)
         yield atten_val
 
@@ -804,8 +763,6 @@ class WSA(object):
         """
         device_setting = {
             'freq': self.freq,
-            'antenna': self.antenna,
-            'gain': self.gain,
             'psfm_gain': self.psfm_gain,
             'hdr_gain': self.hdr_gain,
             'ifgain': self.ifgain,
