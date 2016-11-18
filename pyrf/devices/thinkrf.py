@@ -594,7 +594,7 @@ class WSA(object):
         if 'attenuator' in self.properties.SWEEP_SETTINGS:
             self.scpiset(":sweep:entry:attenuator %0.2f" % (
                 entry.attenuator))
-            print "SCPI VAL: ", entry.attenuator
+
         self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))

@@ -36,7 +36,7 @@ def wsa_properties(device_id):
     elif model == 'RTSA7500-27':
         p = BNC_RTSA750027_Properties()
 
-    elif model == 'WSA5500-408':
+    elif model in ['WSA5500-408', 'R5500-408']:
         p = WSA5500_408Properties()
 
     else:
@@ -297,6 +297,29 @@ class WSA5500_408Properties(WSA5000_408Properties):
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+    DEFAULT_SPECA_SPAN = WSA5000_408Properties.MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = {
+        'mode': 'Sweep SH',
+        'center': 2450.0 * M,
+        'rbw': 250.0e3,
+        'span': DEFAULT_SPECA_SPAN,
+        'decimation': 1,
+        'fshift': 0.0,
+        'device_settings': {
+            'attenuator': 30.0,
+            'var_attenuator': 17.0,
+            'psfm_gain': 'high',
+            'iq_output_path': 'DIGITIZER',
+            'hdr_gain': 25.0,
+            'pll_reference': 'INT',
+            'trigger': {'type': 'NONE',
+                        'fstart': 2440.0 * M,
+                        'fstop': 2460 * M,
+                        'amplitude': -100.0},
+            },
+        'device_class': 'thinkrf.WSA',
+        'device_identifier': 'unknown',
+        }
 
 class WSA5000_427Properties(WSA5000_220Properties):
     model = 'WSA5000-427'
