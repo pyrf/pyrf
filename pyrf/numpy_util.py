@@ -87,6 +87,7 @@ def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideba
         
     if stream_id == VRT_IFDATA_I14:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
+        
 
     if stream_id == VRT_IFDATA_I24:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
@@ -352,9 +353,8 @@ def calibrate_time_domain(power_spectrum, data_pkt):
         complex_coefficient = 2
 
     P_FD_Ln = 10**(power_spectrum/10)
-    P_FD_av = np.mean(P_FD_Ln[2:-2])
-    
-    v_volt = td_data * np.sqrt(P_FD_av/np.var(td_data)) * 50 * np.sqrt(complex_coefficient*len(td_data)/128.0)
+    P_FD_av = np.mean(P_FD_Ln)
 
+    v_volt = td_data * np.sqrt(1e-3) * np.sqrt(P_FD_av/np.var(td_data)) * 50 * np.sqrt(complex_coefficient*len(td_data)/128.0)
+    
     return v_volt
-     
