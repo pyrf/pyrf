@@ -297,10 +297,11 @@ class WSA5500_408Properties(WSA5000_408Properties):
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
     DEFAULT_SPECA_SPAN = WSA5000_408Properties.MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
-        'center': 2450.0 * M,
+        'center': 4025.0 * M,
         'rbw': 250.0e3,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,

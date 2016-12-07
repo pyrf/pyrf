@@ -5,7 +5,7 @@ pi = np.pi
 
 
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
-    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
+                      VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 def calculate_channel_power(power_spectrum):
     """
@@ -15,7 +15,7 @@ def calculate_channel_power(power_spectrum):
                             the channel power calculation
     """
 
-    linear = np.power(10, np.divide(power_spectrum,20))
+    linear = np.power(10, np.divide(power_spectrum, 20))
 
     channel_power = 10 * np.log10(np.sum(np.square(linear)))
     return channel_power
@@ -27,8 +27,8 @@ def _decode_data_pkts(data_pkt):
     q_data = None
 
     if stream_id == VRT_IFDATA_I14Q14:
-        i_data = np.array(data_pkt.data.numpy_array()[:,0], dtype=float) / 2 ** 13
-        q_data = np.array(data_pkt.data.numpy_array()[:,1], dtype=float) / 2 ** 13
+        i_data = np.array(data_pkt.data.numpy_array()[:, 0], dtype=float) / 2 ** 13
+        q_data = np.array(data_pkt.data.numpy_array()[:, 1], dtype=float) / 2 ** 13
 
     if stream_id == VRT_IFDATA_I14:
         i_data = (np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 13)
@@ -295,7 +295,7 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
         return span
     # calculate center bin
     pow_list = list(pow_data)
-    
+
     total_points = len(pow_list)
     mid_point = int(total_points/ 2) 
 
@@ -314,7 +314,6 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     prev_bisect = -1
     # calculate channel power at center point, while incrementing i on each loop to increase span of calculation
     while True:
-        # print bisect_val, total_points
         section_power = calculate_channel_power(pow_list[mid_point - bisect_val : mid_point + bisect_val])
 
         if section_power > perc_power:
