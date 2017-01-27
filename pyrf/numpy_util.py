@@ -5,7 +5,7 @@ pi = np.pi
 
 
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
-    VRT_IFDATA_I24, VRT_IFDATA_PSD8)
+                      VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 
 def calculate_channel_power(power_spectrum):
     """
@@ -15,7 +15,7 @@ def calculate_channel_power(power_spectrum):
                             the channel power calculation
     """
 
-    linear = np.power(10, np.divide(power_spectrum,20))
+    linear = np.power(10, np.divide(power_spectrum, 20))
 
     channel_power = 10 * np.log10(np.sum(np.square(linear)))
     return channel_power
@@ -27,8 +27,8 @@ def _decode_data_pkts(data_pkt):
     q_data = None
 
     if stream_id == VRT_IFDATA_I14Q14:
-        i_data = np.array(data_pkt.data.numpy_array()[:,0], dtype=float) / 2 ** 13
-        q_data = np.array(data_pkt.data.numpy_array()[:,1], dtype=float) / 2 ** 13
+        i_data = np.array(data_pkt.data.numpy_array()[:, 0], dtype=float) / 2 ** 13
+        q_data = np.array(data_pkt.data.numpy_array()[:, 1], dtype=float) / 2 ** 13
 
     if stream_id == VRT_IFDATA_I14:
         i_data = (np.array(data_pkt.data.numpy_array(), dtype=float) / 2 ** 13)
@@ -84,9 +84,10 @@ def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideba
             iq_swap = 0
         power_spectrum = _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
             hide_differential_dc_offset, convert_to_dbm, apply_window, decimation, iq_swap, context['bandwidth'])
-        
+
     if stream_id == VRT_IFDATA_I14:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
+
 
     if stream_id == VRT_IFDATA_I24:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
@@ -295,7 +296,7 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
         return span
     # calculate center bin
     pow_list = list(pow_data)
-    
+
     total_points = len(pow_list)
     mid_point = int(total_points/ 2) 
 
@@ -314,7 +315,6 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     prev_bisect = -1
     # calculate channel power at center point, while incrementing i on each loop to increase span of calculation
     while True:
-        # print bisect_val, total_points
         section_power = calculate_channel_power(pow_list[mid_point - bisect_val : mid_point + bisect_val])
 
         if section_power > perc_power:
@@ -352,9 +352,8 @@ def calibrate_time_domain(power_spectrum, data_pkt):
         complex_coefficient = 2
 
     P_FD_Ln = 10**(power_spectrum/10)
-    P_FD_av = np.mean(P_FD_Ln[2:-2])
-    
-    v_volt = td_data * np.sqrt(P_FD_av/np.var(td_data)) * 50 * np.sqrt(complex_coefficient*len(td_data)/128.0)
+    P_FD_av = np.mean(P_FD_Ln)
 
+    v_volt = td_data * np.sqrt(1e-3) * np.sqrt(P_FD_av/np.var(td_data)) * 50 * np.sqrt(complex_coefficient*len(td_data)/128.0)
+    
     return v_volt
-     
