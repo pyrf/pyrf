@@ -84,10 +84,10 @@ def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideba
             iq_swap = 0
         power_spectrum = _compute_fft(i_data, q_data, correct_phase, iq_correction_wideband,
             hide_differential_dc_offset, convert_to_dbm, apply_window, decimation, iq_swap, context['bandwidth'])
-        
+
     if stream_id == VRT_IFDATA_I14:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)
-        
+
 
     if stream_id == VRT_IFDATA_I24:
         power_spectrum = _compute_fft_i_only(i_data, convert_to_dbm, apply_window)

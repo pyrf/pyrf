@@ -712,11 +712,11 @@ class WSA(object):
 
         if  atten_val is None:
             atten_val = yield self.scpiget(":INPUT:ATTENUATOR?")
-            if 'WSA5500' not in self.properties.model :
+            if 'WSA5000' in self.properties.model :
                 atten_val = bool(int( atten_val))
         else:
-            if 'WSA5500' in self.properties.model :
-                atten_val = yield self.scpiset(":INPUT:ATTENUATOR %0.2f" % atten_val)
+            if any(['R5500-418', 'R5500-427']) in self.properties.model :
+                atten_val = yield self.scpiset(":INPUT:VAR:ATTENUATOR %0.2f" % atten_val)
             else:
                 self.scpiset(":INPUT:ATTENUATOR %s" % (1 if atten_val else 0))
         yield atten_val

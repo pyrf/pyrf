@@ -21,6 +21,7 @@ from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
 from pyrf.vrt import vrt_packet_reader, generate_speca_packet
 
 import logging
+import time
 logger = logging.getLogger(__name__)
 
 class TwistedConnectorError(Exception):
@@ -175,6 +176,7 @@ class VRTClient(Protocol):
             self._at_vrt_boundary = False
             if self._output_file:
                 self._output_data.append(data)
+
             response = self._packet_reader.send(data)
             if response:
                 self._at_vrt_boundary = True
