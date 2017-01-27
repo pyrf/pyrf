@@ -37,8 +37,13 @@ def wsa_properties(device_id):
         p = BNC_RTSA750027_Properties()
 
     elif model in ['WSA5500-408', 'R5500-408']:
-        p = WSA5500_408Properties()
+        p = R5500_408Properties()
 
+    elif model == 'R5500-418':
+        p = R5500_418Properties()
+
+    elif model == 'R5500-427':
+        p = R5500_427Properties()
     else:
         p = WSA5000_220Properties()
 
@@ -290,8 +295,8 @@ class WSA5000_408Properties(WSA5000_208Properties):
 
     RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
-class WSA5500_408Properties(WSA5000_408Properties):
-    model = 'WSA5500-408'
+class R5500_408Properties(WSA5000_408Properties):
+    model = 'R5500-408'
     RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
@@ -300,7 +305,7 @@ class WSA5500_408Properties(WSA5000_408Properties):
     DEFAULT_SPECA_SPAN = WSA5000_408Properties.MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
     SPECA_DEFAULTS = {
         'mode': 'Sweep SH',
-        'center': 2450.0 * M,
+        'center': 4025.0 * M,
         'rbw': 250.0e3,
         'span': DEFAULT_SPECA_SPAN,
         'decimation': 1,
@@ -320,6 +325,7 @@ class WSA5500_408Properties(WSA5000_408Properties):
         'device_class': 'thinkrf.WSA',
         'device_identifier': 'unknown',
         }
+        
 
 class WSA5000_427Properties(WSA5000_220Properties):
     model = 'WSA5000-427'
@@ -360,6 +366,33 @@ class WSA5000_418Properties(WSA5000_220Properties):
     SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
         span= DEFAULT_SPECA_SPAN,
         center = 9025 * M)
+
+class R5500_418Properties(WSA5000_418Properties):
+    model = 'R5500-418'
+    RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
+    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+    DEFAULT_SPECA_SPAN = WSA5000_418Properties.MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 9025 * M,
+        attenuator = 30.0)
+        
+        
+class R5500_427Properties(WSA5000_427Properties):
+    model = 'R5500-427'
+    RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
+    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
+        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
+        'dwell_s', 'dwell_us',
+        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+    DEFAULT_SPECA_SPAN = WSA5000_427Properties.MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
+    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+        span= DEFAULT_SPECA_SPAN,
+        center = 13525 * M,
+        attenuator = 30.0)
         
 class WSA5000_408PProperties(WSA5000_220Properties):
     model = 'WSA5000-408P'
