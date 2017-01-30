@@ -200,12 +200,15 @@ class WSA(object):
         :param path: 'DIGITIZER', 'CONNECTOR', or None to query
         :returns: the current IQ path
         """
-
+        if 'R5500' in self.properties.model:
+            cmd = "OUTPUT:MODE"
+        else:
+            cmd = "OUTPUT:IQ:MODE"
         if path is None:
-            buf = yield self.scpiget(":OUTPUT:IQ:MODE?")
+            buf = yield self.scpiget(":%s?" % cmd)
             path = buf.strip()
         else:
-            self.scpiset(":OUTPUT:IQ:MODE %s" % path)
+            self.scpiset("%s %s" % (cmd, path))
         yield path
 
     @sync_async
@@ -712,12 +715,12 @@ class WSA(object):
 
         if  atten_val is None:
             atten_val = yield self.scpiget(":INPUT:ATTENUATOR?")
-            if 'WSA5000' in self.properties.model :
-                atten_val = bool(int( atten_val))
+
         else:
-            if any(['R5500-418', 'R5500-427']) in self.properties.model :
+            if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
                 atten_val = yield self.scpiset(":INPUT:VAR:ATTENUATOR %0.2f" % atten_val)
             else:
+                atten_val = bool(int( atten_val))
                 self.scpiset(":INPUT:ATTENUATOR %s" % (1 if atten_val else 0))
         yield atten_val
 
