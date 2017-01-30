@@ -8,7 +8,7 @@ import numpy as np
 from pyrf.devices.thinkrf import WSA
 
 # plot constants
-CENTER_FREQ = 2450 * 1e6 
+CENTER_FREQ = 5500 * 1e6 
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
 DECIMATION = 1
@@ -49,7 +49,7 @@ dut.reset()
 dut.request_read_perm()
 dut.freq(CENTER_FREQ)
 dut.decimation(DECIMATION)
-dut.attenuator(ATTENUATOR)
+#dut.attenuator(ATTENUATOR)
 dut.rfe_mode(RFE_MODE)
 
 BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
