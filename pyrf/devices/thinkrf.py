@@ -202,10 +202,10 @@ class WSA(object):
         """
 
         if path is None:
-            buf = yield self.scpiget(":OUTPUT:IQ:MODE?")
+            buf = yield self.scpiget(":OUTPUT:MODE?")
             path = buf.strip()
         else:
-            self.scpiset(":OUTPUT:IQ:MODE %s" % path)
+            self.scpiset(":OUTPUT:MODE %s" % path)
         yield path
 
     @sync_async
@@ -715,8 +715,11 @@ class WSA(object):
             if 'WSA5000' in self.properties.model :
                 atten_val = bool(int( atten_val))
         else:
-            if any(['R5500-418', 'R5500-427']) in self.properties.model :
-                atten_val = yield self.scpiset(":INPUT:VAR:ATTENUATOR %0.2f" % atten_val)
+            if 'R5500' in self.properties.model:
+                if self.properties.model == 'R5500-418' or self.properties.model ==  'R5500-427':
+                    atten_val = yield self.scpiset(":INPUT:VAR:ATTENUATOR %0.2f" % atten_val)
+                else:
+                    atten_val = yield self.scpiset(":INPUT:ATTENUATOR %0.2f" % atten_val)
             else:
                 self.scpiset(":INPUT:ATTENUATOR %s" % (1 if atten_val else 0))
         yield atten_val
