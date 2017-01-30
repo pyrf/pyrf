@@ -205,7 +205,7 @@ class WSA(object):
         else:
             cmd = "OUTPUT:IQ:MODE"
         if path is None:
-            buf = yield self.scpiget(":%s?" % cmd)
+            buf = yield self.scpiget("%s?" % cmd)
             path = buf.strip()
         else:
             self.scpiset("%s %s" % (cmd, path))
@@ -712,16 +712,20 @@ class WSA(object):
         :param enable: True or False to set; None to query
         :returns: the current attenuator state
         """
-
+        if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
+            cmd = 'INPUT:VAR:ATTENUATOR'
+        else:
+            cmd = 'INPUT:ATTENUATOR'
         if  atten_val is None:
-            atten_val = yield self.scpiget(":INPUT:ATTENUATOR?")
+            atten_val = yield self.scpiget("%s?" % cmd)
 
         else:
-            if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
-                atten_val = yield self.scpiset(":INPUT:VAR:ATTENUATOR %0.2f" % atten_val)
+            if 'R5500' in self.properties.model:
+                    atten_val = yield self.scpiset("%s %0.2f" % (cmd, atten_val))
             else:
                 atten_val = bool(int( atten_val))
                 self.scpiset(":INPUT:ATTENUATOR %s" % (1 if atten_val else 0))
+
         yield atten_val
 
     @sync_async
