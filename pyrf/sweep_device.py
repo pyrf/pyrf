@@ -353,9 +353,11 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=256):
         return (fstart, fstart, [])
 
     points = full_bw / rbw
-    
     points = int(32 * round(float(points)/32))
     
+    # FIXME: Quick work around until sweep device is refactored
+    if mode == 'SHN':
+        points = int(max(min_points, 2 ** math.ceil(math.log(points, 2))))
     decimation = 1
     bin_size = float(full_bw) / decimation / points
     
@@ -418,6 +420,7 @@ def plan_sweep(device, fstart, fstop, rbw, mode, min_points=256):
     assert points > 0 and int(points) == points, points
     assert left_bin > 0 and int(left_bin) == left_bin, left_bin
     assert usable_bins > 0 and int(usable_bins) == usable_bins, usable_bins
+
     out.append(SweepStep(
         fcenter=fcenter,
         fstep=step_size,
