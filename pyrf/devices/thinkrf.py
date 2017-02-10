@@ -713,7 +713,7 @@ class WSA(object):
         :returns: the current attenuator state
         """
         if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
-            cmd = 'INPUT:VAR:ATTENUATOR'
+            cmd = 'INPUT:ATTENUATOR:VAR'
         else:
             cmd = 'INPUT:ATTENUATOR'
         if  atten_val is None:
