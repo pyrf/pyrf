@@ -588,24 +588,21 @@ class WSA(object):
         :type entry: pyrf.config.SweepEntry
         """
         self.scpiset(":sweep:entry:new")
-        if 'rfe_mode' in self.properties.SWEEP_SETTINGS:
-            self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
+
+        self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
+        
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
+        
         self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
-        self.scpiset(":sweep:entry:freq:shift %d" % (entry.fshift))
-        self.scpiset(":sweep:entry:decimation %d" % (entry.decimation))
+
         if 'attenuator' in self.properties.SWEEP_SETTINGS:
             self.scpiset(":sweep:entry:attenuator %0.2f" % (
                 entry.attenuator))
-
-        self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
+        
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
+        
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
-        self.scpiset(":sweep:entry:dwell %d,%d" %
-            (entry.dwell_s, entry.dwell_us))
-        self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
-        if entry.trigtype.lower() == 'level':
-            self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
+        
         self.scpiset(":sweep:entry:save")
 
     @sync_async
