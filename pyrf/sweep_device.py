@@ -323,7 +323,7 @@ class SweepDevice(object):
 
                 # if there was only DD mode, append spectral data and send to client
                 self.spectral_data = pow_data[start_bin:stop_bin]
-                self._emit_data()
+                return self._emit_data()
 
                 self.spectral_data = pow_data[start_bin:stop_bin]
                 return
@@ -357,7 +357,10 @@ class SweepDevice(object):
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
 
-            stop_bin = int(len(trimmed_spectrum) * ((packet_stop - self.fstop) /  (self.usable_bw)))
+            stop_bin = int(len(trimmed_spectrum) * ((packet_stop - self.fstop) / self.usable_bw))
+            if packet.spec_inv:
+                stop_bin = len(trimmed_spectrum) - stop_bin
+
             self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum[:stop_bin]])
             # send the data to the client
             return self._emit_data()
