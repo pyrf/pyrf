@@ -585,24 +585,36 @@ class WSA(object):
         Add an entry to the sweep list
 
         :param entry: the sweep entry to add
-        :type entry: pyrf.config.SweepEntry
+        :type entry: pyrf.sweepDevice.sweepSettings
         """
+
+        # create a new entry
         self.scpiset(":sweep:entry:new")
-
-        self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
-        
-        self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
-        
-        self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
-
         if 'attenuator' in self.properties.SWEEP_SETTINGS:
             self.scpiset(":sweep:entry:attenuator %0.2f" % (
-                entry.attenuator))
-        
+                entry.attenuation))
+
+        # set the samples per packet
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
-        
+
+        # set the packets per block
         self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
-        
+
+        # create an entry for DD mode if required
+        if entry.dd_mode:
+            self.scpiset(":sweep:entry:mode DD")
+            self.scpiset(":sweep:entry:save")
+
+        # set the RFE mode of the entry
+        self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
+
+        # set the center frequencies of fstart/fstop of the entry
+        self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
+
+        # set the frequency step of the entry
+        self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
+
+        # save the sweep entry
         self.scpiset(":sweep:entry:save")
 
     @sync_async
