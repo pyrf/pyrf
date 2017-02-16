@@ -88,20 +88,17 @@ class SweepPlanner(object):
         # calculate the fstart of the sweep entry
         sweep_settings.fstart = self.fstart + (self.usable_bw / 2)
 
-        # check if the calculated fstart is below the minimum tunable
-        if sweep_settings.fstart < self.dev_properties.MIN_TUNABLE[self.rfe_mode]:
-            sweep_settings.fstart = self.dev_properties.MIN_TUNABLE[self.rfe_mode]
 
         # determine if DD mode is required
         if self.fstart < self.dev_properties.MIN_TUNABLE[self.rfe_mode]:
             sweep_settings.dd_mode = True
-            sweep_settings.fstart = self.dev_properties.MIN_TUNABLE[self.rfe_mode]
+            sweep_settings.fstart = self.dev_properties.MIN_TUNABLE[self.rfe_mode] + (self.usable_bw / 2)
 
         else:
             sweep_settings.dd_mode = False
 
         # check if non-dd mode is required
-        print self.fstop, self.dev_properties.MIN_TUNABLE['SH']
+
         if self.fstop <= self.dev_properties.MIN_TUNABLE['SH']:
             sweep_settings.beyond_dd = False
         else:

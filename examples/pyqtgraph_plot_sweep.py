@@ -14,11 +14,11 @@ DECIMATION = 1
 RFE_MODE = 'SH'
 
 # declare sweep constants
-START_FREQ = 2380e6
-STOP_FREQ = 2400e6
-RBW = 10e3
+START_FREQ = 20e6
+STOP_FREQ = 200e6
+RBW = 3e3
 
-print 'got in'
+
 # connect to WSA device
 dut = WSA()
 win = pg.GraphicsWindow()
@@ -26,18 +26,17 @@ win.resize(1000,600)
 win.setWindowTitle("PYRF FFT Plot Example")
 
 
-ip = '10.126.110.107'
-
+ip = '10.126.110.111'
 
 dut.connect(ip)
-print 'connected to device'
+
 # initialize WSA configurations
 dut.flush()
 dut.abort()
 dut.request_read_perm()
 dut.reset()
 sd = SweepDevice(dut)
-print 'got here'
+
 # initialize plot
 fft_plot = win.addPlot(title="Power Vs. Frequency")
 
