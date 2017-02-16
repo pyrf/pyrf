@@ -604,6 +604,10 @@ class WSA(object):
         if entry.dd_mode:
             self.scpiset(":sweep:entry:mode DD")
             self.scpiset(":sweep:entry:save")
+        
+        # if only a DD entry is required, don't make another entry
+        if not entry.beyound_dd:
+            return
 
         # set the RFE mode of the entry
         self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))

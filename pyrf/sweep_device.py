@@ -36,6 +36,9 @@ class sweepSettings(object):
     # determine if a second entry is required
     dd_mode = False
 
+    # determines if a non dd entry is needed
+    beyound_dd = True
+
     # entry attenuation
     attenuation = 0
 
@@ -96,6 +99,13 @@ class SweepPlanner(object):
 
         else:
             sweep_settings.dd_mode = False
+
+        # check if non-dd mode is required
+        print self.fstop, self.dev_properties.MIN_TUNABLE['SH']
+        if self.fstop <= self.dev_properties.MIN_TUNABLE['SH']:
+            sweep_settings.beyond_dd = False
+        else:
+            sweep_settings.beyond_dd = True
 
         # grab the full banddwidth of the current mode
         full_bw = self.dev_properties.FULL_BW[self.rfe_mode]
@@ -295,6 +305,7 @@ class SweepDevice(object):
             self._vrt_context.update(packet.fields)
             return
 
+
         # check to see if we recieved our sweep ID
         if 'sweepid' in self._vrt_context:
             self.got_id = True
@@ -312,21 +323,23 @@ class SweepDevice(object):
         # check if DD mode was used in this sweep
         if self.packet_count == 1 and self._sweep_settings.dd_mode:
             # calculate where the start bin should start
-            start_bin = (self.fstart / self.device_settings.FULL_BW['DD'])
+            start_bin = int(len(pow_data) * (self.fstart / self.dev_properties.FULL_BW['DD']))
 
             # calculate the stop bin
-            stop_bin = int(self.device_settings.MIN_TUNABLE['SH'] / self.device_settings.FULL_BW['DD'])
+            stop_bin = int(len(pow_data) * (self.dev_properties.MIN_TUNABLE['SH'] / self.dev_properties.FULL_BW['DD']))
 
             # check if the only mode used was DD mode
-            if self.fstop < self.device_settings.MIN_TUNABLE[self.rfe_mode]:
-                stop_bin = int(self.fstop / self.device_settings.FULL_BW['DD'])
+            if self.fstop <= self.dev_properties.MIN_TUNABLE[self.rfe_mode]:
+
+                stop_bin =  int(len(pow_data) * (self.fstop / self.dev_properties.FULL_BW['DD']))
 
                 # if there was only DD mode, append spectral data and send to client
                 self.spectral_data = pow_data[start_bin:stop_bin]
+
                 return self._emit_data()
 
-                self.spectral_data = pow_data[start_bin:stop_bin]
-                return
+            self.spectral_data = pow_data[start_bin:stop_bin]
+            return
 
         packet_freq = self._vrt_context['rffreq']
 
@@ -340,13 +353,14 @@ class SweepDevice(object):
                                           1,
                                           0)
 
+        # adjust the usable range based on spectral inversion
         usable_bins, start, stop = adjust_usable_fstart_fstop(self.dev_properties,
-                                                             self.rfe_mode,
-                                                             len(pow_data) * 2,
-                                                             1,
-                                                             packet_freq,
-                                                             packet.spec_inv,
-                                                             usable_bins)
+                                                              self.rfe_mode,
+                                                              len(pow_data) * 2,
+                                                              1,
+                                                              packet_freq,
+                                                              packet.spec_inv,
+                                                              usable_bins)
 
         #trim the FFT data, note decimation is 1, fshift is 0
         trimmed_spectrum, edge_data, fstart, fstop = trim_to_usable_fstart_fstop(pow_data,
@@ -356,8 +370,10 @@ class SweepDevice(object):
                                                     
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
-
+            # calculate the stop bin
             stop_bin = int(len(trimmed_spectrum) * ((packet_stop - self.fstop) / self.usable_bw))
+            
+            # take spectral inversion into account
             if packet.spec_inv:
                 stop_bin = len(trimmed_spectrum) - stop_bin
 
