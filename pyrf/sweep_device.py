@@ -368,8 +368,8 @@ class SweepDevice(object):
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
             # calculate the stop bin
-            stop_bin = int(len(trimmed_spectrum) * ((packet_stop - self.fstop) / self.usable_bw))
-            
+            stop_bin = int(len(trimmed_spectrum) * ((self.fstop - packet_start) / self.usable_bw))
+
             # take spectral inversion into account
             if packet.spec_inv:
                 stop_bin = len(trimmed_spectrum) - stop_bin
