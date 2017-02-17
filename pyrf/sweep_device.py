@@ -118,6 +118,13 @@ class SweepPlanner(object):
         points = full_bw / self.rbw
         sweep_settings.spp = int(32 * round(float(points)/32))
 
+        # double the points for SH/SHN mode
+        if sweep_settings.rfe_mode in ['SH', 'SHN']:
+            sweep_settings.spp = sweep_settings.spp * 2
+        
+        # make sure SPP is valid
+        sweep_settings.spp = min(self.dev_properties.MAX_SPP,sweep_settings.spp)
+
         # calculate the expected number of spectral bins required for the SweepEntry
         sweep_settings.spectral_points = int((self.fstop - self.fstart) / self.rbw)
 
@@ -364,7 +371,7 @@ class SweepDevice(object):
                                                                                  usable_bins,
                                                                                  packet_start,
                                                                                  packet_stop)
-                                                    
+
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
             # calculate the stop bin
