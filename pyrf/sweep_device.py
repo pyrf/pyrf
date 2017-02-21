@@ -53,6 +53,12 @@ class sweepSettings(object):
 
     # expected spectral points
     spectral_points = 0
+
+    # determines if a sweep entry is required at the end
+    make_end_entry = False
+    
+    # determine the frequency of the end entry
+    end_entry_freq = 0.0
 class SweepPlanner(object):
     """
     An object that plans a sweep based on  given paramaters.
@@ -114,14 +120,35 @@ class SweepPlanner(object):
         required_steps = math.ceil((self.fstop - sweep_settings.fstart) / self.usable_bw)
         sweep_settings.fstop = sweep_settings.fstart + (required_steps * self.usable_bw)
 
+
+        # make sure fstop is lower than max tunable
+        if sweep_settings.fstop > self.dev_properties.MAX_TUNABLE['SH']:
+            compensated_fstop = True
+            sweep_settings.fstop = self.dev_properties.MAX_TUNABLE['SH']
+
+        # calculate where the device's stop frequency while sweeping
+        calc_fstop = sweep_settings.fstart
+        while True:
+            calc_fstop += sweep_settings.fstep
+            if calc_fstop > sweep_settings.fstop:
+                calc_fstop -= sweep_settings.fstep
+                break
+
+        # determine if a sweep entry is required to compensate for the last frequency step
+        # note this only applies if we already compensated for fstop to be below max freq
+        if calc_fstop < (self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)) and compensated_fstop:
+            sweep_settings.end_entry_freq = calc_fstop + (self.usable_bw / 2)
+            sweep_settings.make_end_entry = True
+
         # calculate the required samples per packet based on the RBW
         points = full_bw / self.rbw
+
         sweep_settings.spp = int(32 * round(float(points)/32))
 
         # double the points for SH/SHN mode
         if sweep_settings.rfe_mode in ['SH', 'SHN']:
             sweep_settings.spp = sweep_settings.spp * 2
-        
+
         # make sure SPP is valid
         sweep_settings.spp = min(self.dev_properties.MAX_SPP,sweep_settings.spp)
 
@@ -262,9 +289,10 @@ class SweepDevice(object):
                                                               self.rfe_mode,
                                                               self.device_settings)
 
+
         # configure the device with the sweep sweep_settings
         self.real_device.sweep_add(self._sweep_settings)
-
+        self.real_device.scpiget("SYST:ERR?")
         # configure the iteration
         self.real_device.sweep_iterations(1)
 
@@ -272,7 +300,7 @@ class SweepDevice(object):
         return self._perform_full_sweep()
 
     def _perform_full_sweep(self):
-
+        #TODO ADD sweep ID
         # perform the sweep using async socket
         if self.async_callback:
 
