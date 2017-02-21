@@ -120,7 +120,7 @@ class SweepPlanner(object):
         required_steps = math.ceil((self.fstop - sweep_settings.fstart) / self.usable_bw)
         sweep_settings.fstop = sweep_settings.fstart + (required_steps * self.usable_bw)
 
-
+        compensated_fstop = False
         # make sure fstop is lower than max tunable
         if sweep_settings.fstop > self.dev_properties.MAX_TUNABLE['SH']:
             compensated_fstop = True
@@ -259,8 +259,8 @@ class SweepDevice(object):
             raise SweepDeviceError(
                 "continuous mode only applies to async operation")
 
-        self.real_device.flush()
-        self.real_device.abort()
+        # self.real_device.flush()
+        # self.real_device.abort()
         self.real_device.request_read_perm()
 
         # grab the device settings
