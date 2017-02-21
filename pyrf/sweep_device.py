@@ -191,13 +191,20 @@ class SweepDevice(object):
     # keep track of the packet count
     packet_count = 0
 
+    # determine if a new entry is required
+    _new_entry = True
+
     # array to place spectral data
     spectral_data = []
 
+    capture_count = 0
     def __init__(self, real_device, async_callback=None):
 
         # initialize the real device
         self.real_device = real_device
+
+        # request read permission from device
+        self.real_device.request_read_perm()
 
         # keep track of the device properties
         self.dev_properties = self.real_device.properties
@@ -205,8 +212,7 @@ class SweepDevice(object):
         # initialize the sweep planner
         self._sweep_planner = SweepPlanner(self.dev_properties)
 
-        # create a sweep id
-        self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
+
 
         # make sure user passes async callback if the device has async connector
         if real_device.async_connector():
@@ -245,7 +251,7 @@ class SweepDevice(object):
         :param rbw: requested RBW in Hz (output RBW may be smaller than
                     requested)
         :type rbw: float
-        :param device_settings: antenna, gain and other device settings
+        :param device_settings: attenuation and other settings
         :type dict:
         :param mode: sweep mode, 'ZIF', 'SH', or 'SHN'
         :type mode: string
@@ -254,17 +260,22 @@ class SweepDevice(object):
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         """
-
+        
         if continuous and not self.async_callback:
             raise SweepDeviceError(
                 "continuous mode only applies to async operation")
 
-        # self.real_device.flush()
-        # self.real_device.abort()
-        self.real_device.request_read_perm()
-
         # grab the device settings
         self.device_settings = device_settings
+
+        # compare old settings with new settings, determine if we need to remake the entry
+        new_settings = (fstart, fstop, mode, rbw, device_settings)
+        old_settings = (self.fstart, self.fstop, self.rfe_mode, self.rbw, self.device_settings)
+        if  new_settings == old_settings:
+            self._new_entry = False
+        else:
+            self._new_entry = True
+
         # keep track of the mode
         self.rfe_mode = mode
 
@@ -279,22 +290,28 @@ class SweepDevice(object):
         self.fstop = fstop
         self.rbw = rbw
 
-        # TODO Check if continuous is requested
-        self.real_device.sweep_clear()
+        # check if we need to make a new entry
+        if self._new_entry:
 
-        # plan the sweep
-        self._sweep_settings = self._sweep_planner.plan_sweep(self.fstart,
-                                                              self.fstop,
-                                                              self.rbw,
-                                                              self.rfe_mode,
-                                                              self.device_settings)
+            self.got_id = False
+            # create a sweep id
+            self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
+            
+            self.real_device.sweep_clear()
+
+            # plan the sweep
+            self._sweep_settings = self._sweep_planner.plan_sweep(self.fstart,
+                                                                  self.fstop,
+                                                                  self.rbw,
+                                                                  self.rfe_mode,
+                                                                  self.device_settings)
 
 
-        # configure the device with the sweep sweep_settings
-        self.real_device.sweep_add(self._sweep_settings)
-        self.real_device.scpiget("SYST:ERR?")
-        # configure the iteration
-        self.real_device.sweep_iterations(1)
+            # configure the device with the sweep sweep_settings
+            self.real_device.sweep_add(self._sweep_settings)
+
+            # configure the iteration
+            self.real_device.sweep_iterations(0)
 
         # capture the sweep data
         return self._perform_full_sweep()
@@ -323,11 +340,11 @@ class SweepDevice(object):
 
         self._vrt_context = {}
         self.spectral_data = []
-        self.got_id = False
+        
         # keep track of packets recieved
         self.packet_count = 0
 
-        self.real_device.sweep_start()
+        self.real_device.sweep_start(self._sweep_id)
 
     def _vrt_receive(self, packet):
         packet_bytes = packet.size * 4
@@ -340,7 +357,8 @@ class SweepDevice(object):
 
         # check to see if we recieved our sweep ID
         if 'sweepid' in self._vrt_context:
-            self.got_id = True
+            if self._vrt_context['sweepid'] == self._sweep_id:
+                self.got_id = True
 
         # if no ID recieved, then continue
         if not self.got_id:
