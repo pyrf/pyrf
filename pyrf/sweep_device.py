@@ -85,7 +85,7 @@ class SweepPlanner(object):
         # assign the sweep mode
         sweep_settings.rfe_mode = self.rfe_mode
 
-        if 'attneuator' in dev_settings:
+        if 'attenuator' in dev_settings:
             sweep_settings.attenuation = dev_settings['attenuator']
 
         # grab the usable bw of the current mode
@@ -136,7 +136,7 @@ class SweepPlanner(object):
 
         # determine if a sweep entry is required to compensate for the last frequency step
         # note this only applies if we already compensated for fstop to be below max freq
-        if calc_fstop < (self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)) and compensated_fstop:
+        if calc_fstop < (self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)):
             sweep_settings.end_entry_freq = calc_fstop + (self.usable_bw / 2)
             sweep_settings.make_end_entry = True
 
@@ -260,7 +260,7 @@ class SweepDevice(object):
         :param min_points: smallest number of points per capture from real_device
         :type min_points: int
         """
-        
+
         if continuous and not self.async_callback:
             raise SweepDeviceError(
                 "continuous mode only applies to async operation")
@@ -271,7 +271,7 @@ class SweepDevice(object):
         # compare old settings with new settings, determine if we need to remake the entry
         new_settings = (fstart, fstop, mode, rbw, device_settings)
         old_settings = (self.fstart, self.fstop, self.rfe_mode, self.rbw, self.device_settings)
-        if  new_settings == old_settings:
+        if  new_settings == old_settings and continuous:
             self._new_entry = False
         else:
             self._new_entry = True
@@ -296,7 +296,7 @@ class SweepDevice(object):
             self.got_id = False
             # create a sweep id
             self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-            
+
             self.real_device.sweep_clear()
 
             # plan the sweep
@@ -311,13 +311,13 @@ class SweepDevice(object):
             self.real_device.sweep_add(self._sweep_settings)
 
             # configure the iteration
-            self.real_device.sweep_iterations(0)
+            self.real_device.sweep_iterations(1)
 
         # capture the sweep data
         return self._perform_full_sweep()
 
     def _perform_full_sweep(self):
-        #TODO ADD sweep ID
+
         # perform the sweep using async socket
         if self.async_callback:
 
@@ -340,7 +340,7 @@ class SweepDevice(object):
 
         self._vrt_context = {}
         self.spectral_data = []
-        
+
         # keep track of packets recieved
         self.packet_count = 0
 
@@ -387,7 +387,7 @@ class SweepDevice(object):
                 self.spectral_data = pow_data[start_bin:stop_bin]
 
                 return self._emit_data()
-
+            
             self.spectral_data = pow_data[start_bin:stop_bin]
             return
 
@@ -420,29 +420,25 @@ class SweepDevice(object):
 
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
+
             # calculate the stop bin
             stop_bin = int(len(trimmed_spectrum) * ((self.fstop - packet_start) / self.usable_bw))
-
-            # take spectral inversion into account
-            if packet.spec_inv:
-                stop_bin = len(trimmed_spectrum) - stop_bin
 
             self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum[:stop_bin]])
             # send the data to the client
             return self._emit_data()
 
         else:
+            # concatenate the spectral data
             self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum])
-
             return
-
 
     def _emit_data(self):
         # emit the data to the client
 
         # if async callback is available, emit the data
         if self.async_callback:
-            self.real_device.vrt_callback = None
+
             self.async_callback(self.fstart, self.fstop, self.spectral_data)
             return
         # return the values if using blocking sockets
