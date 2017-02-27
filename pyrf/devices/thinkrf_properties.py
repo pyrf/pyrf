@@ -12,7 +12,7 @@ def wsa_properties(device_id):
 
     if model == 'WSA4000':
         return WSA4000Properties()
-    
+
     elif model == 'WSA5000-208':
         p = WSA5000_208Properties()
     elif model == 'WSA5000-108':
@@ -36,13 +36,13 @@ def wsa_properties(device_id):
     elif model == 'RTSA7500-27':
         p = BNC_RTSA750027_Properties()
 
-    elif model in ['WSA5500-408', 'R5500-408']:
+    elif model in ['R5500-408', 'RTSA7550-8']:
         p = R5500_408Properties()
 
-    elif model == 'R5500-418':
+    elif model in ['R5500-418', 'RTSA7550-18']:
         p = R5500_418Properties()
 
-    elif model == 'R5500-427':
+    elif model in ['R5500-427', 'RTSA7550-27']:
         p = R5500_427Properties()
     else:
         p = WSA5000_220Properties()
