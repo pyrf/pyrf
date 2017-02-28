@@ -590,11 +590,13 @@ class WSA(object):
 
         # create a new entry
         self.scpiset(":sweep:entry:new")
-        if 'attenuator' in self.properties.SWEEP_SETTINGS:
-            self.scpiset(":sweep:entry:attenuator %0.2f" % (
-                entry.attenuation))
+
+        # detect if variable attenuator needs to be set
+        if self.properties.model in ['R5500-418', 'R5500-427']:
+            self.scpiset("INP:ATT:VAR %0.2f" % (entry.attenuation))
+
         else:
-            self.scpiset("INP:ATT:VAR %0.2f" % (
+            self.scpiset(":sweep:entry:attenuator %0.2f" % (
                 entry.attenuation))
 
         # set the samples per packet

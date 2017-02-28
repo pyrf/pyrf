@@ -383,7 +383,7 @@ class R5500_418Properties(R5500_408Properties):
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     DEFAULT_SPECA_SPAN = WSA5000_418Properties.MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+    SPECA_DEFAULTS = dict(R5500_408Properties.SPECA_DEFAULTS,
         span= DEFAULT_SPECA_SPAN,
         center = 9000 * M)
         
@@ -400,7 +400,7 @@ class R5500_427Properties(R5500_408Properties):
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     DEFAULT_SPECA_SPAN = WSA5000_427Properties.MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
+    SPECA_DEFAULTS = dict(R5500_408Properties.SPECA_DEFAULTS,
         span= DEFAULT_SPECA_SPAN,
         center = 13500 * M)
         
