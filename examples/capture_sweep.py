@@ -10,14 +10,17 @@ import math
 import numpy as np
 
 # declare sweep constants
-START_FREQ = 50e6
-STOP_FREQ = 27000e6
+START_FREQ = 2300e6
+STOP_FREQ = 2400e6
 RBW = 10e3
 
 # connect to WSA, and initialize device
 init_time = time.time()
 dut = WSA()
-dut.connect(sys.argv[1])
+dut.connect('10.126.110.107')
+
+dut.flush()
+dut.abort()
 dut.request_read_perm()
 dut.reset()
 dut.var_attenuator(0)

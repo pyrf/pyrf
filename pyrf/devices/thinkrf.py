@@ -585,28 +585,56 @@ class WSA(object):
         Add an entry to the sweep list
 
         :param entry: the sweep entry to add
-        :type entry: pyrf.config.SweepEntry
+        :type entry: pyrf.sweepDevice.sweepSettings
         """
+
+        # create a new entry
         self.scpiset(":sweep:entry:new")
-        if 'rfe_mode' in self.properties.SWEEP_SETTINGS:
-            self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
-        self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
-        self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
-        self.scpiset(":sweep:entry:freq:shift %d" % (entry.fshift))
-        self.scpiset(":sweep:entry:decimation %d" % (entry.decimation))
         if 'attenuator' in self.properties.SWEEP_SETTINGS:
             self.scpiset(":sweep:entry:attenuator %0.2f" % (
-                entry.attenuator))
+                entry.attenuation))
+        else:
+            self.scpiset("INP:ATT:VAR %0.2f" % (
+                entry.attenuation))
 
-        self.scpiset(":sweep:entry:gain:if %d" % (entry.ifgain))
+        # set the samples per packet
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
-        self.scpiset(":sweep:entry:ppb %d" % (entry.ppb))
-        self.scpiset(":sweep:entry:dwell %d,%d" %
-            (entry.dwell_s, entry.dwell_us))
-        self.scpiset(":sweep:entry:trigger:type %s" % (entry.trigtype))
-        if entry.trigtype.lower() == 'level':
-            self.scpiset(":sweep:entry:trigger:level %d, %d, %d" % (entry.level_fstart, entry.level_fstop, entry.level_amplitude))
+
+
+        # create an entry for DD mode if required
+        if entry.dd_mode:
+            self.scpiset(":sweep:entry:mode DD")
+
+            # if ZIF mode, double the sample size
+            if entry.rfe_mode == 'ZIF':
+                self.scpiset(":sweep:entry:spp %d" % (entry.spp * 2))
+            self.scpiset(":sweep:entry:save")
+
+        # if only a DD entry is required, don't make another entry
+        if not entry.beyound_dd:
+            return
+
+        # set the SPP
+        self.scpiset(":sweep:entry:spp %d" % (entry.spp))
+
+        # set the RFE mode of the entry
+        self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
+
+        # set the center frequencies of fstart/fstop of the entry
+        self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
+
+        # set the frequency step of the entry
+        self.scpiset(":sweep:entry:freq:step %d" % (entry.fstep))
+
+        # save the sweep entry
         self.scpiset(":sweep:entry:save")
+
+        # determine if a stop frequency is required to capture last bit of spectrum
+        if entry.make_end_entry:
+            start_freq = entry.end_entry_freq
+            stop_freq = entry.end_entry_freq + 100e3
+            self.scpiset(":sweep:entry:freq:center %d, %d" % (start_freq, stop_freq))
+            self.scpiset(":sweep:entry:save")
 
     @sync_async
     def sweep_read(self, index):
