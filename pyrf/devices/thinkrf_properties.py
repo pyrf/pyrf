@@ -236,7 +236,8 @@ class WSA5000_220Properties(object):
     SPP_MULTIPLE = 32
     MAX_PPB = 14
 
-    MIN_FREQ = 100e3
+    # technically DC is visible, so minimum is 0
+    MIN_FREQ = 0
 
     SAMPLE_SIZES = create_sample_size(MIN_SPP, MAX_SPP * MAX_PPB, SPP_MULTIPLE)
     P1DB_LEVEL = -5
