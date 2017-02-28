@@ -14,9 +14,9 @@ DECIMATION = 1
 RFE_MODE = 'SH'
 
 # declare sweep constants
-START_FREQ = 20e6
+START_FREQ = 150e6
 STOP_FREQ = 200e6
-RBW = 3e3
+RBW = 48e3
 
 
 # connect to WSA device
@@ -26,7 +26,7 @@ win.resize(1000,600)
 win.setWindowTitle("PYRF FFT Plot Example")
 
 
-ip = '10.126.110.111'
+ip = '10.126.110.103'
 
 dut.connect(ip)
 
