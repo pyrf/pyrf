@@ -140,6 +140,12 @@ class SweepPlanner(object):
             sweep_settings.end_entry_freq = calc_fstop + (self.usable_bw / 2)
             sweep_settings.make_end_entry = True
 
+        # handle case of fstart less than fstart - bw/2
+        if self.fstart > self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2):
+            sweep_settings.make_end_entry = False
+            sweep_settings.fstart = self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)
+            sweep_settings.fstop = self.dev_properties.MAX_TUNABLE['SH']
+
         # calculate the required samples per packet based on the RBW
         points = full_bw / self.rbw
 
@@ -391,6 +397,7 @@ class SweepDevice(object):
             self.spectral_data = pow_data[start_bin:stop_bin]
             return
 
+        # retrieve the frequency of the packet
         packet_freq = self._vrt_context['rffreq']
 
         packet_start = packet_freq - (self.usable_bw / 2)
