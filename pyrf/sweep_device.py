@@ -263,8 +263,6 @@ class SweepDevice(object):
         :type mode: string
         :param continuous: do a sweep with the same config as before
         :type continuous: bool
-        :param min_points: smallest number of points per capture from real_device
-        :type min_points: int
         """
 
         if continuous and not self.async_callback:
@@ -427,7 +425,7 @@ class SweepDevice(object):
 
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
-            
+
             # check if fstart is not the first bin
             if self.fstart > packet_freq - (self.usable_bw / 2):
                 start_bin = int(len(trimmed_spectrum) * ((self.fstart - packet_start) / self.usable_bw))
