@@ -140,6 +140,12 @@ class SweepPlanner(object):
             sweep_settings.end_entry_freq = calc_fstop + (self.usable_bw / 2)
             sweep_settings.make_end_entry = True
 
+        # handle case of fstart less than fstart - bw/2
+        if self.fstart > self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2):
+            sweep_settings.make_end_entry = False
+            sweep_settings.fstart = self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)
+            sweep_settings.fstop = self.dev_properties.MAX_TUNABLE['SH']
+
         # calculate the required samples per packet based on the RBW
         points = full_bw / self.rbw
 
@@ -212,8 +218,6 @@ class SweepDevice(object):
         # initialize the sweep planner
         self._sweep_planner = SweepPlanner(self.dev_properties)
 
-
-
         # make sure user passes async callback if the device has async connector
         if real_device.async_connector():
             if not async_callback:
@@ -257,8 +261,6 @@ class SweepDevice(object):
         :type mode: string
         :param continuous: do a sweep with the same config as before
         :type continuous: bool
-        :param min_points: smallest number of points per capture from real_device
-        :type min_points: int
         """
 
         if continuous and not self.async_callback:
@@ -391,6 +393,7 @@ class SweepDevice(object):
             self.spectral_data = pow_data[start_bin:stop_bin]
             return
 
+        # retrieve the frequency of the packet
         packet_freq = self._vrt_context['rffreq']
 
         packet_start = packet_freq - (self.usable_bw / 2)
@@ -421,10 +424,15 @@ class SweepDevice(object):
         # check if this is the last expected packet
         if self.fstop <= packet_freq + (self.usable_bw / 2):
 
+            # check if fstart is not the first bin
+            if self.fstart > packet_freq - (self.usable_bw / 2):
+                start_bin = int(len(trimmed_spectrum) * ((self.fstart - packet_start) / self.usable_bw))
+            else:
+                start_bin = 0
             # calculate the stop bin
             stop_bin = int(len(trimmed_spectrum) * ((self.fstop - packet_start) / self.usable_bw))
 
-            self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum[:stop_bin]])
+            self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum[start_bin:stop_bin]])
             # send the data to the client
             return self._emit_data()
 

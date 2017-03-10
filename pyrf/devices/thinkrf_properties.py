@@ -48,12 +48,7 @@ def wsa_properties(device_id):
         p = WSA5000_220Properties()
 
     firmware_rev = LooseVersion(firmware.replace('-', '.'))
-    # correct for old reflevels
-    if '.' not in rev or firmware_rev < LooseVersion('4.2'):
-        p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
 
-    if firmware_rev < LooseVersion(p.TRIGGER_FW_VERSION):
-        p.LEVEL_TRIGGER_RFE_MODES = []
     return p
 
 def create_sample_size(min, max, multiple):
@@ -296,7 +291,7 @@ class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
     SATURATION_LEVEL = -10.0
 
-    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
+    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD', 'HDR')
 
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'
