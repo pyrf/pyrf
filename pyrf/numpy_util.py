@@ -47,7 +47,7 @@ def _compute_fft_i_only(i_data, convert_to_dbm, apply_window):
         power_spectrum = 20 * np.log10(power_spectrum)
     return power_spectrum
 
-def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideband = True,
+def compute_fft(dut, data_pkt, context, correct_phase=True, iq_correction_wideband=True,
         hide_differential_dc_offset=True, convert_to_dbm=True, 
         apply_window=True, apply_spec_inv=True, apply_reference=True,ref=None, decimation=1):
     """

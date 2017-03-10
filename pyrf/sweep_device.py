@@ -218,8 +218,6 @@ class SweepDevice(object):
         # initialize the sweep planner
         self._sweep_planner = SweepPlanner(self.dev_properties)
 
-
-
         # make sure user passes async callback if the device has async connector
         if real_device.async_connector():
             if not async_callback:
