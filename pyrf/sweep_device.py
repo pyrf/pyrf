@@ -302,6 +302,7 @@ class SweepDevice(object):
             # reset the device
             if self.dev_properties.mode in ['RTSA7500-8', 'WSA5000']:
                 self.real_device.reset()
+            self.real_device.flush()
             # request read permission from device
             self.real_device.request_read_perm()
 
