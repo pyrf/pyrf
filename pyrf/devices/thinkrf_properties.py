@@ -49,6 +49,10 @@ def wsa_properties(device_id):
 
     firmware_rev = LooseVersion(firmware.replace('-', '.'))
 
+    # correct for old reflevels
+    if '.' not in rev or firmware_rev < LooseVersion('4.2'):
+        p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
+
     return p
 
 def create_sample_size(min, max, multiple):
