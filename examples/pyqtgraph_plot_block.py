@@ -8,7 +8,7 @@ import numpy as np
 from pyrf.devices.thinkrf import WSA
 
 # plot constants
-CENTER_FREQ = 5500 * 1e6 
+CENTER_FREQ = 2450 * 1e6 
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
 DECIMATION = 1
