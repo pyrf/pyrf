@@ -231,8 +231,8 @@ class WSA5000_220Properties(object):
     SPP_MULTIPLE = 32
     MAX_PPB = 14
 
-    # technically DC is visible, so minimum is 0
-    MIN_FREQ = 0
+    # MIN FREQ on the 5000 is restricted to 50 MHz
+    MIN_FREQ = 50e6
 
     SAMPLE_SIZES = create_sample_size(MIN_SPP, MAX_SPP * MAX_PPB, SPP_MULTIPLE)
     P1DB_LEVEL = -5
@@ -295,6 +295,7 @@ class WSA5000_408Properties(WSA5000_208Properties):
 
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'
+    MIN_FREQ = 0
     RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
