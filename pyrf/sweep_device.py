@@ -387,8 +387,11 @@ class SweepDevice(object):
             # calculate where the start bin should start
             start_bin = int(len(pow_data) * (self.fstart / self.dev_properties.FULL_BW['DD']))
 
+            if self.fstart <= self.dev_properties.MIN_FREQ:
+                start_bin = 2
             # calculate the stop bin
             stop_bin = int(len(pow_data) * (self.dev_properties.MIN_TUNABLE['SH'] / self.dev_properties.FULL_BW['DD']))
+
 
             # check if the only mode used was DD mode
             if self.fstop <= self.dev_properties.MIN_TUNABLE[self.rfe_mode]:
@@ -399,7 +402,7 @@ class SweepDevice(object):
                 self.spectral_data = pow_data[start_bin:stop_bin]
 
                 return self._emit_data()
-            
+
             self.spectral_data = pow_data[start_bin:stop_bin]
             return
 
