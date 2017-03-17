@@ -620,7 +620,7 @@ class WSA(object):
 
         # set the RFE mode of the entry
         self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
-
+ 
         # set the center frequencies of fstart/fstop of the entry
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
 
