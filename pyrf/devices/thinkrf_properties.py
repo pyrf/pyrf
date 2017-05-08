@@ -300,7 +300,7 @@ class WSA5000_408Properties(WSA5000_208Properties):
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'
     MIN_FREQ = 9e3
-    RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD', 'HDR')
+    RFE_MODES = ('SH', 'ZIF', 'SHN', 'HDR', 'DD')
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
