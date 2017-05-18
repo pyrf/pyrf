@@ -49,8 +49,8 @@ def wsa_properties(device_id):
 
     firmware_rev = LooseVersion(firmware.replace('-', '.'))
 
-    # correct for old reflevels
-    if '.' not in rev or firmware_rev < LooseVersion('4.2'):
+    # correct for R5500
+    if 'R5500' in model or 'RTSA7550' in model:
         p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
 
     return p
@@ -378,7 +378,6 @@ class R5500_418Properties(R5500_408Properties):
     MAX_TUNABLE = dict((mode, 18000*M)
     
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
@@ -391,7 +390,6 @@ class R5500_418Properties(R5500_408Properties):
         
 class R5500_427Properties(R5500_408Properties):
     model = 'R5500-427'
-    RFE_MODES = ('SH', 'ZIF', 'SHN', 'DD')
     CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 27000*M)
     MAX_TUNABLE = dict((mode, 27000*M)

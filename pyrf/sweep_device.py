@@ -9,6 +9,8 @@ import numpy as np
 
 from pyrf.numpy_util import compute_fft
 
+MAXIMUM_SPP = 32768
+
 class SweepDeviceError(Exception):
     """
     exception for the sweep device to state an error()
