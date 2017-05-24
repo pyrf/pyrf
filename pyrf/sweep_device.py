@@ -264,11 +264,11 @@ class SweepDevice(object):
         :param continuous: do a sweep with the same config as before
         :type continuous: bool
         """
-
+        
         if continuous and not self.async_callback:
             raise SweepDeviceError(
                 "continuous mode only applies to async operation")
-
+        
         # grab the device settings
         self.device_settings = device_settings
 
@@ -279,7 +279,7 @@ class SweepDevice(object):
             self._new_entry = False
         else:
             self._new_entry = True
-
+        self._new_entry = True
         # keep track of the mode
         self.rfe_mode = mode
 
@@ -300,10 +300,10 @@ class SweepDevice(object):
             self.got_id = False
             # create a sweep id
             self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-
+            
             # reset the device
-            if self.dev_properties.mode in ['RTSA7500-8', 'WSA5000']:
-                self.real_device.reset()
+            # if self.dev_properties.mode in ['RTSA7500-8', 'WSA5000']:
+            self.real_device.reset()
             self.real_device.flush()
             # request read permission from device
             self.real_device.request_read_perm()
@@ -410,6 +410,8 @@ class SweepDevice(object):
 
         # retrieve the frequency of the packet
         packet_freq = self._vrt_context['rffreq']
+        if packet_freq > self.fstop - self.usable_bw:
+            self.real_device.request_read_perm()
 
         packet_start = packet_freq - (self.usable_bw / 2)
         packet_stop = packet_freq + (self.usable_bw / 2)
