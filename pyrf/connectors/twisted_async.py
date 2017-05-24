@@ -256,6 +256,10 @@ class SCPIClient(Protocol):
         return d
 
     def dataReceived(self, data):
+
+        if not len(self._pending) > 0:
+            return
+
         cmd, d = self._pending.pop(0)
         logger.debug('scpigot %r', data)
         if d:
