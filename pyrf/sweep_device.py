@@ -302,10 +302,9 @@ class SweepDevice(object):
             self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
             
             # reset the device
-            # if self.dev_properties.mode in ['RTSA7500-8', 'WSA5000']:
+            #TODO: cleanup capture initialization
             self.real_device.reset()
             self.real_device.flush()
-            # request read permission from device
             self.real_device.request_read_perm()
 
             # apply an abort
