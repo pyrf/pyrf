@@ -16,6 +16,7 @@ class PlainSocketConnector(object):
         self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock_vrt.connect((host, VRT_PORT))
+        
 
     def disconnect(self):
         self._sock_scpi.shutdown(socket.SHUT_RDWR)
