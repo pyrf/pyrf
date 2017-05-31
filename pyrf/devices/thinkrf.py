@@ -320,6 +320,7 @@ class WSA(object):
         gain values have to be either 'high', 'medium', 'low'
         :returns: the RF gain value
         """
+
         if gain is None:
             gain1 = yield self.scpiget(":INP:GAIN? 1")
             gain2 = yield self.scpiget(":INP:GAIN? 2")
