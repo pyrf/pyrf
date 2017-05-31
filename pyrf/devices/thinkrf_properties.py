@@ -379,7 +379,7 @@ class R5500_418Properties(R5500_408Properties):
     
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
+        'decimation', 'attenuator', 'hdr_gain', 'psfm_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     DEFAULT_SPECA_SPAN = WSA5000_418Properties.MAX_TUNABLE['SHN']
@@ -395,7 +395,7 @@ class R5500_427Properties(R5500_408Properties):
     MAX_TUNABLE = dict((mode, 27000*M)
         for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
+        'decimation', 'attenuator', 'hdr_gain', 'psfm_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     DEFAULT_SPECA_SPAN = WSA5000_427Properties.MAX_TUNABLE['SHN']
