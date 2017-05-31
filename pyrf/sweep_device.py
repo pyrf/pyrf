@@ -303,7 +303,6 @@ class SweepDevice(object):
             
             # reset the device
             #TODO: cleanup capture initialization
-            self.real_device.reset()
             self.real_device.flush()
             self.real_device.request_read_perm()
 
