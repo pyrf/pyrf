@@ -27,6 +27,7 @@ CTX_REFERENCELEVEL = (1 << 24)
 CTX_SWEEPID = (1 << 0)
 CTX_STREAMID = (1 << 1)
 CTX_IQSWAP = (1 << 3)
+CTX_GPS = (1 << 14)
 
 # values captured in a given frequency range
 I_ONLY = 'i_only'
@@ -156,6 +157,30 @@ class ContextPacket(object):
             value /= 2.0 ** 7
             self.fields['reflevel'] = value
             i += 4
+
+        elif indicators & CTX_GPS:
+            (header, tsi, tsf, latitude, longitude, altitude, sog, heading, track, magnetic, ) = struct.unpack(">IIQiiiiiii", data[i:i+44])
+            tsi_f = (header >> 26) & 0x3
+            tsf_f = (header >> 24) & 0x3
+            oui = header & 0xffffff
+            self.fields['seconds'] = tsi
+            self.fields['secondsfractional'] = tsf
+            self.fields['oui'] = oui
+            latitude /= 2.0 ** 22
+            self.fields['latitude'] = latitude
+            longitude /= 2.0 ** 22
+            self.fields['longitude'] = longitude
+            altitude /= 2.0 ** 5
+            self.fields['altitude'] = altitude
+            sog /= 2.0 ** 16
+            self.fields['speedoverground'] = sog
+            heading /= 2.0 ** 22
+            self.fields['heading'] = heading
+            track /= 2.0 ** 22
+            self.fields['track'] = track
+            magnetic /= 2.0 ** 22
+            self.fields['magneticvariation'] = magnetic
+            i += 44
 
         else:
             self.fields['unknown'] = (indicators, data)

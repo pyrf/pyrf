@@ -36,13 +36,13 @@ def wsa_properties(device_id):
     elif model == 'RTSA7500-27':
         p = BNC_RTSA750027_Properties()
 
-    elif model in ['R5500-408', 'RTSA7550-8']:
+    elif model in ['R5500-408', 'RTSA7550-8', 'R5700-408']:
         p = R5500_408Properties()
 
-    elif model in ['R5500-418', 'RTSA7550-18']:
+    elif model in ['R5500-418', 'RTSA7550-18', 'R5700-418']:
         p = R5500_418Properties()
 
-    elif model in ['R5500-427', 'RTSA7550-27']:
+    elif model in ['R5500-427', 'RTSA7550-27', "R6000x-427", 'R5700-427']:
         p = R5500_427Properties()
     else:
         p = WSA5000_220Properties()
@@ -50,7 +50,7 @@ def wsa_properties(device_id):
     firmware_rev = LooseVersion(firmware.replace('-', '.'))
 
     # correct for R5500
-    if 'R5500' in model or 'RTSA7550' in model:
+    if 'R5500' in model or 'RTSA7550' in model or 'R6000x' in model or 'R5700' in model:
         p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
 
     return p
