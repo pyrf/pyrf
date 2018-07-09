@@ -295,7 +295,7 @@ class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
     SATURATION_LEVEL = -10.0
 
-    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD', 'HDR')
+    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'
