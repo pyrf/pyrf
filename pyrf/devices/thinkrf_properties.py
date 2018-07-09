@@ -235,8 +235,8 @@ class WSA5000_220Properties(object):
     SPP_MULTIPLE = 32
     MAX_PPB = 14
 
-    # MIN FREQ on the 5000 is restricted to 50 MHz
-    MIN_FREQ = 50e6
+    # MIN FREQ on the 5000 is restricted to 100kHz
+    MIN_FREQ = 100e3
 
     SAMPLE_SIZES = create_sample_size(MIN_SPP, MAX_SPP * MAX_PPB, SPP_MULTIPLE)
     P1DB_LEVEL = -5
