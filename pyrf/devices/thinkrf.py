@@ -613,7 +613,7 @@ class WSA(object):
             self.scpiset(":sweep:entry:save")
 
         # if only a DD entry is required, don't make another entry
-        if not entry.beyound_dd:
+        if not entry.beyond_dd:
             return
 
         # set the SPP
