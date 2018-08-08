@@ -131,11 +131,10 @@ class SweepPlanner(object):
             # assign the sweep entry's step frequency, take into account tuning resolution
             sweep_settings.fstep = usable_bw - 100E3 #self.dev_properties.TUNING_RESOLUTION
 
-            # calculate the fstop of the sweep entry.
-            # - sweep_settings.fstart is the fcenter start frequency.  go back half a UBW to get sweep start
-            # - then count how many UBWs we need
-            required_steps = math.ceil((fstop  - (sweep_settings.fstart - (usable_bw / 2))) / usable_bw)
-            sweep_settings.fstop = sweep_settings.fstart + (required_steps * usable_bw) - (usable_bw / 2)
+            # calculate the fstop of the sweep entry from fstart and how many usable_bw's we need
+            fspan = fstop - (sweep_settings.fstart - (usable_bw / 2))
+            required_steps = math.ceil(fspan / sweep_settings.fstep)
+            sweep_settings.fstop = sweep_settings.fstart + (required_steps * sweep_settings.fstep)
             sweep_settings.step_count += required_steps
 
         # make sure fstop is lower than max tunable
