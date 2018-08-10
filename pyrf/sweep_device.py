@@ -114,6 +114,11 @@ class SweepPlanner(object):
             sweep_settings.fstart = self.dev_properties.MIN_TUNABLE[mode] + (usable_bw / 2)
             sweep_settings.step_count += 1
 
+        # make sure we don't accidentally make an fstart that's beyond our tuning range
+        elif (fstart + (usable_bw / 2)) > self.dev_properties.MAX_TUNABLE[mode]:
+            sweep_settings.dd_mode = False
+            sweep_settings.fstart = self.dev_properties.MAX_TUNABLE[mode] - (usable_bw / 2)
+
         else:
             sweep_settings.dd_mode = False
             sweep_settings.fstart = fstart + (usable_bw / 2)
