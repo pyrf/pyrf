@@ -255,7 +255,7 @@ class SweepDevice(object):
         self.continuous = False
 
         # init the sweep id
-        self._sweep_id = 0
+        self._next_sweep_id = 0
 
         # init last finished (technically, it hasn't finished, but for our purposes, it has)
         self._last_finished = True
@@ -316,10 +316,10 @@ class SweepDevice(object):
         self._last_finished = False
 
         # increment the sweep id
-        if self._sweep_id < 0x00000000ffffffff:
-            self._sweep_id += 1
+        if self._next_sweep_id < 0x00000000ffffffff:
+            self._next_sweep_id += 1
         else:
-            self._sweep_id = 0
+            self._next_sweep_id = 0
             
         # keep track if this is a continoued swee
         self.continuous = continuous
@@ -371,7 +371,7 @@ class SweepDevice(object):
         # keep track of packets recieved
         self.packet_count = 0
 
-        self.real_device.sweep_start(self._sweep_id)
+        self.real_device.sweep_start(self._next_sweep_id)
 
     def _vrt_receive(self, packet):
 
@@ -384,6 +384,10 @@ class SweepDevice(object):
         # check to see if we recieved our sweep ID
         if not ('sweepid' in self._vrt_context):
             return
+
+        # make sure we are receiving packets for the right sweep
+        if not (self._vrt_context['sweepid'] == self._next_sweep_id):
+            raise SweepDeviceError("data packets received before start of sweep received!  cur = %d, next = %d" % (self._vrt_context['sweepid'], self._next_sweep_id))
 
         # increment the packet count
         self.packet_count += 1
