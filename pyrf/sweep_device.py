@@ -148,8 +148,8 @@ class SweepPlanner(object):
             sweep_settings.fstart = fstart + (usable_bw / 2)
 
             # reduce fstart by a bit to account for floating point errors
-            # TODO: make this based off rbw and tuning resolution, instead of a magic number
-            sweep_settings.fstart -= 100e3
+            # TODO: make this take into account tuning resolution
+            sweep_settings.fstart -= sweep_settings.rbw * 4
 
         # check if non-dd mode is required
         if fstop <= self.dev_properties.MIN_TUNABLE[mode]:
@@ -158,8 +158,9 @@ class SweepPlanner(object):
             sweep_settings.beyond_dd = True
             sweep_settings.step_count += 1
 
-            # assign the sweep entry's step frequency, take into account tuning resolution
-            sweep_settings.fstep = usable_bw - 100E3 #self.dev_properties.TUNING_RESOLUTION
+            # assign the sweep entry's step frequency reducing by a couple rbw to account for floating point errors
+            # TODO: make this take into account tuning resolution
+            sweep_settings.fstep = usable_bw - (sweep_settings.rbw * 4)
 
             # calculate the fstop of the sweep entry from fstart and how many usable_bw's we need
             fspan = fstop - sweep_settings.fstart - sweep_settings.rbw
