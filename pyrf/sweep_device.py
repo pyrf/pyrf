@@ -108,6 +108,30 @@ class SweepPlanner(object):
         # grab the usable bw of the current mode
         usable_bw = self.dev_properties.USABLE_BW[mode]
 
+        # calculate the required SPP to get the RBW desired
+        sweep_settings.spp = self.dev_properties.FULL_BW[mode] / rbw
+
+        # find closest multiple of 32 because hardware
+        sweep_settings.spp = int(32 * round(float(sweep_settings.spp) / 32))
+
+        # double the points for SH/SHN mode
+        if mode in ['SH', 'SHN']:
+            sweep_settings.spp = sweep_settings.spp * 2
+
+        # if we're using zif mode, but we have a DD entry, we have half the SPP avaible, since DD is I-only and ZIF is IQ
+        if (mode == 'ZIF') and sweep_settings.dd_mode:
+            maxspp = self.dev_properties.MAX_SPP / 2
+        else:
+            maxspp = self.dev_properties.MAX_SPP
+
+        # adjust SPP if it's too big
+        sweep_settings.spp = min(maxspp, sweep_settings.spp)
+
+        # figure out our actual RBW (account for real vs complex data)
+        sweep_settings.rbw = self.dev_properties.FULL_BW[mode] / sweep_settings.spp
+        if not (mode == 'ZIF'):
+            sweep_settings.rbw = sweep_settings.rbw * 2
+
         # calculate fstart frequency
         if fstart < self.dev_properties.MIN_TUNABLE[mode]:
             sweep_settings.dd_mode = True
@@ -132,13 +156,14 @@ class SweepPlanner(object):
             sweep_settings.beyond_dd = False
         else:
             sweep_settings.beyond_dd = True
+            sweep_settings.step_count += 1
 
             # assign the sweep entry's step frequency, take into account tuning resolution
             sweep_settings.fstep = usable_bw - 100E3 #self.dev_properties.TUNING_RESOLUTION
 
             # calculate the fstop of the sweep entry from fstart and how many usable_bw's we need
-            fspan = fstop - (sweep_settings.fstart - (usable_bw / 2))
-            required_steps = math.ceil(fspan / sweep_settings.fstep)
+            fspan = fstop - sweep_settings.fstart - sweep_settings.rbw
+            required_steps = round(fspan / sweep_settings.fstep)
             sweep_settings.fstop = sweep_settings.fstart + (required_steps * sweep_settings.fstep)
             sweep_settings.step_count += required_steps
 
@@ -146,6 +171,7 @@ class SweepPlanner(object):
         # - it can sometimes be higher if an fstart is chosen, such that our 
         #   fstep causes our fstop to go beyond fmax to cover all the band required
         sweep_settings.make_end_entry = False
+        sweep_settings.end_entry_freq = 0
         if sweep_settings.fstop > self.dev_properties.MAX_TUNABLE[mode]:
             # go back one step
             sweep_settings.fstop -= sweep_settings.fstep
@@ -153,30 +179,6 @@ class SweepPlanner(object):
             # add an entry for fmax
             sweep_settings.make_end_entry = True
             sweep_settings.end_entry_freq = self.dev_properties.MAX_TUNABLE[mode] - (usable_bw / 2)
-
-        # calculate the required SPP to get the RBW desired
-        sweep_settings.spp = self.dev_properties.FULL_BW[mode] / rbw
-
-        # find closest multiple of 32 because hardware
-        sweep_settings.spp = int(32 * round(float(sweep_settings.spp) / 32))
-
-        # double the points for SH/SHN mode
-        if mode in ['SH', 'SHN']:
-            sweep_settings.spp = sweep_settings.spp * 2
-
-        # if we're using zif mode, but we have a DD entry, we have half the SPP avaible, since DD is I-only and ZIF is IQ
-        if (mode == 'ZIF') and sweep_settings.dd_mode:
-            maxspp = self.dev_properties.MAX_SPP / 2
-        else:
-            maxspp = self.dev_properties.MAX_SPP
-
-        # adjust SPP if it's too big
-        sweep_settings.spp = min(maxspp, sweep_settings.spp)
-
-        # figure out our actual RBW (account for real vs complex data)
-        sweep_settings.rbw = self.dev_properties.FULL_BW[mode] / sweep_settings.spp
-        if not (mode == 'ZIF'):
-            sweep_settings.rbw = sweep_settings.rbw * 2
 
         # calculate the expected number of spectral bins required for the SweepEntry
         sweep_settings.spectral_points = int(round((sweep_settings.bandstop - sweep_settings.bandstart) / sweep_settings.rbw))
@@ -330,6 +332,7 @@ class SweepDevice(object):
         self.continuous = continuous
 
         # plan the sweep
+        self._sweep_planner = SweepPlanner(self.dev_properties)
         self._sweep_settings = self._sweep_planner.plan_sweep(fstart, fstop, rbw, mode, device_settings)
         self.log("self._sweep_settings = %s" % self._sweep_settings)
 
@@ -490,8 +493,8 @@ class SweepDevice(object):
         self.log("len -- src = %d, dst = %d" % (srclen, dstlen))
 
         # calc src and dest rbw
-        srcrbw = (src_fstop - src_fstart) / srclen
-        dstrbw = (dst_fstop - dst_fstart) / dstlen
+        srcrbw = float(src_fstop - src_fstart) / srclen
+        dstrbw = float(dst_fstop - dst_fstart) / dstlen
         self.log("rbw = %f, %f, %f" % (srcrbw, dstrbw, self._sweep_settings.rbw))
 
         # check if packet start is before sweep start.  shouldn't happen, but check anyway
