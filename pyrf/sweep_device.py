@@ -502,7 +502,7 @@ class SweepDevice(object):
         self.log("boundary(start) = %f / %f" % (src_fstart, dst_fstart))
         if src_fstart < dst_fstart:
             self.log("foo")
-            src_start_bin = int((dst_fstart - src_fstart) / srcrbw)
+            src_start_bin = int(float(dst_fstart - src_fstart) / srcrbw)
         else:
             self.log("bar")
             src_start_bin = 0
@@ -511,7 +511,7 @@ class SweepDevice(object):
         self.log("boundary(stop) = %f / %f" % (src_fstop, dst_fstop))
         if src_fstop > dst_fstop:
             self.log("foo")
-            src_stop_bin = srclen - int((src_fstop - dst_fstop) / srcrbw)
+            src_stop_bin = srclen - int(float(src_fstop - dst_fstop) / srcrbw)
         else:
             self.log("bar")
             src_stop_bin = srclen
@@ -523,7 +523,7 @@ class SweepDevice(object):
         if src_fstart < dst_fstart:
             dst_start_bin = 0
         else:
-            dst_start_bin = int(round((src_fstart - dst_fstart) / dstrbw))
+            dst_start_bin = int(round(float(src_fstart - dst_fstart) / dstrbw))
 
         # calculate dest stop index
         dst_stop_bin = dst_start_bin + tocopy
