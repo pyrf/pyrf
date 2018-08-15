@@ -189,7 +189,7 @@ def adjust_usable_fstart_fstop(dut_prop, rfe_mode, points, decimation,
     # XXX here we "know" that bins = samples/2
     if spec_inv and rfe_mode in ('SH', 'SHN'):
         [(start, run)] = usable_bins
-        start = points / 2 - start - run
+        start = points / 2 - start - run - 1
         usable_bins = [(start, run)]
 
     return usable_bins, fstart, fstop
