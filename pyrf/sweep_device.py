@@ -1,3 +1,4 @@
+import sys
 import math
 import random
 from collections import namedtuple
@@ -18,49 +19,67 @@ class SweepDeviceError(Exception):
     """
     pass
 
-class sweepSettings(object):
+class SweepSettings(object):
     """
     An object used to keep track of the sweep sweep setting
     """
 
-    # sweep entry's start frequency
-    fstart = 0.0
+    def __init__(self):
+        # start frequency of the results we will eventually return
+        self.bandstart = 0.0
 
-    # sweep entry's stop frequency
-    fstop = 0.0
+        # stop frequency of the results we will eventually return
+        self.bandstop = 0.0
 
-    # sweep entry frequency step
-    fstep = 0.0
-    
-    # sweep entry's RFE mode
-    rfe_mode = None
+        # sweep entry's start frequency
+        self.fstart = 0.0
 
-    # determine if a second entry is required
-    dd_mode = False
+        # sweep entry's stop frequency
+        self.fstop = 0.0
 
-    # determines if a non dd entry is needed
-    beyound_dd = True
+        # sweep entry frequency step
+        self.fstep = 0.0
+        
+        # sweep entry's RFE mode
+        self.rfe_mode = None
 
-    # entry attenuation
-    attenuation = 0
+        # determine if a second entry is required
+        self.dd_mode = False
 
-    # entry ppb
-    ppb = 1
+        # determines if a non dd entry is needed
+        self.beyond_dd = True
 
-    # sweep entry's spp
-    spp = 0.0
+        # entry attenuation
+        self.attenuation = 0
 
-    # sweep capture iterations
-    iterations = 0
+        # entry ppb
+        self.ppb = 1
 
-    # expected spectral points
-    spectral_points = 0
+        # sweep entry's spp
+        self.spp = 0.0
 
-    # determines if a sweep entry is required at the end
-    make_end_entry = False
-    
-    # determine the frequency of the end entry
-    end_entry_freq = 0.0
+        # sweep capture iterations
+        self.iterations = 0
+
+        # expected spectral points
+        self.spectral_points = 0
+
+        # determines if a sweep entry is required at the end
+        self.make_end_entry = False
+        
+        # determine the frequency of the end entry
+        self.end_entry_freq = 0.0
+
+        # how many steps are in this sweep
+        self.step_count = 0
+
+        # what's the actual RBW of what we're capturing
+        self.rbw = 0
+
+    def __str__(self):
+        return "SweepSettings[ bandstart = %d, bandstop = %d, fstart = %d, fstop = %d, fstep = %d, step_count = %d, rfe_mode = %s, dd_mode = %s, beyond_dd = %s, attenuation = %s, ppb = %d, spp = %d, iterations = %d, spectral_points = %d, make_end_entry = %s, end_entry_freq = %d, rbw = %f ]" % (self.bandstart, self.bandstop, self.fstart, self.fstop, self.fstep, self.step_count, self.rfe_mode, self.dd_mode, self.beyond_dd, self.attenuation, self.ppb, self.spp, self.iterations, self.spectral_points, self.make_end_entry, self.end_entry_freq, self.rbw)
+
+
 class SweepPlanner(object):
     """
     An object that plans a sweep based on  given paramaters.
@@ -68,105 +87,106 @@ class SweepPlanner(object):
 
     def __init__(self, dev_prop):
         self.dev_properties = dev_prop
-        self._prev_settings = sweepSettings()
+        self._prev_settings = SweepSettings()
 
-    def plan_sweep(self,fstart,fstop,rbw,mode,dev_settings = {}):
+    def plan_sweep(self, fstart, fstop, rbw, mode, dev_settings = {}):
         """
         Plan the sweep given the inputs
         """
 
-        #TODO CHECK FSTART, FSTOP, RBW, AND MODE, make sure they are valid
-        self.fstart = fstart
-        self.fstop = fstop
-        self.rbw = rbw
-        self.rfe_mode = mode
-
         # initialize the sweep settings variable
-        sweep_settings = sweepSettings()
+        sweep_settings = SweepSettings()
 
-        # assign the sweep mode
-        sweep_settings.rfe_mode = self.rfe_mode
+        # assign the sweep mode and start/stop
+        sweep_settings.rfe_mode = mode
+        sweep_settings.bandstart = fstart
+        sweep_settings.bandstop = fstop
 
         if 'attenuator' in dev_settings:
             sweep_settings.attenuation = dev_settings['attenuator']
 
         # grab the usable bw of the current mode
-        self.usable_bw = self.dev_properties.USABLE_BW[self.rfe_mode]
+        usable_bw = self.dev_properties.USABLE_BW[mode]
 
-        # calculate the fstart of the sweep entry
-        sweep_settings.fstart = self.fstart + (self.usable_bw / 2)
+        # calculate the required SPP to get the RBW desired
+        sweep_settings.spp = self.dev_properties.FULL_BW[mode] / rbw
 
+        # find closest multiple of 32 because hardware
+        sweep_settings.spp = int(32 * round(float(sweep_settings.spp) / 32))
 
-        # determine if DD mode is required
-        if self.fstart < self.dev_properties.MIN_TUNABLE[self.rfe_mode]:
+        # double the points for SH/SHN mode
+        if mode in ['SH', 'SHN']:
+            sweep_settings.spp = sweep_settings.spp * 2
+
+        # if we're using zif mode, but we have a DD entry, we have half the SPP avaible, since DD is I-only and ZIF is IQ
+        if (mode == 'ZIF') and sweep_settings.dd_mode:
+            maxspp = self.dev_properties.MAX_SPP / 2
+        else:
+            maxspp = self.dev_properties.MAX_SPP
+
+        # adjust SPP if it's too big
+        sweep_settings.spp = min(maxspp, sweep_settings.spp)
+
+        # figure out our actual RBW (account for real vs complex data)
+        sweep_settings.rbw = self.dev_properties.FULL_BW[mode] / sweep_settings.spp
+        if not (mode == 'ZIF'):
+            sweep_settings.rbw = sweep_settings.rbw * 2
+
+        # calculate fstart frequency
+        if fstart < self.dev_properties.MIN_TUNABLE[mode]:
             sweep_settings.dd_mode = True
-            sweep_settings.fstart = self.dev_properties.MIN_TUNABLE[self.rfe_mode] + (self.usable_bw / 2)
+            sweep_settings.fstart = self.dev_properties.MIN_TUNABLE[mode] + (usable_bw / 2)
+            sweep_settings.step_count += 1
+
+        # make sure we don't accidentally make an fstart that's beyond our tuning range
+        elif (fstart + (usable_bw / 2)) > self.dev_properties.MAX_TUNABLE[mode]:
+            sweep_settings.dd_mode = False
+            sweep_settings.fstart = self.dev_properties.MAX_TUNABLE[mode] - (usable_bw / 2)
 
         else:
             sweep_settings.dd_mode = False
+            sweep_settings.fstart = fstart + (usable_bw / 2)
+
+            # reduce fstart by a bit to account for floating point errors
+            # TODO: make this take into account tuning resolution
+            sweep_settings.fstart -= sweep_settings.rbw * 4
 
         # check if non-dd mode is required
-
-        if self.fstop <= self.dev_properties.MIN_TUNABLE['SH']:
+        if fstop <= self.dev_properties.MIN_TUNABLE[mode]:
             sweep_settings.beyond_dd = False
         else:
             sweep_settings.beyond_dd = True
+            sweep_settings.step_count += 1
 
-        # grab the full banddwidth of the current mode
-        full_bw = self.dev_properties.FULL_BW[self.rfe_mode]
+            # assign the sweep entry's step frequency reducing by a couple rbw to account for floating point errors
+            # TODO: make this take into account tuning resolution
+            sweep_settings.fstep = usable_bw - (sweep_settings.rbw * 4)
 
-        # assign the sweep entry's step frequency, take into account tuning resolution
-        sweep_settings.fstep = self.usable_bw - 100E3 #self.dev_properties.TUNING_RESOLUTION
+            # calculate the fstop of the sweep entry from fstart and how many usable_bw's we need
+            fspan = fstop - sweep_settings.fstart - sweep_settings.rbw
+            required_steps = round(fspan / sweep_settings.fstep)
+            sweep_settings.fstop = sweep_settings.fstart + (required_steps * sweep_settings.fstep)
+            sweep_settings.step_count += required_steps
 
-        # calculate the fstop of the sweep entry
-        required_steps = math.ceil((self.fstop - sweep_settings.fstart) / self.usable_bw)
-        sweep_settings.fstop = sweep_settings.fstart + (required_steps * self.usable_bw)
-
-        compensated_fstop = False
         # make sure fstop is lower than max tunable
-        if sweep_settings.fstop > self.dev_properties.MAX_TUNABLE['SH']:
-            compensated_fstop = True
-            sweep_settings.fstop = self.dev_properties.MAX_TUNABLE['SH']
+        # - it can sometimes be higher if an fstart is chosen, such that our 
+        #   fstep causes our fstop to go beyond fmax to cover all the band required
+        sweep_settings.make_end_entry = False
+        sweep_settings.end_entry_freq = 0
+        if sweep_settings.fstop > self.dev_properties.MAX_TUNABLE[mode]:
+            # go back one step
+            sweep_settings.fstop -= sweep_settings.fstep
 
-        # calculate where the device's stop frequency while sweeping
-        calc_fstop = sweep_settings.fstart
-        while True:
-            calc_fstop += sweep_settings.fstep
-            if calc_fstop > sweep_settings.fstop:
-                calc_fstop -= sweep_settings.fstep
-                break
-
-        # determine if a sweep entry is required to compensate for the last frequency step
-        # note this only applies if we already compensated for fstop to be below max freq
-        if calc_fstop < (self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)):
-            sweep_settings.end_entry_freq = calc_fstop + (self.usable_bw / 2)
+            # add an entry for fmax
             sweep_settings.make_end_entry = True
-
-        # handle case of fstart less than fstart - bw/2
-        if self.fstart > self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2):
-            sweep_settings.make_end_entry = False
-            sweep_settings.fstart = self.dev_properties.MAX_TUNABLE['SH'] - (self.usable_bw / 2)
-            sweep_settings.fstop = self.dev_properties.MAX_TUNABLE['SH']
-
-        # calculate the required samples per packet based on the RBW
-        points = full_bw / self.rbw
-
-        sweep_settings.spp = int(32 * round(float(points)/32))
-
-        # double the points for SH/SHN mode
-        if sweep_settings.rfe_mode in ['SH', 'SHN']:
-            sweep_settings.spp = sweep_settings.spp * 2
-
-        # make sure SPP is valid
-        sweep_settings.spp = min(self.dev_properties.MAX_SPP,sweep_settings.spp)
+            sweep_settings.end_entry_freq = self.dev_properties.MAX_TUNABLE[mode] - (usable_bw / 2)
 
         # calculate the expected number of spectral bins required for the SweepEntry
-        sweep_settings.spectral_points = int((self.fstop - self.fstart) / self.rbw)
-
-        self._prev_settings = sweep_settings
+        sweep_settings.spectral_points = int(round((sweep_settings.bandstop - sweep_settings.bandstart) / sweep_settings.rbw))
 
         # return the sweep sweep_settings
         return sweep_settings
+
 
 class SweepDevice(object):
     """
@@ -208,6 +228,10 @@ class SweepDevice(object):
     capture_count = 0
     def __init__(self, real_device, async_callback=None):
 
+        # init log string
+        self.logstr = ''
+        self.logtype = 'NONE'
+
         # initialize the real device
         self.real_device = real_device
 
@@ -238,6 +262,26 @@ class SweepDevice(object):
         self.async_callback = async_callback
         self.continuous = False
 
+        # init the sweep id
+        self._next_sweep_id = 0
+
+        # init last finished (technically, it hasn't finished, but for our purposes, it has)
+        self._last_finished = True
+
+    def log(self, firstmsg, *msgs):
+        if self.logtype == 'LOG':
+            self.logstr += firstmsg.__str__()
+            for msg in msgs:
+                self.logstr += ", "
+                self.logstr += msg.__str__()
+            self.logstr += "\n"
+        elif self.logtype == 'PRINT':
+            sys.stdout.write(firstmsg.__str__())
+            for msg in msgs:
+                sys.stdout.write(", ")
+                sys.stdout.write(msg.__str__())
+            sys.stdout.write("\n")
+
 
     def capture_power_spectrum(self,
                                fstart,
@@ -249,6 +293,8 @@ class SweepDevice(object):
         """
         Initiate a capture of power spectral density by
         setting up a sweep list and starting a single sweep.
+        - This function does not pipeline, and if the last sweep isn't
+          received before starting a new one, it will generate a failure
 
         :param fstart: starting frequency in Hz
         :type fstart: float
@@ -264,66 +310,42 @@ class SweepDevice(object):
         :param continuous: do a sweep with the same config as before
         :type continuous: bool
         """
+
+        self.log("- capture_power_spectrum", fstart, fstop, rbw, device_settings, mode, continuous)
         
         if continuous and not self.async_callback:
             raise SweepDeviceError(
                 "continuous mode only applies to async operation")
-        
-        # grab the device settings
-        self.device_settings = device_settings
+ 
+        # see if the last sweep has finished
+        if not self._last_finished:
+            raise SweepDeviceError(
+                "previous sweep must have finished before starting a new one")
+        self._last_finished = False
 
-        # compare old settings with new settings, determine if we need to remake the entry
-        new_settings = (fstart, fstop, mode, rbw, device_settings)
-        old_settings = (self.fstart, self.fstop, self.rfe_mode, self.rbw, self.device_settings)
-        if  new_settings == old_settings and continuous:
-            self._new_entry = False
+        # increment the sweep id
+        if self._next_sweep_id < 0x00000000ffffffff:
+            self._next_sweep_id += 1
         else:
-            self._new_entry = True
-        self._new_entry = True
-        # keep track of the mode
-        self.rfe_mode = mode
-
-        # grab the usable bw of the current mode
-        self.usable_bw = self.dev_properties.USABLE_BW[self.rfe_mode]
-
+            self._next_sweep_id = 0
+            
         # keep track if this is a continoued swee
         self.continuous = continuous
 
-        # keep track of the fstart/fstop and rbw
-        self.fstart = fstart
-        self.fstop = fstop
-        self.rbw = rbw
+        # plan the sweep
+        self._sweep_planner = SweepPlanner(self.dev_properties)
+        self._sweep_settings = self._sweep_planner.plan_sweep(fstart, fstop, rbw, mode, device_settings)
+        self.log("self._sweep_settings = %s" % self._sweep_settings)
 
-        # check if we need to make a new entry
-        if self._new_entry:
+        # remember our last sweep for optimization purposes
+        self._last_sweep = (fstart, fstop, rbw, mode, device_settings, continuous)
 
-            self.got_id = False
-            # create a sweep id
-            self._sweep_id = random.randrange(0, 2**32-1) # don't want 2**32-1
-            
-            # reset the device
-            #TODO: cleanup capture initialization
-            self.real_device.flush()
-            self.real_device.request_read_perm()
+        # configure the device with the sweep sweep_settings
+        self.real_device.sweep_clear()
+        self.real_device.sweep_add(self._sweep_settings)
 
-            # apply an abort
-            self.real_device.abort()
-
-            self.real_device.sweep_clear()
-
-            # plan the sweep
-            self._sweep_settings = self._sweep_planner.plan_sweep(self.fstart,
-                                                                  self.fstop,
-                                                                  self.rbw,
-                                                                  self.rfe_mode,
-                                                                  self.device_settings)
-
-
-            # configure the device with the sweep sweep_settings
-            self.real_device.sweep_add(self._sweep_settings)
-
-            # configure the iteration
-            self.real_device.sweep_iterations(1)
+        # configure the iteration
+        self.real_device.sweep_iterations(1)
 
         # capture the sweep data
         return self._perform_full_sweep()
@@ -351,119 +373,169 @@ class SweepDevice(object):
     def _start_sweep(self):
 
         self._vrt_context = {}
-        self.spectral_data = []
+
+        # initialize the array we'll use to hold results
+        self.spectral_data = np.zeros(self._sweep_settings.spectral_points)
 
         # keep track of packets recieved
         self.packet_count = 0
 
-        self.real_device.sweep_start(self._sweep_id)
+        self.real_device.sweep_start(self._next_sweep_id)
 
     def _vrt_receive(self, packet):
-        packet_bytes = packet.size * 4
 
-        # if the packet is a context packet
+        # context packet just update our context dictionary
         if packet.is_context_packet():
             self._vrt_context.update(packet.fields)
+            self.log(packet)
             return
-
 
         # check to see if we recieved our sweep ID
-        if 'sweepid' in self._vrt_context:
-            if self._vrt_context['sweepid'] == self._sweep_id:
-                self.got_id = True
-
-        # if no ID recieved, then continue
-        if not self.got_id:
+        if not ('sweepid' in self._vrt_context):
             return
+
+        # make sure we are receiving packets for the right sweep
+        if not (self._vrt_context['sweepid'] == self._next_sweep_id):
+            raise SweepDeviceError("data packets received before start of sweep received!  cur = %d, next = %d" % (self._vrt_context['sweepid'], self._next_sweep_id))
 
         # increment the packet count
         self.packet_count += 1
+        self.log("#%d of %d - %s" % (self.packet_count, self._sweep_settings.step_count, packet))
 
         # compute the fft
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
 
         # check if DD mode was used in this sweep
         if self.packet_count == 1 and self._sweep_settings.dd_mode:
-            # calculate where the start bin should start
-            start_bin = int(len(pow_data) * (self.fstart / self.dev_properties.FULL_BW['DD']))
+            # copy the data into the result array
+            self._copy_data(0, self.dev_properties.FULL_BW['DD'], pow_data, self._sweep_settings.bandstart, self._sweep_settings.bandstop, self.spectral_data);
 
-            if self.fstart <= self.dev_properties.MIN_FREQ:
-                start_bin = 2
-            # calculate the stop bin
-            stop_bin = int(len(pow_data) * (self.dev_properties.MIN_TUNABLE['SH'] / self.dev_properties.FULL_BW['DD']))
-
-
-            # check if the only mode used was DD mode
-            if self.fstop <= self.dev_properties.MIN_TUNABLE[self.rfe_mode]:
-
-                stop_bin =  int(len(pow_data) * (self.fstop / self.dev_properties.FULL_BW['DD']))
-
-                # if there was only DD mode, append spectral data and send to client
-                self.spectral_data = pow_data[start_bin:stop_bin]
-
+            if self._sweep_settings.beyond_dd:
+                return
+            else:
                 return self._emit_data()
 
-            self.spectral_data = pow_data[start_bin:stop_bin]
-            return
-
-        # retrieve the frequency of the packet
+        # retrieve the frequency and usable BW of the packet
         packet_freq = self._vrt_context['rffreq']
-        if packet_freq > self.fstop - self.usable_bw:
-            self.real_device.request_read_perm()
+        usable_bw = self.dev_properties.USABLE_BW[self._sweep_settings.rfe_mode]
 
-        packet_start = packet_freq - (self.usable_bw / 2)
-        packet_stop = packet_freq + (self.usable_bw / 2)
+        # calc rbw for this packet
+        rbw = float(self.dev_properties.FULL_BW[self._sweep_settings.rfe_mode]) / len(pow_data)
+        self.log("rbw = %f, %f" % (rbw, self._sweep_settings.rbw))
 
         # determine the usable bins in this config
+        self.log("===> compute_usable_bins()", self._sweep_settings.rfe_mode, self._sweep_settings.spp, 1, 0)
         usable_bins = compute_usable_bins(self.dev_properties,
-                                          self.rfe_mode,
+                                          self._sweep_settings.rfe_mode,
                                           self._sweep_settings.spp,
                                           1,
                                           0)
+        self.log("<--- usable_bins", usable_bins)
 
         # adjust the usable range based on spectral inversion
-        usable_bins, start, stop = adjust_usable_fstart_fstop(self.dev_properties,
-                                                              self.rfe_mode,
+        self.log("===> adjust_usable_fstart_fstop()", "self.dev_properties", self._sweep_settings.rfe_mode, len(pow_data) * 2, 1, packet_freq, packet.spec_inv, usable_bins)
+        usable_bins, packet_start, packet_stop = adjust_usable_fstart_fstop(self.dev_properties,
+                                                              self._sweep_settings.rfe_mode,
                                                               len(pow_data) * 2,
                                                               1,
                                                               packet_freq,
                                                               packet.spec_inv,
                                                               usable_bins)
+        self.log("<--- adjust_usable_fstart_fstop", packet_start, packet_stop, usable_bins)
+        #
+        # WARNING: the start and stop returned from this function are HIGHLY sketchy
+        #
+
+        # calculate packet frequency range
+        #packet_start = packet_freq - (self.dev_properties.FULL_BW[self._sweep_settings.rfe_mode] / 2)
+        #packet_stop = packet_freq + (self.dev_properties.FULL_BW[self._sweep_settings.rfe_mode] / 2)
+        #print "packet start/stop", packet_start, packet_stop
 
         #trim the FFT data, note decimation is 1, fshift is 0
-        trimmed_spectrum, edge_data, fstart, fstop = trim_to_usable_fstart_fstop(pow_data,
+        self.log("===> trim_to_usable_fstart_fstop()", "pow_data", usable_bins, packet_start, packet_stop)
+        trimmed_spectrum, edge_data, usable_start, usable_stop = trim_to_usable_fstart_fstop(pow_data,
                                                                                  usable_bins,
                                                                                  packet_start,
                                                                                  packet_stop)
+        self.log("<--- trim_to_usable_fstart_fstop", usable_start, usable_stop, "trimmed_spectrum", edge_data)
 
-        # check if this is the last expected packet
-        if self.fstop <= packet_freq + (self.usable_bw / 2):
+        # copy the data
+        self._copy_data(usable_start, usable_stop, trimmed_spectrum, self._sweep_settings.bandstart, self._sweep_settings.bandstop, self.spectral_data);
 
-            # check if fstart is not the first bin
-            if self.fstart > packet_freq - (self.usable_bw / 2):
-                start_bin = int(len(trimmed_spectrum) * ((self.fstart - packet_start) / self.usable_bw))
-            else:
-                start_bin = 0
-            # calculate the stop bin
-            stop_bin = int(len(trimmed_spectrum) * ((self.fstop - packet_start) / self.usable_bw))
-
-            self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum[start_bin:stop_bin]])
-            # send the data to the client
+        # if there's no more packets, emit result
+        if self.packet_count == self._sweep_settings.step_count:
             return self._emit_data()
 
-        else:
-            # concatenate the spectral data
-            self.spectral_data = np.concatenate([self.spectral_data, trimmed_spectrum])
-            return
+        # all done
+        return
+
 
     def _emit_data(self):
-        # emit the data to the client
+
+        # note that we finished this sweep
+        self._last_finished = True
 
         # if async callback is available, emit the data
         if self.async_callback:
 
-            self.async_callback(self.fstart, self.fstop, self.spectral_data)
+            self.async_callback(self._sweep_settings.bandstart, self._sweep_settings.bandstop, self.spectral_data)
             return
         # return the values if using blocking sockets
         else:
-            return (self.fstart, self.fstop, self.spectral_data)
+            return (self._sweep_settings.bandstart, self._sweep_settings.bandstop, self.spectral_data)
+
+
+    def _copy_data(self, src_fstart, src_fstop, src_psd, dst_fstart, dst_fstop, dst_psd):
+        self.log("_copy_data(%d, %d, src_psd, %d, %d, dst_psd)" % (src_fstart, src_fstop, dst_fstart, dst_fstop))
+
+        # calc src len and dst len
+        srclen = len(src_psd)
+        dstlen = len(dst_psd)
+        self.log("len -- src = %d, dst = %d" % (srclen, dstlen))
+
+        # calc src and dest rbw
+        srcrbw = float(src_fstop - src_fstart) / srclen
+        dstrbw = float(dst_fstop - dst_fstart) / dstlen
+        self.log("rbw = %f, %f, %f" % (srcrbw, dstrbw, self._sweep_settings.rbw))
+
+        # check if packet start is before sweep start.  shouldn't happen, but check anyway
+        self.log("boundary(start) = %f / %f" % (src_fstart, dst_fstart))
+        if src_fstart < dst_fstart:
+            self.log("foo")
+            src_start_bin = int(float(dst_fstart - src_fstart) / srcrbw)
+        else:
+            self.log("bar")
+            src_start_bin = 0
+
+        # check if packet stop is after sweep stop.  this means we don't need the whole packet
+        self.log("boundary(stop) = %f / %f" % (src_fstop, dst_fstop))
+        if src_fstop > dst_fstop:
+            self.log("foo")
+            src_stop_bin = srclen - int(float(src_fstop - dst_fstop) / srcrbw)
+        else:
+            self.log("bar")
+            src_stop_bin = srclen
+
+        # how many values are we copying?
+        tocopy = src_stop_bin - src_start_bin
+
+        # calculate dest start index
+        if src_fstart < dst_fstart:
+            dst_start_bin = 0
+        else:
+            dst_start_bin = int(round(float(src_fstart - dst_fstart) / dstrbw))
+
+        # calculate dest stop index
+        dst_stop_bin = dst_start_bin + tocopy
+        if dst_stop_bin > dstlen:
+            dst_stop_bin = dstlen
+
+            # adjust tocopy
+            tocopy = dst_stop_bin - dst_start_bin
+
+            # adjust src stop bin because we adjusted tocopy
+            src_stop_bin = src_start_bin + tocopy
+
+        # copy the data
+        self.log("dst_psd[%d:%d] = src_psd[%d:%d]" % (dst_start_bin, dst_stop_bin, src_start_bin, src_stop_bin))
+        dst_psd[dst_start_bin:dst_stop_bin] = src_psd[src_start_bin:src_stop_bin]

@@ -150,7 +150,7 @@ class WSA5000_220Properties(object):
         'SH': 50 * M,
         'SHN': 50 * M,
         'IQIN': 0,
-        'DD': 31.24 * M,
+        'DD': 31.25 * M,
         }
     MAX_TUNABLE = {
         'ZIF': 20000 * M,
@@ -235,8 +235,8 @@ class WSA5000_220Properties(object):
     SPP_MULTIPLE = 32
     MAX_PPB = 14
 
-    # MIN FREQ on the 5000 is restricted to 50 MHz
-    MIN_FREQ = 50e6
+    # MIN FREQ on the 5000 is restricted to 100kHz
+    MIN_FREQ = 100e3
 
     SAMPLE_SIZES = create_sample_size(MIN_SPP, MAX_SPP * MAX_PPB, SPP_MULTIPLE)
     P1DB_LEVEL = -5
@@ -295,7 +295,7 @@ class WSA5000_408Properties(WSA5000_208Properties):
     model = 'WSA5000-408'
     SATURATION_LEVEL = -10.0
 
-    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD', 'HDR')
+    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
 
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'

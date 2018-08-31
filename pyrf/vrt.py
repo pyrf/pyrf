@@ -405,7 +405,7 @@ class DataPacket(object):
 
 
     def __str__(self):
-        return ("Data #%02d [%d.%012d, %d samples]" % (self.count, self.tsi, self.tsf, self.size - 6))
+        return ("Data #%02d [%d.%012d, %d samples]" % (self.count, self.tsi, self.tsf, len(self.data)))
 
 
 def generate_speca_packet(data, count=0):
