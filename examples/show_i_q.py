@@ -7,15 +7,15 @@ from pyrf.devices.thinkrf import WSA
 dut = WSA()
 dut.connect(sys.argv[1])
 
-# setup test conditions
+# setup data capture conditions
 dut.reset()
 dut.request_read_perm()
 dut.freq(2450e6)
 
-# capture 1 packet
+# capture 1 packet of 1024 data points
 dut.capture(1024, 1)
 
-# read until I get 1 data packet
+# read until 1 data packet is received
 while not dut.eof():
     pkt = dut.read()
 

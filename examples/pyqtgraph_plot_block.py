@@ -7,19 +7,19 @@ import sys
 import numpy as np
 from pyrf.devices.thinkrf import WSA
 
-# plot constants
-CENTER_FREQ = 2450 * 1e6 
+# Device configuration constants
+CENTER_FREQ = 2450 * 1e6
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
 DECIMATION = 1
 RFE_MODE = 'SH'
 
 class MainApplication(pg.GraphicsWindow):
-
     def __init__(self, dut):
         super(MainApplication, self).__init__()
         self.dut = dut
 
+    # press ';' to manually enter a scpi command
     def keyPressEvent(self, event):
         if event.text() == ';':
             cmd, ok = QtGui.QInputDialog.getText(win, 'Enter SCPI Command',
@@ -28,38 +28,36 @@ class MainApplication(pg.GraphicsWindow):
                 if '?' not in cmd:
                     dut.scpiset(cmd)
 
-# connect to WSA device
-dut = WSA()
-win = MainApplication(dut)
-win.resize(1000,600)
-win.setWindowTitle("PYRF FFT Plot Example")
-
+# get RTSA device IP
 if len(sys.argv) > 1:
     ip = sys.argv[1]
 else:
     ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
                 'Enter a hostname or IP address:')
 
+# connect to an RTSA device
+dut = WSA()
 dut.connect(ip)
 
-
-
-# initialize WSA configurations
+# initialize RTSA configurations
 dut.reset()
 dut.request_read_perm()
 dut.freq(CENTER_FREQ)
 dut.decimation(DECIMATION)
-#dut.attenuator(ATTENUATOR)
+dut.attenuator(ATTENUATOR)
 dut.rfe_mode(RFE_MODE)
 
-BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
 # initialize plot
+win = MainApplication(dut)
+win.resize(1000,600)
+win.setWindowTitle("PYRF FFT Plot Example - " + ip)
 fft_plot = win.addPlot(title="Power Vs. Frequency")
 
 # initialize x-axes limits
+BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
 plot_xmin = (CENTER_FREQ) - (BANDWIDTH  / 2)
 plot_xmax = (CENTER_FREQ) + (BANDWIDTH / 2)
-fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
+fft_plot.setLabel('bottom', text='Frequency', units='Hz', unitPrefix=None)
 
 # initialize the y-axis of the plot
 plot_ymin = -130
@@ -70,11 +68,13 @@ fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
 # enable auto size of the x-y axis
 fft_plot.enableAutoRange('xy', True)
 
-# initialize a curve for the plot 
+# initialize a curve for the plot
 curve = fft_plot.plot(pen='g')
 data, context, pow_data = dut.read_data(SAMPLE_SIZE)
 freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
 
+
+# get data and plot
 def update():
     global dut, curve, fft_plot, plot_xmin, plot_xmax
 

@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+#####################################################################
+## This example makes use of sweep_device.py to perform
+## a single sweep entry monitoring and plot
+#####################################################################
+
 # import required libraries
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
@@ -8,65 +13,78 @@ import numpy as np
 from pyrf.devices.thinkrf import WSA
 from pyrf.sweep_device import SweepDevice
 
-# plot constants
-ATTENUATOR = 0
-DECIMATION = 1
+# Constants for configuration
 RFE_MODE = 'SH'
+START_FREQ = 2350e6
+STOP_FREQ = 3050e6
+SPP = 16384
+PPB = 1
+RBW = 125e6 / (SPP * PPB)  # 125 MHz is the sampling rate
+ATTENUATION = 0
+GAIN = 'HIGH'
 
-# declare sweep constants
-START_FREQ = 150e6
-STOP_FREQ = 200e6
-RBW = 48e3
+# Setup the plotting window
+class MainApplication(pg.GraphicsWindow):
 
+    def __init__(self, dut):
+        super(MainApplication, self).__init__()
+        self.dut = dut
 
-# connect to WSA device
+    # use ';' to do SCPI command on the run
+    def keyPressEvent(self, event):
+        if event.text() == ';':
+            cmd, ok = QtGui.QInputDialog.getText(win, 'Enter SCPI Command',
+                        'Enter SCPI Command:')
+            if ok:
+                if '?' not in cmd:
+                    dut.scpiset(cmd)
+
+# initialize an RTSA (aka WSA) device handle
 dut = WSA()
-win = pg.GraphicsWindow()
-win.resize(1000,600)
-win.setWindowTitle("PYRF FFT Plot Example")
+win = MainApplication(dut)
 
-
-ip = '10.126.110.103'
-
+# get device's IP and connect
+if len(sys.argv) > 1:
+    ip = sys.argv[1]
+else:
+    ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
+                'Enter a hostname or IP address:')
 dut.connect(ip)
 
-# initialize WSA configurations
-dut.flush()
-dut.abort()
-dut.request_read_perm()
+# initialize RTSA configurations
 dut.reset()
-sd = SweepDevice(dut)
+dut.request_read_perm()
+dut.psfm_gain(GAIN)
 
-# initialize plot
+# setup a sweep device
+sweepdev = SweepDevice(dut)
+
+# initialize the plot
+win.resize(1000, 600)
+win.setWindowTitle("PYRF FFT Plot Example - " + ip)
 fft_plot = win.addPlot(title="Power Vs. Frequency")
-
-# initialize x-axes limits
-fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
+fft_plot.enableAutoRange('xy', True)
+curve = fft_plot.plot(pen='g')
+fft_plot.setLabel('bottom', text='Frequency', units='Hz', unitPrefix=None)
 
 # initialize the y-axis of the plot
 plot_ymin = -130
-plot_ymax = 20
-fft_plot.setYRange(plot_ymin ,plot_ymax)
-fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
+plot_ymax = 10
+fft_plot.setYRange(plot_ymin, plot_ymax)
+fft_plot.setLabel('left', text='Power', units='dBm', unitPrefix=None)
 
-# enable auto size of the x-y axis
-fft_plot.enableAutoRange('xy', True)
-
-# initialize a curve for the plot 
-curve = fft_plot.plot(pen='g')
-
+# Get data and plot
 def update():
-    global sd, curve, fft_plot, plot_xmin, plot_xmax
+    global dut, curve, fft_plot, fstart, fstop, print_once
 
-    # read data
-    fstart, fstop, spectral_data = sd.capture_power_spectrum(START_FREQ, 
-                                STOP_FREQ, 
+    # get sweep spectral data of a given RBW and plot
+    fstart, fstop, spectra_data = sweepdev.capture_power_spectrum(START_FREQ,
+                                STOP_FREQ,
                                 RBW,
-                                {'attenuator':0},
-                                mode = 'SH')
-
-    curve.setData(spectral_data, pen = 'g')
-    fft_plot.enableAutoRange('xy', False)
+                                {'attenuator':ATTENUATION},
+                                mode = RFE_MODE)
+    freq_range = np.linspace(fstart , fstop, len(spectra_data))
+    curve.setData(freq_range, spectra_data, pen='g')
 
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
