@@ -2,9 +2,10 @@
 Examples
 ========
 
-These examples may be found in the "examples" directory included
+These are some of the examples may be found in the "examples" directory included
 with the PyRF source code.
 
+Usage: python <filename>.py [device_IP_when_needed]
 
 discovery.py / twisted_discovery.py
 -----------------------------------
@@ -12,15 +13,15 @@ discovery.py / twisted_discovery.py
 * `discovery.py <https://github.com/pyrf/pyrf/blob/master/examples/discovery.py>`_
 * `twisted_discovery.py <https://github.com/pyrf/pyrf/blob/master/examples/twisted_discovery.py>`_
 
-These examples detect WSA devices on the same network
+These examples detect RTSA devices on the local network
 
 Example output:
 
 .. code-block:: none
 
-   WSA4000 00:50:c2:ea:29:14 None at 10.126.110.111
-   WSA4000 00:50:c2:ea:29:26 None at 10.126.110.113
-
+   R5500-427 180601-661 1.5.0 10.126.110.133
+   R5500-408 171212-007 1.5.0 10.126.110.123
+   R5500-418 180522-659 1.4.8 10.126.110.104
 
 .. _twisted-show-i-q:
 
@@ -72,9 +73,21 @@ and plots a complete sweep of the spectrum using NumPy_ and matplotlib_.
 pyqtgraph_plot_block.py
 -----------------------
 
-This example connects to a device specified on the command line,
+This example connects to a device with IP specified on the command line,
 tunes it to a center frequency of 2.450 MHz then continually captures
-and displays an FFT in a GUI window.
+and displays an FFT in a GUI window using pyqtgraph_.
+
+.. _pyqtgraph: http://pyqtgraph.org/
 
 * `pyqtgraph_plot_block.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_block.py>`_
 
+pyqtgraph_plot_sweep.py
+-----------------------
+
+This example connects to a device with IP specified on the command line,
+and makes use of sweep_device.py to perform a single sweep entry
+monitoring and plot FFT results in a GUI window using pyqtgraph_.
+
+.. _pyqtgraph: http://pyqtgraph.org/
+
+* `pyqtgraph_plot_sweep.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_sweep.py>`_

@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PyRF'
-copyright = u'2012-2014, ThinkRF Corporation'
+copyright = u'2012-2018, ThinkRF Corporation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -182,7 +182,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'PyRF.tex',
-   u'API for RF receivers including ThinkRF WSA platform',
+   u'API for RF receivers including ThinkRF RTSA platform',
    u'ThinkRF Corporation', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pyrf',
-     u'API for RF receivers including ThinkRF WSA platform',
+     u'API for RF receivers including ThinkRF RTSA platform',
      [u'ThinkRF Corporation'], 1)
 ]
 
@@ -229,7 +229,7 @@ man_pages = [
 texinfo_documents = [
   ('index', 'PyRF', u'PyRF Documentation',
    u'ThinkRF Corporation', 'PyRF',
-   'API for RF receivers including ThinkRF WSA platform',
+   'API for RF receivers including ThinkRF RTSA platform',
    'Miscellaneous'),
 ]
 

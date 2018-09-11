@@ -6,13 +6,13 @@ Hardware Support
 ----------------
 
 This library supports development for the
-`ThinkRF WSA5000`_ platform.
+`ThinkRF RTSA`_ platform.
 
-.. _ThinkRF WSA5000: http://www.thinkrf.com/
+.. _ThinkRF: http://www.thinkrf.com/
 
 Links
 -----
 
 * `PyRF github page <https://github.com/pyrf/pyrf>`_
 * `PyRF Documentation <http://www.pyrf.org>`_
-* `WSA5000 Documentation <http://www.thinkrf.com/documentation/>`_
+* `ThinkRF Documentation <http://www.thinkrf.com/documentation/>`_

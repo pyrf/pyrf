@@ -68,32 +68,32 @@ from the source directory::
    python setup.py install
 
 
-API for WSA RF Receiver
+PyRF API for ThinkRF RTSA Products
 -----------------------
 
 :class:`pyrf.devices.thinkrf.WSA` is the class that provides access
-to WSA4000 and WSA5000 devices.
+to ThinkRF RTSA devices.
 Its methods closely match the SCPI Command Set described in the
 Programmers Reference available in
 `ThinkRF Resources <http://www.thinkrf.com/resources>`_.
 
-There are simple examples that use this API under the "examples" directory
-included with the source code.
+There are simple examples illustrating usage of this API under the "examples"
+directory included with the source code.
 
 This API may be used in a blocking mode (the default) or in an asynchronous
 mode with using the `Twisted`_ python library.
 
-In blocking mode all methods that read from the device will wait
+In blocking mode, all methods that read from the device will wait
 to receive a response before returning.
 
-In asynchronous mode all methods will send their commands to the device and
+In asynchronous mode, all methods will send their commands to the device and
 then immediately return a Twisted Deferred object.  If you need to wait for
-the response or completion of this command you can attach a callback to the
+the response or completion of this command, you can attach a callback to the
 Deferred object and the Twisted reactor will call it when ready.  You may
 choose to use Twisted's inlineCallbacks function decorator to write Twisted
 code that resembles synchronous code by yielding the Deferred objects
 returned from the API.
 
-To use the asynchronous when a WSA instance is created
+To use the asynchronous, when a WSA instance is created,
 you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
-instance as the connector parameter, as in :ref:`twisted-show-i-q`
+instance as the connector parameter, as shown in :ref:`twisted-show-i-q`
