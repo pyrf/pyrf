@@ -20,7 +20,7 @@ DISCOVERY_QUERY = struct.pack(_DISCOVERY_QUERY_FORMAT,
 
 class WSA(object):
     """
-    Interface for WSA4000 and WSA5000
+    Interface for ThinkRF's R5500, R5700, and WSA5000 (EOL)
 
     :param connector: Connector object to use for SCPI/VRT connections,
         defaults to a new
@@ -75,7 +75,7 @@ class WSA(object):
     @sync_async
     def connect(self, host):
         """
-        connect to a wsa
+        Connect to an RTSA (aka WSA).
         :param host: the hostname or IP to connect to
         """
         yield self.connector.connect(host)
@@ -87,7 +87,7 @@ class WSA(object):
 
     def disconnect(self):
         """
-        close a connection to a wsa
+        Close a connection to an RTSA (aka WSA).
         """
         self.connector.disconnect()
         if self.properties:
@@ -123,12 +123,12 @@ class WSA(object):
     @sync_async
     def id(self):
         """
-        Returns the WSA's identification information string.
+        Returns the RTSA's identification information string.
 
         :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
         yield self.scpiget(":*idn?")
-    
+
     def peakfind(self, n=1, rbw=None, average=1):
         """
         Returns frequency and the power level of the maximum spectral point
@@ -137,16 +137,16 @@ class WSA(object):
         :param n: determine the number of peaks to return
         :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
         :param average: number of capture iterations
-        :returns: [(peak_freq1, peak_power1), 
+        :returns: [(peak_freq1, peak_power1),
                    (peak_freq2, peak_power2)
-                   , ..., 
+                   , ...,
                    (peak_freqn, peak_powern)]
         """
         iq_path = self.iq_output_path()
         capture_mode = self.capture_mode()
 
         if not iq_path == 'DIGITIZER' or not capture_mode == 'BLOCK':
-            raise StandardError("Can't perform peak find while WSA is sweeping or IQ path is not on the WSA ADC")
+            raise StandardError("Can't perform peak find while RTSA is sweeping or IQ path is not on the DIGITIZER path")
         # get read access
         self.request_read_perm()
 
@@ -159,8 +159,8 @@ class WSA(object):
 
     def measure_noisefloor(self, rbw=None, average=1):
         """
-        returns a power level that represents the top edge of the noisefloor
-        
+        Returns a power level that represents the top edge of the noisefloor
+
         :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
         :param average: number of capture iterations
         :returns: noise_power
@@ -169,7 +169,7 @@ class WSA(object):
         capture_mode = self.capture_mode()
 
         if not iq_path == 'DIGITIZER' or not capture_mode == 'BLOCK':
-            raise StandardError("Can't measure noisefloor while WSA is sweeping or IQ path is not on the WSA ADC")
+            raise StandardError("Can't measure noisefloor while RTSA is sweeping or IQ path is not on the DIGITIZER path")
         # get read access
         self.request_read_perm()
         fstart, fstop, pow_data = capture_spectrum(self, rbw, average)
@@ -179,7 +179,7 @@ class WSA(object):
     @sync_async
     def rfe_mode(self, mode=None):
         """
-        This command sets or queries the WSA's Receiver Front End mode of
+        This command sets or queries the RTSA's Receiver Front End (RFE) mode of
         operation.
 
         :param mode: 'ZIF', 'DD', 'HDR', 'IQIN', 'SH' or None to query
@@ -195,7 +195,7 @@ class WSA(object):
     @sync_async
     def iq_output_path(self, path=None):
         """
-        This command sets or queries the WSA's current IQ path
+        This command sets or queries the RTSA's current IQ path
 
         :param path: 'DIGITIZER', 'CONNECTOR', or None to query
         :returns: the current IQ path
@@ -226,7 +226,7 @@ class WSA(object):
     @sync_async
     def pll_reference(self, src=None):
         """
-        This command sets or queries the WSA's PLL reference source
+        This command sets or queries the RTSA's PLL reference source
 
         :param src: 'INT', 'EXT', or None to query
         :returns: the current PLL reference source
@@ -243,7 +243,7 @@ class WSA(object):
     @sync_async
     def freq(self, freq=None):
         """
-        This command sets or queries the tuned center frequency of the WSA.
+        This command sets or queries the tuned center frequency of the RTSA.
 
         :param freq: the new center frequency in Hz (0 - 10 GHz); None to query
 
@@ -306,7 +306,7 @@ class WSA(object):
             value = 1
 
         yield value
-    
+
     @sync_async
     def psfm_gain(self, gain = None):
         GAIN_STATE = {('1', '1'): 'high',
@@ -331,7 +331,7 @@ class WSA(object):
             self.scpiset(":INPUT:GAIN 2 %s\n" % state[1])
 
         yield gain
-        
+
     @sync_async
     def ifgain(self, gain=None):
         """
@@ -387,16 +387,16 @@ class WSA(object):
 
     def reset(self):
         """
-        Resets the WSA to its default settings. It does not affect
+        Resets the RTSA to its default settings. It does not affect
         the registers or queues associated with the IEEE mandated commands.
         """
         self.scpiset(":*rst")
 
     def abort(self):
         """
-        This command will cause the WSA to stop the data capturing,
+        This command will cause the RTSA to stop the data capturing,
         whether in the manual trace block capture, triggering or sweeping
-        mode.  The WSA will be put into the manual mode; in other
+        mode.  The RTSA will be put into the manual mode; in other
         words, process such as streaming, trigger and sweep will be
         stopped.  The capturing process does not wait until the end of a
         packet to stop, it will stop immediately upon receiving the command.
@@ -406,7 +406,7 @@ class WSA(object):
 
     def flush(self):
         """
-        This command clears the WSA's internal data storage buffer of
+        This command clears the RTSA's internal data storage buffer of
         any data that is waiting to be sent.  Thus, It is recommended that
         the flush command should be used when switching between different
         capture modes to clear up the remnants of packet.
@@ -441,8 +441,8 @@ class WSA(object):
             self.scpiset(":TRIGGER:TYPE %s" % settings["type"])
 
             if settings["type"] == "LEVEL":
-                self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings['fstart'], 
-                                                            settings['fstop'], 
+                self.scpiset(":TRIGGER:LEVEL %d, %d, %d" % (settings['fstart'],
+                                                            settings['fstop'],
                                                             settings['amplitude']))
         yield settings
 
@@ -502,7 +502,7 @@ class WSA(object):
     @sync_async
     def request_read_perm(self):
         """
-        Acquire exclusive permission to read data from the WSA.
+        Acquire exclusive permission to read data from the RTSA.
 
         :returns: True if allowed to read, False if not
         """
@@ -568,13 +568,13 @@ class WSA(object):
     @sync_async
     def read(self):
         """
-        Read a single VRT packet from the WSA.
+        Read a single VRT packet from the RTSA.
         """
         return vrt_packet_reader(self.connector.raw_read)
 
     def raw_read(self, num):
         """
-        Raw read of VRT socket data from the WSA.
+        Raw read of VRT socket data from the RTSA.
 
         :param num: the number of bytes to read
         :returns: bytes
@@ -621,7 +621,7 @@ class WSA(object):
 
         # set the RFE mode of the entry
         self.scpiset(":sweep:entry:mode %s" % (entry.rfe_mode))
- 
+
         # set the center frequencies of fstart/fstop of the entry
         self.scpiset(":sweep:entry:freq:center %d, %d" % (entry.fstart, entry.fstop))
 
@@ -707,7 +707,7 @@ class WSA(object):
         """
         This command begins the execution of the stream capture.
         It will also initiate data capturing.  Data packets will
-        be streamed (or pushed) from the WSA whenever data
+        be streamed (or pushed) from the RTSA whenever data
         is available.
 
         :param stream_id: optional unsigned 32-bit stream identifier
@@ -718,7 +718,7 @@ class WSA(object):
     def stream_stop(self):
         """
         This command stops the stream capture.  After receiving
-        the command, the WSA system will stop when the current
+        the command, the RTSA system will stop when the current
         capturing VRT packet is completed.
         """
         self.scpiset(':TRACE:STREAM:STOP')
@@ -736,7 +736,7 @@ class WSA(object):
     @sync_async
     def attenuator(self,  atten_val=None):
         """
-        This command enables, disables or queries the WSA's RFE 20
+        This command enables, disables or queries the RTSA's RFE 20
         dB attenuation.
 
         :param enable: True or False to set; None to query
@@ -761,7 +761,7 @@ class WSA(object):
     @sync_async
     def var_attenuator(self, atten_val=None):
         """
-        This command sets the WSA5000's variable attenuator
+        This command sets the RTSA's variable attenuator (when applicable to the model)
 
         :param atten_val: attenuation value, range: 0-25dB
         :returns: the current attenuation value
@@ -777,7 +777,7 @@ class WSA(object):
     def errors(self):
         """
         Flush and return the list of errors from past commands
-        sent to the WSA. An empty list is returned when no errors
+        sent to the RTSA. An empty list is returned when no errors
         are present.
         """
         errors = []
@@ -793,9 +793,9 @@ class WSA(object):
 
     def apply_device_settings(self, settings, force_change = False):
         """
-        This command takes a dict of device settings, and applies them to the 
-        WSA
-        Note this method only applies a setting if it has been changed using this method
+        This command takes a dict of device settings, and applies them to the
+        RTSA
+        Note: this method only applies a setting if it has been changed using this method
         :param settings: dict containing settings such as attenuation,decimation,etc
         """
         device_setting = {
@@ -830,9 +830,9 @@ class WSA(object):
 
 def parse_discovery_response(response):
     """
-    This function parses the WSA's raw discovery response
+    This function parses the RTSA's raw discovery response
 
-    :param response: The WSA's raw response to a discovery query
+    :param response: The RTSA's raw response to a discovery query
     :returns: Return (model, serial, firmware version) based on a discovery
     response message
     """
@@ -849,12 +849,11 @@ def parse_discovery_response(response):
 def discover_wsa(wait_time=0.125):
     import netifaces
     """
-    This function returns a list that contains all of the WSA's available
+    This function returns a list that contains all of the RTSA's available
     on the local network
 
     :param wait_time: The total time to wait for responses in seconds
-    :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the WSA's
-    available on the local network
+    :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the RTSA's available on the local network
     """
 
     cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -872,7 +871,7 @@ def discover_wsa(wait_time=0.125):
                 destinations.append(a['broadcast'])
 
     for d in destinations:
-        # send query command to WSA
+        # send query command to RTSA
         query_struct = DISCOVERY_QUERY
         cs.sendto(query_struct, (d, DISCOVERY_UDP_PORT))
 
@@ -937,4 +936,3 @@ def cli_chooser():
 
 # for backwards compatibility
 WSA4000 = WSA
-
