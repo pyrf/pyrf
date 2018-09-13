@@ -6,87 +6,107 @@ Manual
 
 Installation
 ------------
+This section provides information on how to install the required python packages.
+
+**Note:** Python v2.7.x is the required version for PyRF, not v3.x or higher.
 
 
-Windows Dependencies
-~~~~~~~~~~~~~~~~~~~~
+Windows Setup
+~~~~~~~~~~~~~
 
-1. Download https://s3.amazonaws.com/ThinkRF/Support-Resources/pyrf-dependencies.zip
-2. Extract the contents of the zipped file
-3. Install Python 2.7.6 (python-2.7.6.msi)
-4. Add the following to the windows PATH ";C:/Python27;C:/Python27/Scripts"
-5. Install Numpy (numpy-1.8.1-win32-superpack-python2.7)
-6. Install Scipy (scipy-0.14.0-win32-superpack-python2.7)
-7. Install Pyside (PySide-1.2.0.win32-py2.7)
-8. Install Pyqtgraph (pyqtgraph-0.9.8.win32)
-9. Install zope.interface (zope.interface-4.1.1.win32-py2.7)
-10. Install twisted (Twisted-14.0.0.win32-py2.7)
-11. Install pywin32 (pywin32-219.win32-py2.7)
-12. Install netifaces (netifaces-0.10.4.win32-py2.7)
-13. Using a command line, go to the qtreactor-qtreactor-pyrf-1.0 folder, and type 'setup.py install'
-14. Using a command line, go to the setuptools-5.7 folder and type 'setup.py install'
+**1. Set-up Python v2.7**
 
-Continue from :ref:`pyrf-installation` below.
+* Install Python v2.7 from https://www.python.org/downloads/release/python-2715/
+* Add to the windows PATH: **C:\\Python27** and **C:\\Python27\\Scripts**
 
-Debian/Ubuntu Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+**2. Install Dependencies**
 
-Use packaged requirements::
+These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ software to install required libraries.
 
-   apt-get install python-pyside python-twisted python-numpy \
-   	python-zope.interface python-setuptools \
-   	 python-netifaces
-   pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
+* Download `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_ (right mouse click and save)
+* Open a command prompt window, navigate to get-pip.py and run::
+
+     python get-pip.py
+
+* Now use **pip** to install the dependencies by typing into the command prompt window::
+
+    pip install numpy scipy pyside pyqtgraph twisted zope.interface setuptools pywin32
+    pip install netifaces
+
+**Note**: When installing **netifaces**, **MS Visual C++ 9.0** is required, follow the recommended instruction, such as ``error: Microsoft Visual C++ 9.0 is required. Get it from http://aka.ms/vcpython27``
+
+* To install **qtreactor**, choose one of the following option:
+ - If you have `git <https://git-scm.com/>`_, run::
+
+    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
+
+ - Otherwise, download **qtreactor folder???** to your computer, then go to `qtreactor-qtreactor-pyrf-1.0` folder, and type::
+
+    python setup.py install
+
+Continue with :ref:`pyrf-installation` below.
 
 
-Or install GUI requirements from source::
+Linux Setup
+~~~~~~~~~~~
 
-   apt-get install qt-sdk python-dev cmake \
-	libblas-dev libatlas-dev liblapack-dev gfortran
-   export BLAS=/usr/lib/libblas/libblas.so
-   export ATLAS=/usr/lib/atlas-base/libatlas.so
-   export LAPACK=/usr/lib/lapack/liblapack.so
-   pip install -r requirements.txt
+These instructions are tested on Debian/Ubuntu system, equivalent ``apt-get`` command might be needed for your system
 
-Continue from :ref:`pyrf-installation` below.
+* Install **python2.7** package if not already available in your system
+* Install required libraries (sudo privilege might be needed)::
+
+    apt-get install pip
+    pip install numpy scipy pyside pyqtgraph twisted netifaces zope.interface setuptools
+    pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
+
+* Or install dependencies from source::
+
+    apt-get install qt-sdk python-dev cmake libblas-dev libatlas-dev liblapack-dev gfortran
+    export BLAS=/usr/lib/libblas/libblas.so
+    export ATLAS=/usr/lib/atlas-base/libatlas.so
+    export LAPACK=/usr/lib/lapack/liblapack.so
+    pip install -r requirements.txt
+
+Continue with :ref:`pyrf-installation` below.
 
 .. _pyrf-installation:
-
 
 PyRF Installation
 ~~~~~~~~~~~~~~~~~
 
-Download the development version::
+* Download the development version by either:
 
-   git clone git://github.com/pyrf/pyrf.git
-   cd pyrf
-   python setup.py install
+ - Using `git <https://git-scm.com/>`_ and run::
 
-Or `download a stable release <https://github.com/pyrf/pyrf/releases>`_, then
-from the source directory::
+    git clone git://github.com/pyrf/pyrf.git
 
-   python setup.py install
+ - Or `download a stable release here <https://github.com/pyrf/pyrf/releases>`_ and extract
+
+* Navigate to `pyrf` directory (``cd pyrf``), run::
+
+    python setup.py install
 
 
 PyRF API for ThinkRF RTSA Products
------------------------
+----------------------------------
 
 :class:`pyrf.devices.thinkrf.WSA` is the class that provides access
-to ThinkRF RTSA devices.
-Its methods closely match the SCPI Command Set described in the
-Programmers Reference available in
-`ThinkRF Resources <http://www.thinkrf.com/resources>`_.
+to `ThinkRF Real-Time Spectrum Analyzers <https://www.thinkrf.com>`_
+(RTSA, also formerly known as WSA) devices.
+Its methods closely match the SCPI Command Set described in the product's
+Programmer's Guide (available on
+`ThinkRF Resources <http://www.thinkrf.com/resources>`_).
 
-There are simple examples illustrating usage of this API under the "examples"
-directory included with the source code.
+There are simple examples illustrating usage of this API under the `examples`
+directory included with the source code directory.
 
-This API may be used in a blocking mode (the default) or in an asynchronous
-mode with using the `Twisted`_ python library.
+This API may be used in a **blocking** mode (the default) or in an **asynchronous**
+mode with using the `Twisted <https://twistedmatrix.com/>`_ python library.
 
-In blocking mode, all methods that read from the device will wait
+In **blocking** mode, all methods that read from the device will wait
 to receive a response before returning.
 
-In asynchronous mode, all methods will send their commands to the device and
+In **asynchronous** mode, all methods will send their commands to the device and
 then immediately return a Twisted Deferred object.  If you need to wait for
 the response or completion of this command, you can attach a callback to the
 Deferred object and the Twisted reactor will call it when ready.  You may
@@ -94,6 +114,6 @@ choose to use Twisted's inlineCallbacks function decorator to write Twisted
 code that resembles synchronous code by yielding the Deferred objects
 returned from the API.
 
-To use the asynchronous, when a WSA instance is created,
+To use the **asynchronous**, when a WSA instance (ex. ``dut = WSA()``) is created,
 you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
 instance as the connector parameter, as shown in :ref:`twisted-show-i-q`

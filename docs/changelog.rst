@@ -1,9 +1,10 @@
 
-Changelog
----------
+Change Logs
+===========
+
 
 PyRF 2.9.0
-==========
+----------
 
 2018-09-04
 
@@ -33,7 +34,7 @@ PyRF 2.9.0
 
 
 PyRF 2.8.0
-==========
+----------
 
 2015-08-12
 
@@ -46,7 +47,7 @@ PyRF 2.8.0
  * Added saturation level value for each device
 
 PyRF 2.7.2
-==========
+----------
 
 2014-12-16
 
@@ -59,7 +60,7 @@ PyRF 2.7.2
  * Default HDR gain is now 25
 
 PyRF 2.7.1
-==========
+----------
 
 2014-11-13
 
@@ -71,7 +72,7 @@ PyRF 2.7.1
  * Y-axis in the persistence plot now corresponds with spectral plot's y-axis
 
 PyRF 2.7.0
-==========
+----------
 
 2014-11-04
 
@@ -80,7 +81,7 @@ PyRF 2.7.0
  * Added lower RBW values in non-sweep modes
 
 PyRF 2.6.2
-==========
+----------
 
 2014-10-10
 
@@ -98,14 +99,14 @@ PyRF 2.6.2
  * Added device information dialog to GUI
 
 PyRF 2.6.1
-==========
+----------
 
 2014-09-30
 
  * Upload corrected version with changelog
 
 PyRF 2.6.0
-==========
+----------
 
 2014-09-30
 
@@ -122,12 +123,12 @@ PyRF 2.6.0
    non-English windows machines
 
 PyRF 2.5.0
-==========
+----------
 
 2014-09-09
 
  * Added Persistence plot
- * Made markers draggable in the plot
+ * Made markers drag-able in the plot
  * Added version number to title bar
  * Moved DSP options to developer menu, developer menu now hidden
    unless GUI run with -d option
@@ -136,15 +137,15 @@ PyRF 2.5.0
  * Moved changelog into docs and updated
 
 PyRF 2.4.1
-==========
+----------
 
 2014-08-19
 
- * Added missing reqirement
+ * Added missing requirement
  * Fixed use with CONNECTOR IQ path
 
 PyRF 2.4.0
-==========
+----------
 
 2014-08-19
 
@@ -152,7 +153,7 @@ PyRF 2.4.0
  * Fixed modes available with some WSA versions
 
 PyRF 2.3.0
-==========
+----------
 
 2014-08-12
 
@@ -165,14 +166,13 @@ PyRF 2.3.0
  * Fixed a number of GUI interface issues
 
 PyRF 2.2.0
-==========
+----------
 
 2014-07-15
 
  * Added waterfall display for GUI and example program
  * Added automatic re-tuning when plot dragged of zoomed
- * Added recording speca state in recorded VRT files, Start/Stop recording
-   menu
+ * Added recording speca state in recorded VRT files, Start/Stop recording menu
  * Added GUI non-sweep playback support and command line '-p' option
  * Added marker controls: peak left, right, center to marker
  * Redesigned frequency controls, device controls and trace controls
@@ -185,7 +185,7 @@ PyRF 2.2.0
  * Renamed GUI launcher to rtsa-gui
 
 PyRF 2.1.0
-==========
+----------
 
 2014-06-20
 
@@ -196,7 +196,7 @@ PyRF 2.1.0
  * Fixed a number of GUI plot issues
 
 PyRF 2.0.3
-==========
+----------
 
 2014-06-03
 
@@ -205,7 +205,7 @@ PyRF 2.0.3
  * Fixed plotting issues in a number of modes in GUI
 
 PyRF 2.0.2
-==========
+----------
 
 2014-04-29
 
@@ -213,7 +213,7 @@ PyRF 2.0.2
  * Fixed RFE input mode GUI issues
 
 PyRF 2.0.1
-==========
+----------
 
 2014-04-21
 
@@ -224,7 +224,7 @@ PyRF 2.0.1
  * Fixed a number of issues
 
 PyRF 2.0.0
-==========
+----------
 
 2014-01-31
  * Added multiple traces and trace controls to GUI
@@ -240,7 +240,7 @@ PyRF 2.0.0
  * Switched to using pyinstaller for better windows build support
 
 PyRF 1.2.0
-==========
+----------
 
 2013-10-01
  * Added WSA5000 support
@@ -249,14 +249,14 @@ PyRF 1.2.0
  * Separated device properties from WSA class
 
 PyRF 1.1.0
-==========
+----------
 
 2013-07-19
  * Fixed some py2exe issues
  * Show the GUI even when not connected
 
 PyRF 1.0.0
-==========
+----------
 
 2013-07-18
 
@@ -270,7 +270,7 @@ PyRF 1.0.0
  * Created CaptureDevice to collect single captures and related context
 
 PyRF 0.4.0
-==========
+----------
 
 2013-05-18
 
@@ -302,7 +302,7 @@ PyRF 0.4.0
  * Fix for power spectrum calculation in pyrf.numpy_util
 
 PyRF 0.3.0
-==========
+----------
 
 2013-02-01
 
@@ -322,42 +322,42 @@ PyRF 0.3.0
  * added requirements.txt for building dependencies from source
 
 PyRF 0.2.5
-==========
+----------
 
 2013-01-26
 
  * fix for compute_fft calculations
 
 PyRF 0.2.4
-==========
+----------
 
 2013-01-19
 
  * fix for missing devices file in setup.py
 
 PyRF 0.2.3
-==========
+----------
 
 2013-01-19
 
  * add planned features to docs
 
 PyRF 0.2.2
-==========
+----------
 
 2013-01-17
 
  * rename package from python-thinkrf to PyRF
 
 python-thinkrf 0.2.1
-====================
+--------------------
 
 2012-12-21
 
  * update for WSA4000 firmware 2.5.3 decimation change
 
 python-thinkrf 0.2.0
-====================
+--------------------
 
 2012-12-09
 
@@ -369,7 +369,7 @@ python-thinkrf 0.2.0
  * GUI perfomance improvements
 
 python-thinkrf 0.1.0
-====================
+--------------------
 
 2012-12-01
 

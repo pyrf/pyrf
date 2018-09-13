@@ -6,13 +6,13 @@ Hardware Support
 ----------------
 
 This library supports development for the
-`ThinkRF RTSA`_ platform.
+`ThinkRF RTSA`_ platforms.
 
 .. _ThinkRF: http://www.thinkrf.com/
 
 Links
 -----
 
-* `PyRF github page <https://github.com/pyrf/pyrf>`_
-* `PyRF Documentation <http://www.pyrf.org>`_
-* `ThinkRF Documentation <http://www.thinkrf.com/documentation/>`_
+* `Official PyRF github page <https://github.com/pyrf/pyrf>`_
+* `PyRF Documentation <https://www.pyrf.org>`_
+* `ThinkRF RTSA Documentation and Resources <https://www.thinkrf.com/resources>`_

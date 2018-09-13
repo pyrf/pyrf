@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# PyRF documentation build configuration file, created by
+# PyRF Documentation build configuration file, created by
 # sphinx-quickstart on Thu Nov 22 17:25:57 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
