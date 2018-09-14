@@ -27,8 +27,7 @@ class WSA(object):
         :class:`PlainSocketConnector <pyrf.connectors.blocking.PlainSocketConnector>`
         instance
 
-    :meth:`connect() <pyrf.devices.thinkrf.WSA.connect>` must be called
-    before other methods are used.
+    :meth:`connect()` must be called before other methods are used.
 
     .. note::
 
@@ -195,9 +194,9 @@ class WSA(object):
     @sync_async
     def iq_output_path(self, path=None):
         """
-        This command sets or queries the RTSA's current IQ path
+        This command sets or queries the RTSA's current IQ path.  It is not applicable to R5700.
 
-        :param path: 'DIGITIZER', 'CONNECTOR', or None to query
+        :param path: 'DIGITIZER', 'CONNECTOR', 'HIF', or None to query
         :returns: the current IQ path
         """
         if 'R5500' in self.properties.model:
@@ -228,7 +227,7 @@ class WSA(object):
         """
         This command sets or queries the RTSA's PLL reference source
 
-        :param src: 'INT', 'EXT', or None to query
+        :param src: 'INT', 'EXT', 'GPS' (when available with the model) or None to query
         :returns: the current PLL reference source
         """
 
@@ -245,7 +244,7 @@ class WSA(object):
         """
         This command sets or queries the tuned center frequency of the RTSA.
 
-        :param freq: the new center frequency in Hz (0 - 10 GHz); None to query
+        :param freq: the center frequency in Hz (range vary depnding on the product model); None to query
 
         :type freq: int
         :returns: the frequency in Hz
@@ -263,7 +262,7 @@ class WSA(object):
         """
         This command sets or queries the frequency shift value.
 
-        :param freq: the new frequency shift in Hz (0 - 125 MHz); None to query
+        :param freq: the frequency shift in Hz (0 - 125 MHz); None to query
         :type freq: int
         :returns: the amount of frequency shift
         """
@@ -279,13 +278,10 @@ class WSA(object):
     def decimation(self, value=None):
         """
         This command sets or queries the rate of decimation of samples in
-        a trace capture. This decimation method consists of cascaded
-        integrator-comb (CIC) filters and at every
-        *value* number of samples, one sample is captured. The supported
-        rate is 4 - 1023.  When the rate is set to 1, no decimation is
-        performed on the trace capture.
+        a trace capture. The supported rate is 4 - 1024.  When the rate is
+        set to 1, no decimation is performed on the trace capture.
 
-        :param value: new decimation value (1 or 4 - 1023); None to query
+        :param value: new decimation value (1 or 4 - 1024); None to query
         :type value: int
         :returns: the decimation value
         """
@@ -373,7 +369,8 @@ class WSA(object):
     @sync_async
     def preselect_filter(self, enable=None):
         """
-        This command sets or queries the RFE preselect filter selection.
+        This command sets or queries the RFE preselect filter selection
+        when supported by the model.
 
         :param enable: True or False to set; None to query
         :returns: the RFE preselect filter selection state
@@ -407,9 +404,9 @@ class WSA(object):
     def flush(self):
         """
         This command clears the RTSA's internal data storage buffer of
-        any data that is waiting to be sent.  Thus, It is recommended that
+        any data that is waiting to be sent.  Thus, it is recommended that
         the flush command should be used when switching between different
-        capture modes to clear up the remnants of packet.
+        capture modes to clear up the remnants of captured packets.
         """
         self.scpiset(":SYSTEM:FLUSH")
 
@@ -470,9 +467,9 @@ class WSA(object):
 
         The upper bound of the samples is limited by the VRT's 16-bit
         packet size field less the VRT header and any optional fields
-        (i.e. Stream ID, Class ID, Timestamps, and trailer)  of 32-bit
-        wide words.  However since the SPP must be a multiple of 16,
-        the maximum is thus limited by 2**16 - 16.
+        (i.e. Stream ID, Class ID, Timestamps, and trailer) of 32-bit
+        wide words.  However since the SPP must be a multiple of 32,
+        the maximum is thus limited by 2**16 - 32.
 
         :param samples: the number of samples in a packet or None
         :returns: the current spp value if the samples parameter is None
@@ -521,9 +518,10 @@ class WSA(object):
 
     def read_data(self, spp):
         """
-        Check if we have permission to read data.
+        Return data packet of *spp* size, the associated context info and the computed power spetral data.
+
         :param spp: the number of samples in a packet
-        :returns: data class, context dictionary, and fft array
+        :returns: data class, context dictionary, and power spectral data array
         """
         data, context = read_data_and_context(self, spp)
         pow_data = compute_fft(self, data, context)
@@ -551,7 +549,7 @@ class WSA(object):
         """
         This command queries the lock status of the RF VCO (Voltage Control
         Oscillator) in the Radio Front End (RFE) or the lock status of the
-        PLL reference clock in the digital card.
+        PLL reference clock in the digitizer card.
 
         :param modulestr: 'vco' for rf lock status, 'clkref' for mobo lock status
         :returns: True if locked
@@ -568,13 +566,13 @@ class WSA(object):
     @sync_async
     def read(self):
         """
-        Read a single VRT packet from the RTSA.
+        Read a single parsed VRT packet from the RTSA, either context or data.
         """
         return vrt_packet_reader(self.connector.raw_read)
 
     def raw_read(self, num):
         """
-        Raw read of VRT socket data from the RTSA.
+        Raw read of VRT socket data of *num* bytes from the RTSA.
 
         :param num: the number of bytes to read
         :returns: bytes
@@ -641,7 +639,7 @@ class WSA(object):
     @sync_async
     def sweep_read(self, index):
         """
-        Read an entry from the sweep list.
+        Read a sweep entry at the given sweep *index* from the sweep list.
 
         :param index: the index of the entry to read
         :returns: sweep entry
@@ -662,7 +660,7 @@ class WSA(object):
     @sync_async
     def sweep_iterations(self, count=None):
         """
-        Set the number of iterations for the complete sweep list,
+        Set or query the number of iterations to loop through a sweep list.
 
         :param count: the number of iterations, 0 for infinite
         :returns: the current number of iterations if count is None
@@ -682,7 +680,9 @@ class WSA(object):
 
     def sweep_start(self, start_id = None):
         """
-        Start the sweep engine.
+        Start the sweep engine with an optional ID.
+
+        :param start_id: An optional 32-bit ID to identify the sweep
         """
         if start_id:
             self.scpiset(":sweep:list:start %d" % start_id);
@@ -692,7 +692,7 @@ class WSA(object):
 
     def sweep_stop(self):
         """
-        Stop the sweep engine.
+        Stop the sweep engine. Recommend calling :meth:`flush()` after stopping.
         """
         self.scpiset(":sweep:list:stop")
 
@@ -719,7 +719,8 @@ class WSA(object):
         """
         This command stops the stream capture.  After receiving
         the command, the RTSA system will stop when the current
-        capturing VRT packet is completed.
+        capturing VRT packet is completed. Recommend calling
+        :meth:`flush()` after stopping.
         """
         self.scpiset(':TRACE:STREAM:STOP')
 
@@ -736,19 +737,18 @@ class WSA(object):
     @sync_async
     def attenuator(self,  atten_val=None):
         """
-        This command enables, disables or queries the RTSA's RFE 20
-        dB attenuation.
+        This command enables, disables or queries the RTSA's RFE attenuation.
 
-        :param enable: True or False to set; None to query
-        :returns: the current attenuator state
+        :param atten_val: see Programmer's Guide for the attenuation value to use for your product; None to query
+        :returns: the current attenuation value
         """
         if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
             cmd = 'INPUT:ATTENUATOR:VAR'
         else:
             cmd = 'INPUT:ATTENUATOR'
+
         if  atten_val is None:
             atten_val = yield self.scpiget("%s?" % cmd)
-
         else:
             if 'R5500' in self.properties.model:
                     atten_val = yield self.scpiset("%s %0.2f" % (cmd, atten_val))
@@ -763,7 +763,7 @@ class WSA(object):
         """
         This command sets the RTSA's variable attenuator (when applicable to the model)
 
-        :param atten_val: attenuation value, range: 0-25dB
+        :param atten_val: attenuation value, vary depending on the product
         :returns: the current attenuation value
         """
         if atten_val is None:
@@ -794,9 +794,10 @@ class WSA(object):
     def apply_device_settings(self, settings, force_change = False):
         """
         This command takes a dict of device settings, and applies them to the
-        RTSA
+        RTSA.
         Note: this method only applies a setting if it has been changed using this method
         :param settings: dict containing settings such as attenuation,decimation,etc
+        :param force_change: to force the change update or not
         """
         device_setting = {
             'freq': self.freq,
@@ -853,7 +854,7 @@ def discover_wsa(wait_time=0.125):
     on the local network
 
     :param wait_time: The total time to wait for responses in seconds
-    :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the RTSA's available on the local network
+    :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the  RTSA's available on the local network
     """
 
     cs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -882,7 +883,6 @@ def discover_wsa(wait_time=0.125):
         data, (host, port) = cs.recvfrom(1024)
 
         model, serial, firmware = parse_discovery_response(data)
-
         wsa_list.append({"MODEL": model,
                         "SERIAL": serial,
                         "FIRMWARE": firmware,

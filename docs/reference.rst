@@ -1,4 +1,3 @@
-
 Reference
 =========
 
@@ -14,13 +13,15 @@ pyrf.devices
 
    .. automethod:: abort()
 
-   .. automethod:: antenna(number=None)
+   .. automethod:: apply_device_settings(settings, force_change=False)
 
-   .. automethod:: apply_device_settings(settings)
+   .. automethod:: async_connector()
 
-   .. automethod:: attenuator(enable=None)
+   .. automethod:: attenuator(atten_val=None)
 
    .. automethod:: capture(spp, ppb)
+
+   .. automethod:: capture_mode()
 
    .. automethod:: connect(host)
 
@@ -34,27 +35,33 @@ pyrf.devices
 
    .. automethod:: flush()
 
-   .. automethod:: flush_captures()
-
    .. automethod:: freq(freq=None)
 
    .. automethod:: fshift(shift=None)
-
-   .. automethod:: gain(gain=None)
 
    .. automethod:: has_data()
 
    .. automethod:: have_read_perm()
 
+   .. automethod:: hdr_gain(gain=None)
+
    .. automethod:: id()
 
-   .. automethod:: ifgain(gain=None)
+   .. automethod:: inject_recording_state(state)
+
+   .. automethod:: iq_output_path(path=None)
 
    .. automethod:: locked(modulestr)
 
+   .. automethod:: measure_noisefloor(rbw=None, average=1)
+
+   .. automethod:: peakfind(n=1, rbw=None, average=1)
+
+   .. automethod:: pll_reference(src)
+
    .. automethod:: ppb(packets=None)
 
-   .. automethod:: preselect_filter(enable=None)
+   .. automethod:: psfm_gain(gain=None)
 
    .. automethod:: raw_read(num)
 
@@ -64,9 +71,15 @@ pyrf.devices
 
    .. automethod:: reset()
 
+   .. automethod:: rfe_mode(mode=None)
+
    .. automethod:: scpiget(cmd)
 
    .. automethod:: scpiset(cmd)
+
+   .. automethod:: set_async_callback(callback)
+
+   .. automethod:: set_recording_output(output_file=None)
 
    .. automethod:: spp(samples=None)
 
@@ -80,6 +93,8 @@ pyrf.devices
 
    .. automethod:: sweep_clear()
 
+   .. automethod:: sweep_iterations(count=None)
+
    .. automethod:: sweep_read(index)
 
    .. automethod:: sweep_start(start_id=None)
@@ -88,7 +103,9 @@ pyrf.devices
 
    .. automethod:: trigger(settings=None)
 
-.. autofunction:: parse_discovery_response
+.. autofunction:: discover_wsa(wait_time=0.125)
+
+.. autofunction:: parse_discovery_response(response)
 
 pyrf.sweep_device
 -----------------
@@ -150,4 +167,3 @@ pyrf.vrt
 .. automodule:: pyrf.vrt
    :members:
    :undoc-members:
-
