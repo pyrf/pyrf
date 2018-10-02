@@ -91,23 +91,6 @@ class WSA4000Properties(object):
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
-    SPECA_DEFAULTS = {
-        'mode': 'ZIF',
-        'center': 2450.0 * M,
-        'rbw': 122070,
-        'span': 125.0 * M,
-        'decimation': 1,
-        'fshift': 0,
-        'device_settings': {
-            'antenna': 1,
-            'ifgain': 0,
-            'gain': 'low',
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
-    SPECA_MODES = ['Sweep ZIF']
-
 
 ###
 # abstract class for WSA5000 models
@@ -208,34 +191,8 @@ class WSA5000Properties(WSA4000Properties):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    DEFAULT_SPECA_SPAN = 125.0 * M
-    DEFAULT_SWEEP_SPAN = 100 * M
     SATURATION_LEVEL = -10.0
-    SPECA_DEFAULTS = {
-        'mode': 'Sweep SH',
-        'center': 2450.0 * M,
-        'rbw': 250.0e3,
-        'span': DEFAULT_SPECA_SPAN,
-        'decimation': 1,
-        'fshift': 0.0,
-        'device_settings': {
-            'attenuator': True,
-            'var_attenuator': 17.0,
-            'psfm_gain': 'high',
-            'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25.0,
-            'pll_reference': 'INT',
-            'trigger': {'type': 'NONE',
-                        'fstart': 2440.0 * M,
-                        'fstop': 2460 * M,
-                        'amplitude': -100.0},
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
     TUNABLE_MODES = ['SH', 'SHN', 'ZIF', 'HDR']
-    SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - MIN_TUNABLE['SHN']
     MIN_SPP = 256
     MAX_SPP = 32768
     SPP_MULTIPLE = 32
@@ -271,11 +228,6 @@ class WSA5000_108Properties(WSA5000Properties):
 
     # 108 -> limited to SHN, HDR, and DD mode
     RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = ['Sweep SHN']
-    SPECA_DEFAULTS = dict(WSA5000Properties.SPECA_DEFAULTS,
-        center = 4025 * M,
-        mode='Sweep SHN'
-    )
     IQ_OUTPUT_CONNECTOR = False
 
 
@@ -284,10 +236,6 @@ class WSA5000_108Properties(WSA5000Properties):
 #
 class WSA5000_208Properties(WSA5000Properties):
     model = 'WSA5000-208'
-    SPECA_DEFAULTS = dict(WSA5000Properties.SPECA_DEFAULTS,
-        span = WSA5000Properties.DEFAULT_SPECA_SPAN,
-        center = 4025 * M,
-    )
 
 
 ###
@@ -340,12 +288,6 @@ class WSA5000_408Properties(WSA5000Properties):
 
     RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
 
-    DEFAULT_SPECA_SPAN = WSA5000Properties.MAX_TUNABLE['SHN'] - WSA5000Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000Properties.SPECA_DEFAULTS,
-        span = DEFAULT_SPECA_SPAN,
-        center = 4025 * M
-    )
-
 
 ###
 # properties for WSA5000-418
@@ -367,12 +309,6 @@ class WSA5000_418Properties(WSA5000_408Properties):
             SHN = 18000 * M,
     )
 
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000Properties.SPECA_DEFAULTS,
-        span = DEFAULT_SPECA_SPAN,
-        center = 9025 * M
-    )
-
 
 ###
 # properties for a WSA5000-427
@@ -390,11 +326,6 @@ class WSA5000_427Properties(WSA5000_418Properties):
             SH = 27000 * M,
             SHN = 27000 * M,
     )
-
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_418Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 13525 * M)
 
 
 ###
@@ -415,12 +346,6 @@ class WSA5000_408PProperties(WSA5000_427Properties):
             SHN = 8000 * M,
     )
 
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_427Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_427Properties.SPECA_DEFAULTS,
-        span = DEFAULT_SPECA_SPAN,
-        center = 4000 * M
-    )
-        
 
 ###
 # properties for a R5500-408
@@ -433,29 +358,6 @@ class R5500_408Properties(WSA5000_408Properties):
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    DEFAULT_SPECA_SPAN = WSA5000_408Properties.MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = {
-        'mode': 'Sweep SH',
-        'center': 4000.0 * M,
-        'rbw': 250.0e3,
-        'span': DEFAULT_SPECA_SPAN,
-        'decimation': 1,
-        'fshift': 0.0,
-        'device_settings': {
-            'attenuator': 30.0,
-            'var_attenuator': 17.0,
-            'psfm_gain': 'high',
-            'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25.0,
-            'pll_reference': 'INT',
-            'trigger': {'type': 'NONE',
-                        'fstart': 2440.0 * M,
-                        'fstop': 2460 * M,
-                        'amplitude': -100.0},
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
         
 
 ###
@@ -477,11 +379,6 @@ class R5500_418Properties(R5500_408Properties):
             SH = 18000 * M,
             SHN = 18000 * M,
     )
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(R5500_408Properties.SPECA_DEFAULTS,
-        span = DEFAULT_SPECA_SPAN,
-        center = 9000 * M,
-    )
         
     
 ###
@@ -499,11 +396,6 @@ class R5500_427Properties(R5500_408Properties):
             SH = 27000 * M,
             SHN = 27000 * M,
     )
-
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(R5500_408Properties.SPECA_DEFAULTS,
-        span = DEFAULT_SPECA_SPAN,
-        center = 13500 * M)
 
 
 ###
