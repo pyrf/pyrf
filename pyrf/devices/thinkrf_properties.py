@@ -65,8 +65,10 @@ def create_sample_size(min, max, multiple):
 
     return list
 
+
 class WSA4000Properties(object):
     model = 'WSA4000'
+    manufacturer = 'THINKRF'
     REFLEVEL_ERROR = 15.7678
     CAPTURE_FREQ_RANGES = [(0, 40*M, I_ONLY), (90*M, 10000*M, IQ)]
     SWEEP_FREQ_RANGE = (90*M, 10000*M)
@@ -89,31 +91,17 @@ class WSA4000Properties(object):
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
-    SPECA_DEFAULTS = {
-        'mode': 'ZIF',
-        'center': 2450.0 * M,
-        'rbw': 122070,
-        'span': 125.0 * M,
-        'decimation': 1,
-        'fshift': 0,
-        'device_settings': {
-            'antenna': 1,
-            'ifgain': 0,
-            'gain': 'low',
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
-    SPECA_MODES = ['Sweep ZIF']
 
-class WSA5000_220Properties(object):
-    model = 'WSA5000-220'
-    manufacturer = 'THINKRF'
+###
+# abstract class for WSA5000 models
+#
+class WSA5000Properties(WSA4000Properties):
+    model = 'WSA5000-BaseClass'
     MINIMUM_FW_VERSION = '3.2.0-rc1'
     TRIGGER_FW_VERSION = '4.1.0'
     REFLEVEL_ERROR = 0
-    CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
-    SWEEP_FREQ_RANGE = (100*M, 20000*M)
+    CAPTURE_FREQ_RANGES = [(50 * M, 8000 * M, IQ)]
+    SWEEP_FREQ_RANGE = (100 * M, 8000 * M)
     RFE_ATTENUATION = 20
     RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD', 'IQIN')
     DEFAULT_SAMPLE_TYPE = {
@@ -153,10 +141,10 @@ class WSA5000_220Properties(object):
         'DD': 31.25 * M,
         }
     MAX_TUNABLE = {
-        'ZIF': 20000 * M,
-        'HDR': 20000 * M,
-        'SH': 20000 * M,
-        'SHN': 20000 * M,
+        'ZIF': 8000 * M,
+        'HDR': 8000 * M,
+        'SH': 8000 * M,
+        'SHN': 8000 * M,
         'IQIN': 0,
         'DD': 31.25 * M,
         }
@@ -203,33 +191,8 @@ class WSA5000_220Properties(object):
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
 
     LEVEL_TRIGGER_RFE_MODES = ['SH', 'SHN', 'ZIF']
-    DEFAULT_SPECA_SPAN = 125.0 * M
-    DEFAULT_SWEEP_SPAN = 100 * M
     SATURATION_LEVEL = -10.0
-    SPECA_DEFAULTS = {
-        'mode': 'Sweep SH',
-        'center': 2450.0 * M,
-        'rbw': 250.0e3,
-        'span': DEFAULT_SPECA_SPAN,
-        'decimation': 1,
-        'fshift': 0.0,
-        'device_settings': {
-            'attenuator': True,
-            'var_attenuator': 17.0,
-            'psfm_gain': 'high',
-            'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25.0,
-            'pll_reference': 'INT',
-            'trigger': {'type': 'NONE',
-                        'fstart': 2440.0 * M,
-                        'fstop': 2460 * M,
-                        'amplitude': -100.0},
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
     TUNABLE_MODES = ['SH', 'SHN', 'ZIF', 'HDR']
-    SPECA_MODES = ['Sweep SH', 'Sweep ZIF', 'Sweep SHN']
     MIN_SPP = 256
     MAX_SPP = 32768
     SPP_MULTIPLE = 32
@@ -257,46 +220,136 @@ class WSA5000_220Properties(object):
     IQ_OUTPUT_CONNECTOR = True
 
 
- 
+###
+# properties for a WSA5000-108
+#
+class WSA5000_108Properties(WSA5000Properties):
+    model = 'WSA5000-108'
+
+    # 108 -> limited to SHN, HDR, and DD mode
+    RFE_MODES = ('SHN', 'HDR', 'DD')
+    IQ_OUTPUT_CONNECTOR = False
+
+
+###
+# properties for the WSA5000-208
+#
+class WSA5000_208Properties(WSA5000Properties):
+    model = 'WSA5000-208'
+
+
+###
+# properties for a WSA5000-208 v2
+#
+class WSA5000_208_v2Properties(WSA5000_208Properties):
+    model = 'WSA5000-208 v2'
+
+
+###
+# properties class for a WSA5000-220
+#
+class WSA5000_220Properties(WSA5000Properties):
+    model = 'WSA5000-220'
+
+    CAPTURE_FREQ_RANGES = [(50*M, 20000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 20000*M)
+
+    # max frequency is 20 GHz
+    MAX_TUNABLE = dict(WSA5000Properties.MAX_TUNABLE, 
+            ZIF = 20000 * M, 
+            HDR = 20000 * M,
+            SH = 20000 * M,
+            SHN = 20000 * M,
+    )
+
+
+###
+# properties for WSA5000-220 v2
+#
 class WSA5000_220_v2Properties(WSA5000_220Properties):
     model = 'WSA5000-220 v2'
-    REFLEVEL_ERROR = 0
     # v2 -> hardware revision without SHN mode
     RFE_MODES = ('SH', 'ZIF', 'HDR', 'DD', 'IQIN')
 
-class WSA5000_208Properties(WSA5000_220Properties):
-    model = 'WSA5000-208'
-    # 208 -> limited to 8GHz
 
-    MAX_TUNABLE = dict((mode, min(8000*M, f))
-        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 4025 * M,)
-
-class WSA5000_108Properties(WSA5000_208Properties):
-    model = 'WSA5000-108'
-    # 108 -> limited to SHN, HDR, and DD mode
-    RFE_MODES = ('SHN', 'HDR', 'DD')
-    SPECA_MODES = ['Sweep SHN']
-    SPECA_DEFAULTS = dict(WSA5000_208Properties.SPECA_DEFAULTS,
-        mode='Sweep SHN')
-    IQ_OUTPUT_CONNECTOR = False
-
+###
+# properties for a WSA5000-308
+#
 class WSA5000_308Properties(WSA5000_108Properties):
     model = 'WSA5000-308'
 
 
-class WSA5000_208_v2Properties(WSA5000_220_v2Properties, WSA5000_208Properties):
-    model = 'WSA5000-208 v2'
-
-class WSA5000_408Properties(WSA5000_208Properties):
+###
+# properties for a WSA5000-408
+#
+class WSA5000_408Properties(WSA5000Properties):
     model = 'WSA5000-408'
     SATURATION_LEVEL = -10.0
 
-    RFE_MODES = ('SH', 'SHN','ZIF', 'HDR', 'DD')
+    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
 
+
+###
+# properties for WSA5000-418
+#
+class WSA5000_418Properties(WSA5000_408Properties):
+    model = 'WSA5000-418'
+    CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 18000*M)
+
+    # add psfm settings
+    SWEEP_SETTINGS = list(WSA5000Properties.SWEEP_SETTINGS) + [ 'var_attenuator', 'psfm_gain' ]
+    SWEEP_SETTINGS.remove('attenuator')
+
+    # max frequency is 18 GHz
+    MAX_TUNABLE = dict(WSA5000Properties.MAX_TUNABLE, 
+            ZIF = 18000 * M, 
+            HDR = 18000 * M,
+            SH = 18000 * M,
+            SHN = 18000 * M,
+    )
+
+
+###
+# properties for a WSA5000-427
+#
+class WSA5000_427Properties(WSA5000_418Properties):
+    model = 'WSA5000-427'
+    CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 27000*M)
+    SATURATION_LEVEL = -17.0
+
+    # max frequency is 27 GHz
+    MAX_TUNABLE = dict(WSA5000Properties.MAX_TUNABLE, 
+            ZIF = 27000 * M, 
+            HDR = 27000 * M,
+            SH = 27000 * M,
+            SHN = 27000 * M,
+    )
+
+
+###
+# properties for a WSA5000-408P
+#
+class WSA5000_408PProperties(WSA5000_427Properties):
+    model = 'WSA5000-408P'
+
+    CAPTURE_FREQ_RANGES = [(50*M, 8000*M, IQ)]
+    SWEEP_FREQ_RANGE = (100*M, 8000*M)
+    SATURATION_LEVEL = -10.0
+
+    # max frequency is 8 GHz
+    MAX_TUNABLE = dict(WSA5000_427Properties.MAX_TUNABLE, 
+            ZIF = 8000 * M, 
+            HDR = 8000 * M,
+            SH = 8000 * M,
+            SHN = 8000 * M,
+    )
+
+
+###
+# properties for a R5500-408
+#
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'
     MIN_FREQ = 9e3
@@ -305,124 +358,49 @@ class R5500_408Properties(WSA5000_408Properties):
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    DEFAULT_SPECA_SPAN = WSA5000_408Properties.MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = {
-        'mode': 'Sweep SH',
-        'center': 4000.0 * M,
-        'rbw': 250.0e3,
-        'span': DEFAULT_SPECA_SPAN,
-        'decimation': 1,
-        'fshift': 0.0,
-        'device_settings': {
-            'attenuator': 30.0,
-            'var_attenuator': 17.0,
-            'psfm_gain': 'high',
-            'iq_output_path': 'DIGITIZER',
-            'hdr_gain': 25.0,
-            'pll_reference': 'INT',
-            'trigger': {'type': 'NONE',
-                        'fstart': 2440.0 * M,
-                        'fstop': 2460 * M,
-                        'amplitude': -100.0},
-            },
-        'device_class': 'thinkrf.WSA',
-        'device_identifier': 'unknown',
-        }
         
 
-class WSA5000_427Properties(WSA5000_220Properties):
-    model = 'WSA5000-427'
-    # 427 -> increased to 27GHz
-    CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
-    SWEEP_FREQ_RANGE = (100*M, 27000*M)
-    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
-    SATURATION_LEVEL = -17.0
-
-    # 427 model has no attenuation
-    SWEEP_SETTINGS = ['var_attenuator','psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'hdr_gain', 'spp', 'ppb',
-        'dwell_s', 'dwell_us',
-        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    MAX_TUNABLE = dict((mode, max(27000*M, f))
-        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 13525 * M)
-
-class WSA5000_418Properties(WSA5000_220Properties):
-    model = 'WSA5000-418'
-    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
-    # 418 -> decreased to 18GHz
-    CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
-    SWEEP_FREQ_RANGE = (100*M, 18000*M)
-    SATURATION_LEVEL = -10.0
-    SWEEP_SETTINGS = ['var_attenuator', 'psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'hdr_gain', 'spp', 'ppb',
-        'dwell_s', 'dwell_us',
-        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-
-
-    MAX_TUNABLE = dict((mode, 18000*M)
-        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 9025 * M)
-
+###
+# properties for R5500-418
+#
 class R5500_418Properties(R5500_408Properties):
     model = 'R5500-418'
 
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
-    MAX_TUNABLE = dict((mode, 18000*M)
+
+    SWEEP_SETTINGS = list(R5500_408Properties.SWEEP_SETTINGS) + [ 'var_attenuator', 'psfm_gain' ]
+    SWEEP_SETTINGS.remove('attenuator')
+
+    # max frequency is 18 GHz
+    MAX_TUNABLE = dict(R5500_408Properties.MAX_TUNABLE, 
+            ZIF = 18000 * M, 
+            HDR = 18000 * M,
+            SH = 18000 * M,
+            SHN = 18000 * M,
+    )
+        
     
-        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'hdr_gain', 'psfm_gain', 'spp', 'ppb',
-        'dwell_s', 'dwell_us',
-        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    DEFAULT_SPECA_SPAN = WSA5000_418Properties.MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(R5500_408Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 9000 * M)
-        
-        
+###
+# properties for R5500-427
+#
 class R5500_427Properties(R5500_408Properties):
     model = 'R5500-427'
     CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 27000*M)
-    MAX_TUNABLE = dict((mode, 27000*M)
-        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'attenuator', 'hdr_gain', 'psfm_gain', 'spp', 'ppb',
-        'dwell_s', 'dwell_us',
-        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
-    DEFAULT_SPECA_SPAN = WSA5000_427Properties.MAX_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(R5500_408Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 13500 * M)
-        
-class WSA5000_408PProperties(WSA5000_220Properties):
-    model = 'WSA5000-408P'
-    RFE_MODES = ('SH', 'SHN', 'ZIF', 'HDR', 'DD')
-    # 418 -> decreased to 18GHz
-    CAPTURE_FREQ_RANGES = [(50*M, 8000*M, IQ)]
-    SWEEP_FREQ_RANGE = (100*M, 8000*M)
-    SATURATION_LEVEL = -10.0
-    SWEEP_SETTINGS = ['var_attenuator', 'psfm_gain', 'rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
-        'decimation', 'hdr_gain', 'spp', 'ppb',
-        'dwell_s', 'dwell_us',
-        'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+
+    # max frequency is 27 GHz
+    MAX_TUNABLE = dict(R5500_408Properties.MAX_TUNABLE, 
+            ZIF = 27000 * M, 
+            HDR = 27000 * M,
+            SH = 27000 * M,
+            SHN = 27000 * M,
+    )
 
 
-    MAX_TUNABLE = dict((mode, 8000*M)
-        for mode, f in WSA5000_220Properties.MAX_TUNABLE.iteritems())
-    DEFAULT_SPECA_SPAN = MAX_TUNABLE['SHN'] - WSA5000_220Properties.MIN_TUNABLE['SHN']
-    SPECA_DEFAULTS = dict(WSA5000_220Properties.SPECA_DEFAULTS,
-        span= DEFAULT_SPECA_SPAN,
-        center = 4000 * M)
-        
+###
+# properties for BNC whitelabeled devices
+#
 class BNC_RTSA75008_Properties(WSA5000_408Properties):
     model = 'RTSA7500-8'
     manufacturer = 'Berkley Nucleonics'
