@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import sys
-from pyrf.devices.thinkrf import WSA4000
+from pyrf.devices.thinkrf import WSA
 from pyrf.connectors.twisted_async import TwistedConnector
 
 from twisted.internet import reactor, defer
 import twisted.python.log
 
 # connect to wsa
-dut = WSA4000(connector=TwistedConnector(reactor))
+dut = WSA(connector=TwistedConnector(reactor))
 
 @defer.inlineCallbacks
 def show_i_q():

@@ -21,7 +21,7 @@ Windows Setup
 
 **2. Install Dependencies**
 
-These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ software to install required libraries.
+These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ software to install required libraries  Open a command prompt window and type **pip**, if a help menu appears, **pip** is already in your system.  If pip has not yet been installed, follow these instructions:
 
 * Download `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_ (right mouse click and save)
 * Open a command prompt window, navigate to get-pip.py and run::
@@ -30,10 +30,12 @@ These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(pa
 
 * Now use **pip** to install the dependencies by typing into the command prompt window::
 
-    pip install numpy scipy pyside pyqtgraph twisted zope.interface setuptools pywin32
+    pip install numpy scipy pyqtgraph twisted zope.interface setuptools pywin32
     pip install netifaces
 
 **Note**: When installing **netifaces**, **MS Visual C++ 9.0** is required, follow the recommended instruction, such as ``error: Microsoft Visual C++ 9.0 is required. Get it from http://aka.ms/vcpython27``
+
+* Download **pyside v1.2.2** (not the latest) from https://download.qt.io/official_releases/pyside/ and install
 
 * To install **qtreactor**, choose one of the following option:
  - If you have `git <https://git-scm.com/>`_, run::

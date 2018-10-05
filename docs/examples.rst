@@ -85,7 +85,7 @@ pyqtgraph_plot_sweep.py
 
 This example connects to a device with IP specified on the command line,
 and makes use of sweep_device.py to perform a single sweep entry
-monitoring and plot FFT results in a GUI window using pyqtgraph_.
+monitoring and plot FFT results in a GUI window using 'pyqtgraph_.
 
 .. _pyqtgraph: http://pyqtgraph.org/
 

@@ -107,19 +107,6 @@ pyrf.devices
 
 .. autofunction:: parse_discovery_response(response)
 
-pyrf.sweep_device
------------------
-
-.. automodule:: pyrf.sweep_device
-   :members:
-   :undoc-members:
-
-pyrf.capture_device
--------------------
-
-.. automodule:: pyrf.capture_device
-   :members:
-   :undoc-members:
 
 pyrf.connectors
 ---------------
@@ -129,7 +116,9 @@ pyrf.connectors
 
 .. automodule:: pyrf.connectors.blocking
    :members:
-   :undoc-members:
+   # :undoc-members:
+   :no-undoc-members:
+   :exclude-members:
 
 .twisted_async
 ~~~~~~~~~~~~~~
@@ -138,6 +127,23 @@ pyrf.connectors
    :members:
    :undoc-members:
 
+
+pyrf.capture_device
+-------------------
+
+.. automodule:: pyrf.capture_device
+    :members:
+    :undoc-members:
+
+
+pyrf.sweep_device
+-----------------
+
+.. automodule:: pyrf.sweep_device
+   :members:
+   :undoc-members:
+
+
 pyrf.config
 -----------
 
@@ -145,12 +151,14 @@ pyrf.config
    :members:
    :undoc-members:
 
+
 pyrf.numpy_util
 ---------------
 
 .. automodule:: pyrf.numpy_util
    :members:
    :undoc-members:
+
 
 pyrf.util
 ---------
@@ -160,6 +168,7 @@ pyrf.util
 .. autofunction:: pyrf.util.read_data_and_context
 
 .. autofunction:: pyrf.util.collect_data_and_context
+
 
 pyrf.vrt
 --------

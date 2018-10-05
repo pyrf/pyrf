@@ -8,7 +8,7 @@ PyRF 2.9.0
 
 2018-09-04
 
- * Added GPS support for R5700 RTSA products including VRT GPS context packet
+ * Added GNSS support for R5700 RTSA products including VRT GNSS context packet
  * Added support for R5500 products
  * Added flush and reset to capture setup
  * Added calibrate_time_domain() function for a given time-domain data point

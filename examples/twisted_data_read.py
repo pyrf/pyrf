@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+#####################################################################
+## This example shows an example of stream capture
+## See the product's Programmer's Guide for info on Stream feature
+#####################################################################
+
+
 # import required libraries
 import sys
 import numpy as np
@@ -12,7 +18,7 @@ from twisted.internet import reactor, defer
 import twisted.python.log
 
 # plot constants
-CENTER_FREQ = 2450 * 1e6 
+CENTER_FREQ = 2450 * 1e6
 SAMPLE_SIZE = 1024
 ATTENUATOR = 0
 DECIMATION = 1
@@ -45,12 +51,12 @@ def show_i_q():
 
     yield dut.trigger(TRIGGER_SET)
     printer = VRT_PRINTER()
-    
+
     dut.connector.vrt_callback = printer.print_packet
-    
+
     # capture 1 packet
     yield dut.stream_start()
-    
+
 def stopStreaming():
     print 'stopped stream'
     dut.stream_stop()
