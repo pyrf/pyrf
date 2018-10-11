@@ -25,7 +25,7 @@ from pyrf.version import __version__
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'rst2pdf.pdfbuilder']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -182,7 +182,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'PyRF.tex',
-   u'API for RF receivers including ThinkRF RTSA platform',
+   u'API for RF receivers including ThinkRF RTSA platforms',
    u'ThinkRF Corporation', 'manual'),
 ]
 
@@ -206,15 +206,13 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-pdf_documents = [('index', u'rst2pdf', u'pyRF API Documentation', u'ThinkRF')]
-
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pyrf',
-     u'API for RF receivers including ThinkRF RTSA platform',
+     u'API for RF receivers including ThinkRF RTSA platforms',
      [u'ThinkRF Corporation'], 1)
 ]
 
@@ -230,7 +228,7 @@ man_pages = [
 texinfo_documents = [
   ('index', 'PyRF', u'PyRF Documentation',
    u'ThinkRF Corporation', 'PyRF',
-   'API for RF receivers including ThinkRF RTSA platform',
+   'API for RF receivers including ThinkRF RTSA platforms',
    'Miscellaneous'),
 ]
 

@@ -1,6 +1,6 @@
+pip==18.1
 scipy
 numpy
-PySide==1.2.2
 zope.interface
 twisted
 -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
