@@ -6,7 +6,7 @@ Change Logs
 PyRF 2.9.0
 ----------
 
-2018-09-04
+2018-10-02
 
  * Added GNSS support for R5700 RTSA products including VRT GNSS context packet
  * Added support for R5500 products
@@ -15,6 +15,7 @@ PyRF 2.9.0
  * Added calculate_occupied_bw() function for a given spectrum and occupied percentage
  * Added more examples
  * Refactored sweep_device functions
+ * Restructured ThinkRF device properties and removed deprecated ones
  * Improved IQ offset algorithm
  * Enabled "100 kHz span" (HDR mode) for R5500 products
  * Enabled trigger feature

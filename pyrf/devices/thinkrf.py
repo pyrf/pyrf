@@ -65,7 +65,7 @@ class WSA(object):
 
     def inject_recording_state(self, state):
         """
-        Inject the current speca state into the recording stream when
+        Inject the current RTSA state into the recording stream when
         the next capture is received.  Replaces previous data if not
         yet sent.
         """
@@ -94,11 +94,10 @@ class WSA(object):
 
     def scpiset(self, cmd):
         """
-        Send a SCPI command.
+        Send a SCPI command of set type (i.e. not query command).
 
-        This is the lowest-level interface provided.
-        Please see the Programmer's Guide for information about
-        the commands available.
+        This is the lowest-level interface provided.  See the product's
+        Programmer's Guide for the SCPI commands available.
 
         :param cmd: the command to send
         :type cmd: str
@@ -107,11 +106,10 @@ class WSA(object):
 
     def scpiget(self, cmd):
         """
-        Send a SCPI command and wait for the response.
+        Send a SCPI *query* command and wait for the response.
 
-        This is the lowest-level interface provided.
-        Please see the Programmer's Guide for information about
-        the commands available.
+        This is the lowest-level interface provided.  See the product's
+        Programmer's Guide for the SCPI commands available.
 
         :param cmd: the command to send
         :type cmd: str

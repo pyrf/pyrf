@@ -18,7 +18,7 @@ Example output:
 
 .. code-block:: none
 
-   R5500-427 180601-661 1.5.0 10.126.110.133
+   R5700-427 180601-661 1.5.0 10.126.110.133
    R5500-408 171212-007 1.5.0 10.126.110.123
    R5500-418 180522-659 1.4.8 10.126.110.104
 
@@ -74,9 +74,7 @@ pyqtgraph_plot_block.py
 
 This example connects to a device with IP specified on the command line,
 tunes it to a center frequency of 2.450 MHz then continually captures
-and displays an FFT in a GUI window using pyqtgraph_.
-
-.. _pyqtgraph: http://pyqtgraph.org/
+and displays an FFT in a GUI window using `pyqtgraph <http://pyqtgraph.org/>`_.
 
 * `pyqtgraph_plot_block.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_block.py>`_
 
@@ -85,8 +83,6 @@ pyqtgraph_plot_sweep.py
 
 This example connects to a device with IP specified on the command line,
 and makes use of sweep_device.py to perform a single sweep entry
-monitoring and plot FFT results in a GUI window using 'pyqtgraph_.
-
-.. _pyqtgraph: http://pyqtgraph.org/
+monitoring and plot FFT results in a GUI window using `pyqtgraph <http://pyqtgraph.org/>`_.
 
 * `pyqtgraph_plot_sweep.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_sweep.py>`_

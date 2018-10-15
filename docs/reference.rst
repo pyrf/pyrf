@@ -116,16 +116,15 @@ pyrf.connectors
 
 .. automodule:: pyrf.connectors.blocking
    :members:
-   # :undoc-members:
    :no-undoc-members:
-   :exclude-members:
+   :exclude-members: sync_async
 
 .twisted_async
 ~~~~~~~~~~~~~~
 
 .. automodule:: pyrf.connectors.twisted_async
    :members:
-   :undoc-members:
+   :no-undoc-members:
 
 
 pyrf.capture_device

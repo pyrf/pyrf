@@ -21,7 +21,7 @@ Windows Setup
 
 **2. Install Dependencies**
 
-These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ software to install required libraries  Open a command prompt window and type **pip**, if a help menu appears, **pip** is already in your system.  If pip has not yet been installed, follow these instructions:
+These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ software to install required libraries.  Open a command prompt window and type **pip**, if a help menu appears, **pip** is already in your system.  If **pip** has not yet been installed, follow these instructions:
 
 * Download `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_ (right mouse click and save)
 * Open a command prompt window, navigate to get-pip.py and run::
@@ -30,19 +30,20 @@ These installation steps make use of `pip <https://en.wikipedia.org/wiki/Pip_(pa
 
 * Now use **pip** to install the dependencies by typing into the command prompt window::
 
-    pip install numpy scipy pyqtgraph twisted zope.interface setuptools pywin32
+    pip install numpy scipy pyside==1.2.2 pyqtgraph twisted zope.interface setuptools pywin32
     pip install netifaces
 
-**Note**: When installing **netifaces**, **MS Visual C++ 9.0** is required, follow the recommended instruction, such as ``error: Microsoft Visual C++ 9.0 is required. Get it from http://aka.ms/vcpython27``
-
-* Download **pyside v1.2.2** (not the latest) from https://download.qt.io/official_releases/pyside/ and install
+**Notes:**
+ - **pySide v1.2.2** is needed, not the latest
+ - When installing **netifaces**, **MS Visual C++ 9.0** is required, follow the recommended instruction, such as ``error: Microsoft Visual C++ 9.0 is required. Get it from http://aka.ms/vcpython27``
 
 * To install **qtreactor**, choose one of the following option:
+
  - If you have `git <https://git-scm.com/>`_, run::
 
     pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
 
- - Otherwise, download **qtreactor folder???** to your computer, then go to `qtreactor-qtreactor-pyrf-1.0` folder, and type::
+ - Otherwise, download `qtreactor-pyrf-1.0 <https://github.com/pyrf/qtreactor/releases>`_ to your computer, unzip and then go into the extracted folder in a command prompt window and type::
 
     python setup.py install
 
@@ -52,13 +53,13 @@ Continue with :ref:`pyrf-installation` below.
 Linux Setup
 ~~~~~~~~~~~
 
-These instructions are tested on Debian/Ubuntu system, equivalent ``apt-get`` command might be needed for your system
+These instructions are tested on Debian/Ubuntu system, equivalent **apt-get** command might be needed for your system.
 
 * Install **python2.7** package if not already available in your system
 * Install required libraries (sudo privilege might be needed)::
 
     apt-get install pip
-    pip install numpy scipy pyside pyqtgraph twisted netifaces zope.interface setuptools
+    pip install numpy scipy pyside==1.2.2 pyqtgraph twisted netifaces zope.interface setuptools
     pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
 
 * Or install dependencies from source::
@@ -68,6 +69,7 @@ These instructions are tested on Debian/Ubuntu system, equivalent ``apt-get`` co
     export ATLAS=/usr/lib/atlas-base/libatlas.so
     export LAPACK=/usr/lib/lapack/liblapack.so
     pip install -r requirements.txt
+    pip install pyside==1.2.2
 
 Continue with :ref:`pyrf-installation` below.
 
@@ -100,7 +102,8 @@ Programmer's Guide (available on
 `ThinkRF Resources <http://www.thinkrf.com/resources>`_).
 
 There are simple examples illustrating usage of this API under the `examples`
-directory included with the source code directory.
+directory included with the source code directory.  Some are mentioned in the
+:doc:`examples` section of this document .
 
 This API may be used in a **blocking** mode (the default) or in an **asynchronous**
 mode with using the `Twisted <https://twistedmatrix.com/>`_ python library.
@@ -112,10 +115,10 @@ In **asynchronous** mode, all methods will send their commands to the device and
 then immediately return a Twisted Deferred object.  If you need to wait for
 the response or completion of this command, you can attach a callback to the
 Deferred object and the Twisted reactor will call it when ready.  You may
-choose to use Twisted's inlineCallbacks function decorator to write Twisted
+choose to use Twisted's ``inlineCallbacks`` function decorator to write Twisted
 code that resembles synchronous code by yielding the Deferred objects
 returned from the API.
 
-To use the **asynchronous**, when a WSA instance (ex. ``dut = WSA()``) is created,
+To use the **asynchronous**, when a WSA instance of a device (ex. ``dut = WSA()``) is created,
 you must pass a :class:`pyrf.connectors.twisted_async.TwistedConnector`
 instance as the connector parameter, as shown in :ref:`twisted-show-i-q`
