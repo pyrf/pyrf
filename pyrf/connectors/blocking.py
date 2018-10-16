@@ -32,10 +32,41 @@ class PlainSocketConnector(object):
     def scpiget(self, cmd):
         cmd = "%s\n" % cmd
         logger.debug('scpiset %r', cmd)
+
+        # send the command
         self._sock_scpi.send(cmd)
+
+        # read the reply (or atleast some of it)
         buf = self._sock_scpi.recv(1024)
-        logger.debug('scpigot %r', buf)
-        return buf
+
+        # test the first character to see if this is ascii or block data
+        if buf[0] != '#':
+            # ascii response, just return it
+            logger.debug('scpigot %r', buf)
+            return buf
+
+        #
+        # first character is '#', so it's block data
+        #
+
+        # parse the number of digits
+        numlen = int(buf[1])
+
+        # now parse the actual block len
+        blocklen = int(buf[2:2 + numlen])
+
+        # figure out how much we have already
+        lenread = len(buf) - 2 - numlen
+
+        # read bytes until we get all of it
+        blockbuf = buf[2 + numlen:]
+        while lenread < blocklen:
+            buf = self._sock_scpi.recv(blocklen - lenread)
+            blockbuf += buf
+            lenread += len(buf)
+
+        # that's all our bytes, return the byte string for them to deal with
+        return blockbuf
 
     def eof(self):
         # FIXME: lies
