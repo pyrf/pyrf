@@ -20,7 +20,7 @@ DISCOVERY_QUERY = struct.pack(_DISCOVERY_QUERY_FORMAT,
 
 class WSA(object):
     """
-    Interface for ThinkRF's R5500, R5700, and WSA5000 (EOL)
+    Interface for ThinkRF's R5500, R5700, and WSA5000 (EOL).
 
     :param connector: Connector object to use for SCPI/VRT connections,
         defaults to a new
@@ -34,7 +34,7 @@ class WSA(object):
        The following methods will either block then return a result
        or if you passed a
        :class:`TwistedConnector <pyrf.connectors.twisted_async.TwistedConnector>`
-       instance to the constructor they will immediately return a
+       instance to the constructor, they will immediately return a
        Twisted Deferred object.
 
     """
@@ -516,7 +516,7 @@ class WSA(object):
 
     def read_data(self, spp):
         """
-        Return data packet of *spp* size, the associated context info and the computed power spetral data.
+        Return data packet of *spp* (samples per packet) size, the associated context info and the computed power spetral data.
 
         :param spp: the number of samples in a packet
         :returns: data class, context dictionary, and power spectral data array

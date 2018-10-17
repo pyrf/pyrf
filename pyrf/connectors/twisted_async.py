@@ -30,7 +30,7 @@ class TwistedConnectorError(Exception):
 class TwistedConnector(object):
     """
     A connector that makes SCPI/VRT connections asynchronously using
-    Twisted.
+    Twisted method.
 
     A callback may be assigned to vrt_callback that will be called
     with VRT packets as they arrive.  When .vrt_callback is None
@@ -97,7 +97,7 @@ class TwistedConnector(object):
 
 class VRTClient(Protocol):
     """
-    A Twisted protocol for the VRT connection
+    A Twisted protocol for the VRT connection.
 
     :param receive_callback: a function that will be passed a vrt
         DataPacket or ContextPacket when it is received
@@ -256,7 +256,7 @@ class SCPIClient(Protocol):
         return d
 
     def dataReceived(self, data):
-        
+
         # The firmware sometimes sends an extra query unexpectedly TODO FIX THIS ISSUE IN FIRMWARE
         if not len(self._pending) > 0:
             return
@@ -284,4 +284,3 @@ class SCPIClientFactory(Factory):
         pass
     def clientConnectionFailed(self, connector, reason):
         pass
-

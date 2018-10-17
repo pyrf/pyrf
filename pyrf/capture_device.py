@@ -13,10 +13,10 @@ class CaptureDevice(object):
     """
     Virtual device that returns power levels generated from a single data packet
 
-    :param real_device: device that will will be used for capturing data,
+    :param real_device: the device that will be used for capturing data,
                         typically a :class:`pyrf.thinkrf.WSA` instance.
     :param async_callback: callback to use for async operation (not used if
-                           real_device is using a :class:`PlainSocketConnector`)
+                           *real_device* is using a blocking :class:`PlainSocketConnector`)
     :param device_settings: initial device settings to use, passed to
                             :meth:`pyrf.capture_dvice.CaptureDevice.configure_device`
                             if given
@@ -47,9 +47,10 @@ class CaptureDevice(object):
         """
         Configure the device settings on the next capture
 
-        :param device_settings: attenuator, decimation frequency shift
-                                and other device settings
-        :type dict:
+        :param device_settings: rfe mode, attenuation, decimation and other device settings
+        :type device_settings: dict
+        :param force_change: force the configuration to apply device_settings changes or not
+        :type force_change: bool
         """
         real_func = getattr(self.real_device, "apply_device_settings", None)
         if callable(real_func):
@@ -63,15 +64,18 @@ class CaptureDevice(object):
         Initiate a capture of raw time domain IQ or I-only data
 
         :param rfe_mode: radio front end mode, e.g. 'ZIF', 'SH', ...
-        :param freq: center frequency
-        :param rbw: requested RBW in Hz (output RBW may be smaller than
-                    requested)
+        :type rfe_mode: string
+        :param freq: center frequency in Hz to set
+        :type freq: float
+        :param rbw: the resolution bandwidth (RBW) in Hz of the data to be captured
+                    (output RBW may be smaller than requested)
         :type rbw: float
-        :param device_settings: attenuator, decimation frequency shift
-                                and other device settings
-        :type dict:
-        :param min_points: smallest number of points per capture from real_device
+        :param device_settings: rfe_mode, freq, decimation, fshift and other device settings
+        :type device_settings: dict
+        :param min_points: smallest number of data points per capture from the device
         :type min_points: int
+        :param force_change: force the configuration to apply device_settings changes or not
+        :type force_change: bool
         """
 
         prop = self.real_device.properties
@@ -82,7 +86,7 @@ class CaptureDevice(object):
         self.configure_device(dict(
             freq=freq,
             rfe_mode=rfe_mode,
-            **(device_settings if device_settings else {})), force_change) 
+            **(device_settings if device_settings else {})), force_change)
 
         full_bw = prop.FULL_BW[rfe_mode]
 
@@ -90,14 +94,14 @@ class CaptureDevice(object):
         self._data_packets = []
 
         self.points = round(full_bw / rbw)
-        
+
         if prop.DEFAULT_SAMPLE_TYPE[rfe_mode] == I_ONLY:
             self.points  *= 2
-        
+
         self.points = round(max(min_points, self.points))
-        
+
         self.points, self.packets_per_block = compute_spp_ppb(self.points, prop)
-        
+
         fshift = self._device_set.get('fshift', 0)
         decimation = self._device_set.get('decimation', 1)
         self.usable_bins = compute_usable_bins(prop, rfe_mode, (self.points * self.packets_per_block),

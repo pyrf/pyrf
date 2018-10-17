@@ -14,14 +14,13 @@ MAXIMUM_SPP = 32768
 
 class SweepDeviceError(Exception):
     """
-    exception for the sweep device to state an error()
-    has occured
+    Exception for the sweep device to state an error() has occured
     """
     pass
 
 class SweepSettings(object):
     """
-    An object used to keep track of the sweep sweep setting
+    An object used to keep track of the sweep settings
     """
 
     def __init__(self):
@@ -39,7 +38,7 @@ class SweepSettings(object):
 
         # sweep entry frequency step
         self.fstep = 0.0
-        
+
         # sweep entry's RFE mode
         self.rfe_mode = None
 
@@ -66,7 +65,7 @@ class SweepSettings(object):
 
         # determines if a sweep entry is required at the end
         self.make_end_entry = False
-        
+
         # determine the frequency of the end entry
         self.end_entry_freq = 0.0
 
@@ -83,6 +82,9 @@ class SweepSettings(object):
 class SweepPlanner(object):
     """
     An object that plans a sweep based on  given paramaters.
+
+    :param dev_prop: the sweep device properties
+    :type dev_prop: dict
     """
 
     def __init__(self, dev_prop):
@@ -169,7 +171,7 @@ class SweepPlanner(object):
             sweep_settings.step_count += required_steps
 
         # make sure fstop is lower than max tunable
-        # - it can sometimes be higher if an fstart is chosen, such that our 
+        # - it can sometimes be higher if an fstart is chosen, such that our
         #   fstep causes our fstop to go beyond fmax to cover all the band required
         sweep_settings.make_end_entry = False
         sweep_settings.end_entry_freq = 0
@@ -184,20 +186,19 @@ class SweepPlanner(object):
         # calculate the expected number of spectral bins required for the SweepEntry
         sweep_settings.spectral_points = int(round((sweep_settings.bandstop - sweep_settings.bandstart) / sweep_settings.rbw))
 
-        # return the sweep sweep_settings
+        # return the sweep_settings
         return sweep_settings
 
 
 class SweepDevice(object):
     """
-    Virtual device that generates power levels from a range of
-    frequencies by sweeping the frequencies with a real device
-    and piecing together FFT results.
+    Virtual device that generates power spectrum from a given frequency range
+    by sweeping the frequencies with a real device and piecing together the FFT results.
 
-    :param real_device: device that will will be used for capturing data,
+    :param real_device: the RF device that will be used for capturing data,
                         typically a :class:`pyrf.devices.thinkrf.WSA` instance.
-    :param callback: callback to use for async operation (not used if
-                     real_device is using a :class:`PlainSocketConnector`)
+    :param async_callback: a callback to use for async operation (not used if
+                     *real_device* is using a blocking :class:`PlainSocketConnector`)
     """
     # keep track of the mode
     rfe_mode = None
@@ -226,6 +227,7 @@ class SweepDevice(object):
     spectral_data = []
 
     capture_count = 0
+
     def __init__(self, real_device, async_callback=None):
 
         # init log string
@@ -268,6 +270,7 @@ class SweepDevice(object):
         # init last finished (technically, it hasn't finished, but for our purposes, it has)
         self._last_finished = True
 
+    # Private function
     def log(self, firstmsg, *msgs):
         if self.logtype == 'LOG':
             self.logstr += firstmsg.__str__()
@@ -291,32 +294,35 @@ class SweepDevice(object):
                                mode='SH',
                                continuous=False):
         """
-        Initiate a capture of power spectral density by
-        setting up a sweep list and starting a single sweep.
-        - This function does not pipeline, and if the last sweep isn't
-          received before starting a new one, it will generate a failure
+        Initiate a data capture from the *real_device* by setting up a sweep list
+        and starting a single sweep, and then return power spectral density data
+        along with the **actual** sweep start and stop frequencies set (which
+        might not be exactly the same as the requested *fstart* and *fstop*).
 
-        :param fstart: starting frequency in Hz
+        .. note:: This function does not pipeline, and if the last sweep isn't received before starting a new one, it will generate a failure.
+
+        :param fstart: sweep starting frequency in Hz
         :type fstart: float
-        :param fstop: ending frequency in Hz
+        :param fstop: sweep ending frequency in Hz
         :type fstop: float
-        :param rbw: requested RBW in Hz (output RBW may be smaller than
-                    requested)
+        :param rbw: the resolution bandwidth (RBW) in Hz of the data to be captured (output RBW may be smaller than requested)
         :type rbw: float
-        :param device_settings: attenuation and other settings
-        :type dict:
+        :param device_settings: attenuation and other device settings
+        :type device_settings: dict
         :param mode: sweep mode, 'ZIF', 'SH', or 'SHN'
         :type mode: string
-        :param continuous: do a sweep with the same config as before
+        :param continuous: set sweep to be continuously or not (once only)
         :type continuous: bool
+
+        :returns: fstart, fstop, power_data
         """
 
         self.log("- capture_power_spectrum", fstart, fstop, rbw, device_settings, mode, continuous)
-        
+
         if continuous and not self.async_callback:
             raise SweepDeviceError(
                 "continuous mode only applies to async operation")
- 
+
         # see if the last sweep has finished
         if not self._last_finished:
             raise SweepDeviceError(
@@ -328,8 +334,8 @@ class SweepDevice(object):
             self._next_sweep_id += 1
         else:
             self._next_sweep_id = 0
-            
-        # keep track if this is a continoued swee
+
+        # keep track if this is a continuous sweep
         self.continuous = continuous
 
         # plan the sweep
@@ -340,7 +346,7 @@ class SweepDevice(object):
         # remember our last sweep for optimization purposes
         self._last_sweep = (fstart, fstop, rbw, mode, device_settings, continuous)
 
-        # configure the device with the sweep sweep_settings
+        # configure the device with the sweep_settings
         self.real_device.sweep_clear()
         self.real_device.sweep_add(self._sweep_settings)
 

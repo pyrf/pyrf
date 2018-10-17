@@ -67,6 +67,8 @@ pyrf.devices
 
    .. automethod:: read()
 
+   .. automethod:: read_data(spp)
+
    .. automethod:: request_read_perm()
 
    .. automethod:: reset()
@@ -119,6 +121,7 @@ pyrf.connectors
    :no-undoc-members:
    :exclude-members: sync_async
 
+
 .twisted_async
 ~~~~~~~~~~~~~~
 
@@ -131,8 +134,8 @@ pyrf.capture_device
 -------------------
 
 .. automodule:: pyrf.capture_device
-    :members:
-    :undoc-members:
+   :members:
+   :no-undoc-members:
 
 
 pyrf.sweep_device
@@ -140,7 +143,8 @@ pyrf.sweep_device
 
 .. automodule:: pyrf.sweep_device
    :members:
-   :undoc-members:
+   :no-undoc-members:
+   :exclude-members: plan_sweep
 
 
 pyrf.config

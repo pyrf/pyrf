@@ -41,7 +41,9 @@ def vrt_packet_reader(raw_read):
     Read a VRT packet, parse it and return an object with its data.
 
     Implemented as a generator that yields the result of the passed
-    raw_read function and accepts the value sent as its data.
+    *raw_read* function and accepts the value sent as its data.
+
+    :param raw_read: a function of raw data??
     """
     tmpstr = yield raw_read(4)
     if not tmpstr:
@@ -424,4 +426,3 @@ def generate_speca_packet(data, count=0):
         VRTSPECA,
         )
     return ''.join((header, payload, padding)), (count + 1) & 0x0f
-
