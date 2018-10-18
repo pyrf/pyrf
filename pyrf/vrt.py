@@ -43,7 +43,7 @@ def vrt_packet_reader(raw_read):
     Implemented as a generator that yields the result of the passed
     *raw_read* function and accepts the value sent as its data.
 
-    :param raw_read: a function of raw data??
+    :param list raw_read: VRT packet of raw data (bytes)
     """
     tmpstr = yield raw_read(4)
     if not tmpstr:
@@ -74,7 +74,14 @@ def vrt_packet_reader(raw_read):
 
 class ContextPacket(object):
     """
-    A Context Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`
+    A Context Packet received from :meth:`pyrf.devices.thinkrf.WSA.read`.
+    See VRT section of the product's Programmer's Guide for more information.
+
+    :param packet_type: VRT packet type
+    :param count: VRT packet counter (see VRT protocol)
+    :param int size: The VRT packet size, less headers and trailer words
+    :param tmpstr: hold the raw data for parsing
+    :param bool has_timestamp: to indicate timestamp is available with the packet
 
     .. attribute:: fields
 
@@ -217,16 +224,17 @@ class ContextPacket(object):
 
     def is_data_packet(self):
         """
+        To indicate this VRT packet is not of data type as it's a ContextPacket
+
         :returns: False
         """
         return False
 
     def is_context_packet(self, ptype=None):
         """
-        :param ptype: "Receiver", "Digitizer" or None for any
-        packet type
+        :param str ptype: "Receiver", "Digitizer" or None for any packet type
 
-        :returns: True if this packet matches the type passed
+        :returns: True if this packet matches the *ptype* passed
         """
         if ptype is None:
             return True
@@ -247,8 +255,7 @@ class ContextPacket(object):
 
 class IQData(object):
     """
-    Data Packet values as a lazy collection of (I, Q) tuples
-    read from *binary_data*.
+    Data Packet values as a lazy collection of (I, Q) tuples read from *binary_data*.
 
     This object behaves as an immutable python sequence, e.g.
     you may do any of the following:
@@ -297,7 +304,7 @@ class IQData(object):
 
     def numpy_array(self):
         """
-        Return a numpy array of I, Q values for this data similar to:
+        Return a numpy array of I, Q values for this data
         """
         return self.np_array
 
@@ -413,7 +420,7 @@ class DataPacket(object):
 def generate_speca_packet(data, count=0):
     """
     :param data: a python dict that can be serialized as JSON
-    :param count: int count for the header of this packet
+    :param int count: count for the header of this packet
 
     :returns: (vrt packet bytes, next count int)
     """

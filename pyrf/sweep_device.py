@@ -301,18 +301,13 @@ class SweepDevice(object):
 
         .. note:: This function does not pipeline, and if the last sweep isn't received before starting a new one, it will generate a failure.
 
-        :param fstart: sweep starting frequency in Hz
-        :type fstart: float
-        :param fstop: sweep ending frequency in Hz
-        :type fstop: float
-        :param rbw: the resolution bandwidth (RBW) in Hz of the data to be captured (output RBW may be smaller than requested)
-        :type rbw: float
+        :param int fstart: sweep starting frequency in Hz
+        :param int fstop: sweep ending frequency in Hz
+        :param float rbw: the resolution bandwidth (RBW) in Hz of the data to be captured (output RBW may be smaller than requested)
         :param device_settings: attenuation and other device settings
         :type device_settings: dict
-        :param mode: sweep mode, 'ZIF', 'SH', or 'SHN'
-        :type mode: string
-        :param continuous: set sweep to be continuously or not (once only)
-        :type continuous: bool
+        :param str mode: sweep mode, 'ZIF', 'SH', or 'SHN'
+        :param bool continuous: set sweep to be continuously or not (once only)
 
         :returns: fstart, fstop, power_data
         """

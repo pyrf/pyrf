@@ -32,10 +32,10 @@ class TwistedConnector(object):
     A connector that makes SCPI/VRT connections asynchronously using
     Twisted method.
 
-    A callback may be assigned to vrt_callback that will be called
-    with VRT packets as they arrive.  When .vrt_callback is None
-    (the default) arriving packets will be ignored.
+    :param reactor: a twisted reactor, (ex: "from twisted.internet import reactor")
+    :param callback vrt_callback: A callback may be assigned to *vrt_callback* that will be called with VRT packets as they arrive.  When *vrt_callback* is None (the default), arriving packets will be ignored.
     """
+
     def __init__(self, reactor, vrt_callback=None):
         self._reactor = reactor
         self.vrt_callback = vrt_callback

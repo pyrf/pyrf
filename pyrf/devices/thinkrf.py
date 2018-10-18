@@ -30,13 +30,11 @@ class WSA(object):
     :meth:`connect()` must be called before other methods are used.
 
     .. note::
-
        The following methods will either block then return a result
        or if you passed a
        :class:`TwistedConnector <pyrf.connectors.twisted_async.TwistedConnector>`
        instance to the constructor, they will immediately return a
        Twisted Deferred object.
-
     """
 
     properties = None
@@ -54,6 +52,11 @@ class WSA(object):
         return hasattr(self.connector, 'vrt_callback')
 
     def set_async_callback(self, callback):
+        """
+        Set the asynchronous callback for a function when the device receives a VRT packet.
+        Use with Twisted setup.
+        :param callback:  callback to set. Set to *None* to disable receiving packets.
+        """
         self.connector.vrt_callback = callback
 
     def set_recording_output(self, output_file=None):
@@ -75,7 +78,12 @@ class WSA(object):
     def connect(self, host):
         """
         Connect to an RTSA (aka WSA).
-        :param host: the hostname or IP to connect to
+
+        :param str host: the hostname or IP to connect to
+
+        Usage::
+
+            dut.connect('123.456.789.1')
         """
         yield self.connector.connect(host)
         self.device_id = (yield self.scpiget(":*idn?"))
@@ -111,9 +119,8 @@ class WSA(object):
         This is the lowest-level interface provided.  See the product's
         Programmer's Guide for the SCPI commands available.
 
-        :param cmd: the command to send
-        :type cmd: str
-        :returns: the response back from the box if any
+        :param str cmd: the SCPI command to send
+        :return: the response output from the box if any
         """
         return self.connector.scpiget(cmd)
 
@@ -122,7 +129,7 @@ class WSA(object):
         """
         Returns the RTSA's identification information string.
 
-        :returns: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
+        :return: "<Manufacturer>,<Model>,<Serial number>,<Firmware version>"
         """
         yield self.scpiget(":*idn?")
 
@@ -131,9 +138,9 @@ class WSA(object):
         Returns frequency and the power level of the maximum spectral point
         computed using the current settings, Note this function disables
 
-        :param n: determine the number of peaks to return
-        :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
-        :param average: number of capture iterations
+        :param int n: determine the number of peaks to return
+        :param int rbw: rbw of spectral capture (Hz) (will round to nearest native RBW) or None
+        :param int average: number of capture iterations
         :returns: [(peak_freq1, peak_power1),
                    (peak_freq2, peak_power2)
                    , ...,
@@ -158,9 +165,9 @@ class WSA(object):
         """
         Returns a power level that represents the top edge of the noisefloor
 
-        :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
-        :param average: number of capture iterations
-        :returns: noise_power
+        :param int rbw: rbw of spectral capture (Hz) (will round to nearest native RBW) or None
+        :param int average: number of capture iterations
+        :return: noise_power
         """
         iq_path = self.iq_output_path()
         capture_mode = self.capture_mode()
@@ -179,8 +186,8 @@ class WSA(object):
         This command sets or queries the RTSA's Receiver Front End (RFE) mode of
         operation.
 
-        :param mode: 'ZIF', 'DD', 'HDR', 'IQIN', 'SH' or None to query
-        :returns: the current RFE mode
+        :param str mode: 'ZIF', 'DD', 'HDR', 'SHN', 'SH', or *None* to query
+        :return: the current RFE mode if *None* is used
         """
         if mode is None:
             buf = yield self.scpiget(":INPUT:MODE?")
@@ -194,8 +201,8 @@ class WSA(object):
         """
         This command sets or queries the RTSA's current IQ path.  It is not applicable to R5700.
 
-        :param path: 'DIGITIZER', 'CONNECTOR', 'HIF', or None to query
-        :returns: the current IQ path
+        :param str path: 'DIGITIZER', 'CONNECTOR', 'HIF', or *None* to query
+        :returns: the current IQ output path type if *None* is used
         """
         if 'R5500' in self.properties.model:
             cmd = "OUTPUT:MODE"
@@ -225,8 +232,8 @@ class WSA(object):
         """
         This command sets or queries the RTSA's PLL reference source
 
-        :param src: 'INT', 'EXT', 'GPS' (when available with the model) or None to query
-        :returns: the current PLL reference source
+        :param str src: 'INT', 'EXT', 'GPS' (when available with the model) or *None* to query
+        :returns: the current PLL reference source if *None* is used
         """
 
         if src is None:
@@ -242,10 +249,8 @@ class WSA(object):
         """
         This command sets or queries the tuned center frequency of the RTSA.
 
-        :param freq: the center frequency in Hz (range vary depnding on the product model); None to query
-
-        :type freq: int
-        :returns: the frequency in Hz
+        :param int freq: the center frequency in Hz (range vary depnding on the product model); *None* to query
+        :returns: the frequency in Hz if *None* is used
         """
         if freq is None:
             buf = yield self.scpiget(":FREQ:CENTER?")
@@ -260,9 +265,8 @@ class WSA(object):
         """
         This command sets or queries the frequency shift value.
 
-        :param freq: the frequency shift in Hz (0 - 125 MHz); None to query
-        :type freq: int
-        :returns: the amount of frequency shift
+        :param int freq: the frequency shift in Hz (0 - 125 MHz); *None* to query
+        :returns: the amount of frequency shift if *None* is used
         """
         if shift is None:
             buf = yield self.scpiget("FREQ:SHIFT?")
@@ -279,9 +283,8 @@ class WSA(object):
         a trace capture. The supported rate is 4 - 1024.  When the rate is
         set to 1, no decimation is performed on the trace capture.
 
-        :param value: new decimation value (1 or 4 - 1024); None to query
-        :type value: int
-        :returns: the decimation value
+        :param int value: new decimation value (1 or 4 - 1024); *None* to query
+        :returns: the decimation value if *None* is used
         """
         if value is None:
             buf = yield self.scpiget("SENSE:DECIMATION?")
@@ -303,17 +306,20 @@ class WSA(object):
 
     @sync_async
     def psfm_gain(self, gain = None):
+        """
+        This command sets or queries one of the Pre-Select Filter Modules's (PSFM) gain stages.
+
+        :param str gain: sets the gain value to 'high', 'medium', 'low', or *None* to query
+        :returns: the RF gain value if *None* is used
+
+        Usage::
+
+            dut.psfm_gain('HIGH')
+        """
         GAIN_STATE = {('1', '1'): 'high',
                       ('1', '0'): 'medium',
                       ('0', '0'): 'low'}
         GAIN_SET = {v: k for k, v in GAIN_STATE.items()}
-        """
-        This command sets or queries one of the PSFM gain stages.
-
-        :param gain: sets the gain value of the amplifiers, note the
-        gain values have to be either 'high', 'medium', 'low'
-        :returns: the RF gain value
-        """
 
         if gain is None:
             gain1 = yield self.scpiget(":INP:GAIN? 1")
@@ -334,8 +340,8 @@ class WSA(object):
         additive with the primary gain stages of the LNA
         that are described in :meth:`gain`.
 
-        :param gain: float between -10 and 34 to set; None to query
-        :returns: the ifgain in dB
+        :param float gain: float between -10 and 34 to set; *None* to query
+        :returns: the ifgain in dB if *None* is used
         """
         if gain is None:
             gain = yield self.scpiget(":INPUT:GAIN:IF?")
@@ -352,8 +358,8 @@ class WSA(object):
         This command sets or queries the HDR gain of the receiver.
         The gain has a range of -10 to 30 dB.
 
-        :param gain: float between -10 and 30 to set; None to query
-        :returns: the hdr gain in dB
+        :param int gain: float between -10 and 30 to set; *None* to query
+        :returns: the hdr gain in dB if *None* is used
         """
         if gain is None:
             gain = yield self.scpiget(":INPut:GAIN:HDR?")
@@ -370,8 +376,8 @@ class WSA(object):
         This command sets or queries the RFE preselect filter selection
         when supported by the model.
 
-        :param enable: True or False to set; None to query
-        :returns: the RFE preselect filter selection state
+        :param bool enable: True or False to set; *None* to query
+        :returns: the RFE preselect filter selection state if *None* is used
         """
         if enable is None:
             enable = yield self.scpiget(":INPUT:FILTER:PRESELECT?")
@@ -382,7 +388,7 @@ class WSA(object):
 
     def reset(self):
         """
-        Resets the RTSA to its default settings. It does not affect
+        Resets the RTSA to its default configuration. It does not affect
         the registers or queues associated with the IEEE mandated commands.
         """
         self.scpiset(":*rst")
@@ -416,9 +422,9 @@ class WSA(object):
         the trigger execution; setting to any other type will
         enable the trigger engine.
 
-        :param settings: the new trigger settings; None to query
+        :param settings: the new trigger settings; *None* to query
         :type settings: dictionary
-        :returns: the trigger settings
+        :returns: the trigger settings if *None* is used
         """
         if settings is None:
             # find out what kind of trigger is set
@@ -444,13 +450,14 @@ class WSA(object):
     def capture(self, spp, ppb):
         """
         This command will start the single block capture and the return of
-        *ppb* packets of *spp* samples each. The data
+        *ppb* packets of *spp* samples in each packet. The data
         within a single block capture trace is continuous from one packet
         to the other, but not necessary between successive block capture
-        commands issued.
+        commands issued. Used for **stream** or **block** capture mode.
+        To read data back, recommend using :meth:`read_data` method.
 
-        :param spp: the number of samples in a packet
-        :param ppb: the number of packets in a capture
+        :param int spp: the number of samples in a VRT packet
+        :param int ppb: the number of packets in a block of capture
         """
         self.scpiset(":TRACE:SPP %s\n" % (spp))
         self.scpiset(":TRACE:BLOCK:PACKETS %s\n" % (ppb))
@@ -460,17 +467,14 @@ class WSA(object):
     @sync_async
     def spp(self, samples=None):
         """
-        This command sets or queries the number of Samples Per Packet
-        (SPPacket).
+        This command sets or queries the number of Samples Per [VRT] Packet (SPP).
 
-        The upper bound of the samples is limited by the VRT's 16-bit
-        packet size field less the VRT header and any optional fields
-        (i.e. Stream ID, Class ID, Timestamps, and trailer) of 32-bit
-        wide words.  However since the SPP must be a multiple of 32,
-        the maximum is thus limited by 2**16 - 32.
+        The upper bound of the *samples* is limited by the VRT's 16-bit
+        packet size field.  However, since the SPP must be a multiple of 32,
+        the maximum is thus limited by (2**16 - 32) or 65504.
 
-        :param samples: the number of samples in a packet or None
-        :returns: the current spp value if the samples parameter is None
+        :param int samples: the number of samples in a VRT packet (256 to 65504, a multiple of 32), or *None* to query
+        :returns: the current spp value if the samples parameter is *None*
         """
         if samples is None:
             number = yield self.scpiget(":TRACE:SPP?")
@@ -481,11 +485,10 @@ class WSA(object):
     @sync_async
     def ppb(self, packets=None):
         """
-        This command sets the number of IQ packets in a capture
-        block
+        This command sets the number of IQ packets in a capture block
 
-        :param packets: the number of samples in a packet
-        :returns: the current ppb value if the packets parameter is None
+        :param int packets: the number of packets for a block of capture, or *None* to query
+        :returns: the current ppb value if the packets parameter is *None*
         """
         if packets is None:
             number = yield self.scpiget(":TRACE:BLOCK:PACKETS?")
@@ -507,7 +510,7 @@ class WSA(object):
     @sync_async
     def have_read_perm(self):
         """
-        Check if we have permission to read data.
+        Check if we have permission to read data from the RTSA.
 
         :returns: True if allowed to read, False if not
         """
@@ -516,10 +519,11 @@ class WSA(object):
 
     def read_data(self, spp):
         """
-        Return data packet of *spp* (samples per packet) size, the associated context info and the computed power spetral data.
+        Read and return a data packet, as well as computed power spectral density data, of *spp* (samples per packet) size, the associated context info and the computed power spetral data.
+        If a block of data is requested (such as *ppb* is more than 1), loop through this function to retreive all data.
 
-        :param spp: the number of samples in a packet
-        :returns: data class, context dictionary, and power spectral data array
+        :param int spp: the number of samples in a VRT packet (256 to 65504) in a multiple of 32
+        :returns: data, context dictionary, and power spectral data array
         """
         data, context = read_data_and_context(self, spp)
         pow_data = compute_fft(self, data, context)
@@ -549,7 +553,7 @@ class WSA(object):
         Oscillator) in the Radio Front End (RFE) or the lock status of the
         PLL reference clock in the digitizer card.
 
-        :param modulestr: 'vco' for rf lock status, 'clkref' for mobo lock status
+        :param str modulestr: 'VCO' for rf lock status, 'CLKREF' for ref clock lock status
         :returns: True if locked
         """
         if modulestr.upper() == 'VCO':
@@ -564,7 +568,7 @@ class WSA(object):
     @sync_async
     def read(self):
         """
-        Read a single parsed VRT packet from the RTSA, either context or data.
+        Read and return a single **parsed** VRT packet from the RTSA, either context or data.
         """
         return vrt_packet_reader(self.connector.raw_read)
 
@@ -572,17 +576,29 @@ class WSA(object):
         """
         Raw read of VRT socket data of *num* bytes from the RTSA.
 
-        :param num: the number of bytes to read
+        :param int num: the number of bytes to read
         :returns: bytes
         """
         return self.connector.raw_read(num)
 
     def sweep_add(self, entry):
         """
-        Add an entry to the sweep list
+        Add a sweep entry to the sweep list
 
-        :param entry: the sweep entry to add
+        :param entry: the sweep entry settings to add to the list
         :type entry: pyrf.sweepDevice.sweepSettings
+
+        Usage example::
+
+            entry = SweepEntry(
+                fstart=100 * M,
+                fstop=7900 * M,
+                fstep=100 * M,
+                fshift=0,
+                decimation=1,
+                spp=spp,
+                ppb=ppb)
+            dut.sweep_add(entry)
         """
 
         # create a new entry
@@ -640,7 +656,7 @@ class WSA(object):
         Read a sweep entry at the given sweep *index* from the sweep list.
 
         :param index: the index of the entry to read
-        :returns: sweep entry
+        :returns: settings of that sweep entry
         :rtype: pyrf.config.SweepEntry
         """
         ent = SweepEntry()
@@ -660,8 +676,8 @@ class WSA(object):
         """
         Set or query the number of iterations to loop through a sweep list.
 
-        :param count: the number of iterations, 0 for infinite
-        :returns: the current number of iterations if count is None
+        :param int count: the number of iterations, 0 for infinite, or *None* to query
+        :returns: the current number of iterations if count is *None*
         """
         if count is None:
             number = yield self.scpiget(":sweep:list:iterations?")
@@ -680,7 +696,7 @@ class WSA(object):
         """
         Start the sweep engine with an optional ID.
 
-        :param start_id: An optional 32-bit ID to identify the sweep
+        :param int start_id: An optional 32-bit ID to identify the sweep
         """
         if start_id:
             self.scpiset(":sweep:list:start %d" % start_id);
@@ -708,7 +724,7 @@ class WSA(object):
         be streamed (or pushed) from the RTSA whenever data
         is available.
 
-        :param stream_id: optional unsigned 32-bit stream identifier
+        :param int stream_id: optional unsigned 32-bit stream identifier
         """
         self.scpiset(':TRACE:STREAM:START' +
             (' %d' % stream_id if stream_id else ''))
@@ -733,12 +749,12 @@ class WSA(object):
         yield self.scpiget(":TRACE:STREAM:STATUS?")
 
     @sync_async
-    def attenuator(self,  atten_val=None):
+    def attenuator(self, atten_val=None):
         """
         This command enables, disables or queries the RTSA's RFE attenuation.
 
-        :param atten_val: see Programmer's Guide for the attenuation value to use for your product; None to query
-        :returns: the current attenuation value
+        :param atten_val: see Programmer's Guide for the attenuation value to use for your product; *None* to query
+        :returns: the current attenuation value if *None* is used
         """
         if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
             cmd = 'INPUT:ATTENUATOR:VAR'
@@ -761,8 +777,8 @@ class WSA(object):
         """
         This command sets the RTSA's variable attenuator (when applicable to the model)
 
-        :param atten_val: attenuation value, vary depending on the product
-        :returns: the current attenuation value
+        :param float atten_val: attenuation value, vary depending on the product, or *None* to query
+        :returns: the current variable attenuation value if *None* is used
         """
         if atten_val is None:
 
@@ -792,10 +808,11 @@ class WSA(object):
     def apply_device_settings(self, settings, force_change = False):
         """
         This command takes a dict of device settings, and applies them to the
-        RTSA.
-        Note: this method only applies a setting if it has been changed using this method
-        :param settings: dict containing settings such as attenuation,decimation,etc
-        :param force_change: to force the change update or not
+        RTSA
+
+        :param settings: dict containing device's settings such as attenuation, decimation, etc
+        :type settings: dict
+        :param bool force_change: to force the change update or not
         """
         device_setting = {
             'freq': self.freq,
@@ -806,7 +823,6 @@ class WSA(object):
             'decimation': self.decimation,
             'spp': self.spp,
             'ppb': self.ppb,
-            'trigger': self.trigger,
             'attenuator': self.attenuator,
             'var_attenuator': self.var_attenuator,
             'rfe_mode': self.rfe_mode,
@@ -832,8 +848,7 @@ def parse_discovery_response(response):
     This function parses the RTSA's raw discovery response
 
     :param response: The RTSA's raw response to a discovery query
-    :returns: Return (model, serial, firmware version) based on a discovery
-    response message
+    :returns: Return (model, serial, firmware version) based on a discovery response message
     """
     RESPONSE_HEADER_FORMAT = '>II'
     WSA4000_DISCOVERY_VERSION = 1
@@ -848,10 +863,10 @@ def parse_discovery_response(response):
 def discover_wsa(wait_time=0.125):
     import netifaces
     """
-    This function returns a list that contains all of the RTSA's available
-    on the local network
+    This function returns a list that contains all of the RTSA's available on the local network
 
-    :param wait_time: The total time to wait for responses in seconds
+    :param int wait_time: The total time to wait for responses in seconds
+
     :returns: Return a list of dicts (MODEL, SERIAL, FIRMWARE, IP) of all the  RTSA's available on the local network
     """
 

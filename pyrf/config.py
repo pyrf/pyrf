@@ -2,16 +2,21 @@ TRIGGER_TYPE_LEVEL = 'LEVEL'
 TRIGGER_TYPE_NONE = 'NONE'
 
 class TriggerSettingsError(Exception):
+    """
+    Exception for the trigger settings to state an error() has occured
+    """
     pass
 
 class TriggerSettings(object):
     """
     Trigger settings for :meth:`pyrf.devices.thinkrf.WSA.trigger`.
 
-    :param trigtype: "LEVEL" or "NONE" to disable
-    :param fstart: starting frequency in Hz
-    :param fstop: ending frequency in Hz
-    :param amplitude: minumum level for trigger in dBm
+    :param str trigtype: "LEVEL", "PULSE", or "NONE" to disable
+    :param int fstart: trigger starting frequency in Hz
+    :param int fstop: trigger ending frequency in Hz
+    :param float amplitude: minimum level for trigger in dBm
+
+    :return: a string in the format: TriggerSettings(trigger type, fstart, fstop, amplitude)
     """
 
     def __init__(self,
@@ -30,27 +35,31 @@ class TriggerSettings(object):
 
 class SweepEntry(object):
     """
-    Sweep entry for :meth:`pyrf.devices.thinkrf.WSA.sweep_add`
+    Sweep entry setup for :meth:`pyrf.devices.thinkrf.WSA.sweep_add`
 
-    :param fstart: starting frequency in Hz
-    :param fstop: ending frequency in Hz
-    :param fstep: frequency step in Hz
-    :param fshift: the frequency shift in Hz
-    :param decimation: the decimation value (0 or 4 - 1023)
-    :param antenna: the antenna (1 or 2)
-    :param gain: the RF gain value ('high', 'medium', 'low' or 'vlow')
-    :param ifgain: the IF gain in dB (-10 - 34)
-    :param hdr_gain: the HDR gain in dB (-10 - 30)
-    :param spp: samples per packet
-    :param ppb: packets per block
-    :param dwell_s: dwell time seconds
-    :param dwell_us: dwell time microseconds
-    :param trigtype: trigger type ('none', 'pulse' or 'level')
-    :param level_fstart: level trigger starting frequency in Hz
-    :param level_fstop: level trigger ending frequency in Hz
-    :param level_amplitude: level trigger minimum in dBm
-    :param attenuator: enable/disable attenuator
-    :param rfe_mode: RFE mode to be used
+    :param int fstart: starting frequency in Hz
+    :param int fstop: ending frequency in Hz
+    :param int fstep: frequency step in Hz
+    :param int fshift: the frequency shift in Hz
+    :param int decimation: the decimation value (0 or 4 - 1023)
+    :param str gain: the RF gain value ('high', 'medium', 'low' or 'vlow')
+    :param int ifgain: the IF gain in dB (-10 - 34)
+
+        .. note:: parameter is deprecated, kept for a legacy device
+
+    :param int hdr_gain: the HDR gain in dB (-10 - 30)
+    :param int spp: samples per packet (256 - max, a multiple of 32) that fit in one VRT packet
+    :param int ppb: data packets per block
+    :param int dwell_s: dwell time seconds
+    :param int dwell_us: dwell time microseconds
+    :param str trigtype: trigger type ('none', 'pulse' or 'level')
+    :param int level_fstart: level trigger starting frequency in Hz
+    :param int level_fstop: level trigger ending frequency in Hz
+    :param float level_amplitude: level trigger minimum in dBm
+    :param attenuator: vary depending on the product
+    :param str rfe_mode: RFE mode to be used, such as 'SH', 'SHN', 'DD', etc.
+
+    :return: a string list of the sweep entry's settings
     """
 
     def __init__(self,
@@ -70,8 +79,8 @@ class SweepEntry(object):
             level_fstart= 50000000,
             level_fstop=10000000000,
             level_amplitude=-100,
-            attenuator=True,
-            rfe_mode='ZIF'):
+            attenuator=30,
+            rfe_mode='SH'):
 
         self.fstart = fstart
         self.fstop = fstop
@@ -108,5 +117,3 @@ class SweepEntry(object):
             + "\tattenuator: %s\n" % self.attenuator
             + "\trfe_mode: %s\n" % self.rfe_mode
             + ")")
-
-

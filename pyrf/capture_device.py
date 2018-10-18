@@ -49,8 +49,7 @@ class CaptureDevice(object):
 
         :param device_settings: rfe mode, attenuation, decimation and other device settings
         :type device_settings: dict
-        :param force_change: force the configuration to apply device_settings changes or not
-        :type force_change: bool
+        :param bool force_change: force the configuration to apply device_settings changes or not
         """
         real_func = getattr(self.real_device, "apply_device_settings", None)
         if callable(real_func):
@@ -63,19 +62,14 @@ class CaptureDevice(object):
         """
         Initiate a capture of raw time domain IQ or I-only data
 
-        :param rfe_mode: radio front end mode, e.g. 'ZIF', 'SH', ...
-        :type rfe_mode: string
-        :param freq: center frequency in Hz to set
-        :type freq: float
-        :param rbw: the resolution bandwidth (RBW) in Hz of the data to be captured
+        :param str rfe_mode: radio front end mode, e.g. 'ZIF', 'SH', ...
+        :param int freq: center frequency in Hz to set
+        :param float rbw: the resolution bandwidth (RBW) in Hz of the data to be captured
                     (output RBW may be smaller than requested)
-        :type rbw: float
         :param device_settings: rfe_mode, freq, decimation, fshift and other device settings
-        :type device_settings: dict
-        :param min_points: smallest number of data points per capture from the device
-        :type min_points: int
-        :param force_change: force the configuration to apply device_settings changes or not
-        :type force_change: bool
+        :type device_settings: dict or None
+        :param int min_points: smallest number of data points per capture from the device
+        :param bool force_change: force the configuration to apply device_settings changes or not
         """
 
         prop = self.real_device.properties

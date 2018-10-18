@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 class PlainSocketConnector(object):
     """
-    This connector makes SCPI/VRT socket connections using plain sockets,
-    of blocking type.
+    This connector makes SCPI/VRT socket connections using plain sockets, of blocking type.
     """
 
     def connect(self, host):
@@ -67,8 +66,7 @@ def socketread(socket, count, flags = None):
     Retry socket read until *count* amount of data received,
     like reading from a file.
 
-    :param count: the amount of data received
-    :type count: int
+    :param int count: the amount of data received
     :param flags: socket.recv() related flags
     """
     if not flags:
