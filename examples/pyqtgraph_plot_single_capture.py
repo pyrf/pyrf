@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 
 #####################################################################
-## This example makes use of sweep_device.py to perform
-## a single 100 MHz sweep monitoring and plot
-##
-## To perform a more sophisticated sweep setup with many entries
-## for different frequency location, look into SweepEntry() of util.py
+## This example makes use of read_data() of thinkrf.py to perform
+## a single capture of SPP sample size, and plot the spectral result
 #####################################################################
 
 # import required libraries
@@ -14,26 +11,20 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 from pyrf.devices.thinkrf import WSA
-from pyrf.sweep_device import SweepDevice
 
-# Constants for configuration
+# Device configuration constants
+CENTER_FREQ = 2450 * 1e6
+SAMPLE_SIZE = 8192
+ATTENUATOR = 0
+DECIMATION = 1
 RFE_MODE = 'SH'
-START_FREQ = 2350e6
-STOP_FREQ = 3050e6
-SPP = 16384
-PPB = 1
-RBW = 125e6 / (SPP * PPB)  # 125 MHz is the sampling rate
-ATTENUATION = 0
-GAIN = 'HIGH'
 
-# Setup the plotting window
 class MainApplication(pg.GraphicsWindow):
-
     def __init__(self, dut):
         super(MainApplication, self).__init__()
         self.dut = dut
 
-    # use ';' to do SCPI command on the run
+    # press ';' to manually enter a scpi command
     def keyPressEvent(self, event):
         if event.text() == ';':
             cmd, ok = QtGui.QInputDialog.getText(win, 'Enter SCPI Command',
@@ -42,52 +33,61 @@ class MainApplication(pg.GraphicsWindow):
                 if '?' not in cmd:
                     dut.scpiset(cmd)
 
-# initialize an RTSA (aka WSA) device handle
-dut = WSA()
-win = MainApplication(dut)
-
-# get device's IP and connect
+# get RTSA device IP
 if len(sys.argv) > 1:
     ip = sys.argv[1]
 else:
     ip, ok = QtGui.QInputDialog.getText(win, 'Open Device',
                 'Enter a hostname or IP address:')
+
+# connect to an RTSA device
+dut = WSA()
 dut.connect(ip)
 
 # initialize RTSA configurations
 dut.reset()
 dut.request_read_perm()
-dut.psfm_gain(GAIN)
+dut.freq(CENTER_FREQ)
+dut.decimation(DECIMATION)
+dut.attenuator(ATTENUATOR)
+dut.rfe_mode(RFE_MODE)
 
-# setup a sweep device
-sweepdev = SweepDevice(dut)
-
-# initialize the plot
-win.resize(1000, 600)
+# initialize plot
+win = MainApplication(dut)
+win.resize(1000,600)
 win.setWindowTitle("PYRF FFT Plot Example - " + ip)
 fft_plot = win.addPlot(title="Power Vs. Frequency")
-fft_plot.enableAutoRange('xy', True)
-curve = fft_plot.plot(pen='g')
+
+# initialize x-axes limits
+BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
+plot_xmin = (CENTER_FREQ) - (BANDWIDTH  / 2)
+plot_xmax = (CENTER_FREQ) + (BANDWIDTH / 2)
 fft_plot.setLabel('bottom', text='Frequency', units='Hz', unitPrefix=None)
 
 # initialize the y-axis of the plot
 plot_ymin = -130
-plot_ymax = 10
-fft_plot.setYRange(plot_ymin, plot_ymax)
-fft_plot.setLabel('left', text='Power', units='dBm', unitPrefix=None)
+plot_ymax = 20
+fft_plot.setYRange(plot_ymin ,plot_ymax)
+fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
 
-# Get data and plot
+# enable auto size of the x-y axis
+fft_plot.enableAutoRange('xy', True)
+
+# initialize a curve for the plot
+curve = fft_plot.plot(pen='g')
+data, context, pow_data = dut.read_data(SAMPLE_SIZE)
+freq_range = np.linspace(plot_xmin , plot_xmax, len(pow_data))
+
+
+# get data and plot
 def update():
-    global dut, curve, fft_plot, fstart, fstop, print_once
+    global dut, curve, fft_plot, plot_xmin, plot_xmax
 
-    # get sweep spectral data of a given RBW and plot
-    fstart, fstop, spectra_data = sweepdev.capture_power_spectrum(START_FREQ,
-                                STOP_FREQ,
-                                RBW,
-                                {'attenuator':ATTENUATION},
-                                mode = RFE_MODE)
-    freq_range = np.linspace(fstart , fstop, len(spectra_data))
-    curve.setData(freq_range, spectra_data, pen='g')
+    # read data
+    data, context, pow_data = dut.read_data(SAMPLE_SIZE)
+
+    curve.setData(freq_range, pow_data, pen = 'g')
+    fft_plot.enableAutoRange('xy', False)
 
 timer = QtCore.QTimer()
 timer.timeout.connect(update)

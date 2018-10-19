@@ -2,18 +2,22 @@
 Change Logs
 ===========
 
+PyRF 2.9.1
+----------
+
+ * Updated this PyRF Manual/Documentation
+ * Added more examples
 
 PyRF 2.9.0
 ----------
 
-2018-10-02
+2018-10-12
 
  * Added GNSS support for R5700 RTSA products including VRT GNSS context packet
  * Added support for R5500 products
  * Added flush and reset to capture setup
  * Added calibrate_time_domain() function for a given time-domain data point
  * Added calculate_occupied_bw() function for a given spectrum and occupied percentage
- * Added more examples
  * Refactored sweep_device functions
  * Restructured ThinkRF device properties and removed deprecated ones
  * Improved IQ offset algorithm
@@ -31,7 +35,6 @@ PyRF 2.9.0
  * Fixed sample sizes being off by 32 samples
  * Fixed capture_device bug related to number of data points
  * Fixed bugs related to CSV file and settings
- * Updated this PyRF Manual/Documentation
 
 
 PyRF 2.8.0

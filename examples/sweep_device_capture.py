@@ -17,13 +17,12 @@ RBW = 10e3
 # connect to WSA, and initialize device
 init_time = time.time()
 dut = WSA()
-dut.connect('10.126.110.107')
+dut.connect(sys.argv[1])
 
 dut.flush()
 dut.abort()
 dut.request_read_perm()
 dut.reset()
-dut.var_attenuator(0)
 
 sd = SweepDevice(dut)
 init_time = time.time() - init_time
@@ -32,8 +31,8 @@ init_time = time.time() - init_time
 
 while True:
     capture_time = time.time()
-    fstart, fstop, spectra_data = sd.capture_power_spectrum(START_FREQ, 
-                                STOP_FREQ, 
+    fstart, fstop, spectra_data = sd.capture_power_spectrum(START_FREQ,
+                                STOP_FREQ,
                                 RBW,
                                 {'attenuator':0},
                                 mode = 'SH')
@@ -42,6 +41,4 @@ while True:
 
     print 'Init Time (msec): ', init_time
     print 'Capture Time (msec): ', capture_time
-    print  'Total Time (msec): ', init_time + capture_time 
-
-
+    print 'Total Time (msec): ', init_time + capture_time

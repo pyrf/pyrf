@@ -449,12 +449,12 @@ class WSA(object):
 
     def capture(self, spp, ppb):
         """
-        This command will start the single block capture and the return of
+        This command will **start** the single block capture of
         *ppb* packets of *spp* samples in each packet. The data
         within a single block capture trace is continuous from one packet
         to the other, but not necessary between successive block capture
         commands issued. Used for **stream** or **block** capture mode.
-        To read data back, recommend using :meth:`read_data` method.
+        To read data back, use :meth:`read` method.  See `show_i_q.py <https://github.com/pyrf/pyrf/blob/master/examples/show_i_q.py>`_ as an example.
 
         :param int spp: the number of samples in a VRT packet
         :param int ppb: the number of packets in a block of capture
@@ -587,18 +587,6 @@ class WSA(object):
 
         :param entry: the sweep entry settings to add to the list
         :type entry: pyrf.sweepDevice.sweepSettings
-
-        Usage example::
-
-            entry = SweepEntry(
-                fstart=100 * M,
-                fstop=7900 * M,
-                fstep=100 * M,
-                fshift=0,
-                decimation=1,
-                spp=spp,
-                ppb=ppb)
-            dut.sweep_add(entry)
         """
 
         # create a new entry

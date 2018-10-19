@@ -1,10 +1,13 @@
 Examples
 ========
 
-These are some of the examples may be found in the "examples" directory included
-with the PyRF source code.
+This section explains **some** of the `examples <https://github.com/pyrf/pyrf/blob/master/examples/>`_ included with the PyRF source code.
 
-Usage: python <filename>.py [device_IP_when_needed]
+Typical Usage::
+
+    python <example_file>.py [device_IP_when_needed]
+
+.. _twisted-show-i-q:
 
 discovery.py / twisted_discovery.py
 -----------------------------------
@@ -12,7 +15,7 @@ discovery.py / twisted_discovery.py
 * `discovery.py <https://github.com/pyrf/pyrf/blob/master/examples/discovery.py>`_
 * `twisted_discovery.py <https://github.com/pyrf/pyrf/blob/master/examples/twisted_discovery.py>`_
 
-These examples detect RTSA devices on the local network
+These examples detect RTSA devices on the local network.
 
 Example output:
 
@@ -22,12 +25,11 @@ Example output:
    R5500-408 171212-007 1.5.0 10.126.110.123
    R5500-418 180522-659 1.4.8 10.126.110.104
 
-.. _twisted-show-i-q:
 
 show_i_q.py / twisted_show_i_q.py
 ---------------------------------
 
-These examples connect to a device specified on the command line,
+These examples connect to a device of IP specified on the command line,
 tunes it to a center frequency of 2.450 MHz
 then reads and displays one capture of 1024 i, q values.
 
@@ -57,11 +59,31 @@ Example output (truncated):
    4,-12
 
 
+pyqtgraph_plot_single_capture.py / pyqtgraph_plot_block.py
+----------------------------------------------------------
+
+These examples connect to a device of IP specified on the command line,
+tunes it to a center frequency, then continually capture
+and display the computed spectral data using `pyqtgraph <http://pyqtgraph.org/>`_.
+
+* `pyqtgraph_plot_single_capture.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_single_capture.py>`_
+* `pyqtgraph_plot_block.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_block.py>`_
+
+pyqtgraph_plot_sweep.py
+-----------------------
+
+This example connects to a device of IP specified on the command line,
+makes use of sweep_device.py to perform a single sweep entry
+monitoring and plots computed spectral results using `pyqtgraph <http://pyqtgraph.org/>`_.
+
+* `pyqtgraph_plot_sweep.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_sweep.py>`_
+
+
 matplotlib_plot_sweep.py
 ------------------------
 
 This example connects to a device specified on the command line,
-and plots a complete sweep of the spectrum using NumPy_ and matplotlib_.
+and plots a large sweep of the spectrum using NumPy_ and matplotlib_.
 
 * `matplotlib_plot_sweep.py <https://github.com/pyrf/pyrf/blob/master/examples/matplotlib_plot_sweep.py>`_
 
@@ -69,20 +91,12 @@ and plots a complete sweep of the spectrum using NumPy_ and matplotlib_.
 .. _matplotlib: http://matplotlib.org/
 
 
-pyqtgraph_plot_block.py
------------------------
+simple_gui
+----------
+This folder contains a simple example on creating a GUI (using `pyqtgraph <http://pyqtgraph.org/>`_ along with `Twisted <https://twistedmatrix.com/>`_) to plot real-time data acquired from ThinkRF's RTSA device.  It displays the spectral density data in the top plot, and the raw I &/or Q data (when available) in the lower plot.
 
-This example connects to a device with IP specified on the command line,
-tunes it to a center frequency of 2.450 MHz then continually captures
-and displays an FFT in a GUI window using `pyqtgraph <http://pyqtgraph.org/>`_.
+* `simple_gui <https://github.com/pyrf/pyrf/blob/master/examples/example_gui/>`_
 
-* `pyqtgraph_plot_block.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_block.py>`_
+Usage::
 
-pyqtgraph_plot_sweep.py
------------------------
-
-This example connects to a device with IP specified on the command line,
-and makes use of sweep_device.py to perform a single sweep entry
-monitoring and plot FFT results in a GUI window using `pyqtgraph <http://pyqtgraph.org/>`_.
-
-* `pyqtgraph_plot_sweep.py <https://github.com/pyrf/pyrf/blob/master/examples/pyqtgraph_plot_sweep.py>`_
+    python run_gui.py <device_ip>

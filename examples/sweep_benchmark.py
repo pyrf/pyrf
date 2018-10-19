@@ -17,6 +17,7 @@ if len(sys.argv) > 2:
     ppb = int(sys.argv[2])
 else:
     ppb = 1
+
 # setup test conditions
 dut.reset()
 dut.request_read_perm()
@@ -32,9 +33,9 @@ for spp in [min(2**i, 2**16-16) for i in range(7, 17)]:
         fstep=100 * M,
         fshift=0,
         decimation=1,
+        attenuator=0,
         spp=spp,
-        ppb=ppb,
-        )
+        ppb=ppb)
     dut.sweep_add(s)
     captures = max(SAMPLES/spp, 1)
     dut.sweep_iterations(0) # continuous

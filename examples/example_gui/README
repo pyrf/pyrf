@@ -1,0 +1,4 @@
+This folder contains a simple GUI design.
+
+To run, type:
+    python run_gui.py <device IP>
