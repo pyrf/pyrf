@@ -12,7 +12,7 @@ import numpy as np
 
 # declare sweep constants
 START_FREQ = 50e6
-STOP_FREQ = 27e9
+STOP_FREQ = 8e9
 RBW = 100e3
 
 # connect to wsa
@@ -21,7 +21,6 @@ dut.connect(sys.argv[1])
 dut.request_read_perm()
 # declare sweep device
 sd = SweepDevice(dut)
-
 
 # read the spectral data
 fstart, fstop, spectra_data = sd.capture_power_spectrum(START_FREQ, STOP_FREQ, RBW,

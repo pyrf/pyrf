@@ -196,10 +196,9 @@ pyrf.util
 
 .. module:: pyrf.util
 
+.. autofunction:: pyrf.util.capture_spectrum
+
 .. autofunction:: pyrf.util.read_data_and_context
-
-.. autofunction:: pyrf.util.collect_data_and_context
-
 
 pyrf.vrt
 --------
@@ -207,3 +206,4 @@ pyrf.vrt
 .. automodule:: pyrf.vrt
    :members:
    :no-undoc-members:
+   :exclude-members: DataArray, generate_speca_packet

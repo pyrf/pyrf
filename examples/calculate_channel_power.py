@@ -15,7 +15,7 @@ def smooth(list,degree=1):
     new_list = []
     list_average = np.mean(sorted(list)[int(0.995 * len(list)):-1]) + 5
     for n, i in enumerate(list):
-        
+
         start = max(0, n - degree)
         stop = min(len(list), n + degree)
         points = list[start:stop]
@@ -23,14 +23,14 @@ def smooth(list,degree=1):
             new_list.append(list[n])
         else:
             new_list.append(np.mean(points))
- 
+
     return new_list
 
 # declare sweep constants
 START_FREQ = 50e6
-STOP_FREQ = 27e9
+STOP_FREQ = 8e9
 RBW = 100e3
-VBW = 30e3
+VBW = 100e3
 
 # connect to wsa
 dut = WSA()

@@ -312,6 +312,7 @@ class DataArray(object):
     """
     Data Packet values as a lazy array read from *binary_data*.
 
+    :param binary_data: the binary data received
     :param bytes_per_sample: 1 for PSD8 data, 2 for I14 data or
                              4 for I24 data
     """

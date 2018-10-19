@@ -27,14 +27,14 @@ from pyrf.devices.thinkrf import WSA
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 SAMPLE_VALUES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-RBW_VALUES = [244.141e3 * 2 , 
-            244.141e3, 
-            122.070e3, 
-            61.035e3, 
-            30.518e3, 
-            15.259e3, 
-            7.62939e3, 
-            3.815e3, 
+RBW_VALUES = [244.141e3 * 2 ,
+            244.141e3,
+            122.070e3,
+            61.035e3,
+            30.518e3,
+            15.259e3,
+            7.62939e3,
+            3.815e3,
             3.815e3 / 2]
 
 HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
@@ -44,12 +44,14 @@ PLOT_YMAX = 0
 M = 1e6
 ZIF_BITS = 2**13
 CONST_POINTS = 512
+WINDOW_WIDTH = 100
+WINDOW_HEIGHT = 100
+
 try:
     from twisted.internet.defer import inlineCallbacks
 except ImportError:
     def inlineCallbacks(fn):
         pass
-
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -59,7 +61,7 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
         WINDOW_WIDTH = screen.width() * 0.8
-        WINDOW_HEIGHT = screen.height() * 0.6
+        WINDOW_HEIGHT = screen.height() * 0.8
         self.resize(WINDOW_WIDTH,WINDOW_HEIGHT)
         self.initUI()
 
@@ -93,8 +95,8 @@ class MainPanel(QtGui.QWidget):
         self.control_widgets = []
         super(MainPanel, self).__init__()
         screen = QtGui.QDesktopWidget().screenGeometry()
-        self.setMinimumWidth(screen.width() * 0.8)
-        self.setMinimumHeight(screen.height() * 0.6)
+        self.setMinimumWidth(WINDOW_WIDTH)
+        self.setMinimumHeight(WINDOW_HEIGHT)
         self._vrt_context = {}
         self._reactor = self._get_reactor()
 
@@ -133,7 +135,7 @@ class MainPanel(QtGui.QWidget):
         self.read_block()
 
     def read_block(self):
-        rbw = self.rbw 
+        rbw = self.rbw
         if self.dev_set['rfe_mode'] == 'ZIF':
             rbw = self.rbw * 2
         self.cap_dut.capture_time_domain(self.dev_set['rfe_mode'],
@@ -156,20 +158,20 @@ class MainPanel(QtGui.QWidget):
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(5)
-        plot_width = 8
+        plot_width = 4
         for x in range(plot_width):
             grid.setColumnMinimumWidth(x, 250)
         grid.setColumnMinimumWidth(plot_width + 1, 260)
-        
+
         grid.addWidget(self._plot_layout(), 0,0,5,plot_width)
-        
+
         controls_layout = QtGui.QVBoxLayout()
         controls_layout.setSpacing(1)
         controls_layout.addWidget(self._if_attenuator())
         controls_layout.addWidget(self._hdr_gain())
         controls_layout.addWidget(self._center_freq())
         controls_layout.addWidget(self._rbw_controls())
-        
+
         controls_layout.addWidget(self._mode_controls())
         controls_layout.addWidget(self._maxh_controls())
         controls_layout.addStretch()
@@ -177,20 +179,20 @@ class MainPanel(QtGui.QWidget):
 
         self._grid = grid
         self.setLayout(grid)
-    def _plot_layout(self):
 
+    def _plot_layout(self):
         # create spectral plot
         self.window = pg.PlotWidget(name='pyrf_plot')
         self.window.showGrid(True, True)
         self.window.setYRange(PLOT_YMIN ,PLOT_YMAX)
         self.fft_curve = self.window.plot(pen = 'g')
         self.mhold_curve = self.window.plot(pen = 'y')
-       
+
         # create IQ plot widget
         self.iq_window = pg.PlotWidget(name='IQ Plot')
         self.i_curve = self.iq_window.plot(pen = 'r')
         self.q_curve = self.iq_window.plot(pen = 'g')
-        
+
         # create split
         vsplit = QtGui.QSplitter()
         vsplit.setOrientation(QtCore.Qt.Vertical)
@@ -198,13 +200,13 @@ class MainPanel(QtGui.QWidget):
         vsplit.addWidget(self.iq_window)
         self._plot_layout = vsplit
         return self._plot_layout
-        
+
     def _center_freq(self):
-        grid, widget = self.create_grid_and_widget('Freq')
+        grid, widget = self.create_grid_and_widget('Frequency (MHz)')
         freq_edit = QtGui.QLineEdit(str(self.dev_set['freq'] / float(M)))
         self._freq_edit = freq_edit
         self.control_widgets.append(self._freq_edit)
-        
+
         def freq_change():
             self.dev_set['freq'] = float(freq_edit.text()) * M
             self.cap_dut.configure_device(self.dev_set)
@@ -214,24 +216,26 @@ class MainPanel(QtGui.QWidget):
         return widget
 
     def _if_attenuator(self):
-        grid, widget = self.create_grid_and_widget('IF Attenuator')
-        if_attenuator = QtGui.QLineEdit('25')
+        grid, widget = self.create_grid_and_widget('Attenuation (dB)')
+        if_attenuator = QtGui.QLineEdit('0')
+        if_attenuator.setToolTip("Change the attenuation level")
 
         self.control_widgets.append(if_attenuator)
-        
+
         def atten_change():
-            self.dut.var_attenuator(int(if_attenuator.text()))
+            self.dut.attenuator(int(if_attenuator.text()))
         if_attenuator.returnPressed.connect(lambda: atten_change())
         grid.addWidget(if_attenuator, 0,1,0,1)
         widget.setLayout(grid)
         return widget
 
     def _hdr_gain(self):
-        grid, widget = self.create_grid_and_widget('hdr Attenuator')
+        grid, widget = self.create_grid_and_widget('HDR Gain (dB)')
         hdr_attenuator = QtGui.QLineEdit('25')
+        hdr_attenuator.setToolTip("Change the HDR mode's gain level")
 
         self.control_widgets.append(hdr_attenuator)
-        
+
         def atten_change():
             self.dut.hdr_gain(int(hdr_attenuator.text()))
         hdr_attenuator.returnPressed.connect(lambda: atten_change())
@@ -273,7 +277,7 @@ class MainPanel(QtGui.QWidget):
         widget.setLayout(grid)
         self.control_widgets.append(self._rbw_box)
         return widget
-        
+
     def _maxh_controls(self):
         grid, widget = self.create_grid_and_widget('Max Hold')
         max_hold = QtGui.QCheckBox(self)
@@ -285,7 +289,7 @@ class MainPanel(QtGui.QWidget):
         grid.addWidget(max_hold, 0,1,0,1)
         widget.setLayout(grid)
         return widget
-            
+
     def create_grid_and_widget(self, name):
             grid = QtGui.QGridLayout()
             widget = QtGui.QWidget()
@@ -293,14 +297,15 @@ class MainPanel(QtGui.QWidget):
                 grid.addWidget(QtGui.QLabel(name), 0,0,0,1)
             widget.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
             return grid, widget
-    
+
     def update_plot(self):
         self.update_trace()
-        
+
     def update_trace(self):
-        freq_range = np.linspace(self.dev_set['freq'] -62.5, 
-                                self.dev_set['freq'] + 62.5, 
-                                len(self.pow_data)) 
+        freq_range = np.linspace(self.dev_set['freq'] -62.5,
+                                self.dev_set['freq'] + 62.5,
+                                len(self.pow_data))
+        self.fft_curve.clear()
         self.fft_curve.setData(freq_range, self.pow_data)
         if self.enable_mhold:
             if len(self.mhold) != len(self.pow_data):
@@ -311,17 +316,19 @@ class MainPanel(QtGui.QWidget):
         else:
             self.mhold_curve.setData([], [])
             self.mhold = []
-            
+
         i_data, q_data, stream_id, spec_inv = _decode_data_pkts(self.raw_data)
+        self.i_curve.clear()
+        self.q_curve.clear()
         self.i_curve.setData(i_data)
         if q_data is not None:
             self.q_curve.setData(q_data)
         else:
             self.q_curve.setData([])
+
     def enable_controls(self):
         for item in self.control_widgets:
             item.setEnabled(True)
-    
 
     def disable_controls(self):
         for item in self.control_widgets:

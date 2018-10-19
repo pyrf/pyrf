@@ -5,18 +5,20 @@ import itertools
 from ast import literal_eval
 from pyrf.numpy_util import  compute_fft
 import numpy as np
+
 def capture_spectrum(dut, rbw = None, average=1, dec=1, fshift=0):
     """
-    Returns the spectral data, and the start frequency, stop frequency corresponding to the 
-    WSA's current configuration
-    :param rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
-    :param average: number of capture iterations
-    :param dec: decimation factor applied
-    :param fshift: the fshift applied
-    :returns: (fstart, fstop, pow_data)
-    where pow_data is a list
+    Returns the spectral data, and the usable start and stop frequencies corresponding to the
+    RTSA's current configuration
+
+    :param int rbw: rbw of spectral capture (Hz) (will round to nearest native RBW)
+    :param int average: number of capture iterations
+    :param int dec: decimation factor applied
+    :param int fshift: the fshift applied, in Hz
+
+    :returns: (fstart, fstop, pow_data) where pow_data is a list
     """
-    
+
     # grab mode/decimation
     mode = dut.rfe_mode()
     bandwidth = dut.properties.FULL_BW[mode]
@@ -49,7 +51,7 @@ def capture_spectrum(dut, rbw = None, average=1, dec=1, fshift=0):
     fstart = freq - bandwidth / 2
     fstop = freq + bandwidth/ 2
     usable_bins = compute_usable_bins(dut.properties, mode, points, dec, fshift)
-    
+
     total_pow = []
     for v in range(average):
         dut.capture(samples, packets)
@@ -79,21 +81,23 @@ def capture_spectrum(dut, rbw = None, average=1, dec=1, fshift=0):
             total_pow = np.add(total_pow, pow_data)
     pow_data = total_pow / average
     # trim FFT
-    pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
-                                                                    usable_bins,  
-                                                                    fstart,  
+    pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data,
+                                                                    usable_bins,
+                                                                    fstart,
                                                                     fstop)
 
     return (fstart, fstop, pow_data)
 
 def read_data_and_context(dut, points=1024):
     """
-    Initiate capture of one data packet, wait for and return data packet
+    Initiate capture of one VRT data packet, wait for and return data packet
     and collect preceeding context packets.
+
+    :param int points: Number of data points to capture
 
     :returns: (data_pkt, context_values)
 
-    Where context_values is a dict of {field_name: value} items from
+    Where *context_values* is a dict of {field_name: value} items from
     all the context packets received.
     """
     # capture 1 packet
@@ -162,7 +166,7 @@ def compute_usable_bins(dut_prop, rfe_mode, points, decimation, fshift):
     # XXX usable bins for SH + fshift aren't correct yet, so show everything
     if rfe_mode in ('SH', 'SHN') and decimation > 1:
         usable_bins = [(0, points)]
-    
+
     return usable_bins
 
 
@@ -210,9 +214,10 @@ def trim_to_usable_fstart_fstop(bins, usable_bins, fstart, fstop):
 
     return bins[left_bin:right_bin], trim_bins, adj_fstart, adj_fstop
 
+
 def decode_config_type(config_str, str_type):
     """
-    returns config_str value based on str_type
+    Returns config_str value based on str_type
     """
 
     if isinstance(str_type, bool):
@@ -239,13 +244,15 @@ def decode_config_type(config_str, str_type):
     else:
         value = config_str
     return value
-    
+
 def find_saturation(freq, saturation_values, attenuation):
     """
-    return a saturation value based on the frequency and amount of attenuation
-    :param freq: the freq of interest
+    Return a saturation value based on the frequency and amount of attenuation
+
+    :param int freq: the freq of interest, in Hz
     :param saturation_values: a dict containing the saturation values (keys are frequencies)
     :param attenuation: the amount of attenuation applied
+
     :returns: the closest saturation value corresponding to the frequency
     """
     sat_freqs = saturation_values.keys()
@@ -278,7 +285,7 @@ def capture_sweep_spectrum(dut, mode, points, dec = 1, fshift = 0, packets = 1):
         else:
             d, c = collect_data_and_context(dut, samples)
             data.data.np_array = np.concatenate([data.data.np_array, d.data.np_array])
-    
+
     # adjust fstart and fstop based on the spectral inversion
     usable_bins, fstart, fstop = adjust_usable_fstart_fstop(
         dut.properties,
@@ -296,16 +303,16 @@ def capture_sweep_spectrum(dut, mode, points, dec = 1, fshift = 0, packets = 1):
         total_pow = np.add(total_pow, pow_data)
     pow_data = total_pow
     # trim FFT
-    pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data, 
-                                                                    usable_bins,  
-                                                                    fstart,  
+    pow_data, usable_bins, fstart, fstop = trim_to_usable_fstart_fstop(pow_data,
+                                                                    usable_bins,
+                                                                    fstart,
                                                                     fstop)
 
     return (fstart, fstop, pow_data, context)
-    
+
 def compute_spp_ppb(samples, properties):
     """
-    compute the samples per packets and packets per block that give the closest value to 
+    compute the samples per packets and packets per block that give the closest value to
     # the input samples
     :param samples: the number of required samples
     :param properties: the device properties
@@ -332,11 +339,8 @@ def compute_spp_ppb(samples, properties):
             spp = (int(spp /properties.SPP_MULTIPLE) * properties.SPP_MULTIPLE) / 2
         ppb = samples / spp
         spp = valid_samples[int((float(spp) / float(properties.SPP_MULTIPLE)) - 7)]
-        
-    else: 
+
+    else:
         spp = samples
         ppb = 1
     return (spp, ppb)
-    
-    
-    
