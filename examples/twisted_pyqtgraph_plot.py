@@ -9,6 +9,11 @@ from pyrf.devices.thinkrf import WSA
 from pyrf.numpy_util import compute_fft
 
 from pyrf.connectors.twisted_async import TwistedConnector
+
+app = QtGui.QApplication([])
+import qt4reactor
+qt4reactor.install()
+
 from twisted.internet import reactor, defer
 import twisted.python.log
 
@@ -30,14 +35,27 @@ ip = sys.argv[1]
 # confiture RTSA to use twisted
 dut = WSA(connector=TwistedConnector(reactor))
 
+
+# Setup the plotting window
+class MainApplication(pg.GraphicsWindow):
+
+    def __init__(self, dut):
+        super(MainApplication, self).__init__()
+        self.dut = dut
+
+    # to ensure the reactor stopped when plot stopped
+    def closeEvent(self, event):
+        reactor.callLater(2 ** -4, reactor.stop)
+
 # initialize plot
-win = pg.GraphicsWindow()
+win = MainApplication(dut) #pg.GraphicsWindow()
 win.resize(1000, 600)
 win.setWindowTitle("PYRF FFT Plot Example")
 
 fft_plot = win.addPlot(title="Power Vs. Frequency")
 fft_plot.setLabel('bottom', text='Frequency', units='Hz', unitPrefix=None)
 fft_plot.setLabel('left', text= 'Power', units = 'dBm', unitPrefix=None)
+# autorange the first plot to get the y-axis range
 fft_plot.enableAutoRange('xy', True)
 curve = fft_plot.plot(pen='g')
 
@@ -59,31 +77,23 @@ def show_i_q():
     yield dut.capture(SAMPLE_SIZE, PPB)
 
 context = {}
-#def receive_vrt(packet):
-def receive_vrt(update):
+def receive_vrt(packet):
     # read until get 1 data packet
-    global dut
+    global dut, context
     if not packet.is_data_packet():
         context.update(packet.fields)
         return
     else:
         pow_data = compute_fft(dut, packet, context)
         update(dut, pow_data)
+        # now disable the range to prevent fluctuation
+        fft_plot.enableAutoRange('xy', False)
 
 
 def update(dut, pow_data):
-    reactor.callLater(1 ** -4, reactor.stop)
     curve.setData(pow_data, pen = 'g')
     dut.capture(SAMPLE_SIZE, PPB)
-    #reactor.callLater(1 ** -4, reactor.run)
 
 d = show_i_q()
 d.addErrback(twisted.python.log.err)
 reactor.run()
-
-
-## Start Qt event loop unless running in interactive mode or using pyside.
-if __name__ == '__main__':
-    import sys
-    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-        QtGui.QApplication.instance().exec_()

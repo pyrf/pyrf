@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 
-from pyrf.devices.thinkrf import WSA
-from pyrf.connectors.twisted_async import TwistedConnector
-from pyrf.sweep_device import SweepDevice
-
 import sys
 import time
 import math
-
-from matplotlib.pyplot import plot, figure, axis, xlabel, ylabel, show
 import numpy as np
+from pyrf.devices.thinkrf import WSA
+from pyrf.connectors.twisted_async import TwistedConnector
+from pyrf.sweep_device import SweepDevice
+from matplotlib.pyplot import plot, figure, axis, xlabel, ylabel, show
 
 from twisted.internet import reactor, defer
 import twisted.python.log
