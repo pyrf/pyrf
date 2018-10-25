@@ -4,30 +4,39 @@ import sys
 import zlib
 import json
 import numpy as np
+
+# VRT Packet Type
+VRTDATA = 1
 VRTCONTEXT = 4
 VRTCUSTOMCONTEXT = 5
-VRTDATA = 1
 
+# Stream Indentfier for Different Packet classes
 VRTRECEIVER = 0x90000001
 VRTDIGITIZER = 0x90000002
 VRTCUSTOM = 0x90000004
-VRTSPECA = 0x5370eca0
 VRT_IFDATA_I14Q14 = 0x90000003
 VRT_IFDATA_I14 = 0x90000005
 VRT_IFDATA_I24 = 0x90000006
 VRT_IFDATA_PSD8 = 0x90000007
 
+# Digitizer Context Indicator Field Bit Positions
+CTX_BANDWIDTH = (1 << 29)
+CTX_RFOFFSET = (1 << 26)
+CTX_REFERENCELEVEL = (1 << 24)
+CTX_GPS = (1 << 14)
+
+# Receiver Context Indicator Field Bit Positions
 CTX_REFERENCEPOINT = (1 << 30)
 CTX_RFFREQ = (1 << 27)
 CTX_GAIN = (1 << 23)
 CTX_TEMPERATURE = (1 << 18)
-CTX_BANDWIDTH = (1 << 29)
-CTX_RFOFFSET = (1 << 26)
-CTX_REFERENCELEVEL = (1 << 24)
-CTX_SWEEPID = (1 << 0)
-CTX_STREAMID = (1 << 1)
+
+# Extension Context Indicator Field Bit Positions
 CTX_IQSWAP = (1 << 3)
-CTX_GPS = (1 << 14)
+CTX_STREAMID = (1 << 1)
+CTX_SWEEPID = (1 << 0)
+
+VRTSPECA = 0x5370eca0
 
 # values captured in a given frequency range
 I_ONLY = 'i_only'
