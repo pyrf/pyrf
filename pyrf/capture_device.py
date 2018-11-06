@@ -70,6 +70,7 @@ class CaptureDevice(object):
         :type device_settings: dict or None
         :param int min_points: smallest number of data points per capture from the device
         :param bool force_change: force the configuration to apply device_settings changes or not
+        :returns: (fstart, fstop, data) where fstart & fstop are frequencies in Hz & data is a list
         """
 
         prop = self.real_device.properties

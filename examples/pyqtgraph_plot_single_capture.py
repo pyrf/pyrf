@@ -13,11 +13,12 @@ import numpy as np
 from pyrf.devices.thinkrf import WSA
 
 # Device configuration constants
-CENTER_FREQ = 2450 * 1e6
+CENTER_FREQ = 930 * 1e6
 SAMPLE_SIZE = 8192
 ATTENUATOR = 0
 DECIMATION = 1
 RFE_MODE = 'SH'
+MHZ = 1e6
 
 class MainApplication(pg.GraphicsWindow):
     def __init__(self, dut):
@@ -60,8 +61,19 @@ fft_plot = win.addPlot(title="Power Vs. Frequency")
 
 # initialize x-axes limits
 BANDWIDTH = dut.properties.FULL_BW[RFE_MODE]
-plot_xmin = (CENTER_FREQ) - (BANDWIDTH  / 2)
-plot_xmax = (CENTER_FREQ) + (BANDWIDTH / 2)
+# for SH/SHN mode, spectral inversion and IF centred at 35 MHz (not 62.5 MHz/ 2) affect the display
+if ((RFE_MODE == 'SH') | (RFE_MODE == 'SHN')):
+    spec_inv = int(dut.scpiget("FREQ:INV? %d" % CENTER_FREQ))
+    if spec_inv:
+        plot_xmin = (CENTER_FREQ) - (62.5 - 35) * MHZ
+        plot_xmax = (CENTER_FREQ) + (35 * MHZ)
+    else:
+        plot_xmin = (CENTER_FREQ) - (35 * MHZ)
+        plot_xmax = (CENTER_FREQ) + (62.5 - 35) * MHZ
+else:
+    plot_xmin = (CENTER_FREQ) - (BANDWIDTH / 2)
+    plot_xmax = (CENTER_FREQ) + (BANDWIDTH / 2)
+
 fft_plot.setLabel('bottom', text='Frequency', units='Hz', unitPrefix=None)
 
 # initialize the y-axis of the plot

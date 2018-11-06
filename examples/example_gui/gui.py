@@ -18,30 +18,18 @@ import math
 from contextlib import contextmanager
 from pkg_resources import parse_version
 
-
 from pyrf.connectors.twisted_async import TwistedConnector
+from pyrf.devices.thinkrf import WSA
 from pyrf.capture_device import CaptureDevice
 
 from pyrf.numpy_util import compute_fft, _decode_data_pkts
-from pyrf.devices.thinkrf import WSA
 from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
     VRT_IFDATA_I24, VRT_IFDATA_PSD8)
 SAMPLE_VALUES = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-RBW_VALUES = [244.141e3 * 2 ,
-            244.141e3,
-            122.070e3,
-            61.035e3,
-            30.518e3,
-            15.259e3,
-            7.62939e3,
-            3.815e3,
-            3.815e3 / 2]
-
-HDR_RBW_VALUES = [1271.56, 635.78, 317.890, 158.94, 79.475, 39.736, 19.868, 9.934]
 MODES = ['ZIF', 'SH', 'SHN', 'HDR', 'DD']
 PLOT_YMIN = -140
 PLOT_YMAX = 0
-M = 1e6
+MHZ = 1e6
 ZIF_BITS = 2**13
 CONST_POINTS = 512
 WINDOW_WIDTH = 100
@@ -117,17 +105,18 @@ class MainPanel(QtGui.QWidget):
         dut = WSA(connector=TwistedConnector(self._reactor))
         yield dut.connect(name)
         self.dev_set = {
-            'attenuator': 1,
+            'attenuator': 0,
             'freq':2450e6,
             'decimation': 1,
             'fshift': 0,
             'rfe_mode': 'SH',
             'iq_output_path': 'DIGITIZER'}
-        self.rbw = RBW_VALUES[4]
-        self.enable_mhold = False
-        self.mhold = []
         self.dut = dut
         self.dut_prop = self.dut.properties
+        self.bandwidth = self.dut_prop.FULL_BW[self.dev_set['rfe_mode']]
+        self.rbw = 125000000 / SAMPLE_VALUES[3]
+        self.enable_mhold = False
+        self.mhold = []
         self.cap_dut = CaptureDevice(dut, async_callback=self.receive_capture,
             device_settings=self.dev_set)
         self.initUI()
@@ -136,8 +125,6 @@ class MainPanel(QtGui.QWidget):
 
     def read_block(self):
         rbw = self.rbw
-        if self.dev_set['rfe_mode'] == 'ZIF':
-            rbw = self.rbw * 2
         self.cap_dut.capture_time_domain(self.dev_set['rfe_mode'],
                                     self.dev_set['freq'],
                                     rbw)
@@ -151,9 +138,9 @@ class MainPanel(QtGui.QWidget):
         if 'reflevel' in data['context_pkt']:
             self.ref_level = data['context_pkt']['reflevel']
         self.pow_data = compute_fft(self.dut, data['data_pkt'], data['context_pkt'], ref = self.ref_level)
-
         self.raw_data = data['data_pkt']
-        self.update_plot()
+        self.freq_range = (fstart, fstop)
+        self.update_trace()
 
     def initUI(self):
         grid = QtGui.QGridLayout()
@@ -203,13 +190,13 @@ class MainPanel(QtGui.QWidget):
 
     def _center_freq(self):
         grid, widget = self.create_grid_and_widget('Frequency (MHz)')
-        freq_edit = QtGui.QLineEdit(str(self.dev_set['freq'] / float(M)))
+        freq_edit = QtGui.QLineEdit(str(self.dev_set['freq'] / float(MHZ)))
         self._freq_edit = freq_edit
         self.control_widgets.append(self._freq_edit)
 
         def freq_change():
-            self.dev_set['freq'] = float(freq_edit.text()) * M
-            self.cap_dut.configure_device(self.dev_set)
+            self.dev_set['freq'] = float(freq_edit.text()) * MHZ
+            self.dut.freq(int(self.dev_set['freq']))
         freq_edit.returnPressed.connect(lambda: freq_change())
         grid.addWidget(freq_edit, 0,1,0,1)
         widget.setLayout(grid)
@@ -251,6 +238,7 @@ class MainPanel(QtGui.QWidget):
         def new_mode():
             self.dev_set['rfe_mode'] = MODES[mode.currentIndex()]
             self.dut.rfe_mode(self.dev_set['rfe_mode'])
+            self.bandwidth = self.dut_prop.FULL_BW[self.dev_set['rfe_mode']]
         mode.setCurrentIndex(1)
         mode.currentIndexChanged.connect(new_mode)
         grid.addWidget(mode, 0,1,0,1)
@@ -263,14 +251,15 @@ class MainPanel(QtGui.QWidget):
         rbw = QtGui.QComboBox(self)
         rbw.setToolTip("Change the RBW of the FFT plot")
 
-        self._hdr_points_values = HDR_RBW_VALUES
         self._rbw_box = rbw
         rbw.addItems([str(p) + ' ' for p in SAMPLE_VALUES])
 
         def new_rbw():
-            self.rbw = RBW_VALUES[rbw.currentIndex()]
-            if self.dev_set['rfe_mode'] == 'HDR':
-                self.rbw = HDR_RBW_VALUES[rbw.currentIndex()]
+            if self.dev_set['rfe_mode'] != 'ZIF':
+                self.rbw = self.bandwidth * 2 / SAMPLE_VALUES[rbw.currentIndex()]
+            else:
+                self.rbw = self.bandwidth / SAMPLE_VALUES[rbw.currentIndex()]
+
         rbw.setCurrentIndex(3)
         rbw.currentIndexChanged.connect(new_rbw)
         grid.addWidget(rbw, 0,1,0,1)
@@ -298,13 +287,8 @@ class MainPanel(QtGui.QWidget):
             widget.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
             return grid, widget
 
-    def update_plot(self):
-        self.update_trace()
-
     def update_trace(self):
-        freq_range = np.linspace(self.dev_set['freq'] -62.5,
-                                self.dev_set['freq'] + 62.5,
-                                len(self.pow_data))
+        freq_range = np.linspace(self.freq_range[0], self.freq_range[1], len(self.pow_data))
         self.fft_curve.clear()
         self.fft_curve.setData(freq_range, self.pow_data)
         if self.enable_mhold:

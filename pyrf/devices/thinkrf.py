@@ -521,6 +521,7 @@ class WSA(object):
         """
         Read and return a data packet, as well as computed power spectral density data, of *spp* (samples per packet) size, the associated context info and the computed power spetral data.
         If a block of data is requested (such as *ppb* is more than 1), loop through this function to retreive all data.
+        See also data other capture functions: :meth:`pyrf.util.capture_spectrum`, :meth:`pyrf.capture_device.capture_time_domain`
 
         :param int spp: the number of samples in a VRT packet (256 to 65504) in a multiple of 32
         :returns: data, context dictionary, and power spectral data array
