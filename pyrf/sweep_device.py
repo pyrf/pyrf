@@ -243,6 +243,10 @@ class SweepDevice(object):
         # keep track of the device properties
         self.dev_properties = self.real_device.properties
 
+        # initialize the geolocation callback
+        self._geo_callback_func = None
+        self._geo_callback_data = None
+
         # initialize the sweep planner
         self._sweep_planner = SweepPlanner(self.dev_properties)
 
@@ -284,6 +288,35 @@ class SweepDevice(object):
                 sys.stdout.write(", ")
                 sys.stdout.write(msg.__str__())
             sys.stdout.write("\n")
+
+
+    def set_geolocation_callback(self, func, data = None):
+        """
+        set a callback that will get called whenever the geolocation information
+        of the device is updated.
+        The callback function should accept two parameters.  The first parameter
+        will be the callback data that was passed in this function
+        set_geolocation_callback(func, data, geolocation_dictionary).
+        The geolocation_dictionary will have the following properties:
+        - oui
+        - seconds
+        - altitude
+        - longitude
+        - speedoverground
+        - secondsfractional
+        - track
+        - latitude
+        - magneticvariation
+        - heading
+        See the programmer's guide for usage on each of these properties.
+
+        :param func: the function to be called
+        :param data: the data to be passed to the function
+        :returns: None
+        """
+
+        self._geo_callback_func = func
+        self._geo_callback_data = data
 
 
     def capture_power_spectrum(self,
@@ -387,6 +420,16 @@ class SweepDevice(object):
 
         # context packet just update our context dictionary
         if packet.is_context_packet():
+            # look for any geolocation info
+            geo = { }
+            for field in [ 'latitude', 'longitude', 'altitude', 'speedoverground', 'heading', 'track', 'magneticvariation' ]:
+                if field in packet.fields:
+                    geo[field] = packet.fields[field]
+            if geo and self._geo_callback_func:
+                # execute callback
+                func = self._geo_callback_func
+                func(self._geo_callback_data, geo)
+
             self._vrt_context.update(packet.fields)
             self.log(packet)
             return
