@@ -8,15 +8,6 @@ try:
 except ImportError:
     from distutils.core import setup
 
-extras = {}
-try:
-    import py2exe
-    extras.update({
-        'windows':['rtsa-gui.py'],
-        })
-except ImportError:
-    pass
-
 exec(open(os.path.join("pyrf","version.py")).read())
 release = __version__
 
@@ -54,10 +45,5 @@ setup(
         "Topic :: System :: Hardware",
         ],
     test_suite='pyrf.tests',
-    entry_points={
-        'gui_scripts': [
-            "rtsa-gui = pyrf.gui.spectrum_analyzer:main",
-            ],
-        },
-    **extras
+    entry_points={ },
     )
