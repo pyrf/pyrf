@@ -178,27 +178,64 @@ class ContextPacket(object):
 
         elif indicators & CTX_GPS:
             (header, tsi, tsf, latitude, longitude, altitude, sog, heading, track, magnetic, ) = struct.unpack(">IIQiiiiiii", data[i:i+44])
-            tsi_f = (header >> 26) & 0x3
-            tsf_f = (header >> 24) & 0x3
+            i += 44
+
+            # parse OUI from the header
             oui = header & 0xffffff
+            self.fields['oui'] = oui
+
+            # timestamp
             self.fields['seconds'] = tsi
             self.fields['secondsfractional'] = tsf
-            self.fields['oui'] = oui
-            latitude /= 2.0 ** 22
-            self.fields['latitude'] = latitude
-            longitude /= 2.0 ** 22
-            self.fields['longitude'] = longitude
-            altitude /= 2.0 ** 5
-            self.fields['altitude'] = altitude
-            sog /= 2.0 ** 16
-            self.fields['speedoverground'] = sog
-            heading /= 2.0 ** 22
-            self.fields['heading'] = heading
-            track /= 2.0 ** 22
-            self.fields['track'] = track
-            magnetic /= 2.0 ** 22
-            self.fields['magneticvariation'] = magnetic
-            i += 44
+
+            # latitude
+            if latitude == 0x7fffffff:
+                self.fields['latitude'] = None
+            else:
+                latitude /= 2.0 ** 22
+                self.fields['latitude'] = latitude
+
+            # longitude
+            if longitude == 0x7fffffff:
+                self.fields['longitude'] = None
+            else:
+                longitude /= 2.0 ** 22
+                self.fields['longitude'] = longitude
+
+            # altitude
+            if altitude == 0x7fffffff:
+                self.fields['altitude'] = None
+            else:
+                altitude /= 2.0 ** 5
+                self.fields['altitude'] = altitude
+
+            # speed over ground
+            if sog == 0x7fffffff:
+                self.fields['speedoverground'] = None
+            else:
+                sog /= 2.0 ** 16
+                self.fields['speedoverground'] = sog
+
+            # heading
+            if heading == 0x7fffffff:
+                self.fields['heading'] = None
+            else:
+                heading /= 2.0 ** 22
+                self.fields['heading'] = heading
+
+            # track
+            if track == 0x7fffffff:
+                self.fields['track'] = None
+            else:
+                track /= 2.0 ** 22
+                self.fields['track'] = track
+
+            # magnetic variance
+            if magnetic == 0x7fffffff:
+                self.fields['magneticvariation'] = None
+            else:
+                magnetic /= 2.0 ** 22
+                self.fields['magneticvariation'] = magnetic
 
         else:
             self.fields['unknown'] = (indicators, data)

@@ -7,6 +7,7 @@ def wsa_properties(device_id):
     """
     Return a WSA*Properties class for device_id passed
     """
+
     mfr, model_rev, serial, firmware = device_id.split(',')
     model, _space, rev = model_rev.partition(' ')
 
@@ -42,8 +43,12 @@ def wsa_properties(device_id):
     elif model in ['R5500-418', 'RTSA7550-18', 'R5700-418']:
         p = R5500_418Properties()
 
-    elif model in ['R5500-427', 'RTSA7550-27', "R6000x-427", 'R5700-427']:
+    elif model in ['R5500-427', 'RTSA7550-27']:
         p = R5500_427Properties()
+
+    elif model in ['R6000x-427', 'R5700-427']:
+        p = R5700_427Properties()
+
     else:
         p = WSA5000_220Properties()
 
@@ -90,6 +95,7 @@ class WSA4000Properties(object):
     SWEEP_SETTINGS = ['fstart', 'fstop', 'fstep', 'fshift', 'decimation',
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+    GPS_AVAILABLE = False
 
 
 ###
@@ -396,6 +402,14 @@ class R5500_427Properties(R5500_408Properties):
             SH = 27000 * M,
             SHN = 27000 * M,
     )
+
+
+###
+# properties for R5700-427
+#
+class R5700_427Properties(R5500_427Properties):
+    model = 'R5700-427'
+    GPS_AVAILABLE = True
 
 
 ###
