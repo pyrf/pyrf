@@ -5,6 +5,8 @@ Change Logs
 PyRF 2.9.1
 ----------
 
+2018-11-05
+ * Fixed proper plot mapping of bandwidth & frequencies in some examples
  * Updated this PyRF Manual/Documentation
  * Added more examples
 

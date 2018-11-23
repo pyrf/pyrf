@@ -8,7 +8,7 @@ Hardware Support
 This library supports development for the
 `ThinkRF RTSA`_ platforms.
 
-.. _ThinkRF: http://www.thinkrf.com/
+.. _ThinkRF RTSA: http://www.thinkrf.com/
 
 Links
 -----
