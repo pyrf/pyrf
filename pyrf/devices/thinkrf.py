@@ -594,7 +594,8 @@ class WSA(object):
         self.scpiset(":sweep:entry:new")
 
         # detect if variable attenuator needs to be set
-        if self.properties.model in ['R5500-418', 'R5500-427']:
+        # TODO: refactor this into device properties
+        if self.properties.model in ['R5500-418', 'R5500-427', 'R5700-427']:
             self.scpiset("SWEEP:ENTRY:ATT:VAR %0.2f" % (entry.attenuation))
 
         else:
