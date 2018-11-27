@@ -232,7 +232,7 @@ class WSA(object):
         """
         This command sets or queries the RTSA's PLL reference source
 
-        :param str src: 'INT', 'EXT', 'GPS' (when available with the model) or *None* to query
+        :param str src: 'INT', 'EXT', 'GNSS' (when available with the model) or *None* to query
         :returns: the current PLL reference source if *None* is used
         """
 
@@ -240,7 +240,7 @@ class WSA(object):
             buf = yield self.scpiget(":SOURCE:REFERENCE:PLL?")
             src = buf.strip()
         else:
-            assert src in ('INT', 'EXT')
+            assert src in ('INT', 'EXT', 'GNSS')
             self.scpiset(":SOURCE:REFERENCE:PLL %s" % src)
         yield src
 
