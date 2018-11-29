@@ -134,6 +134,11 @@ class SweepPlanner(object):
         if not (mode == 'ZIF'):
             sweep_settings.rbw = sweep_settings.rbw * 2
 
+        # change fstart and stop by a bit to account for floating point errors
+        # TODO: make this take into account tuning resolution
+        fstart -= sweep_settings.rbw * 4
+        fstop += sweep_settings.rbw * 4
+
         # calculate fstart frequency
         if fstart < self.dev_properties.MIN_TUNABLE[mode]:
             sweep_settings.dd_mode = True
@@ -148,10 +153,6 @@ class SweepPlanner(object):
         else:
             sweep_settings.dd_mode = False
             sweep_settings.fstart = fstart + (usable_bw / 2)
-
-            # reduce fstart by a bit to account for floating point errors
-            # TODO: make this take into account tuning resolution
-            sweep_settings.fstart -= sweep_settings.rbw * 4
 
         # check if non-dd mode is required
         if fstop <= self.dev_properties.MIN_TUNABLE[mode]:

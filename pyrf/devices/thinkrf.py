@@ -634,8 +634,8 @@ class WSA(object):
 
         # determine if a stop frequency is required to capture last bit of spectrum
         if entry.make_end_entry:
-            start_freq = entry.end_entry_freq
-            stop_freq = entry.end_entry_freq + 100e3
+            start_freq = entry.end_entry_freq + round(entry.fstep / 2)
+            stop_freq = start_freq
             self.scpiset(":sweep:entry:freq:center %d, %d" % (start_freq, stop_freq))
             self.scpiset(":sweep:entry:save")
 
