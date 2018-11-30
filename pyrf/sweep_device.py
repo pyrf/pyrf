@@ -134,6 +134,11 @@ class SweepPlanner(object):
         if not (mode == 'ZIF'):
             sweep_settings.rbw = sweep_settings.rbw * 2
 
+        # make sure our result is atleast 1 RBW big
+        if (sweep_settings.bandstop - sweep_settings.bandstart) < sweep_settings.rbw:
+            fstop = sweep_settings.bandstart + sweep_settings.rbw
+            sweep_settings.bandstop = fstop
+
         # change fstart and stop by a bit to account for floating point errors
         # TODO: make this take into account tuning resolution
         fstart -= sweep_settings.rbw * 4
@@ -538,6 +543,7 @@ class SweepDevice(object):
             # adjust src stop bin because we adjusted tocopy
             src_stop_bin = src_start_bin + tocopy
 
-        # copy the data
-        self.log("dst_psd[%d:%d] = src_psd[%d:%d]" % (dst_start_bin, dst_stop_bin, src_start_bin, src_stop_bin))
-        dst_psd[dst_start_bin:dst_stop_bin] = src_psd[src_start_bin:src_stop_bin]
+        # copy the data, if there's data that needs copying
+        if ((dst_stop_bin - dst_start_bin) > 0) and ((src_stop_bin - src_start_bin) > 0):
+            self.log("dst_psd[%d:%d] = src_psd[%d:%d]" % (dst_start_bin, dst_stop_bin, src_start_bin, src_stop_bin))
+            dst_psd[dst_start_bin:dst_stop_bin] = src_psd[src_start_bin:src_stop_bin]
