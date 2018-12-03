@@ -375,8 +375,7 @@ class R5500_418Properties(R5500_408Properties):
     CAPTURE_FREQ_RANGES = [(50*M, 18000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 18000*M)
 
-    SWEEP_SETTINGS = list(R5500_408Properties.SWEEP_SETTINGS) + [ 'var_attenuator', 'psfm_gain' ]
-    SWEEP_SETTINGS.remove('attenuator')
+    SWEEP_SETTINGS = list(R5500_408Properties.SWEEP_SETTINGS) + [ 'psfm_gain' ]
 
     # max frequency is 18 GHz
     MAX_TUNABLE = dict(R5500_408Properties.MAX_TUNABLE, 
@@ -390,7 +389,7 @@ class R5500_418Properties(R5500_408Properties):
 ###
 # properties for R5500-427
 #
-class R5500_427Properties(R5500_408Properties):
+class R5500_427Properties(R5500_418Properties):
     model = 'R5500-427'
     CAPTURE_FREQ_RANGES = [(50*M, 27000*M, IQ)]
     SWEEP_FREQ_RANGE = (100*M, 27000*M)
