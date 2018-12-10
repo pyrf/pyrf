@@ -204,7 +204,8 @@ class WSA(object):
         :param str path: 'DIGITIZER', 'CONNECTOR', 'HIF', or *None* to query
         :returns: the current IQ output path type if *None* is used
         """
-        if 'R5500' in self.properties.model:
+        # TODO: make this not depend on model name
+        if ('R5500' in self.properties.model) or ('R5700' in self.properties.model):
             cmd = "OUTPUT:MODE"
         else:
             cmd = "OUTPUT:IQ:MODE"
@@ -232,7 +233,7 @@ class WSA(object):
         """
         This command sets or queries the RTSA's PLL reference source
 
-        :param str src: 'INT', 'EXT', 'GPS' (when available with the model) or *None* to query
+        :param str src: 'INT', 'EXT', 'GNSS' (when available with the model) or *None* to query
         :returns: the current PLL reference source if *None* is used
         """
 
@@ -240,7 +241,7 @@ class WSA(object):
             buf = yield self.scpiget(":SOURCE:REFERENCE:PLL?")
             src = buf.strip()
         else:
-            assert src in ('INT', 'EXT')
+            assert src in ('INT', 'EXT', 'GNSS')
             self.scpiset(":SOURCE:REFERENCE:PLL %s" % src)
         yield src
 
@@ -594,7 +595,8 @@ class WSA(object):
         self.scpiset(":sweep:entry:new")
 
         # detect if variable attenuator needs to be set
-        if self.properties.model in ['R5500-418', 'R5500-427']:
+        # TODO: refactor this into device properties
+        if self.properties.model in ['R5500-418', 'R5500-427', 'R5700-427']:
             self.scpiset("SWEEP:ENTRY:ATT:VAR %0.2f" % (entry.attenuation))
 
         else:
@@ -634,8 +636,8 @@ class WSA(object):
 
         # determine if a stop frequency is required to capture last bit of spectrum
         if entry.make_end_entry:
-            start_freq = entry.end_entry_freq
-            stop_freq = entry.end_entry_freq + 100e3
+            start_freq = entry.end_entry_freq + round(entry.fstep / 2)
+            stop_freq = start_freq
             self.scpiset(":sweep:entry:freq:center %d, %d" % (start_freq, stop_freq))
             self.scpiset(":sweep:entry:save")
 
@@ -745,7 +747,8 @@ class WSA(object):
         :param atten_val: see Programmer's Guide for the attenuation value to use for your product; *None* to query
         :returns: the current attenuation value if *None* is used
         """
-        if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
+        # TODO: make this not depend on model name
+        if ('R5500-418' in self.properties.model) or ('R5500-427' in self.properties.model) or ('R5700-427' in self.properties.model):
             cmd = 'INPUT:ATTENUATOR:VAR'
         else:
             cmd = 'INPUT:ATTENUATOR'
@@ -753,7 +756,8 @@ class WSA(object):
         if  atten_val is None:
             atten_val = yield self.scpiget("%s?" % cmd)
         else:
-            if 'R5500' in self.properties.model:
+            # TODO: make this not depend on model name
+            if ('R5500' in self.properties.model) or ('R5700' in self.properties.model):
                     atten_val = yield self.scpiset("%s %0.2f" % (cmd, atten_val))
             else:
                 atten_val = bool(int( atten_val))
