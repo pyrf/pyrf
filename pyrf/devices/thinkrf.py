@@ -204,7 +204,8 @@ class WSA(object):
         :param str path: 'DIGITIZER', 'CONNECTOR', 'HIF', or *None* to query
         :returns: the current IQ output path type if *None* is used
         """
-        if 'R5500' in self.properties.model:
+        # TODO: make this not depend on model name
+        if ('R5500' in self.properties.model) or ('R5700' in self.properties.model):
             cmd = "OUTPUT:MODE"
         else:
             cmd = "OUTPUT:IQ:MODE"
@@ -746,7 +747,8 @@ class WSA(object):
         :param atten_val: see Programmer's Guide for the attenuation value to use for your product; *None* to query
         :returns: the current attenuation value if *None* is used
         """
-        if 'R5500-418' in self.properties.model or 'R5500-427' in self.properties.model:
+        # TODO: make this not depend on model name
+        if ('R5500-418' in self.properties.model) or ('R5500-427' in self.properties.model) or ('R5700-427' in self.properties.model):
             cmd = 'INPUT:ATTENUATOR:VAR'
         else:
             cmd = 'INPUT:ATTENUATOR'
@@ -754,7 +756,8 @@ class WSA(object):
         if  atten_val is None:
             atten_val = yield self.scpiget("%s?" % cmd)
         else:
-            if 'R5500' in self.properties.model:
+            # TODO: make this not depend on model name
+            if ('R5500' in self.properties.model) or ('R5700' in self.properties.model):
                     atten_val = yield self.scpiset("%s %0.2f" % (cmd, atten_val))
             else:
                 atten_val = bool(int( atten_val))
