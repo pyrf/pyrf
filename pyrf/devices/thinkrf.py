@@ -75,7 +75,7 @@ class WSA(object):
         self.connector.inject_recording_state(state)
 
     @sync_async
-    def connect(self, host):
+    def connect(self, host, timeout=8):
         """
         Connect to an RTSA (aka WSA).
 
@@ -85,7 +85,7 @@ class WSA(object):
 
             dut.connect('123.456.789.1')
         """
-        yield self.connector.connect(host)
+        yield self.connector.connect(host, timeout)
         self.device_id = (yield self.scpiget(":*idn?"))
         self.properties = wsa_properties(self.device_id)
 

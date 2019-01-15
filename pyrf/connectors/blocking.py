@@ -10,13 +10,30 @@ class PlainSocketConnector(object):
     This connector makes SCPI/VRT socket connections using plain sockets, of blocking type.
     """
 
-    def connect(self, host):
-        self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock_scpi.connect((host, SCPI_PORT))
-        self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock_vrt.connect((host, VRT_PORT))
+    def __init__(self):
+        self._sock_scpi = None
+        self._sock_vrt = None
 
+    def connect(self, host, timeout=8): # if after 8s nothing has happened, throw timeout
+        """connect scpi and vrt with a timeout"""
+        try:
+            self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock_scpi.settimeout(timeout)
+            self._sock_scpi.connect((host, SCPI_PORT))
+            self._sock_scpi.settimeout(None)
+            self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        except socket.error as err:
+            logger.error('socket connect SCPI failed with %s', err)
+            raise
+        else:
+            try:
+                self._sock_vrt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self._sock_vrt.connect((host, VRT_PORT))
+            except socket.error as err:
+                logger.error('socket connect VRT failed with %s', err)
+                self._sock_scpi.shutdown(socket.SHUT_RDWR)
+                self._sock_scpi.close()
+                raise            
 
     def disconnect(self):
         self._sock_scpi.shutdown(socket.SHUT_RDWR)
