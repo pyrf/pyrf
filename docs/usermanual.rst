@@ -58,9 +58,13 @@ These instructions are tested on Debian/Ubuntu system, equivalent **apt-get** co
 * Install **python2.7** package if not already available in your system
 * Install required libraries (sudo privilege might be needed)::
 
-    apt-get install pip
-    pip install numpy scipy pyside==1.2.2 pyqtgraph twisted netifaces zope.interface setuptools
+    apt-get install pip 
+    pip install numpy scipy pyqtgraph twisted netifaces zope.interface setuptools
     pip install -e git://github.com/pyrf/qtreactor.git#egg=qtreactor
+    pip install PySide
+
+**Note:**
+ - **pySide v1.2.2** might be needed if the latest 1.2.4 version would not work on your OS (additional installation such as **cmake** or **python-tk** (for Tinker) might be needed if these errors shown during installation)
 
 * Or install dependencies from source::
 
