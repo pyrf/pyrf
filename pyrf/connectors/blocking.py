@@ -20,7 +20,6 @@ class PlainSocketConnector(object):
             self._sock_scpi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._sock_scpi.settimeout(timeout)
             self._sock_scpi.connect((host, SCPI_PORT))
-            self._sock_scpi.settimeout(None)
             self._sock_scpi.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         except socket.error as err:
             logger.error('socket connect SCPI failed with %s', err)
@@ -36,10 +35,15 @@ class PlainSocketConnector(object):
                 raise            
 
     def disconnect(self):
-        self._sock_scpi.shutdown(socket.SHUT_RDWR)
-        self._sock_scpi.close()
-        self._sock_vrt.shutdown(socket.SHUT_RDWR)
-        self._sock_vrt.close()
+        """attempt to disconnect safely from SCPI and VRT"""
+        try:
+            # try to shutdown both sessions
+            self._sock_scpi.shutdown(socket.SHUT_RDWR)
+            self._sock_vrt.shutdown(socket.SHUT_RDWR)
+        finally:
+            # regardless of what happens in shutdown, ALWAYS lose sockets on disconnect
+            self._sock_scpi.close()
+            self._sock_vrt.close()
 
     def scpiset(self, cmd):
         cmd = "%s\n" % cmd
@@ -47,12 +51,23 @@ class PlainSocketConnector(object):
         self._sock_scpi.send(cmd)
 
     def scpiget(self, cmd):
+        """send a query to the device and wait for its response"""
         cmd = "%s\n" % cmd
-        logger.debug('scpiset %r', cmd)
-        self._sock_scpi.send(cmd)
-        buf = self._sock_scpi.recv(1024)
-        logger.debug('scpigot %r', buf)
-        return buf
+        logger.debug('scpiget %r', cmd)
+        try:
+            self._sock_scpi.send(cmd)
+        except socket.error as err:
+            logger.error('scpiget (send) failed on socket error: %s', err)
+            raise
+        else:
+            try:
+                buf = self._sock_scpi.recv(1024)
+            except socket.error as err:
+                logger.error('scpiget (recv) failed on socket error: %s', err)
+                raise
+            else:
+                logger.debug('scpigot %r', buf)
+                return buf
 
     def eof(self):
         # FIXME: lies
