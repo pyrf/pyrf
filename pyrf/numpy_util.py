@@ -8,16 +8,19 @@ from pyrf.vrt import (I_ONLY, VRT_IFDATA_I14Q14, VRT_IFDATA_I14,
 def calculate_channel_power(power_spectrum):
     """
     Return a dBm value representing the channel power of the input
-    power spectrum.
+    power spectrum. The algorithm is:
+    Pchan = 10 * log10(sum(10^(Pdbm[i]/10))) where i = start_bint to stop_bin
+    (Reference: http://uniteng.com/index.php/2013/07/26/channel-power-measurements/
+    However, instead of calculating over the whole bandwidth as in the ref link,    this fn only needs to calculate between the given power_spectrum range).
 
     :param list power_spectrum: an array containing the power spectrum to be
                         used for the channel power calculation
     :returns: the channel power result
     """
 
-    linear = np.power(10, np.divide(power_spectrum, 20))
+    linear = np.power(10, np.divide(power_spectrum, 10))
+    channel_power = 10 * np.log10(np.sum(linear))
 
-    channel_power = 10 * np.log10(np.sum(np.square(linear)))
     return channel_power
 
 def _decode_data_pkts(data_pkt):
@@ -288,50 +291,51 @@ def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, R
 
 def calculate_occupied_bw(pow_data, span, occupied_perc):
     """
-    Return the occupied bandwidth of a given spectrum, and occupied percentage
+    Return the occupied bandwidth of a given spectrum
 
     :param list pow_data: spectral data to be analyzed
     :param int span: span of the given spectrum, in Hz
     :param float occupied_perc: Percentage of the power to be measured
 
-    :returns: float value of the occupied bandwidth
+    :returns: float value of the occupied bandwidth (in Hz)
     """
 
     # 100% of the occupied bandwidth is the full span
     if occupied_perc >= 100.0:
         return span
+
     # calculate center bin
     pow_list = list(pow_data)
-
     total_points = len(pow_list)
-    mid_point = int(total_points/ 2)
+    mid_point = int(total_points / 2)
 
-    # the number of segments to jump seperate the spectrum
-    num_divisions = 1500
-
-    # offset the value of the spectrum, so the minimum is 0, to prevent negative numbers from offseting the channel power calculation
+    # offset the value of the spectrum so that the minimum is 0 to prevent
+    # negative numbers used in (10^pow_list) resulting in faile computation
     min_offset = np.abs(min(pow_list))
-    pow_list= (pow_list + min_offset) * 5
+    pow_list= pow_list + min_offset
 
-    # calculate total channel power
+    # calculate total channel power & the % equivalent
     total_channel_power = calculate_channel_power(pow_list)
     perc_power = (occupied_perc / 100.0) * total_channel_power
 
-    bisect_val = 1
-    prev_bisect = -1
-    # calculate channel power at center point, while incrementing i on each loop to increase span of calculation
+    # calculate channel power at center point, while incrementing by X # of
+    # RBWs on each loop to increase span of calculation
+    span_step = 1 # initially 1 rbw span
     while True:
-        section_power = calculate_channel_power(pow_list[mid_point - bisect_val : mid_point + bisect_val])
+        section_power = calculate_channel_power(pow_list[mid_point - span_step : mid_point + span_step])
 
-        if section_power > perc_power:
+        if section_power >= perc_power:
             break
+        else:
+            # the larger # of points, the larger the step size to prevent long
+            # looping; however, can't be larger than the half of total points
+            span_step  = span_step + max(1, int(total_points / 1000))
+            if span_step > int(total_points / 2):
+                span_step = int(total_points / 2)
+                break
 
-        if section_power < perc_power:
-            prev_bisect = bisect_val
-            bisect_val  = bisect_val + max(1, int(total_points / num_divisions))
-
-    # calculate occupied bandwidth
-    occupied_bw = (float(2 * bisect_val) / float(total_points)) * span
+    # calculate occupied bandwidth by taking span_step on each side * rbw
+    occupied_bw = float((2 * span_step) * (span / total_points))
 
     return occupied_bw
 
