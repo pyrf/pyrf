@@ -428,7 +428,8 @@ class WSA(object):
         """
         if settings is None:
             # find out what kind of trigger is set
-            trigstr = yield self.scpiget(":TRIGGER:TYPE?")
+            buf = yield self.scpiget(":TRIGGER:TYPE?")
+            trigstr = buf.strip()
             if trigstr == "LEVEL":
                 # read the settings from the box
                 trigstr = yield self.scpiget(":TRIGGER:LEVEL?")
@@ -504,7 +505,8 @@ class WSA(object):
 
         :returns: True if allowed to read, False if not
         """
-        lockstr = yield self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
+        buf = yield self.scpiget(":SYSTEM:LOCK:REQUEST? ACQ\n")
+        lockstr = buf.strip()
         yield lockstr == "1"
 
     @sync_async
@@ -514,7 +516,8 @@ class WSA(object):
 
         :returns: True if allowed to read, False if not
         """
-        lockstr = yield self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
+        buf = yield self.scpiget(":SYSTEM:LOCK:HAVE? ACQ\n")
+        lockstr = buf.strip()
         yield lockstr == "1"
 
     def read_data(self, spp):
