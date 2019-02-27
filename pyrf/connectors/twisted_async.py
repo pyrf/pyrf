@@ -230,11 +230,17 @@ class VRTClientFactory(Factory):
     def clientConnectionFailed(self, connector, reason):
         pass
 
+
 class SCPIClient(Protocol):
     _pending = None
+    _in_block = False
+    _num_len = None
+    _block_len = None
+    _buf_scpi = None
 
     def connectionMade(self):
         self.transport.setTcpNoDelay(True)
+        self._buf_scpi = StringIO()
 
     def scpiset(self, cmd):
         if self._pending:
@@ -256,13 +262,43 @@ class SCPIClient(Protocol):
         return d
 
     def dataReceived(self, data):
-
+        datapos = 0
         # The firmware sometimes sends an extra query unexpectedly TODO FIX THIS ISSUE IN FIRMWARE
         if not len(self._pending) > 0:
             return
 
+        # Peak into the packet
+        if data[0] == '#' and not self._in_block:
+            self._in_block = True
+            datapos += 1  # (1)
+
+        if self._in_block:
+            if self._num_len is None:
+                self._num_len = int(data[datapos])
+                datapos += 1  # (2)
+
+            if self._block_len is None:
+                self._block_len = int(data[datapos:datapos + self._num_len])
+                datapos += self._num_len  # (2+self.num_len)
+
+            self._buf_scpi.seek(0, 2)  # move to the last position
+            self._buf_scpi.write(data)
+
+            if self._buf_scpi.tell() < self._block_len + self._num_len + 2:
+                return
+            else:
+                self._buf_scpi.seek(0)
+                data = self._buf_scpi.read(self._block_len+self._num_len+2)
+                self._buf_scpi.seek(0)
+                self._buf_scpi.truncate()
+                self._block_len = None
+                self._num_len = None
+                self._in_block = False
+
         cmd, d = self._pending.pop(0)
-        logger.debug('scpigot %r', data)
+        # Profile for timming this should help
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('scpigot %r', data)
         if d:
             d.callback(data)
 
