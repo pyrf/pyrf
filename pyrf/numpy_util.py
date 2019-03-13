@@ -11,7 +11,8 @@ def calculate_channel_power(power_spectrum):
     power spectrum. The algorithm is:
     Pchan = 10 * log10(sum(10^(Pdbm[i]/10))) where i = start_bint to stop_bin
     (Reference: http://uniteng.com/index.php/2013/07/26/channel-power-measurements/
-    However, instead of calculating over the whole bandwidth as in the ref link,    this fn only needs to calculate between the given power_spectrum range).
+    However, instead of calculating over the whole bandwidth as in the ref link,
+    this fn only needs to calculate between the given power_spectrum range).
 
     :param list power_spectrum: an array containing the power spectrum to be
                         used for the channel power calculation
@@ -271,7 +272,6 @@ def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, R
                     N_ndx = max(enumerate(p),key=lambda x: x[1])[0]
                     N = np.sqrt(2) * x[N_ndx]
 
-
                     Natt = np.random.normal(0, N, len(att_ind)) + 1j * np.random.normal(0, N, len(att_ind))
                     ampl_spectrum[att_ind] = (ampl_spectrum[att_ind]/np.abs(ampl_spectrum[att_ind])) * Natt
                     iq = np.fft.ifft(np.fft.fftshift(ampl_spectrum*Nsamp))
@@ -291,7 +291,7 @@ def imageAttenuation(i_in, q_in, Phi_deg, iqswapedbit, iq_correction_wideband, R
 
 def calculate_occupied_bw(pow_data, span, occupied_perc):
     """
-    Return the occupied bandwidth of a given spectrum
+    Return the occupied bandwidth of a given spectrum, in Hz
 
     :param list pow_data: spectral data to be analyzed
     :param int span: span of the given spectrum, in Hz
@@ -309,30 +309,20 @@ def calculate_occupied_bw(pow_data, span, occupied_perc):
     total_points = len(pow_list)
     mid_point = int(total_points / 2)
 
-    # offset the value of the spectrum so that the minimum is 0 to prevent
-    # negative numbers used in (10^pow_list) resulting in faile computation
-    min_offset = np.abs(min(pow_list))
-    pow_list= pow_list + min_offset
+    # calculate total linear power & the % equivalent
+    total_linear_power = np.sum(np.power(10, np.divide(pow_list, 10)))
+    perc_power = (occupied_perc / 100.0) * total_linear_power
 
-    # calculate total channel power & the % equivalent
-    total_channel_power = calculate_channel_power(pow_list)
-    perc_power = (occupied_perc / 100.0) * total_channel_power
-
-    # calculate channel power at center point, while incrementing by X # of
-    # RBWs on each loop to increase span of calculation
+    # calculate channel power at center point, while incrementing by span_step
+    # of 1 RBW increment to increase span of calculation
     span_step = 1 # initially 1 rbw span
+    section_power = np.sum(np.power(10, np.divide(pow_list[mid_point - span_step : mid_point + span_step], 10)))
     while True:
-        section_power = calculate_channel_power(pow_list[mid_point - span_step : mid_point + span_step])
-
         if section_power >= perc_power:
             break
-        else:
-            # the larger # of points, the larger the step size to prevent long
-            # looping; however, can't be larger than the half of total points
-            span_step  = span_step + max(1, int(total_points / 1000))
-            if span_step > int(total_points / 2):
-                span_step = int(total_points / 2)
-                break
+        span_step = span_step + 1
+        section_power = section_power + np.power(10, np.divide(pow_list[mid_point - span_step], 10))
+        section_power = section_power + np.power(10, np.divide(pow_list[mid_point + span_step], 10))
 
     # calculate occupied bandwidth by taking span_step on each side * rbw
     occupied_bw = float((2 * span_step) * (span / total_points))
