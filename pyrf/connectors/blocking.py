@@ -65,8 +65,8 @@ class PlainSocketConnector(object):
             blockbuf += buf
             lenread += len(buf)
 
-        # that's all our bytes, return the byte string for them to deal with
-        return blockbuf
+        # that's all our bytes, return the byte string for them to deal with, but don't return the trailing \n
+        return blockbuf[:-1]
 
     def eof(self):
         # FIXME: lies
