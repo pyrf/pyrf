@@ -37,26 +37,28 @@ def wsa_properties(device_id):
     elif model == 'RTSA7500-27':
         p = BNC_RTSA750027_Properties()
 
-    elif model in ['R5500-408', 'RTSA7550-8', 'R5700-408']:
+    elif model in ['R5500-408', 'R5550-408', 'RTSA7550-8']:
         p = R5500_408Properties()
 
-    elif model in ['R5500-418', 'RTSA7550-18', 'R5700-418']:
+    elif model in ['R5500-418', 'R5550-418', 'RTSA7550-18']:
         p = R5500_418Properties()
 
-    elif model in ['R5500-427', 'RTSA7550-27']:
+    elif model in ['R5500-427', 'R5550-427', 'RTSA7550-27']:
         p = R5500_427Properties()
 
-    elif model in ['R6000x-427', 'R5700-427']:
+    elif model in ['R5700-408', 'R5750-408']:
+        p = R5700_408Properties()
+
+    elif model in ['R5700-418', 'R5750-418']:
+        p = R5700_418Properties()
+
+    elif model in ['R6000x-427', 'R5700-427', 'R5750-427']:
         p = R5700_427Properties()
 
     else:
         p = WSA5000_220Properties()
 
     firmware_rev = LooseVersion(firmware.replace('-', '.'))
-
-    # correct for R5500
-    if 'R5500' in model or 'RTSA7550' in model or 'R6000x' in model or 'R5700' in model:
-        p.REFLEVEL_ERROR = WSA4000Properties.REFLEVEL_ERROR
 
     return p
 
@@ -358,6 +360,7 @@ class WSA5000_408PProperties(WSA5000_427Properties):
 #
 class R5500_408Properties(WSA5000_408Properties):
     model = 'R5500-408'
+    REFLEVEL_ERROR = 15.7678
     MIN_FREQ = 9e3
     RFE_MODES = ('SH', 'ZIF', 'SHN', 'HDR', 'DD')
     SWEEP_SETTINGS = ['rfe_mode', 'fstart', 'fstop', 'fstep', 'fshift',
@@ -401,6 +404,22 @@ class R5500_427Properties(R5500_418Properties):
             SH = 27000 * M,
             SHN = 27000 * M,
     )
+
+
+###
+# properties for R5700-408
+#
+class R5700_408Properties(R5500_408Properties):
+    model = 'R5700-408'
+    GPS_AVAILABLE = True
+
+
+###
+# properties for R5700-418
+#
+class R5700_418Properties(R5500_418Properties):
+    model = 'R5700-418'
+    GPS_AVAILABLE = True
 
 
 ###
