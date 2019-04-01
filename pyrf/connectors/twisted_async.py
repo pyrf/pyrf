@@ -1,6 +1,7 @@
 try:
     from twisted.internet.protocol import Factory, Protocol
     from twisted.internet import defer
+    from twisted.protocols.policies import TimeoutMixin
     from twisted.internet.endpoints import TCP4ClientEndpoint
     try: # Twisted >= 13.0 for IPv6 support
         from twisted.internet.endpoints import HostnameEndpoint
@@ -19,7 +20,7 @@ except ImportError:
 
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
 from pyrf.vrt import vrt_packet_reader, generate_speca_packet
-
+import socket
 import logging
 import time
 logger = logging.getLogger(__name__)
@@ -231,7 +232,7 @@ class VRTClientFactory(Factory):
         pass
 
 
-class SCPIClient(Protocol):
+class SCPIClient(Protocol, TimeoutMixin):
     _pending = None
     _in_block = False
     _num_len = None
@@ -257,12 +258,21 @@ class SCPIClient(Protocol):
             self._pending.append((cmd, d))
         else:
             self._pending = [('', d)]
+            self.setTimeout(5)
             self.transport.write(cmd)
             logger.debug('scpiget %r', cmd)
         return d
 
+    def timeoutConnection(self):
+        if len(self._pending) > 0:
+            cmd, d = self._pending.pop(0)
+            if d:
+                self.setTimeout(None)
+                d.errback(socket.error("SCPI socket timeout"))
+
     def dataReceived(self, data):
         datapos = 0
+        self.resetTimeout()
         # The firmware sometimes sends an extra query unexpectedly TODO FIX THIS ISSUE IN FIRMWARE
         if not len(self._pending) > 0:
             return
@@ -300,6 +310,7 @@ class SCPIClient(Protocol):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug('scpigot %r', data)
         if d:
+            self.setTimeout(None)
             d.callback(data)
 
         while self._pending:
@@ -307,6 +318,7 @@ class SCPIClient(Protocol):
             logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
             self.transport.write(cmd)
             if d:
+                self.setTimeout(5)
                 break
             self._pending.pop(0)
 
