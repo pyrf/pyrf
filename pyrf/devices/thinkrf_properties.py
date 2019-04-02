@@ -98,6 +98,9 @@ class WSA4000Properties(object):
         'antenna', 'gain', 'ifgain', 'spp', 'ppb', 'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
     GPS_AVAILABLE = False
+    OLD_CMD_OUTPUT_MODE_CMD = True
+    ATTENUATOR_TYPE = "BLOCK"
+    BLOCK_ATTENUATOR_TYPE = "BOOL"
 
 
 ###
@@ -367,6 +370,8 @@ class R5500_408Properties(WSA5000_408Properties):
         'decimation', 'attenuator', 'hdr_gain', 'spp', 'ppb',
         'dwell_s', 'dwell_us',
         'trigtype', 'level_fstart', 'level_fstop', 'level_amplitude']
+    OLD_CMD_OUTPUT_MODE_CMD = False
+    BLOCK_ATTENUATOR_TYPE = "STEP"
         
 
 ###
@@ -387,6 +392,7 @@ class R5500_418Properties(R5500_408Properties):
             SH = 18000 * M,
             SHN = 18000 * M,
     )
+    ATTENUATOR_TYPE = "VARIABLE"
         
     
 ###
@@ -420,6 +426,7 @@ class R5700_408Properties(R5500_408Properties):
 class R5700_418Properties(R5500_418Properties):
     model = 'R5700-418'
     GPS_AVAILABLE = True
+    ATTENUATOR_TYPE = "VARIABLE"
 
 
 ###

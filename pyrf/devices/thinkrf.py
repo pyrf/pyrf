@@ -204,11 +204,10 @@ class WSA(object):
         :param str path: 'DIGITIZER', 'CONNECTOR', 'HIF', or *None* to query
         :returns: the current IQ output path type if *None* is used
         """
-        # TODO: make this not depend on model name
-        if ('R5500' in self.properties.model) or ('R5700' in self.properties.model):
-            cmd = "OUTPUT:MODE"
-        else:
+        if self.properties.OLD_CMD_OUTPUT_MODE_CMD:
             cmd = "OUTPUT:IQ:MODE"
+        else:
+            cmd = "OUTPUT:MODE"
         if path is None:
             buf = yield self.scpiget("%s?" % cmd)
             path = buf.strip()
@@ -596,12 +595,10 @@ class WSA(object):
 
         # detect if variable attenuator needs to be set
         # TODO: refactor this into device properties
-        if self.properties.model in ['R5500-418', 'R5500-427', 'R5700-427']:
+        if self.properties.ATTENUATOR_TYPE == "VARIABLE":
             self.scpiset("SWEEP:ENTRY:ATT:VAR %0.2f" % (entry.attenuation))
-
         else:
-            self.scpiset(":sweep:entry:attenuator %0.2f" % (
-                entry.attenuation))
+            self.scpiset(":sweep:entry:attenuator %0.2f" % (entry.attenuation))
 
         # set the samples per packet
         self.scpiset(":sweep:entry:spp %d" % (entry.spp))
@@ -747,21 +744,28 @@ class WSA(object):
         :param atten_val: see Programmer's Guide for the attenuation value to use for your product; *None* to query
         :returns: the current attenuation value if *None* is used
         """
-        # TODO: make this not depend on model name
-        if ('R5500-418' in self.properties.model) or ('R5500-427' in self.properties.model) or ('R5700-427' in self.properties.model):
+
+        # figure out what scpi command we have to send
+        if self.properties.ATTENUATOR_TYPE == "VARIABLE":
             cmd = 'INPUT:ATTENUATOR:VAR'
         else:
             cmd = 'INPUT:ATTENUATOR'
 
+        # query existing value
         if  atten_val is None:
             atten_val = yield self.scpiget("%s?" % cmd)
+
+        # set value given
         else:
-            # TODO: make this not depend on model name
-            if ('R5500' in self.properties.model) or ('R5700' in self.properties.model):
-                    atten_val = yield self.scpiset("%s %0.2f" % (cmd, atten_val))
+            # check for old style attenuator parameters
+            if self.properties.BLOCK_ATTENUATOR_TYPE == "BOOL":
+                atten_val = int(bool(int(atten_val)))
+                fmt = "%s %d"
             else:
-                atten_val = bool(int( atten_val))
-                self.scpiset(":INPUT:ATTENUATOR %s" % (1 if atten_val else 0))
+                fmt = "%s %0.2f"
+
+            # set the attenuation
+            self.scpiset(fmt % (cmd, atten_val))
 
         yield atten_val
 
