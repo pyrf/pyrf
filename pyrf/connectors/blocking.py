@@ -61,7 +61,7 @@ class PlainSocketConnector(object):
         # read bytes until we get all of it
         blockbuf = buf[2 + numlen:]
         while lenread < blocklen:
-            buf = self._sock_scpi.recv(blocklen - lenread)
+            buf = self._sock_scpi.recv(1024)
             blockbuf += buf
             lenread += len(buf)
 
