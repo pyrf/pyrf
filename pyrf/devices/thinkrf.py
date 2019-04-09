@@ -245,6 +245,26 @@ class WSA(object):
         yield src
 
     @sync_async
+    def data(self, data_type=None, offset=0, length=0):
+        """
+        """
+        data_type = data_type.upper()
+        assert data_type in ('NOISE', 'SIGNAL')
+        buf = yield self.scpiget(":DATA:CORRECTION:%s:READ? %d,%d" % (data_type, offset, length))
+        data = buf
+        yield data
+
+    @sync_async
+    def size(self, data_type=None):
+        """
+        """
+        data_type = data_type.upper()
+        assert data_type in ('NOISE', 'SIGNAL')
+        buf = yield self.scpiget(":DATA:CORRECTION:%s:SIZE?" % data_type)
+        size = int(buf)
+        yield size
+
+    @sync_async
     def freq(self, freq=None):
         """
         This command sets or queries the tuned center frequency of the RTSA.
