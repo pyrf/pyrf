@@ -294,11 +294,11 @@ class SCPIClient(Protocol, TimeoutMixin):
             self._buf_scpi.seek(0, 2)  # move to the last position
             self._buf_scpi.write(data)
 
-            if self._buf_scpi.tell() < self._block_len + self._num_len + 2:
+            if self._buf_scpi.tell() < self._block_len + self._num_len + 2 + 1:
                 return
             else:
-                self._buf_scpi.seek(0)
-                data = self._buf_scpi.read(self._block_len+self._num_len+2)
+                self._buf_scpi.seek(2+self._num_len)
+                data = self._buf_scpi.read(self._block_len)
                 self._buf_scpi.seek(0)
                 self._buf_scpi.truncate()
                 self._block_len = None
