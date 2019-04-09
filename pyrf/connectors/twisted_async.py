@@ -20,9 +20,9 @@ except ImportError:
 
 from pyrf.connectors.base import sync_async, SCPI_PORT, VRT_PORT
 from pyrf.vrt import vrt_packet_reader, generate_speca_packet
-import socket
 import logging
 import time
+import os
 logger = logging.getLogger(__name__)
 
 class TwistedConnectorError(Exception):
@@ -268,7 +268,21 @@ class SCPIClient(Protocol, TimeoutMixin):
             cmd, d = self._pending.pop(0)
             if d:
                 self.setTimeout(None)
-                d.errback(socket.error("SCPI socket timeout"))
+                self._buf_scpi.seek(0, os.SEEK_SET)  # move to first position
+                self._buf_scpi.truncate()  # set buffer size of current position aka 0
+                self._block_len = None
+                self._num_len = None
+                self._in_block = False
+                d.errback(ValueError)
+
+            while self._pending:
+                cmd, d = self._pending[0]
+                logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
+                self.transport.write(cmd)
+                if d:
+                    self.setTimeout(5)
+                    break
+                self._pending.pop(0)
 
     def dataReceived(self, data):
         datapos = 0
@@ -291,7 +305,7 @@ class SCPIClient(Protocol, TimeoutMixin):
                 self._block_len = int(data[datapos:datapos + self._num_len])
                 datapos += self._num_len  # (2+self.num_len)
 
-            self._buf_scpi.seek(0, 2)  # move to the last position
+            self._buf_scpi.seek(0, os.SEEK_END)  # move to the last position
             self._buf_scpi.write(data)
 
             if self._buf_scpi.tell() < self._block_len + self._num_len + 2 + 1:
@@ -299,28 +313,28 @@ class SCPIClient(Protocol, TimeoutMixin):
             else:
                 self._buf_scpi.seek(2+self._num_len)
                 data = self._buf_scpi.read(self._block_len)
-                self._buf_scpi.seek(0)
-                self._buf_scpi.truncate()
+                self._buf_scpi.seek(0, os.SEEK_SET)  # move to first position
+                self._buf_scpi.truncate()  # set buffer size of current position aka 0
                 self._block_len = None
                 self._num_len = None
                 self._in_block = False
-
-        cmd, d = self._pending.pop(0)
-        # Profile for timming this should help
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('scpigot %r', data)
-        if d:
-            self.setTimeout(None)
-            d.callback(data)
-
-        while self._pending:
-            cmd, d = self._pending[0]
-            logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
-            self.transport.write(cmd)
+        if len(self._pending) > 0:
+            cmd, d = self._pending.pop(0)
+            # Profile for timming this should help
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('scpigot %r', data)
             if d:
-                self.setTimeout(5)
-                break
-            self._pending.pop(0)
+                self.setTimeout(None)
+                d.callback(data)
+
+            while self._pending:
+                cmd, d = self._pending[0]
+                logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
+                self.transport.write(cmd)
+                if d:
+                    self.setTimeout(5)
+                    break
+                self._pending.pop(0)
 
 
 class SCPIClientFactory(Factory):
