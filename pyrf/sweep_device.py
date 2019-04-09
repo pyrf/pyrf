@@ -35,10 +35,16 @@ class correction_vector_acquire(object):
             data1.addCallback(self.get_vector_loop)
 
     def get_vector_data(self, size):
+        if size is None:
+            self.d.callback(None)
+            return
         self.size = int(size)
         data = self.dut.data(self.v_type, self.offset, self.transfer_size)
 
         data.addCallback(self.get_vector_loop)
+
+    def error_b(self, failure):
+        return None
 
     def get_vector(self, v_type=None):
         self.v_type = v_type
@@ -48,7 +54,7 @@ class correction_vector_acquire(object):
         self.data_buffer = ""
         size = self.dut.size(self.v_type)
         size.addCallback(self.get_vector_data)
-
+        size.addErrback(self.error_b)
         return d
 
 
@@ -76,6 +82,8 @@ class correction_vector(object):
         return vector / 1000000.0
 
     def buffer_to_vector(self, buffer_in):
+        if len(buffer_in) < 8 + 40:
+            raise ValueError
         self.frequency_index = []
         dy = np.dtype(np.int32)
         dy = dy.newbyteorder('>')
@@ -89,6 +97,9 @@ class correction_vector(object):
         size = 6 * freq_num
         input_buffer = buffer_in[offset:offset + size]
         offset += size
+
+        if len(input_buffer) < size:
+            raise ValueError
 
         for i in range(freq_num):
             freq, index = struct.unpack("!LH", input_buffer[i*6:i*6+6])
@@ -365,26 +376,38 @@ class SweepDevice(object):
             real_device.set_async_callback(None)
 
             def _save_correction_vector(data_buffer):
-                if data_buffer.v_type == "SIGNAL":
-                    self.sp_corr_obj = correction_vector()
-                    self.sp_corr_obj.buffer_to_vector(data_buffer.data_buffer)
-                elif data_buffer.v_type == "NOISE":
-                    self.nf_corr_obj = correction_vector()
-                    self.nf_corr_obj.buffer_to_vector(data_buffer.data_buffer)
-                else:
-                    raise ValueError
+                if data_buffer is None:
+                    return None
+                try:
+                    if data_buffer.v_type == "SIGNAL":
+                        self.sp_corr_obj = correction_vector()
+                        self.sp_corr_obj.buffer_to_vector(data_buffer.data_buffer)
+                    elif data_buffer.v_type == "NOISE":
+                        self.nf_corr_obj = correction_vector()
+                        self.nf_corr_obj.buffer_to_vector(data_buffer.data_buffer)
+                except AttributeError:
+                    if data_buffer.v_type == "SIGNAL":
+                        self.sp_corr_obj = None
+                    elif data_buffer.v_type == "NOISE":
+                        self.nf_corr_obj = None
 
             vector_obj = correction_vector_acquire()
             vector_obj.dut = real_device
+
             vector_obj1 = correction_vector_acquire()
             vector_obj1.dut = real_device
 
+            def _catch_timeout(failure):
+                failure.trap(AttributeError)
+                return None
+
             d1 = vector_obj.get_vector("NOISE")
             d1.addCallback(_save_correction_vector)
+            d1.addErrback(_catch_timeout)
 
             d2 = vector_obj1.get_vector("SIGNAL")
             d2.addCallback(_save_correction_vector)
-
+            d2.addErrback(_catch_timeout)
 
         else:
 
@@ -402,7 +425,10 @@ class SweepDevice(object):
                 max_buf_size = 16*1024
                 offset = 0
                 bin_data = ""
-                signal_size = int(dut.size(v_type))
+                signal_size = dut.size(v_type)
+                if signal_size == 0:
+                    # return NULL or raise error?
+                    pass
                 if signal_size > max_buf_size:
                     transfer_size = max_buf_size
                 else:
@@ -416,9 +442,15 @@ class SweepDevice(object):
                     offset = offset + transfered
                 return bin_data
             self.sp_corr_obj = correction_vector()
-            self.sp_corr_obj.buffer_to_vector(_get_correction(self.real_device, "SIGNAL"))
+            try:
+                self.sp_corr_obj.buffer_to_vector(_get_correction(self.real_device, "SIGNAL"))
+            except ValueError:
+                self.sp_corr_obj = None
             self.nf_corr_obj = correction_vector()
-            self.nf_corr_obj.buffer_to_vector(_get_correction(self.real_device, "NOISE"))
+            try:
+                self.nf_corr_obj.buffer_to_vector(_get_correction(self.real_device, "NOISE"))
+            except ValueError:
+                self.nf_corr_obj = None
         self.async_callback = async_callback
         self.continuous = False
 
@@ -626,8 +658,8 @@ class SweepDevice(object):
             sp_cal = np.flipud(sp_cal)
         sp_cal = signal.resample(sp_cal, len(pow_data))
         nf_cal = signal.resample(nf_cal, len(pow_data))
-        correction_thresh = self.correction_thresh
-        #correction_thresh = -135.0 + ((10.0 * packet_freq / 1e6) / 27000.0) + 10.0 * np.log10(rbw) + self._sweep_settings.attenuation
+        #correction_thresh = self.correction_thresh
+        correction_thresh = -135.0 + ((10.0 * packet_freq / 1e6) / 27000.0) + 10.0 * np.log10(rbw) + self._sweep_settings.attenuation
         pow_data = np.where(pow_data < correction_thresh, pow_data - nf_cal,
                             pow_data - sp_cal)
         # check if DD mode was used in this sweep
