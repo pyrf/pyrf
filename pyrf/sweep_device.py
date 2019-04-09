@@ -7,10 +7,104 @@ from pyrf.util import (compute_usable_bins, adjust_usable_fstart_fstop,
     trim_to_usable_fstart_fstop, find_saturation)
 
 import numpy as np
+from twisted.internet import defer
 
 from pyrf.numpy_util import compute_fft
-
+from scipy import signal
+import struct
 MAXIMUM_SPP = 32768
+
+class correction_vector_acquire(object):
+    data_buffer = ""
+    v_type = "SIGNAL"
+    dut = None
+    complete_buffer = False
+    d = None
+    offset = 0
+    size = 0
+    transfer_size = 16*1024
+
+    def get_vector_loop(self, data):
+        self.data_buffer = b"".join([self.data_buffer, data])
+        self.offset += len(data)
+        if self.offset >= self.size:
+            self.d.callback(self)
+        else:
+            data1 = self.dut.data(self.v_type, self.offset, self.transfer_size)
+
+            data1.addCallback(self.get_vector_loop)
+
+    def get_vector_data(self, size):
+        self.size = int(size)
+        data = self.dut.data(self.v_type, self.offset, self.transfer_size)
+
+        data.addCallback(self.get_vector_loop)
+
+    def get_vector(self, v_type=None):
+        self.v_type = v_type
+        d = defer.Deferred()
+        self.d = d
+        self.offset = 0
+        self.data_buffer = ""
+        size = self.dut.size(self.v_type)
+        size.addCallback(self.get_vector_data)
+
+        return d
+
+
+class correction_vector(object):
+    correction_vectors = None
+    frequency_index = None
+    digest = None
+
+    def _binary_search(self, freq):
+        lo = 0
+        hi = len(self.frequency_index)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if self.frequency_index[mid][0] * 1e3 < freq:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
+
+    def get_correction_vector(self, freq):
+        index = self._binary_search(freq)
+        if index == len(self.frequency_index):
+            index = index - 1
+        vector = self.correction_vectors[self.frequency_index[index][1]]
+        return vector / 1000000.0
+
+    def buffer_to_vector(self, buffer_in):
+        self.frequency_index = []
+        dy = np.dtype(np.int32)
+        dy = dy.newbyteorder('>')
+        self.correction_vectors = {}
+        offset = 0
+        size = 8
+        input_buffer = buffer_in[offset:offset + size]
+        offset = size
+        version, freq_num, vector_num, vector_size = struct.unpack("!HHHH", input_buffer)
+        offset += 40
+        size = 6 * freq_num
+        input_buffer = buffer_in[offset:offset + size]
+        offset += size
+
+        for i in range(freq_num):
+            freq, index = struct.unpack("!LH", input_buffer[i*6:i*6+6])
+            self.frequency_index.append([freq, index])
+
+        for i in range(vector_num):
+            size = 2
+            input_buffer = buffer_in[offset:offset + size]
+            offset += size
+            index = struct.unpack(">H", input_buffer)[0]
+            size = 4 * vector_size
+            input_buffer = buffer_in[offset:offset + size]
+            offset += size
+            micro_db = np.frombuffer(input_buffer, dtype=dy, count=vector_size)
+            self.correction_vectors[index] = micro_db
+
 
 class SweepDeviceError(Exception):
     """
@@ -234,6 +328,11 @@ class SweepDevice(object):
 
     capture_count = 0
 
+    correction_thresh = 10
+
+    sp_corr_obj = None
+    nf_corr_obj = None
+
     def __init__(self, real_device, async_callback=None):
 
         # init log string
@@ -264,6 +363,29 @@ class SweepDevice(object):
 
             # disable receiving data until we are expecting it
             real_device.set_async_callback(None)
+
+            def _save_correction_vector(data_buffer):
+                if data_buffer.v_type == "SIGNAL":
+                    self.sp_corr_obj = correction_vector()
+                    self.sp_corr_obj.buffer_to_vector(data_buffer.data_buffer)
+                elif data_buffer.v_type == "NOISE":
+                    self.nf_corr_obj = correction_vector()
+                    self.nf_corr_obj.buffer_to_vector(data_buffer.data_buffer)
+                else:
+                    raise ValueError
+
+            vector_obj = correction_vector_acquire()
+            vector_obj.dut = real_device
+            vector_obj1 = correction_vector_acquire()
+            vector_obj1.dut = real_device
+
+            d1 = vector_obj.get_vector("NOISE")
+            d1.addCallback(_save_correction_vector)
+
+            d2 = vector_obj1.get_vector("SIGNAL")
+            d2.addCallback(_save_correction_vector)
+
+
         else:
 
             # make sure user doesnt pass async callback if the connector uses blocking sockets
@@ -271,6 +393,32 @@ class SweepDevice(object):
                 raise SweepDeviceError(
                     "async_callback not applicable for sync operation")
 
+            def _get_correction(dut, v_type=None):
+                if v_type.upper() == "SIGNAL" or v_type.upper() == "NOISE":
+                    v_type = v_type.upper()
+                else:
+                    raise ValueError
+
+                max_buf_size = 16*1024
+                offset = 0
+                bin_data = ""
+                signal_size = int(dut.size(v_type))
+                if signal_size > max_buf_size:
+                    transfer_size = max_buf_size
+                else:
+                    transfer_size = signal_size
+
+                while offset < signal_size:
+                    data_buffer = dut.data(v_type, offset, transfer_size)
+                    data = data_buffer
+                    transfered = len(data)
+                    bin_data = b"".join([bin_data, data])
+                    offset = offset + transfered
+                return bin_data
+            self.sp_corr_obj = correction_vector()
+            self.sp_corr_obj.buffer_to_vector(_get_correction(self.real_device, "SIGNAL"))
+            self.nf_corr_obj = correction_vector()
+            self.nf_corr_obj.buffer_to_vector(_get_correction(self.real_device, "NOISE"))
         self.async_callback = async_callback
         self.continuous = False
 
@@ -452,9 +600,36 @@ class SweepDevice(object):
         self.packet_count += 1
         self.log("#%d of %d - %s" % (self.packet_count, self._sweep_settings.step_count, packet))
 
+        # retrieve the frequency and usable BW of the packet
+        packet_freq = self._vrt_context['rffreq']
+        usable_bw = self.dev_properties.USABLE_BW[self._sweep_settings.rfe_mode]
+
         # compute the fft
         pow_data = compute_fft(self.real_device, packet, self._vrt_context)
 
+        # calc rbw for this packet
+        rbw = float(self.dev_properties.FULL_BW[self._sweep_settings.rfe_mode]) / len(pow_data)
+        self.log("rbw = %f, %f" % (rbw, self._sweep_settings.rbw))
+
+        if self.nf_corr_obj is not None:
+            nf_cal = self.nf_corr_obj.get_correction_vector(packet_freq)
+        else:
+            nf_cal = np.zeros(len(pow_data))
+
+        if self.sp_corr_obj is not None:
+            sp_cal = self.sp_corr_obj.get_correction_vector(packet_freq)
+        else:
+            sp_cal = np.zeros(len(pow_data))
+
+        if packet.spec_inv:
+            nf_cal = np.flipud(nf_cal)
+            sp_cal = np.flipud(sp_cal)
+        sp_cal = signal.resample(sp_cal, len(pow_data))
+        nf_cal = signal.resample(nf_cal, len(pow_data))
+        correction_thresh = self.correction_thresh
+        #correction_thresh = -135.0 + ((10.0 * packet_freq / 1e6) / 27000.0) + 10.0 * np.log10(rbw) + self._sweep_settings.attenuation
+        pow_data = np.where(pow_data < correction_thresh, pow_data - nf_cal,
+                            pow_data - sp_cal)
         # check if DD mode was used in this sweep
         if self.packet_count == 1 and self._sweep_settings.dd_mode:
             # copy the data into the result array
@@ -465,13 +640,6 @@ class SweepDevice(object):
             else:
                 return self._emit_data()
 
-        # retrieve the frequency and usable BW of the packet
-        packet_freq = self._vrt_context['rffreq']
-        usable_bw = self.dev_properties.USABLE_BW[self._sweep_settings.rfe_mode]
-
-        # calc rbw for this packet
-        rbw = float(self.dev_properties.FULL_BW[self._sweep_settings.rfe_mode]) / len(pow_data)
-        self.log("rbw = %f, %f" % (rbw, self._sweep_settings.rbw))
 
         # determine the usable bins in this config
         self.log("===> compute_usable_bins()", self._sweep_settings.rfe_mode, self._sweep_settings.spp, 1, 0)
