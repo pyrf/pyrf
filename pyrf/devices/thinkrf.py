@@ -245,7 +245,7 @@ class WSA(object):
         yield src
 
     @sync_async
-    def data(self, data_type=None, offset=0, length=0):
+    def correction_data(self, data_type=None, offset=0, length=0):
         """
         """
         data_type = data_type.upper()
@@ -255,7 +255,7 @@ class WSA(object):
         yield data
 
     @sync_async
-    def size(self, data_type=None):
+    def correction_size(self, data_type=None):
         """
         """
         data_type = data_type.upper()

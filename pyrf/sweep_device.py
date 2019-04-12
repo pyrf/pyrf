@@ -30,8 +30,7 @@ class correction_vector_acquire(object):
         if self.offset >= self.size:
             self.d.callback(self)
         else:
-            data1 = self.dut.data(self.v_type, self.offset, self.transfer_size)
-
+            data1 = self.dut.correction_data(self.v_type, self.offset, self.transfer_size)
             data1.addCallback(self.get_vector_loop)
 
     def get_vector_data(self, size):
@@ -39,8 +38,7 @@ class correction_vector_acquire(object):
             self.d.callback(None)
             return
         self.size = int(size)
-        data = self.dut.data(self.v_type, self.offset, self.transfer_size)
-
+        data = self.dut.correction_data(self.v_type, self.offset, self.transfer_size)
         data.addCallback(self.get_vector_loop)
 
     def error_b(self, failure):
@@ -52,7 +50,7 @@ class correction_vector_acquire(object):
         self.d = d
         self.offset = 0
         self.data_buffer = ""
-        size = self.dut.size(self.v_type)
+        size = self.dut.correction_size(self.v_type)
         size.addCallback(self.get_vector_data)
         size.addErrback(self.error_b)
         return d
@@ -425,7 +423,7 @@ class SweepDevice(object):
                 max_buf_size = 16*1024
                 offset = 0
                 bin_data = ""
-                signal_size = dut.size(v_type)
+                signal_size = dut.correction_size(v_type)
                 if signal_size == 0:
                     # return NULL or raise error?
                     pass
@@ -435,7 +433,7 @@ class SweepDevice(object):
                     transfer_size = signal_size
 
                 while offset < signal_size:
-                    data_buffer = dut.data(v_type, offset, transfer_size)
+                    data_buffer = dut.correction_data(v_type, offset, transfer_size)
                     data = data_buffer
                     transfered = len(data)
                     bin_data = b"".join([bin_data, data])
