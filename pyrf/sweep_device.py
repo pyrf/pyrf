@@ -10,7 +10,6 @@ import numpy as np
 from twisted.internet import defer
 
 from pyrf.numpy_util import compute_fft
-from scipy import signal
 import struct
 MAXIMUM_SPP = 32768
 
@@ -61,7 +60,14 @@ class correction_vector(object):
     frequency_index = None
     digest = None
 
+    def __init__(self):
+        self.frequency_index = []
+        self.dy = np.dtype(np.int32)
+        self.dy = self.dy.newbyteorder('>')
+        self.correction_vectors = {}
+
     def _binary_search(self, freq):
+        # Simple binary search, modified to work the object's datastructure
         lo = 0
         hi = len(self.frequency_index)
         while lo < hi:
@@ -72,47 +78,75 @@ class correction_vector(object):
                 hi = mid
         return lo
 
-    def get_correction_vector(self, freq):
+    def _interp(self, in_array, number_of_points):
+        # array index of our orignal from 0 to size of vector - 1
+        x = np.arange(0.0, self.vector_size, 1.0)
+        # our new index
+        z = np.linspace(0.0, self.vector_size - 1, number_of_points)
+        # interpolate to get our new vector array
+        out_array = np.interp(z, x, in_array)
+        return out_array
+
+    def get_correction_vector(self, freq, number_of_points):
+        # binary search, retunrs our index
         index = self._binary_search(freq)
+        # get the case where we go off the end
         if index == len(self.frequency_index):
             index = index - 1
+
+        # get our vector
         vector = self.correction_vectors[self.frequency_index[index][1]]
-        return vector / 1000000.0
+        # convert from micro db to db
+        vector = vector / 1000000.0
+        # interpolate our vector to the wanted size
+        resampled_vector = self._interp(vector, number_of_points)
+        return resampled_vector
 
     def buffer_to_vector(self, buffer_in):
+        if buffer_in is None:
+            raise ValueError
+
         if len(buffer_in) < 8 + 40:
             raise ValueError
-        self.frequency_index = []
-        dy = np.dtype(np.int32)
-        dy = dy.newbyteorder('>')
-        self.correction_vectors = {}
+
+        # Get the first 8 bytes
         offset = 0
         size = 8
         input_buffer = buffer_in[offset:offset + size]
+        version, freq_num, vector_num, self.vector_size = struct.unpack("!HHHH", input_buffer)
         offset = size
-        version, freq_num, vector_num, vector_size = struct.unpack("!HHHH", input_buffer)
+
+        # Ignore the next 40 bytes, as not used know
         offset += 40
+
+        # grab our frequency list
         size = 6 * freq_num
         input_buffer = buffer_in[offset:offset + size]
         offset += size
 
         if len(input_buffer) < size:
             raise ValueError
-
+        # loop over our buffer, adding a frequency pair to the array
         for i in range(freq_num):
             freq, index = struct.unpack("!LH", input_buffer[i*6:i*6+6])
             self.frequency_index.append([freq, index])
 
+        # grab our correction vectors
         for i in range(vector_num):
+
+            # Grab out index
             size = 2
             input_buffer = buffer_in[offset:offset + size]
-            offset += size
             index = struct.unpack(">H", input_buffer)[0]
-            size = 4 * vector_size
-            input_buffer = buffer_in[offset:offset + size]
             offset += size
-            micro_db = np.frombuffer(input_buffer, dtype=dy, count=vector_size)
+
+            # get our correction vector
+            size = 4 * self.vector_size
+            input_buffer = buffer_in[offset:offset + size]
+            micro_db = np.frombuffer(input_buffer, dtype=self.dy,
+                                     count=self.vector_size)
             self.correction_vectors[index] = micro_db
+            offset += size
 
 
 class SweepDeviceError(Exception):
@@ -642,21 +676,19 @@ class SweepDevice(object):
         self.log("rbw = %f, %f" % (rbw, self._sweep_settings.rbw))
 
         if self.nf_corr_obj is not None:
-            nf_cal = self.nf_corr_obj.get_correction_vector(packet_freq)
+            nf_cal = self.nf_corr_obj.get_correction_vector(packet_freq, len(pow_data))
         else:
             nf_cal = np.zeros(len(pow_data))
 
         if self.sp_corr_obj is not None:
-            sp_cal = self.sp_corr_obj.get_correction_vector(packet_freq)
+            sp_cal = self.sp_corr_obj.get_correction_vector(packet_freq, len(pow_data))
         else:
             sp_cal = np.zeros(len(pow_data))
 
         if packet.spec_inv:
             nf_cal = np.flipud(nf_cal)
             sp_cal = np.flipud(sp_cal)
-        sp_cal = signal.resample(sp_cal, len(pow_data))
-        nf_cal = signal.resample(nf_cal, len(pow_data))
-        #correction_thresh = self.correction_thresh
+
         correction_thresh = -135.0 + ((10.0 * packet_freq / 1e6) / 27000.0) + 10.0 * np.log10(rbw) + self._sweep_settings.attenuation
         pow_data = np.where(pow_data < correction_thresh, pow_data - nf_cal,
                             pow_data - sp_cal)
