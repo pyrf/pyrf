@@ -273,7 +273,7 @@ class SCPIClient(Protocol, TimeoutMixin):
                 self._block_len = None
                 self._num_len = None
                 self._in_block = False
-                d.errback(ValueError)
+                d.errback(IOError("scpi timed out"))
 
             while self._pending:
                 cmd, d = self._pending[0]
