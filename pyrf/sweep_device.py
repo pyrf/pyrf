@@ -13,6 +13,7 @@ from pyrf.numpy_util import compute_fft
 import struct
 MAXIMUM_SPP = 32768
 
+
 class correction_vector_acquire(object):
     data_buffer = ""
     v_type = "SIGNAL"
@@ -27,31 +28,58 @@ class correction_vector_acquire(object):
         self.data_buffer = b"".join([self.data_buffer, data])
         self.offset += len(data)
         if self.offset >= self.size:
-            self.d.callback(self)
+            # we have gotten all out data, return this object
+            if self.d is not None:
+                self.d.callback(self)
         else:
-            data1 = self.dut.correction_data(self.v_type, self.offset, self.transfer_size)
+            # more data, grab another set of data
+            data1 = self.dut.correction_data(self.v_type, self.offset,
+                                             self.transfer_size)
+            # and add this function to the call back
             data1.addCallback(self.get_vector_loop)
 
     def get_vector_data(self, size):
+        # We got out size
         if size is None:
-            self.d.callback(None)
+            # size is return None threw our created deffered in get_vector
+            if self.d is not None:
+                self.d.callback(None)
             return
+
         self.size = int(size)
-        data = self.dut.correction_data(self.v_type, self.offset, self.transfer_size)
+        if self.size == 0:
+            if self.d is not None:
+                self.d.callback(None)
+            return
+
+        if self.size < self.transfer_size:
+            self.transfer_size = self.size
+        # Grab our first set of data (deffered)
+        data = self.dut.correction_data(self.v_type, self.offset,
+                                        self.transfer_size)
+        # add the self.get_vector_loop call back
         data.addCallback(self.get_vector_loop)
+        # what happens to error back here?
 
     def error_b(self, failure):
+        if self.d is not None:
+            self.d.callback(None)
         return None
 
     def get_vector(self, v_type=None):
+        #
         self.v_type = v_type
-        d = defer.Deferred()
-        self.d = d
         self.offset = 0
         self.data_buffer = ""
+        # Create a defered
+        d = defer.Deferred()
+        self.d = d
+
+        # get our size (deffered)
         size = self.dut.correction_size(self.v_type)
         size.addCallback(self.get_vector_data)
         size.addErrback(self.error_b)
+        # return our deferred
         return d
 
 
