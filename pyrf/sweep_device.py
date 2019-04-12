@@ -435,6 +435,7 @@ class SweepDevice(object):
             # disable receiving data until we are expecting it
             real_device.set_async_callback(None)
 
+            # Function to be called when async data is done capturing
             def _save_correction_vector(data_buffer):
                 if data_buffer is None:
                     return None
@@ -451,15 +452,17 @@ class SweepDevice(object):
                     elif data_buffer.v_type == "NOISE":
                         self.nf_corr_obj = None
 
+            # function to catch the errback of the async code. Used to handle
+            # the case when we can get the correction vectors.
+            def _catch_timeout(failure):
+                failure.trap(IOError)
+                return None
+
             vector_obj = correction_vector_acquire()
             vector_obj.dut = real_device
 
             vector_obj1 = correction_vector_acquire()
             vector_obj1.dut = real_device
-
-            def _catch_timeout(failure):
-                failure.trap(AttributeError)
-                return None
 
             d1 = vector_obj.get_vector("NOISE")
             d1.addCallback(_save_correction_vector)
@@ -485,32 +488,50 @@ class SweepDevice(object):
                 max_buf_size = 16*1024
                 offset = 0
                 bin_data = ""
-                signal_size = dut.correction_size(v_type)
+                try:
+                    signal_size = dut.correction_size(v_type)
+                except (IOError, OSError):  # this will handle socket.error's
+                    raise ValueError
+
+                # We have nothing to transfer
                 if signal_size == 0:
-                    # return NULL or raise error?
-                    pass
+                    return None
+
+                # check to see if tere is more data than can be transfer in one
+                # go
                 if signal_size > max_buf_size:
+                    # if so transfer our max buffer size
                     transfer_size = max_buf_size
                 else:
+                    # if not grab only what we need
                     transfer_size = signal_size
 
+                # While we still have data remaining
                 while offset < signal_size:
-                    data_buffer = dut.correction_data(v_type, offset, transfer_size)
-                    data = data_buffer
-                    transfered = len(data)
-                    bin_data = b"".join([bin_data, data])
+                    # get the data
+                    data_buffer = dut.correction_data(v_type, offset,
+                                                      transfer_size)
+                    # figure out how many bytes were transfered
+                    transfered = len(data_buffer)
+                    # append the data to the buffer of what we have allready
+                    # got
+                    bin_data = b"".join([bin_data, data_buffer])
+                    # increase the offset
                     offset = offset + transfered
                 return bin_data
+
             self.sp_corr_obj = correction_vector()
             try:
                 self.sp_corr_obj.buffer_to_vector(_get_correction(self.real_device, "SIGNAL"))
             except ValueError:
                 self.sp_corr_obj = None
+
             self.nf_corr_obj = correction_vector()
             try:
                 self.nf_corr_obj.buffer_to_vector(_get_correction(self.real_device, "NOISE"))
             except ValueError:
                 self.nf_corr_obj = None
+
         self.async_callback = async_callback
         self.continuous = False
 
