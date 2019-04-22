@@ -32,7 +32,7 @@ class PlainSocketConnector(object):
                 logger.error('socket connect VRT failed with %s', err)
                 self._sock_scpi.shutdown(socket.SHUT_RDWR)
                 self._sock_scpi.close()
-                raise            
+                raise
 
     def disconnect(self):
         """attempt to disconnect safely from SCPI and VRT"""
@@ -59,12 +59,12 @@ class PlainSocketConnector(object):
         except socket.error as err:
             logger.error('scpiget (send) failed on socket error: %s', err)
             raise
-        else:
-            try:
-                buf = self._sock_scpi.recv(1024)
-            except socket.error as err:
-                logger.error('scpiget (recv) failed on socket error: %s', err)
-                raise
+
+        try:
+            buf = self._sock_scpi.recv(1024)
+        except socket.error as err:
+            logger.error('scpiget (recv) failed on socket error: %s', err)
+            raise
 
         # test the first character to see if this is ascii or block data
         if buf[0] != '#':
@@ -88,7 +88,12 @@ class PlainSocketConnector(object):
         # read bytes until we get all of it
         blockbuf = buf[2 + numlen:]
         while lenread < blocklen:
-            buf = self._sock_scpi.recv(1024)
+            try:
+                buf = self._sock_scpi.recv(1024)
+            except socket.error as err:
+                logger.error('scpiget (recv) failed on socket error: %s', err)
+                raise
+
             blockbuf += buf
             lenread += len(buf)
 
