@@ -85,7 +85,7 @@ class WSA(object):
 
             dut.connect('123.456.789.1')
         """
-        yield self.connector.connect(host, timeout)
+        yield self.connector.connect(host, timeout=timeout)
         self.device_id = (yield self.scpiget(":*idn?"))
         self.properties = wsa_properties(self.device_id)
 

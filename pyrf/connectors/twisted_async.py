@@ -41,9 +41,9 @@ class TwistedConnector(object):
         self._reactor = reactor
         self.vrt_callback = vrt_callback
 
-    def connect(self, host, output_file=None):
+    def connect(self, host, output_file=None, timeout=8):
         point = HostnameEndpoint(self._reactor, host, SCPI_PORT)
-        d = point.connect(SCPIClientFactory())
+        d = point.connect(SCPIClientFactory(timeout))
 
         @d.addCallback
         def connect_vrt(scpi):
@@ -239,6 +239,9 @@ class SCPIClient(Protocol, TimeoutMixin):
     _block_len = None
     _buf_scpi = None
 
+    def __init__(self, timeout):
+        self.timeout = timeout
+
     def connectionMade(self):
         self.transport.setTcpNoDelay(True)
         self._buf_scpi = StringIO()
@@ -258,7 +261,7 @@ class SCPIClient(Protocol, TimeoutMixin):
             self._pending.append((cmd, d))
         else:
             self._pending = [('', d)]
-            self.setTimeout(5)
+            self.setTimeout(self.timeout)
             self.transport.write(cmd)
             logger.debug('scpiget %r', cmd)
         return d
@@ -280,7 +283,7 @@ class SCPIClient(Protocol, TimeoutMixin):
                 logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
                 self.transport.write(cmd)
                 if d:
-                    self.setTimeout(5)
+                    self.setTimeout(self.timeout)
                     break
                 self._pending.pop(0)
 
@@ -318,6 +321,7 @@ class SCPIClient(Protocol, TimeoutMixin):
                 self._block_len = None
                 self._num_len = None
                 self._in_block = False
+
         if len(self._pending) > 0:
             cmd, d = self._pending.pop(0)
             # Profile for timming this should help
@@ -332,17 +336,23 @@ class SCPIClient(Protocol, TimeoutMixin):
                 logger.debug('scpi(%s) %r', 'get' if d else 'set', cmd)
                 self.transport.write(cmd)
                 if d:
-                    self.setTimeout(5)
+                    self.setTimeout(self.timeout)
                     break
                 self._pending.pop(0)
 
 
 class SCPIClientFactory(Factory):
+    def __init__(self, timeout):
+        self._timeout = timeout
+
     def startedConnecting(self, connector):
         pass
+
     def buildProtocol(self, addr):
-        return SCPIClient()
+        return SCPIClient(self._timeout)
+
     def clientConnectionLost(self, connector, reason):
         pass
+
     def clientConnectionFailed(self, connector, reason):
         pass
