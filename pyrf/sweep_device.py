@@ -399,10 +399,9 @@ class SweepDevice(object):
 
     capture_count = 0
 
-    correction_thresh = 10
-
     sp_corr_obj = None
     nf_corr_obj = None
+    _flattening_enabled = True
 
     def __init__(self, real_device, async_callback=None):
 
@@ -556,6 +555,15 @@ class SweepDevice(object):
                 sys.stdout.write(msg.__str__())
             sys.stdout.write("\n")
 
+    def enable_flatening(self, enable=None):
+        """
+        :param enable: enable or disable spectral flattening
+        :type enable: bool or None
+        """
+        if enable is None:
+            return self._flattening_enabled
+        else:
+            self._flattening_enabled = enable
 
     def set_geolocation_callback(self, func, data = None):
         """
@@ -723,42 +731,45 @@ class SweepDevice(object):
         # calc rbw for this packet
         rbw = float(self.dev_properties.FULL_BW[self._sweep_settings.rfe_mode]) / len(pow_data)
         self.log("rbw = %f, %f" % (rbw, self._sweep_settings.rbw))
+        if self._flattening_enabled:
+            # Check if we are above 50 MHz and in SH mode
+            if packet_freq >= 50e6 and self._sweep_settings.rfe_mode == "SH":
+                number_of_points = len(pow_data)
+                # check if we have correction vectors (Noise)
+                if self.nf_corr_obj is not None:
+                    # if so grab them
+                    nf_cal = \
+                            self.nf_corr_obj.get_correction_vector(packet_freq,
+                                                                   number_of_points)
+                else:
+                    # if no set it to 0
+                    nf_cal = np.zeros(number_of_points)
 
-        # Check if we are above 50 MHz and in SH mode
-        if packet_freq >= 50e6 and self._sweep_settings.rfe_mode == "SH":
-            number_of_points = len(pow_data)
-            # check if we have correction vectors (Noise)
-            if self.nf_corr_obj is not None:
-                # if so grab them
-                nf_cal = self.nf_corr_obj.get_correction_vector(packet_freq,
-                                                                number_of_points)
-            else:
-                # if no set it to 0
-                nf_cal = np.zeros(number_of_points)
+                # check if we have corrrection vectors (Spectrum)
+                if self.sp_corr_obj is not None:
+                    # if so grab them
+                    sp_cal = \
+                            self.sp_corr_obj.get_correction_vector(packet_freq,
+                                                                   number_of_points)
+                else:
+                    # if not set it to 0
+                    sp_cal = np.zeros(number_of_points)
 
-            # check if we have corrrection vectors (Spectrum)
-            if self.sp_corr_obj is not None:
-                # if so grab them
-                sp_cal = self.sp_corr_obj.get_correction_vector(packet_freq,
-                                                                number_of_points)
-            else:
-                # if not set it to 0
-                sp_cal = np.zeros(number_of_points)
+                # if the data is spectraly inverted, invert the vectors
+                if packet.spec_inv:
+                    nf_cal = np.flipud(nf_cal)
+                    sp_cal = np.flipud(sp_cal)
 
-            # if the data is spectraly inverted, invert the vectors
-            if packet.spec_inv:
-                nf_cal = np.flipud(nf_cal)
-                sp_cal = np.flipud(sp_cal)
-
-            # calculate the correction threshold
-            correction_thresh = (-135.0 + ((10.0 * packet_freq / 1e6)
-                                           / 27000.0) + 10.0 * np.log10(rbw)
-                                 + self._sweep_settings.attenuation)
-            # creat the spectrum. per bin, if the ampltitude is above
-            # correction threshold do pow_data - sp_cal else do pow_data -
-            # nf_cal
-            pow_data = np.where(pow_data < correction_thresh,
-                                pow_data - nf_cal, pow_data - sp_cal)
+                # calculate the correction threshold
+                correction_thresh = (-135.0 + ((10.0 * packet_freq / 1e6)
+                                               / 27000.0) + 10.0
+                                     * np.log10(rbw)
+                                     + self._sweep_settings.attenuation)
+                # creat the spectrum. per bin, if the ampltitude is above
+                # correction threshold do pow_data - sp_cal else do pow_data -
+                # nf_cal
+                pow_data = np.where(pow_data < correction_thresh,
+                                    pow_data - nf_cal, pow_data - sp_cal)
 
         # check if DD mode was used in this sweep
         if self.packet_count == 1 and self._sweep_settings.dd_mode:
