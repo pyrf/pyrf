@@ -13,7 +13,6 @@ from pyrf.numpy_util import compute_fft
 import struct
 MAXIMUM_SPP = 32768
 
-
 class correction_vector_acquire(object):
     data_buffer = ""
     v_type = "SIGNAL"
@@ -555,7 +554,7 @@ class SweepDevice(object):
                 sys.stdout.write(msg.__str__())
             sys.stdout.write("\n")
 
-    def enable_flatening(self, enable=None):
+    def enable_flattening(self, enable=None):
         """
         :param enable: enable or disable spectral flattening
         :type enable: bool or None
@@ -592,7 +591,6 @@ class SweepDevice(object):
 
         self._geo_callback_func = func
         self._geo_callback_data = data
-
 
     def capture_power_spectrum(self,
                                fstart,
