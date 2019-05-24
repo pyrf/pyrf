@@ -2,6 +2,47 @@
 Change Logs
 ===========
 
+PyRF 2.10.0
+-----------
+* sweep_device: Added function to disable spectral flattening.
+* devices/thinkrf.py: Correctly sets the level trigger type.
+* devices/thinkrf.py: Strip \n from scpiresponse when doing a compare.
+* Support setting time out on connect.
+* connectiors/blocking: Add a try-catch around socket read.
+* Added timeout on SCPI receive.
+* Added timeout to SCPI/VRT connect.
+* sweep_device: Comment and handle errors in _vrt_receive.
+* sweep_device: Clean up and error handle SweepDevice init.
+* sweep_device: Comment and add error handling in correction_vector_aquire.
+* connectors/twisted_async: Clean up code and change raised error.
+* sweep_device: Change how the interpolation is done on the correction vector.
+* device/thinkrf: Rename size and data to correction_size and correction_data.
+* connectors/twisted_async: Added time out error handling.
+* sweep_device: Support error handling.
+* connectors/twisted_async Support reading the full buffer.
+* sweep_device: Add support for spectral flattening for signals and noise floor.
+* devices/thinkrf: Add size and data commands.
+* connectors/blocking.py Fix bug where data transfer would transfer everything but the newline.
+* connectors/twisted_async Add timeout to SCPI transfers.
+* connectors/twisted_asyc: Support async SCPI block data.
+* Block responses have a trailing NL on them,  but we don't want to return that as part of the data.
+* Adding block data response handling to the blocking connector.
+* Removing model name dependencies from PyRF code and moving it all into the properties file.
+* Add support for all R55xx and R57xx models.
+* Fixed occupied bandwidth calculation.
+* Fixed channel power & occupied bandwidth calculation.
+* Found a couple more instances of R5500 specific behaviour that wasn't being applied to R5700s.
+* Adjusted inheritance for R5500-427 so it properly inherits SWEEP_SETTINGS from 418 instead of 408.  This fix reflects the additional control of the psfm_gain available on these units.  Also corrected attenuation value.
+* Due to R5700, GNSS is now a valid value for pll_reference().
+* Attenuation still depends on model in some cases.
+* Avoid situations where we fail if the requested capture is too small.
+* Fixed some edge cases where, after stitching together the IBWs, there would be a 0 entry in the result where data wasn't copied. This usually occurred at the end  of the sweep.
+* Removed references to the long-ago-removed rtsa-gui from setup.py.
+* Added callback function to sweepdevice which gets called when geolocation fields are changed during a sweep operation.
+* Improved support for R5700. Check for invalid values in geolocation fields, create R5700 properties object with GPS_AVAILABLE property.
+
+
+
 PyRF 2.9.1
 ----------
 
