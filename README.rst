@@ -7,6 +7,7 @@ Hardware Support
 
 This library supports development for the
 `ThinkRF RTSA`_ platforms.
+Note that this library is obsoleted and is superseded by pyRF3. Contact support@thinkrf.com for the latest version.
 
 .. _ThinkRF RTSA: http://www.thinkrf.com/
 
