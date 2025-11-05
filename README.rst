@@ -7,13 +7,11 @@ Hardware Support
 
 This library supports development for the
 `ThinkRF RTSA`_ platforms.
-Note that this library is obsoleted and is superseded by pyRF3. Contact support@thinkrf.com for the latest version.
+Note that this library is obsoleted and is superseded by libtrf API (C++/C) with an example pyRF4 binding. Contact `Support <https://support.thinkrf.com/support/home>` or support@thinkrf.com for more information.
 
 .. _ThinkRF RTSA: http://www.thinkrf.com/
 
 Links
 -----
-
-* `Official PyRF github page <https://github.com/pyrf/pyrf>`_
-* `PyRF Documentation <https://www.pyrf.org>`_
-* `ThinkRF RTSA Documentation and Resources <https://www.thinkrf.com/resources>`_
+* `ThinkRF APIs <https://thinkrf.com/documentation-2/software-apis/`_
+* `ThinkRF RTSA Documentation and Resources <https://thinkrf.com/documentation/>`_
