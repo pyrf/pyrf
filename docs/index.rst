@@ -5,6 +5,21 @@
 PyRF Documentation
 ==================
 
+** Note **
+----------
+
+As of January 2024, pyRF3 (the superseded version of pyRF) version is **deprecated** and has been replaced by the **libtrf API** (C++/C), for which a sample pyRF4 binding is available upon request.
+
+pyRF3 remains functional all R5xx0 features released prior to 2024; however, it does not support the newer RTSA products or the R55x0/R57x0 features introduced after 2024. This API is to be used as is.
+
+Contact `Support <https://support.thinkrf.com/support/home>`_ or support@thinkrf.com for more information.
+
+**References:**
+
+* `ThinkRF APIs <https://thinkrf.com/documentation-2/software-apis/>`_
+* `Spectraware Spectrum Viewer (replacement for S240v5) <https://thinkrf.com/real-time-spectrum-analyzers/spectraware-spectrum-analysis-software/>`_
+* `ThinkRF RTSA Documentation and Resources <https://thinkrf.com/documentation/>`_
+
 Overview
 --------
 
@@ -43,7 +58,6 @@ Links
 
 * `Official PyRF github page <https://github.com/pyrf/pyrf>`_
 * `PyRF Documentation <https://www.pyrf.org>`_
-* `ThinkRF RTSA Documentation and Resources <https://www.thinkrf.com/resources>`_
 
 Indices and Tables
 ------------------
