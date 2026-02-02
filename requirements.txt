@@ -1,4 +1,4 @@
-pip==21.1
+pip==26.0
 scipy
 numpy
 zope.interface
